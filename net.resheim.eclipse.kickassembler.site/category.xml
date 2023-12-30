@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature id="net.resheim.eclipse.kickassembler.feature">
+      <category name="main"/>
+   </feature>
+   <category-def name="main" label="Eclipse Kick Assembler">
+      <description>
+         TBD
+      </description>
+   </category-def>
+</site>

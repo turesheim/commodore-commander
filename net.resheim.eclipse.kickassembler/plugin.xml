@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<!--      base-type="org.eclipse.tm4e.language_pack.basetype" -->
+<plugin>
+  <extension
+    point="org.eclipse.core.contenttype.contentTypes">
+    <content-type
+      file-extensions="asm,inc,s,a,lib,kick,ka,src"
+      base-type="org.eclipse.core.runtime.text"
+      id="net.resheim.eclipse.kickassembler"
+      name="Kick Assembler Code"
+      priority="normal">
+    </content-type>
+  </extension>
+
+  <!-- Register Kick Assembler TextMate grammars -->
+  <extension
+    point="org.eclipse.tm4e.registry.grammars">
+    <grammar
+      scopeName="source.assembly.kickassembler"
+      path="syntaxes/kickassembler.tmLanguage.json">
+    </grammar>
+    <scopeNameContentTypeBinding
+      contentTypeId="net.resheim.eclipse.kickassembler"
+      scopeName="source.assembly.kickassembler">
+    </scopeNameContentTypeBinding>
+  </extension>
+
+  <extension point="org.eclipse.tm4e.languageconfiguration.languageConfigurations">
+    <languageConfiguration contentTypeId="net.resheim.eclipse.kickassembler" path="syntaxes/kickassembler.language-configuration.json" />
+  </extension>
+
+  <!-- Assembly Editor uses TextMate presentation reconcilier -->
+  <extension
+    point="org.eclipse.ui.genericeditor.presentationReconcilers">
+    <presentationReconciler
+      class="org.eclipse.tm4e.ui.text.TMPresentationReconciler"
+      contentType="net.resheim.eclipse.kickassembler">
+    </presentationReconciler>
+  </extension>
+
+  <!-- Assembly Editor -->
+  <extension point="org.eclipse.ui.editors">
+    <editorContentTypeBinding 
+    editorId="org.eclipse.ui.genericeditor.GenericEditor" 
+    contentTypeId="net.resheim.eclipse.kickassembler" />
+  </extension>
+  <extension
+        point="org.eclipse.tm4e.ui.snippets">
+     <snippet
+           name="Kick Assembler"
+           path="snippet.asm"
+           scopeName="source.assembly.kickassembler">
+     </snippet>
+  </extension>
+
+</plugin>

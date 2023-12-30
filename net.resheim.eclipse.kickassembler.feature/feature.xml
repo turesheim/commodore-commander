@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="net.resheim.eclipse.kickassembler.feature"
+      label="%featureName"
+      version="1.0.0.qualifier"
+      provider-name="%providerName"
+      plugin="net.resheim.eclipse.kickassembler">
+
+   <description>
+      %description
+   </description>
+
+   <copyright>
+      %copyright
+   </copyright>
+
+   <license url="">
+      %license
+   </license>
+
+   <requires>
+      <import feature="org.eclipse.tm4e.feature" version="0.6.1.202308132047" match="compatible"/>
+   </requires>
+
+   <plugin
+         id="net.resheim.eclipse.kickassembler"
+         version="0.0.0"/>
+
+</feature>
