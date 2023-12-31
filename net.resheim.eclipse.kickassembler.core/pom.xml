@@ -8,10 +8,10 @@
 		<relativePath>../pom.xml</relativePath>
 		<artifactId>net.resheim.eclipse.kickassembler-parent</artifactId>
 		<groupId>net.resheim.eclipse.kickassembler</groupId>
-		<version>1.0.0-SNAPSHOT</version>
+		<version>1.1.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>net.resheim.eclipse.kickassembler</artifactId>
+	<artifactId>net.resheim.eclipse.kickassembler.core</artifactId>
 	<packaging>eclipse-plugin</packaging>
 
 	<properties>

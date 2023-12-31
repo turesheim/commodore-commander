@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         id="kickassemblerBuilder"
+         name="Kick Assembler Project Builder"
+         point="org.eclipse.core.resources.builders">
+      <builder
+            hasNature="true">
+         <run
+               class="net.resheim.eclipse.kickassembler.core.builder.KickAssemblerBuilder">
+         </run>
+      </builder>
+   </extension>
+   <extension
+         id="kickassemblerNature"
+         name="Kick Assembler Project Nature"
+         point="org.eclipse.core.resources.natures">
+      <runtime>
+         <run
+               class="net.resheim.eclipse.kickassembler.core.builder.KickAssemblerNature">
+         </run>
+      </runtime>
+      <builder
+            id="net.resheim.eclipse.kickassembler.core.kickassemblerBuilder">
+      </builder>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <category
+            id="net.resheim.eclipse.kickassembler.core.kickassemblerNature.category"
+            name="Kick Assembler Project Nature commands">
+      </category>
+      <command
+            categoryId="net.resheim.eclipse.kickassembler.core.kickassemblerNature.category"
+            defaultHandler="net.resheim.eclipse.kickassembler.core.builder.AddRemoveKickAssemblerNatureHandler"
+            id="net.resheim.eclipse.kickassembler.core.addRemoveKickAssemblerNature"
+            name="Add/RemoveKick Assembler Project Nature">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="popup:org.eclipse.ui.projectConfigure?after=additions">
+         <command
+               commandId="net.resheim.eclipse.kickassembler.core.addRemoveKickAssemblerNature"
+               label="Disable Kick Assembler Project"
+               style="push">
+            <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="selection">
+                  <count
+                        value="1">
+                  </count>
+                  <iterate>
+                     <adapt
+                           type="org.eclipse.core.resources.IProject">
+                        <test
+                              property="org.eclipse.core.resources.projectNature"
+                              value="net.resheim.eclipse.kickassembler.core.kickassemblerNature">
+                        </test>
+                     </adapt>
+                  </iterate>
+               </with>
+            </visibleWhen>
+         </command>
+         <command
+               commandId="net.resheim.eclipse.kickassembler.core.addRemoveKickAssemblerNature"
+               label="Convert to Kick Assembler Project"
+               style="push">
+            <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="selection">
+                  <count
+                        value="1">
+                  </count>
+                  <iterate>
+                     <adapt
+                           type="org.eclipse.core.resources.IProject">
+                        <not>
+                           <test
+                                 property="org.eclipse.core.resources.projectNature"
+                                 value="net.resheim.eclipse.kickassembler.core.kickassemblerNature">
+                           </test>
+                        </not>
+                     </adapt>
+                  </iterate>
+               </with>
+            </visibleWhen>
+         </command>
+      </menuContribution>
+   </extension>
+   <extension
+         id="xmlProblem"
+         name="XML Problem"
+         point="org.eclipse.core.resources.markers">
+      <super
+            type="org.eclipse.core.resources.problemmarker">
+      </super>
+      <persistent
+            value="true">
+      </persistent>
+   </extension>
+
+</plugin>

@@ -2,9 +2,9 @@
 <feature
       id="net.resheim.eclipse.kickassembler.feature"
       label="%featureName"
-      version="1.0.0.qualifier"
+      version="1.1.0.qualifier"
       provider-name="%providerName"
-      plugin="net.resheim.eclipse.kickassembler">
+      plugin="net.resheim.eclipse.kickassembler.ui">
 
    <description>
       %description
@@ -23,7 +23,11 @@
    </requires>
 
    <plugin
-         id="net.resheim.eclipse.kickassembler"
+         id="net.resheim.eclipse.kickassembler.core"
+         version="0.0.0"/>
+
+   <plugin
+         id="net.resheim.eclipse.kickassembler.ui"
          version="0.0.0"/>
 
 </feature>
