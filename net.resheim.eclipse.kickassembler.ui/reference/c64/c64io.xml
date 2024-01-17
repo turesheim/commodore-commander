@@ -6,6 +6,7 @@
 <iomap>
   <entry address="$0000" name="MOS 6510 Data Direction Register (xx101111)">
 <![CDATA[
+
     Bit=1: Output
     Bit=0: Input
     x=Don't Care
@@ -39,7 +40,27 @@
   <entry address="$D00D" id="SP6Y" name="Sprite 6 Y Pos" />
   <entry address="$D00E" id="SP7X" name="Sprite 7 X Pos" />
   <entry address="$D00F" id="SP7Y" name="Sprite 7 Y Pos" />
-  <entry address="$D010" id="MSIGX" name="Sprites 0-7 X Pos (msb of X coord.)" />
+  <entry address="$D010" id="MSIGX" name="Most Significant Bits of Sprites 0-7 Horizontal Position">
+<![CDATA[
+<table>
+  <tr><th>Bit</th><th>Value</th></tr>
+  <tr><td>0</td><td>Most significant bit of Sprite 0 horizontal position</td></tr>
+  <tr><td>1</td><td>Most significant bit of Sprite 1 horizontal position</td></tr>
+  <tr><td>2</td><td>Most significant bit of Sprite 2 horizontal position</td></tr>
+  <tr><td>3</td><td>Most significant bit of Sprite 3 horizontal position</td></tr>
+  <tr><td>4</td><td>Most significant bit of Sprite 4 horizontal position</td></tr>
+  <tr><td>5</td><td>Most significant bit of Sprite 5 horizontal position</td></tr>
+  <tr><td>6</td><td>Most significant bit of Sprite 6 horizontal position</td></tr>
+  <tr><td>7</td><td>Most significant bit of Sprite 7 horizontal position</td></tr>
+</table>
+<p>
+Setting one of these bites to 1 adds 256 to the horizontal position of
+the corresponding sprite.  Resetting one of these bits to 0 restricts
+the horizontal position of the corresponding sprite to a value of 255
+or less
+</p>
+]]>
+  </entry>
   <entry address="$D011" name="VIC Control Register">
 <![CDATA[
     7 Raster Compare: (Bit 8) See 53266
@@ -55,16 +76,17 @@
   <entry address="$D014" name="Light-Pen Latch Y Pos"/>
   <entry address="$D015" id="SPENA" name="Sprite display Enable">
 <![CDATA[
-<pre>
-0    Enable Sprite 0 (1=sprite is on, 0=sprite is off)
-1    Enable Sprite 1 (1=sprite is on, 0=sprite is off)
-2    Enable Sprite 2 (1=sprite is on, 0=sprite is off)
-3    Enable Sprite 3 (1=sprite is on, 0=sprite is off)
-4    Enable Sprite 4 (1=sprite is on, 0=sprite is off)
-5    Enable Sprite 5 (1=sprite is on, 0=sprite is off)
-6    Enable Sprite 6 (1=sprite is on, 0=sprite is off)
-7    Enable Sprite 7 (1=sprite is on, 0=sprite is off)
-</pre>
+<table>
+  <tr><th>Bit</th><th>Value</th></tr>
+<tr><td>0</td><td>Enable Sprite 0 (1=sprite is on, 0=sprite is off)</td></tr>
+<tr><td>1</td><td>Enable Sprite 1 (1=sprite is on, 0=sprite is off)</td></tr>
+<tr><td>2</td><td>Enable Sprite 2 (1=sprite is on, 0=sprite is off)</td></tr>
+<tr><td>3</td><td>Enable Sprite 3 (1=sprite is on, 0=sprite is off)</td></tr>
+<tr><td>4</td><td>Enable Sprite 4 (1=sprite is on, 0=sprite is off)</td></tr>
+<tr><td>5</td><td>Enable Sprite 5 (1=sprite is on, 0=sprite is off)</td></tr>
+<tr><td>6</td><td>Enable Sprite 6 (1=sprite is on, 0=sprite is off)</td></tr>
+<tr><td>7</td><td>Enable Sprite 7 (1=sprite is on, 0=sprite is off)</td></tr>
+</table>
 
 <p>
 In order for any sprite to be displayed, the corresponding bit in this
