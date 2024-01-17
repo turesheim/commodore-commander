@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="assembly">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="mnemonic" maxOccurs="unbounded">
+					<xs:complexType mixed="true">
+						<xs:attribute name="id" type="xs:ID" use="required" />
+						<xs:attribute name="name" use="required" />
+						<xs:attribute name="flags">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value="B" />
+									<xs:enumeration value="NVZ" />
+									<xs:enumeration value="NVZC" />
+									<xs:enumeration value="NZ" />
+									<xs:enumeration value="NZC" />
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="mnemonics" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="mnemonic" maxOccurs="unbounded">
+								<xs:complexType>
+									<xs:attribute name="id" type="xs:ID" />
+									<xs:attribute name="ID" />
+									<xs:attribute name="flags" />
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="description" />
+						</xs:sequence>
+						<xs:attribute name="name" use="required" />
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

@@ -1,0 +1,489 @@
+<!--
+  This map shows details about the various Commodore 64 addresses. Details are
+  obtained from various sources. This document needs a lot of work, but has some
+  of the essentials.
+  
+  Hex         Dec         Page          Contents
+  $0000-$0001 0-1         -             CPU I/O port - see Zeropage
+  $D000-$D3FF 53248-54271 Page 208-211  VIC-II registers
+  $D400-$D7FF 54272-55295 Page 212-215  SID registers
+  $D800-$DBFF 55296-56319 Page 216-219  Color Memory
+  $DC00-$DCFF 56320-56575 Page 220      CIA 1
+  $DD00-$DDFF 56576-56831 Page 221      CIA 2
+  $DE00-$DEFF 56832-57087 Page 222      I/O 1
+  $DF00-$DFFF 57088-57343 Page 223      I/O 2
+-->
+<?xml-model href="c64io.xsd"?>
+<iomap>
+  <entry address="$0000" name="MOS 6510 Data Direction Register (xx101111)">
+<![CDATA[
+
+    Bit=1: Output
+    Bit=0: Input
+    x=Don't Care
+]]>
+  </entry>
+  <entry address="$0001" name="MOS 6510 Micro-Processor">
+<![CDATA[
+    On-Chip I/O Port
+    0 /LORAM Signal (0=Switch BASIC ROM Out)
+    1 /HIRAM Signal (0=Switch Kernal ROM Out)
+    2 /CHAREN Signal (0=Switch Char. ROM In)
+    3 Cassette Data Output Line
+    4 Cassette Switch Sense: 1 = Switch Closed
+    5 Cassette Motor Control 0 = ON, 1 = OFF
+    6-7 Undefined
+]]>
+  </entry>
+  <entry address="$D000" id="SP0X" name="Sprite 0 X Pos" />
+  <entry address="$D001" id="SP0Y" name="Sprite 0 Y Pos" />
+  <entry address="$D002" id="SP1X" name="Sprite 1 X Pos" />
+  <entry address="$D003" id="SP1Y" name="Sprite 1 Y Pos" />
+  <entry address="$D004" id="SP2X" name="Sprite 2 X Pos" />
+  <entry address="$D005" id="SP2Y" name="Sprite 2 Y Pos" />
+  <entry address="$D006" id="SP3X" name="Sprite 3 X Pos" />
+  <entry address="$D007" id="SP3Y" name="Sprite 3 Y Pos" />
+  <entry address="$D008" id="SP4X" name="Sprite 4 X Pos" />
+  <entry address="$D009" id="SP4Y" name="Sprite 4 Y Pos" />
+  <entry address="$D00A" id="SP5X" name="Sprite 5 X Pos" />
+  <entry address="$D00B" id="SP5Y" name="Sprite 5 Y Pos" />
+  <entry address="$D00C" id="SP6X" name="Sprite 6 X Pos" />
+  <entry address="$D00D" id="SP6Y" name="Sprite 6 Y Pos" />
+  <entry address="$D00E" id="SP7X" name="Sprite 7 X Pos" />
+  <entry address="$D00F" id="SP7Y" name="Sprite 7 Y Pos" />
+  <entry address="$D010" id="MSIGX" name="Most Significant Bits of Sprites 0-7 Horizontal Position">
+<![CDATA[
+<table>
+  <tr><th>Bit</th><th>Value</th></tr>
+  <tr><td>0</td><td>Most significant bit of Sprite 0 horizontal position</td></tr>
+  <tr><td>1</td><td>Most significant bit of Sprite 1 horizontal position</td></tr>
+  <tr><td>2</td><td>Most significant bit of Sprite 2 horizontal position</td></tr>
+  <tr><td>3</td><td>Most significant bit of Sprite 3 horizontal position</td></tr>
+  <tr><td>4</td><td>Most significant bit of Sprite 4 horizontal position</td></tr>
+  <tr><td>5</td><td>Most significant bit of Sprite 5 horizontal position</td></tr>
+  <tr><td>6</td><td>Most significant bit of Sprite 6 horizontal position</td></tr>
+  <tr><td>7</td><td>Most significant bit of Sprite 7 horizontal position</td></tr>
+</table>
+<p>
+Setting one of these bites to 1 adds 256 to the horizontal position of
+the corresponding sprite.  Resetting one of these bits to 0 restricts
+the horizontal position of the corresponding sprite to a value of 255
+or less
+</p>
+]]>
+  </entry>
+  <entry address="$D011" name="VIC Control Register">
+<![CDATA[
+    7 Raster Compare: (Bit 8) See 53266
+    6 Extended Color Text Mode 1 = Enable
+    5 Bit Map Mode. 1 = Enable
+    4 Blank Screen to Border Color: 0 = Blank
+    3 Select 24/25 Row Text Display: 1=25 Rows
+    2-0 Smooth Scroll to Y Dot-Position (0-7)
+]]>
+  </entry>
+  <entry address="$D012" name="Read Raster/Write Raster Value for Compare IRQ"/>
+  <entry address="$D013" name="Light-Pen Latch X Pos"/>
+  <entry address="$D014" name="Light-Pen Latch Y Pos"/>
+  <entry address="$D015" id="SPENA" name="Sprite display Enable">
+<![CDATA[
+<table>
+  <tr><th>Bit</th><th>Value</th></tr>
+<tr><td>0</td><td>Enable Sprite 0 (1=sprite is on, 0=sprite is off)</td></tr>
+<tr><td>1</td><td>Enable Sprite 1 (1=sprite is on, 0=sprite is off)</td></tr>
+<tr><td>2</td><td>Enable Sprite 2 (1=sprite is on, 0=sprite is off)</td></tr>
+<tr><td>3</td><td>Enable Sprite 3 (1=sprite is on, 0=sprite is off)</td></tr>
+<tr><td>4</td><td>Enable Sprite 4 (1=sprite is on, 0=sprite is off)</td></tr>
+<tr><td>5</td><td>Enable Sprite 5 (1=sprite is on, 0=sprite is off)</td></tr>
+<tr><td>6</td><td>Enable Sprite 6 (1=sprite is on, 0=sprite is off)</td></tr>
+<tr><td>7</td><td>Enable Sprite 7 (1=sprite is on, 0=sprite is off)</td></tr>
+</table>
+
+<p>
+In order for any sprite to be displayed, the corresponding bit in this
+register must be set to 1 (the default for this location is 0).  Of
+course, just setting this bit along will not guarantee that a sprite
+will be shown on the screen.  The Sprite Data Pointer must indicate a
+data area that holds some values other than 0.  The Sprite Color
+Register must also contain a value other than that of the background
+color.  In addition, the Sprite Horizontal and Vertical Position
+Registers must be set for positions that lie within the visible screen
+range in order for a sprite to appear on screen.
+</p>
+]]>
+  </entry>
+  <entry address="$D016" name="VIC Control Register">
+<![CDATA[
+    7-6 Unused
+    5 ALWAYS SET THIS BIT TO 0 !
+    4 Multi-Color Mode: 1 = Enable (Text or
+    Bit-Map)
+    3 Select 38/40 Column Text Display:
+    1 = 40 Cols
+    2-0 Smooth Scroll to X Pos
+]]>
+  </entry>
+  <entry address="$D017" name="Sprites 0-7 Expand 2x Vertical (Y)"/>
+  <entry address="$D018" name="VIC Memory Control Register">
+<![CDATA[
+    7-4 Video Matrix Base Address (inside VIC)
+    3-1 Character Dot-Data Base Address (inside
+    VIC)
+    0 Select upper/lower Character Set
+]]>
+  </entry>
+  <entry address="$D019"
+    name="VIC Interrupt Flag Register (Bit = 1: IRQ Occurred)">
+<![CDATA[
+    7 Set on Any Enabled VIC IRQ Condition
+    3 Light-Pen Triggered IRQ Flag
+    2 Sprite to Sprite Collision IRQ Flag
+    1 Sprite to Background Collision IRQ Flag
+    0 Raster Compare IRQ Flag
+]]>
+  </entry>
+  <entry address="$D01A" name="IRQ Mask Register: 1 = Interrupt Enabled"/>
+  <entry address="$D01B" name="Sprite to Background Display Priority:">
+<![CDATA[
+    1 = Sprite
+]]>
+  </entry>
+  <entry address="$D01C" name="Sprites 0-7 Multi-Color Mode Select:">
+<![CDATA[
+    1 = M.C.M.
+]]>
+  </entry>
+  <entry address="$D01D" name="Sprites 0-7 Expand 2x Horizontal (X)" />
+  <entry address="$D01E" name="Sprite to Sprite Collision Detect" />
+  <entry address="$D01F" name="Sprite to Background Collision Detect" />
+  <entry address="$D020" name="Border Color" />
+  <entry address="$D021" name="Background Color 0">
+<![CDATA[
+This register sets the background color for all text modes, sprite
+graphics, and multicolor bitmap graphics. The default color value is
+6 (blue).
+]]>
+  </entry>    
+  <entry address="$D022" name="Background Color 1" />
+  <entry address="$D023" name="Background Color 2" />
+  <entry address="$D024" name="Background Color 3" />
+  <entry address="$D025" name="Sprite Multi-Color Register 0" />
+  <entry address="$D026" name="Sprite Multi-Color Register 1" />
+  <entry address="$D027" name="Sprite 0 Color" />
+  <entry address="$D028" name="Sprite 1 Color" />
+  <entry address="$D029" name="Sprite 2 Color" />
+  <entry address="$D02A" name="Sprite 3 Color" />
+  <entry address="$D02B" name="Sprite 4 Color" />
+  <entry address="$D02C" name="Sprite 5 Color" />
+  <entry address="$D02D" name="Sprite 6 Color" />
+  <entry address="$D02E" name="Sprite 7 Color" />
+  <entry address="$D400-$D7FF" name="MOS 81 SOUND INTERFACE DEVICE (SID)" />
+  <entry address="$D400" name="Voice 1: Frequency Control - Low-Byte" />
+  <entry address="$D401" name="Voice 1: Frequency Control - High-Byte" />
+  <entry address="$D402" name="Voice 1: Pulse Waveform Width - Low-Byte" />
+  <entry address="$D403" name="7-4 Unused">
+<![CDATA[
+    3-0 Voice 1: Pulse Waveform Width - High-
+    Nybble
+]]>
+  </entry>
+  <entry address="$D404" name="Voice 1: Control Register">
+<![CDATA[
+    7 Select Random Noise Waveform, 1 = On
+    6 Select Pulse Waveform, 1 = On
+    5 Select Sawtooth Waveform, 1 = On
+    4 Select Triangle Waveform, 1 = On
+    3 Test Bit: 1 = Disable Oscillator 1
+    2 Ring Modulate Osc. 1 with Osc. 3 Output,
+    1 = On
+    1 Synchronize Osc.1 with Osc.3 Frequency,
+    1 = On
+    0 Gate Bit: 1 = Start Att/Dec/Sus,
+    0 = Start Release
+]]>
+  </entry>
+  <entry address="$D405" name="Envelope Generator 1: Attack/Decay Cycle Control">
+<![CDATA[
+    7-4 Select Attack Cycle Duration: 0-15
+    3-0 Select Decay Cycle Duration: 0-15
+]]>
+  </entry>
+  <entry address="$D406" name="Envelope Generator 1: Sustain/Release Cycle Control">
+<![CDATA[
+    7-4 Select Sustain Cycle Duration: 0-15
+    3-0 Select Release Cycle Duration: 0-15
+]]>
+  </entry>
+  <entry address="$D407" name="Voice 2: Frequency Control - Low-Byte" />
+  <entry address="$D408" name="Voice 2: Frequency Control - High-Byte" />
+  <entry address="$D409" name="Voice 2: Pulse Waveform Width - Low-Byte" />
+  <entry address="$D40A" name="7-4 Unused">
+<![CDATA[
+    3-0 Voice 2: Pulse Waveform Width - High- Nybble
+]]>
+  </entry>
+  <entry address="$D40B" name="Voice 2: Control Register">
+<![CDATA[
+    7 Select Random Noise Waveform, 1 = On
+    6 Select Pulse Waveform, 1 = On
+    5 Select Sawtooth Waveform, 1 = On
+    4 Select Triangle Waveform, 1 = On
+    3 Test Bit: 1 = Disable Oscillator 1
+    2 Ring Modulate Osc. 2 with Osc. 1 Output,
+    1 = On
+    1 Synchronize Osc.2 with Osc. 1 Frequency,
+    1 = On
+    0 Gate Bit: 1 = Start Att/Dec/Sus,
+    0 = Start Release
+]]>
+  </entry>
+  <entry address="$D40C" name="Envelope Generator 2: Attack / Decay Cycle Control">
+<![CDATA[
+    7-4 Select Attack Cycle Duration: 0-15
+    3-0 Select Decay Cycle Duration: 0-15
+]]>
+  </entry>
+  <entry address="$D40D" name="Envelope Generator 2: Sustain / Release Cycle Control">
+<![CDATA[
+    7-4 Select Sustain Cycle Duration: 0-15
+    3-0 Select Release Cycle Duration: 0-15
+]]>
+  </entry>
+  <entry address="$D40E" name="Voice 3: Frequency Control - Low-Byte" />
+  <entry address="$D40F" name="Voice 3: Frequency Control - High-Byte" />
+  <entry address="$D410" name="Voice 3: Pulse Waveform Width - Low-Byte" />
+  <entry address="$D411" name="7-4 Unused">
+<![CDATA[
+    3-0 Voice 3: Pulse Waveform Width - High-
+    Nybble
+]]>
+  </entry>
+  <entry address="$D412" name="Voice 3: Control Register">
+<![CDATA[
+    7 Select Random Noise Waveform, 1 = On
+    6 Select Pulse Waveform, 1 = On
+    5 Select Sawtooth Waveform, 1 = On
+    4 Select Triangle Waveform, 1 = On
+    3 Test Bit: 1 = Disable Oscillator 1
+    2 Ring Modulate Osc. 3 with Osc. 2 Output,
+    1 = On
+    1 Synchronize Osc. 3 with Osc.2 Frequency,
+    1 = On
+    0 Gate Bit: 1 = Start Att/Dec/Sus,
+    0 = Start Release
+]]>
+  </entry>
+  <entry address="$D413" name="Envelope Generator 3: Attack/Decay Cycle Control">
+<![CDATA[
+    7-4 Select Attack Cycle Duration: 0-15
+    3-0 Select Decay Cycle Duration: 0-15
+]]>
+  </entry>
+  <entry address="$D414"
+    name="Envelope Generator 3: Sustain / Release Cycle Control">
+<![CDATA[
+    7-4 Select Sustain Cycle Duration: 0-15
+    3-0 Select Release Cycle Duration: 0-15
+]]>
+  </entry>
+  <entry address="$D415" name="Filter Cutoff Frequency: Low-Nybble">
+<![CDATA[
+    (Bits 2-0)
+]]>
+  </entry>
+  <entry address="$D416" name="Filter Cutoff Frequency: High-Byte" />
+  <entry address="$D417" name="Filter Resonance Control / Voice Input Control">
+<![CDATA[
+    7-4 Select Filter Resonance: 0-15
+    3 Filter External Input: 1 = Yes, 0 = No
+    2 Filter Voice 3 Output: 1 = Yes, 0 = No
+    Filter Voice 2 Output: 1 = Yes, 0 = No
+    0 Filter Voice 1 Output: 1 = Yes, 0 = No
+]]>
+  </entry>
+  <entry address="$D418" name="Select Filter Mode and Volume">
+<![CDATA[
+    7 Cut-Off Voice 3 Output: 1 = Off, 0 = On
+    6 Select Filter High-Pass Mode: 1 = On
+    5 Select Filter Band-Pass Mode: 1 = On
+    4 Select Filter Low-Pass Mode: 1 = On
+    3-0 Select Output Volume: 0-15
+]]>
+  </entry>
+  <entry address="$D419" name="Analog/Digital Converter: Game Paddle 1">
+<![CDATA[
+    (0-255)
+]]>
+  </entry>
+  <entry address="$D41A" name="Analog/Digital Converter: Game Paddle 2">
+<![CDATA[
+    (0-255)
+]]>
+  </entry>
+  <entry address="$D41B" name="Oscillator 3 Random Number Generator"/>
+  <entry address="$D41C" name="Envelope Generator 3 Output" />
+  <entry address="$D500-$D7FF" name="SID IMAGES" />
+  <entry address="$D800-$DBFF" name="Color RAM (Nybbles)" />
+  <entry address="$DC00-$DCFF" name="MOS 6526 Complex Interface Adapter">
+<![CDATA[
+    (CIA) #1
+]]>
+  </entry>
+  <entry address="$DC00"
+    name="Data Port A (Keyboard, Joystick, Paddles, Light-Pen)">
+<![CDATA[
+    7-0 Write Keyboard Column Values for
+    Keyboard Scan
+    7-6 Read Paddles on Port A / B (01 = Port A,
+    10 = Port B)
+    4 Joystick A Fire Button: 1 = Fire
+    3-2 Paddle Fire Buttons
+    3-0 Joystick A Direction (0-15)
+]]>
+  </entry>
+  <entry address="$DC01"
+    name="Data Port B (Keyboard, Joystick, Paddles): Game Port 1">
+<![CDATA[
+    7-0 Read Keyboard Row Values for Keyboard
+    Scan
+    7 Timer B Toggle/Pulse Output
+    6 Timer A: Toggle/Pulse Output
+    4 Joystick 1 Fire Button: 1 = Fire
+    3-2 Paddle Fire Buttons
+    3-0 Joystick 1 Direction
+]]>
+  </entry>
+  <entry address="$DC02" name="Data Direction Register - Port A (56320)" />
+  <entry address="$DC03" name="Data Direction Register - Port B (56321)" />
+  <entry address="$DC04" name="Timer A: Low-Byte" />
+  <entry address="$DC05" name="Timer A: High-Byte" />
+  <entry address="$DC06" name="Timer B: Low-Byte" />
+  <entry address="$DC07" name="Timer B: High-Byte" />
+  <entry address="$DC08" name="Time-of-Day Clock: 1/10 Seconds" />
+  <entry address="$DC09" name="Time-of-Day Clock: Seconds" />
+  <entry address="$DC0A" name="Time-of-Day Clock: Minutes" />
+  <entry address="$DC0B" name="Time-of-Day Clock: Hours + AM/PM Flag (Bit 7)" />
+  <entry address="$DC0C" name="Synchronous Serial I/O Data Buffer" />
+  <entry address="$DC0D"
+    name="CIA Interrupt Control Register (Read IRQs/Write Mask)">
+<![CDATA[
+    7 IRQ Flag (1 = IRQ Occurred) / Set-
+    Clear Flag
+    4 FLAG1 IRQ (Cassette Read / Serial Bus
+    SRQ Input)
+    3 Serial Port Interrupt
+    2 Time-of-Day Clock Alarm Interrupt
+    1 Timer B Interrupt
+    0 Timer A Interrupt
+]]>
+  </entry>
+  <entry address="$DC0E" name="CIA Control Register A">
+<![CDATA[
+    7 Time-of-Day Clock Frequency: 1 = 50 Hz,
+    0 = 60 Hz
+    6 Serial Port I/O Mode Output, 0 = Input
+    5 Timer A Counts: 1 = CNT Signals,
+    0 = System 02 Clock
+    4 Force Load Timer A: 1 = Yes
+    3 Timer A Run Mode: 1 = One-Shot,
+    0 = Continuous
+    2 Timer A Output Mode to PB6: 1 = Toggle,
+    0 = Pulse
+    1 Timer A Output on PB6: 1 = Yes, 0 = No
+    0 Start/Stop Timer A: 1 = Start, 0 = Stop
+]]>
+  </entry>
+  <entry address="$DC0F" name="CIA Control Register B">
+<![CDATA[
+    7 Set Alarm/TOD-Clock: 1 = Alarm,
+    0 = Clock
+    6-5 Timer B Mode Select:
+    00 = Count System 02 Clock Pulses
+    01 = Count Positive CNT Transitions
+    10 = Count Timer A Underflow Pulses
+    11 = Count Timer A Underflows While
+    CNT Positive
+    4-0 Same as CIA Control Reg. A - for Timer B
+]]>
+  </entry>
+  <entry address="$DD00-$DDFF"
+    name="MOS 6526 Complex Interface Adapter (CIA) #2"/>
+  <entry address="$DD00"
+    name="Data Port A (Serial Bus, RS-232, VIC Memory Control)">
+<![CDATA[
+    7 Serial Bus Data Input
+    6 Serial Bus Clock Pulse Input
+    5 Serial Bus Data Output
+    4 Serial Bus Clock Pulse Output
+    3 Serial Bus ATN Signal Output
+    2 RS-232 Data Output (User Port)
+    1-0 VIC Chip System Memory Bank Select
+    (Default = 11)
+]]>
+  </entry>
+  <entry address="$DD01" name="Data Port B (User Port, RS-232)">
+<![CDATA[
+    7 User / RS-232 Data Set Ready
+    6 User / RS-232 Clear to Send
+    5 User
+    4 User / RS-232 Carrier Detect
+    3 User / RS-232 Ring Indicator
+    2 User / RS-232 Data Terminal Ready
+    1 User / RS-232 Request to Send
+    0 User / RS-232 Received Data
+]]>
+  </entry>
+  <entry address="$DD02" name="Data Direction Register - Port A" />
+  <entry address="$DD03" name="Data Direction Register - Port B" />
+  <entry address="$DD04" name="Timer A: Low-Byte" />
+  <entry address="$DD05" name="Timer A: High-Byte" />
+  <entry address="$DD06" name="Timer B: Low-Byte" />
+  <entry address="$DD07" name="Timer B: High-Byte" />
+  <entry address="$DD08" name="Time-of-Day Clock: 1/10 Seconds" />
+  <entry address="$DD09" name="Time-of-Day Clock: Seconds" />
+  <entry address="$DD0A" name="Time-of-Day Clock: Minutes" />
+  <entry address="$DD0B" name="Time-of-Day Clock: Hours + AM/PM Flag (Bit 7)" />
+  <entry address="$DD0C" name="Synchronous Serial I/O Data Buffer" />
+  <entry address="$DD0D"
+    name="CIA Interrupt Control Register (Read NMIs/Write Mask)">
+<![CDATA[
+    7 NMI Flag (1 = NMI Occurred) / Set-
+    Clear Flag
+    4 FLAG1 NMI (User/RS-232 Received Data
+    Input)
+    3 Serial Port Interrupt
+    1 Timer B Interrupt
+    0 Timer A Interrupt
+]]>
+  </entry>
+  <entry address="$DD0E" name="CIA Control Register A">
+<![CDATA[
+    7 Time-of-Day Clock Frequency: 1 = 50 Hz,
+    0 = 60 Hz
+    6 Serial Port I/O Mode Output, 0 = Input
+    5 Timer A Counts: 1 = CNT Signals,
+    0 = System 02 Clock
+    4 Force Load Timer A: 1 = Yes
+    3 Timer A Run Mode: 1 = One-Shot,
+    0 = Continuous
+    2 Timer A Output Mode to PB6: 1 = Toggle,
+    0 = Pulse
+    1 Timer A Output on PB6: 1 = Yes, 0 = No
+    0 Start/Stop Timer A: 1 = Start, 0 = Stop
+]]>
+  </entry>
+  <entry address="$DD0F" name="CIA Control Register B">
+<![CDATA[
+    7 Set Alarm/TOD-Clock: 1=Alarm, 0=Clock
+    6-5 Timer B Mode Select:
+    00 = Count System 02 Clock Pulses
+    01 = Count Positive CNT Transitions
+    10 = Count Timer A Underflow Pulses
+    11 = Count Timer A Underflows While
+    CNT Positive
+    4-0 Same as CIA Control Reg. A - for Timer B
+]]>
+  </entry>
+  <entry address="$DE00-$DEFF" name="Reserved for Future I/O Expansion" />
+  <entry address="$DF00-$DFFF" name="Reserved for Future I/O Expansion" />
+</iomap>

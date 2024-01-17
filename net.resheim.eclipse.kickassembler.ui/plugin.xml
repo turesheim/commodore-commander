@@ -6,7 +6,6 @@
     point="org.eclipse.core.contenttype.contentTypes">
     <content-type
       file-extensions="asm,inc,s,a,lib,kick,ka,src"
-      base-type="org.eclipse.core.runtime.text"
       id="net.resheim.eclipse.kickassembler"
       name="Kick Assembler Code"
       priority="normal">
@@ -42,8 +41,15 @@
   <!-- Assembly Editor -->
   <extension point="org.eclipse.ui.editors">
     <editorContentTypeBinding 
-    editorId="org.eclipse.ui.genericeditor.GenericEditor" 
+    editorId="net.resheim.eclipse.kickassembler.editor" 
     contentTypeId="net.resheim.eclipse.kickassembler" />
+    <editor
+          class="net.resheim.eclipse.kickassembler.editor.KickAssemblerEditor"
+          default="true"
+          icon="icons/asm_file_obj.png"
+          id="net.resheim.eclipse.kickassembler.editor"
+          name="C64 Assembler">
+    </editor>
   </extension>
   <extension
         point="org.eclipse.tm4e.ui.snippets">
