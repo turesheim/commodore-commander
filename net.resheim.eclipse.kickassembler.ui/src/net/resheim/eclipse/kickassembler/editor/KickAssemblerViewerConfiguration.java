@@ -83,7 +83,7 @@ public class KickAssemblerViewerConfiguration extends SourceViewerConfiguration 
 						}
 						sb.append(" - " + entry.getName() + "</h1>");
 						if (entry.getDescription() != null) {
-							sb.append("<pre>" + entry.getDescription() + "</pre>");
+							sb.append(entry.getDescription());
 						}
 						return sb.toString();
 				} else
