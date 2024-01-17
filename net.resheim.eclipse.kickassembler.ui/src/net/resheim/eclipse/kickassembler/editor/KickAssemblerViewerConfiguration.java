@@ -35,14 +35,29 @@ public class KickAssemblerViewerConfiguration extends SourceViewerConfiguration 
 			<head>
 			<style>
 			body {
-			  background-color: linen;
+				background-color: linen;
 			}
-
 			h1 {
-			  color: maroon;
-			  font-family: monospace;
-			  font-size: 10pt;
-			  font-weight: bold;
+				color: maroon;
+				font-family: monospace;
+				font-size: 10pt;
+				font-weight: bold;
+			}
+			table {
+				border: 1px solid black;
+				width: 100%;
+			}
+			td, th {
+				padding: 4px;
+				margin: 0px;
+				font-family: monospace;
+				font-size: 9pt;
+			}
+			tr {
+				background-color: bisque;
+			}
+			tr:nth-child(even) {
+				background-color: tan;
 			}
 			</style>
 			</head>
@@ -65,7 +80,6 @@ public class KickAssemblerViewerConfiguration extends SourceViewerConfiguration 
 
 		public TextHover(ISourceViewer sourceViewer) {
 			this.fSourceViewer = sourceViewer;
-			System.out.println(sourceViewer);
 		}
 
 		@Override
@@ -86,8 +100,8 @@ public class KickAssemblerViewerConfiguration extends SourceViewerConfiguration 
 							sb.append(entry.getDescription());
 						}
 						return sb.toString();
-				} else
-					return null;
+					} else
+						return null;
 				} catch (BadLocationException e) {
 				}
 			}
@@ -144,7 +158,6 @@ public class KickAssemblerViewerConfiguration extends SourceViewerConfiguration 
 
 			return null;
 		}
-
 
 		@Override
 		public String getHoverInfo(ITextViewer textViewer, IRegion hoverRegion) {
