@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?pde?>
 <!-- generated with https://github.com/eclipse-cbi/targetplatform-dsl -->
-<target name="Resheim Equationwriter Target Platform" sequenceNumber="1703954396">
+<target name="Resheim Equationwriter Target Platform" sequenceNumber="1705483850">
   <locations>
     <location includeMode="planner" includeAllPlatforms="false" includeSource="true" includeConfigurePhase="false" type="InstallableUnit">
+      <unit id="org.eclipse.epp.package.committers" version="4.30.0.20231201-1200"/>
       <unit id="org.eclipse.equinox.p2.sdk.feature.group" version="3.11.2200.v20231112-1314"/>
       <unit id="org.eclipse.sdk.feature.group" version="4.30.0.v20231201-0512"/>
       <unit id="org.eclipse.pde.core" version="3.17.200.v20231118-2008"/>
