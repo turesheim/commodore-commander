@@ -11,19 +11,14 @@
  */
 package net.resheim.eclipse.kickassembler.editor;
 
-import org.eclipse.jface.action.Action;
-import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.internal.text.html.BrowserInformationControl;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.text.AbstractInformationControl;
 import org.eclipse.jface.text.IInformationControl;
 import org.eclipse.jface.text.IInformationControlCreator;
-import org.eclipse.jface.text.IInformationControlExtension3;
 import org.eclipse.jface.text.IInformationControlExtension5;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
-import org.eclipse.swt.browser.ProgressAdapter;
-import org.eclipse.swt.browser.ProgressEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Menu;
@@ -40,23 +35,15 @@ public class DocumentationInformationControl extends AbstractInformationControl
 	private Browser fBrowser;
 
 	public DocumentationInformationControl(Shell parent) {
-		super(parent, "Commodore 64 I/O Map", true);
+		super(parent, "Commodore 64 I/O Map (press F2 for focus)", true);
 		create();
 	}
-
-	private boolean fCompleted;
 
 	@Override
 	protected void createContent(Composite parent) {
 		fBrowser = new Browser(parent, SWT.NONE);
 		fBrowser.setJavascriptEnabled(false);
-		fBrowser.addProgressListener(new ProgressAdapter() {
 
-			@Override
-			public void completed(ProgressEvent event) {
-				fCompleted = true;
-			}
-		});
 		// Cancel opening of new windows
 		fBrowser.addOpenWindowListener(event -> event.required = true);
 
@@ -80,13 +67,17 @@ public class DocumentationInformationControl extends AbstractInformationControl
 		return new Point(600, 200);
 	}
 
+	// This method will be called when the control gets focus and the enriched
+	// version of the control is requested. Should probably re-implement
+	// something similar as the BrowserInformationControl instead of using an
+	// internal type.
 	@Override
 	public IInformationControlCreator getInformationPresenterControlCreator() {
 		return new IInformationControlCreator() {
 
+			@SuppressWarnings("restriction")
 			@Override
 			public IInformationControl createInformationControl(Shell parent) {
-				// return new DocumentationInformationControl(parent);
 				return new BrowserInformationControl(parent, JFaceResources.DIALOG_FONT, "Commodore 64 I/O Map");
 			}
 		};
