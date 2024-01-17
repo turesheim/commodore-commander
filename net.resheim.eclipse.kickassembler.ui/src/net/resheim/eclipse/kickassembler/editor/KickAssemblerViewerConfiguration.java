@@ -31,6 +31,7 @@ import org.eclipse.tm4e.ui.text.TMPresentationReconciler;
 
 public class KickAssemblerViewerConfiguration extends SourceViewerConfiguration {
 
+	// CSS Colors: http://davidbau.com/colors/
 	private static final String CSS = """
 			<head>
 			<style>
