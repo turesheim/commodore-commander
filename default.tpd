@@ -1,4 +1,4 @@
-target "Resheim Equationwriter Target Platform" with source requirements
+target "Commodore Commander Target Platform" with source requirements
 
 // Base dependencies
 location "https://download.eclipse.org/releases/2023-12/" {

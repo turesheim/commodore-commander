@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Kick Assembler
-Bundle-SymbolicName: net.resheim.eclipse.kickassembler.ui;singleton:=true
+Bundle-Name: Commodore Commander
+Bundle-SymbolicName: net.resheim.eclipse.commodore-commander.ui;singleton:=true
 Bundle-Vendor: Torkild U. Resheim
 Bundle-Version: 1.1.0.qualifier
 Automatic-Module-Name: net.resheim.eclipse.kickassembler.editor
@@ -24,4 +24,5 @@ Require-Bundle: org.eclipse.jface.text,
  org.eclipse.tm4e.core,
  org.eclipse.tm4e.ui,
  org.eclipse.ui.genericeditor,
- org.eclipse.tm4e.languageconfiguration
+ org.eclipse.tm4e.languageconfiguration,
+ net.resheim.eclipse.commodore-commander.core

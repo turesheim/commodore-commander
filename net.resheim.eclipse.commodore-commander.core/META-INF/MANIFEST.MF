@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Kick Assembler Core
-Bundle-SymbolicName: net.resheim.eclipse.kickassembler.core;singleton:=true
+Bundle-Name: Commodore Commander Core
+Bundle-SymbolicName: net.resheim.eclipse.commodore-commander.core;singleton:=true
 Bundle-Version: 1.1.0.qualifier
 Require-Bundle: org.eclipse.core.resources,
  org.eclipse.core.runtime,
