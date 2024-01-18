@@ -73,13 +73,10 @@ public class KickAssemblerWrapper {
 	}
 
 	public int execute(String[] var1) {
+        // TODO: Use this to get output to the correct console
 		this.getState().log.addPrintStream(System.out);
-		this.getState().log.println("//------------------------------------------------------");
-		this.getState().log.println("//------------------------------------------------------");
-		this.getState().log.println("//"
-				+ StringUtil.centerPad(54, "Kick Assembler v" + KickAssemblerSetup.versionString + " by Mads Nielsen"));
-		this.getState().log.println("//------------------------------------------------------");
-		this.getState().log.println("//------------------------------------------------------");
+        this.getState().log.println(
+                StringUtil.centerPad(54, "Kick Assembler v" + KickAssemblerSetup.versionString + " by Mads Nielsen"));
 		int var2 = 0;
 
 		try {
