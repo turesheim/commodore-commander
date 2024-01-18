@@ -34,8 +34,11 @@ public class DocumentationInformationControl extends AbstractInformationControl
 
 	private Browser fBrowser;
 
-	public DocumentationInformationControl(Shell parent) {
-		super(parent, "Commodore 64 I/O Map (press F2 for focus)", true);
+	private String source;
+
+	public DocumentationInformationControl(Shell parent, String source) {
+		super(parent, source + " (press F2 for focus)", true);
+		this.source = source;
 		create();
 	}
 
@@ -54,7 +57,9 @@ public class DocumentationInformationControl extends AbstractInformationControl
 
 	@Override
 	public void setInformation(String input) {
-		fBrowser.setText(input);
+		if (input != null) {
+			fBrowser.setText(input);
+		}
 	}
 
 	@Override
@@ -78,7 +83,7 @@ public class DocumentationInformationControl extends AbstractInformationControl
 			@SuppressWarnings("restriction")
 			@Override
 			public IInformationControl createInformationControl(Shell parent) {
-				return new BrowserInformationControl(parent, JFaceResources.DIALOG_FONT, "Commodore 64 I/O Map");
+				return new BrowserInformationControl(parent, JFaceResources.DIALOG_FONT, source);
 			}
 		};
 	}
