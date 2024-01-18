@@ -8,34 +8,34 @@
       <builder
             hasNature="true">
          <run
-               class="net.resheim.eclipse.kickassembler.core.builder.KickAssemblerBuilder">
+               class="net.resheim.eclipse.cc.builder.KickAssemblerBuilder">
          </run>
       </builder>
    </extension>
    <extension
-         id="kickassemblerNature"
-         name="Kick Assembler Project Nature"
+         id="nature"
+         name="Commodore Commander Project Nature"
          point="org.eclipse.core.resources.natures">
       <runtime>
          <run
-               class="net.resheim.eclipse.kickassembler.core.builder.KickAssemblerNature">
+               class="net.resheim.eclipse.cc.builder.CommodoreCommanderNature">
          </run>
       </runtime>
       <builder
-            id="net.resheim.eclipse.kickassembler.core.kickassemblerBuilder">
+            id="net.resheim.eclipse.commodore-commander.core.kickassemblerBuilder">
       </builder>
    </extension>
    <extension
          point="org.eclipse.ui.commands">
       <category
-            id="net.resheim.eclipse.kickassembler.core.kickassemblerNature.category"
-            name="Kick Assembler Project Nature commands">
+            id="net.resheim.eclipse.commodore-commander.core.nature.category"
+            name="Commodore Commander Project Nature commands">
       </category>
       <command
-            categoryId="net.resheim.eclipse.kickassembler.core.kickassemblerNature.category"
-            defaultHandler="net.resheim.eclipse.kickassembler.core.builder.AddRemoveKickAssemblerNatureHandler"
-            id="net.resheim.eclipse.kickassembler.core.addRemoveKickAssemblerNature"
-            name="Add/RemoveKick Assembler Project Nature">
+            categoryId="net.resheim.eclipse.commodore-commander.core.nature.category"
+            defaultHandler="net.resheim.eclipse.cc.core.AddRemoveNatureHandler"
+            id="net.resheim.eclipse.commodore-commander.core.addRemoveNature"
+            name="Add/Remove Commodore Commander Project Nature">
       </command>
    </extension>
    <extension
@@ -43,8 +43,8 @@
       <menuContribution
             locationURI="popup:org.eclipse.ui.projectConfigure?after=additions">
          <command
-               commandId="net.resheim.eclipse.kickassembler.core.addRemoveKickAssemblerNature"
-               label="Disable Kick Assembler Project"
+               commandId="net.resheim.eclipse.commodore-commander.core.addRemoveNature"
+               label="Disable Commodore Commander Project"
                style="push">
             <visibleWhen
                   checkEnabled="false">
@@ -58,7 +58,7 @@
                            type="org.eclipse.core.resources.IProject">
                         <test
                               property="org.eclipse.core.resources.projectNature"
-                              value="net.resheim.eclipse.kickassembler.core.kickassemblerNature">
+                              value="net.resheim.eclipse.commdore-commander.core.nature">
                         </test>
                      </adapt>
                   </iterate>
@@ -66,8 +66,8 @@
             </visibleWhen>
          </command>
          <command
-               commandId="net.resheim.eclipse.kickassembler.core.addRemoveKickAssemblerNature"
-               label="Convert to Kick Assembler Project"
+               commandId="net.resheim.eclipse.commodore-commander.core.addRemoveNature"
+               label="Convert to Commodore Commander Project"
                style="push">
             <visibleWhen
                   checkEnabled="false">
@@ -82,7 +82,7 @@
                         <not>
                            <test
                                  property="org.eclipse.core.resources.projectNature"
-                                 value="net.resheim.eclipse.kickassembler.core.kickassemblerNature">
+                                 value="net.resheim.eclipse.commdore-commander.core.nature">
                            </test>
                         </not>
                      </adapt>

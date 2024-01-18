@@ -1,4 +1,4 @@
-package net.resheim.eclipse.kickassembler.core.assembler;
+package net.resheim.eclipse.cc.assembler;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,7 +51,7 @@ import kickass.state.libraries.ILibrary;
 import kickass.state.libraries.LibConstant;
 import kickass.state.miscoutput.ByteDumpWriter;
 import kickass.state.scope.symboltable.SymbolStatus;
-import net.resheim.eclipse.kickassembler.core.builder.KickAssemblerBuilder;
+import net.resheim.eclipse.cc.builder.KickAssemblerBuilder;
 
 /**
  * A copy of KickAssembler with a few members exposed for the benefit of @see

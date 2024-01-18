@@ -1,4 +1,4 @@
-package net.resheim.eclipse.kickassembler.core.builder;
+package net.resheim.eclipse.cc.core;
 
 import java.util.Iterator;
 import org.eclipse.core.commands.*;
@@ -10,7 +10,9 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.handlers.HandlerUtil;
 
-public class AddRemoveKickAssemblerNatureHandler extends AbstractHandler {
+import net.resheim.eclipse.cc.builder.CommodoreCommanderNature;
+
+public class AddRemoveNatureHandler extends AbstractHandler {
 
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		ISelection selection = HandlerUtil.getCurrentSelection(event);
@@ -51,7 +53,7 @@ public class AddRemoveKickAssemblerNatureHandler extends AbstractHandler {
 		String[] natures = description.getNatureIds();
 
 		for (int i = 0; i < natures.length; ++i) {
-			if (KickAssemblerNature.NATURE_ID.equals(natures[i])) {
+			if (CommodoreCommanderNature.NATURE_ID.equals(natures[i])) {
 				// Remove the nature
 				String[] newNatures = new String[natures.length - 1];
 				System.arraycopy(natures, 0, newNatures, 0, i);
@@ -65,7 +67,7 @@ public class AddRemoveKickAssemblerNatureHandler extends AbstractHandler {
 		// Add the nature
 		String[] newNatures = new String[natures.length + 1];
 		System.arraycopy(natures, 0, newNatures, 0, natures.length);
-		newNatures[natures.length] = KickAssemblerNature.NATURE_ID;
+		newNatures[natures.length] = CommodoreCommanderNature.NATURE_ID;
 		description.setNatureIds(newNatures);
 		project.setDescription(description, null);
 	}

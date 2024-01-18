@@ -1,4 +1,4 @@
-package net.resheim.eclipse.kickassembler.core.builder;
+package net.resheim.eclipse.cc.builder;
 
 import org.eclipse.core.resources.ICommand;
 import org.eclipse.core.resources.IProject;
@@ -6,12 +6,12 @@ import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IProjectNature;
 import org.eclipse.core.runtime.CoreException;
 
-public class KickAssemblerNature implements IProjectNature {
+public class CommodoreCommanderNature implements IProjectNature {
 
 	/**
 	 * ID of this project nature
 	 */
-	public static final String NATURE_ID = "net.resheim.eclipse.kickassembler.core.kickassemblerNature";
+    public static final String NATURE_ID = "net.resheim.eclipse.commodore-commander.core.nature";
 
 	private IProject project;
 

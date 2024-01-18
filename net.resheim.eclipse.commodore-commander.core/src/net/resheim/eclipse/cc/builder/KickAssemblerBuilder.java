@@ -1,4 +1,4 @@
-package net.resheim.eclipse.kickassembler.core.builder;
+package net.resheim.eclipse.cc.builder;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -18,7 +18,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 
 import kickass.common.diagnostics.DiagnosticType;
 import kickass.common.diagnostics.IDiagnostic;
-import net.resheim.eclipse.kickassembler.core.assembler.KickAssemblerWrapper;
+import net.resheim.eclipse.cc.assembler.KickAssemblerWrapper;
 
 public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
@@ -52,7 +52,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
-	public static final String BUILDER_ID = "net.resheim.eclipse.kickassembler.core.kickassemblerBuilder";
+    public static final String BUILDER_ID = "net.resheim.eclipse.commodore-commander.core.kickassemblerBuilder";
 
 	private static final String MARKER_TYPE = "net.resheim.eclipse.kickassembler.core.xmlProblem";
 
