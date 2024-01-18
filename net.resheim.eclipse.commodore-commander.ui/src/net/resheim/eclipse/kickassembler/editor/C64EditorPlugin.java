@@ -25,7 +25,6 @@ public class C64EditorPlugin extends AbstractUIPlugin {
 	private static C64EditorPlugin plugin;
 
 	public C64EditorPlugin() {
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override

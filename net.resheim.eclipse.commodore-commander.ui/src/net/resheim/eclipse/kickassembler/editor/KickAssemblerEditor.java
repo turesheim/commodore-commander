@@ -13,9 +13,6 @@ package net.resheim.eclipse.kickassembler.editor;
 
 import org.eclipse.jface.text.ITextHover;
 import org.eclipse.ui.editors.text.TextEditor;
-
-// 
-
 /**
  * 
  * XXX: Switching to basic TextEditor breaks some features provided by the
