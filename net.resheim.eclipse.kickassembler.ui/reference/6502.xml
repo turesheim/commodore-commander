@@ -1,0 +1,991 @@
+<!-- SECTION ============================================================== -->
+<?xml-model href="6502.xsd"?>
+<mnemonics>
+  <mnemonic id="ADC" name="ADC (ADd with Carry)" flags="NVZC">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Immediate     ADC #$44      $69
+Zero Page     ADC $44       $65
+Zero Page,X   ADC $44,X     $75
+Absolute      ADC $4400     $6D
+Absolute,X    ADC $4400,X   $7D
+Absolute,Y    ADC $4400,Y   $79
+Indirect,X    ADC ($44,X)   $61
+Indirect,Y    ADC ($44),Y   $71
+
++ add 1 cycle if page boundary crossed
+</pre>
+
+<p>ADC results are dependant on the setting of the <a href="#DFLAG">decimal flag</a>.
+In decimal mode, addition is carried out on the assumption that the values 
+involved are packed BCD (Binary Coded Decimal).</p>
+<p>There is no way to add without carry.</p>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="AND" name="AND (bitwise AND with accumulator)" flags="NZ">
+  <![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Immediate     AND #$44      $29
+Zero Page     AND $44       $25
+Zero Page,X   AND $44,X     $35
+Absolute      AND $4400     $2D
+Absolute,X    AND $4400,X   $3D
+Absolute,Y    AND $4400,Y   $39
+Indirect,X    AND ($44,X)   $21
+Indirect,Y    AND ($44),Y   $31
+
++ add 1 cycle if page boundary crossed
+</pre>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="ASL" name="ASL (Arithmetic Shift Left)" flags="NZC">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Accumulator   ASL A         $0A
+Zero Page     ASL $44       $06
+Zero Page,X   ASL $44,X     $16
+Absolute      ASL $4400     $0E
+Absolute,X    ASL $4400,X   $1E
+</pre>
+<p>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0" width="302.051" height="37.95" viewBox="0, 0, 1006.837, 126.5">
+  <g id="Layer_1" transform="translate(0, -674.5)">
+    <g>
+      <g>
+        <path d="M456.5,720.5 L504.5,720.5 L504.5,792.5 L456.5,792.5 L456.5,720.5 z" fill="#FFFFFF"/>
+        <path d="M456.5,720.5 L504.5,720.5 L504.5,792.5 L456.5,792.5 L456.5,720.5 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M504.5,720.5 L552.5,720.5 L552.5,792.5 L504.5,792.5 L504.5,720.5 z" fill="#FFFFFF"/>
+        <path d="M504.5,720.5 L552.5,720.5 L552.5,792.5 L504.5,792.5 L504.5,720.5 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M552.5,720.5 L600.5,720.5 L600.5,792.5 L552.5,792.5 L552.5,720.5 z" fill="#FFFFFF"/>
+        <path d="M552.5,720.5 L600.5,720.5 L600.5,792.5 L552.5,792.5 L552.5,720.5 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M600.5,720.5 L648.5,720.5 L648.5,792.5 L600.5,792.5 L600.5,720.5 z" fill="#FFFFFF"/>
+        <path d="M600.5,720.5 L648.5,720.5 L648.5,792.5 L600.5,792.5 L600.5,720.5 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M648.5,720.5 L696.5,720.5 L696.5,792.5 L648.5,792.5 L648.5,720.5 z" fill="#FFFFFF"/>
+        <path d="M648.5,720.5 L696.5,720.5 L696.5,792.5 L648.5,792.5 L648.5,720.5 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M696.5,720.5 L744.5,720.5 L744.5,792.5 L696.5,792.5 L696.5,720.5 z" fill="#FFFFFF"/>
+        <path d="M696.5,720.5 L744.5,720.5 L744.5,792.5 L696.5,792.5 L696.5,720.5 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M744.5,720.5 L792.5,720.5 L792.5,792.5 L744.5,792.5 L744.5,720.5 z" fill="#FFFFFF"/>
+        <path d="M744.5,720.5 L792.5,720.5 L792.5,792.5 L744.5,792.5 L744.5,720.5 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M792.5,720.5 L840.5,720.5 L840.5,792.5 L792.5,792.5 L792.5,720.5 z" fill="#FFFFFF"/>
+        <path d="M792.5,720.5 L840.5,720.5 L840.5,792.5 L792.5,792.5 L792.5,720.5 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 488.511, 696)">
+        <tspan x="-32.511" y="11.5" font-family="Menlo-Bold" font-size="36" fill="#FFFFFF">MSB</tspan>
+      </text>
+      <path d="M457.512,681.256 L463.699,681.256 L466.828,692.77 L469.939,681.256 L476.162,681.256 L476.162,707.5 L471.697,707.5 L471.697,686.477 L468.92,697.955 L464.789,697.955 L461.977,686.477 L461.977,707.5 L457.512,707.5 z M486.639,695.986 Q482.719,694.492 481.33,692.849 Q479.941,691.205 479.941,688.428 Q479.941,684.859 482.227,682.82 Q484.512,680.781 488.502,680.781 Q490.312,680.781 492.123,681.194 Q493.934,681.607 495.709,682.416 L495.709,687.479 Q494.039,686.301 492.316,685.686 Q490.594,685.07 488.906,685.07 Q487.025,685.07 486.023,685.826 Q485.021,686.582 485.021,687.988 Q485.021,689.078 485.751,689.79 Q486.48,690.502 488.801,691.363 L491.033,692.207 Q494.197,693.367 495.691,695.283 Q497.186,697.199 497.186,700.117 Q497.186,704.09 494.839,706.05 Q492.492,708.01 487.746,708.01 Q485.795,708.01 483.835,707.544 Q481.875,707.078 480.047,706.164 L480.047,700.803 Q482.121,702.279 484.063,703 Q486.006,703.721 487.904,703.721 Q489.82,703.721 490.875,702.851 Q491.93,701.98 491.93,700.416 Q491.93,699.238 491.227,698.351 Q490.523,697.463 489.188,696.953 z M506.555,695.582 L506.555,703.352 L510,703.352 Q512.479,703.352 513.472,702.508 Q514.465,701.664 514.465,699.572 Q514.465,697.445 513.428,696.514 Q512.391,695.582 510,695.582 z M506.555,685.352 L506.555,691.451 L510,691.451 Q511.969,691.451 512.804,690.748 Q513.639,690.045 513.639,688.428 Q513.639,686.811 512.786,686.081 Q511.934,685.352 510,685.352 z M501.545,681.221 L510,681.221 Q514.377,681.221 516.583,682.882 Q518.789,684.543 518.789,687.848 Q518.789,690.379 517.488,691.803 Q516.188,693.227 513.674,693.455 Q516.68,693.754 518.2,695.477 Q519.721,697.199 519.721,700.293 Q519.721,704.09 517.436,705.795 Q515.15,707.5 510,707.5 L501.545,707.5 z" fill="#000000"/>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 812.511, 696)">
+        <tspan x="-32.511" y="11.5" font-family="Menlo-Bold" font-size="36" fill="#FFFFFF">LSB</tspan>
+      </text>
+      <path d="M783.955,707.5 L783.955,681.256 L789.141,681.256 L789.141,702.93 L800.232,702.93 L800.232,707.5 z M810.639,695.986 Q806.719,694.492 805.33,692.849 Q803.941,691.205 803.941,688.428 Q803.941,684.859 806.227,682.82 Q808.512,680.781 812.502,680.781 Q814.312,680.781 816.123,681.194 Q817.934,681.607 819.709,682.416 L819.709,687.479 Q818.039,686.301 816.316,685.686 Q814.594,685.07 812.906,685.07 Q811.025,685.07 810.023,685.826 Q809.021,686.582 809.021,687.988 Q809.021,689.078 809.751,689.79 Q810.48,690.502 812.801,691.363 L815.033,692.207 Q818.197,693.367 819.691,695.283 Q821.186,697.199 821.186,700.117 Q821.186,704.09 818.839,706.05 Q816.492,708.01 811.746,708.01 Q809.795,708.01 807.835,707.544 Q805.875,707.078 804.047,706.164 L804.047,700.803 Q806.121,702.279 808.063,703 Q810.006,703.721 811.904,703.721 Q813.82,703.721 814.875,702.851 Q815.93,701.98 815.93,700.416 Q815.93,699.238 815.227,698.351 Q814.523,697.463 813.188,696.953 z M830.555,695.582 L830.555,703.352 L834,703.352 Q836.479,703.352 837.472,702.508 Q838.465,701.664 838.465,699.572 Q838.465,697.445 837.428,696.514 Q836.391,695.582 834,695.582 z M830.555,685.352 L830.555,691.451 L834,691.451 Q835.969,691.451 836.804,690.748 Q837.639,690.045 837.639,688.428 Q837.639,686.811 836.786,686.081 Q835.934,685.352 834,685.352 z M825.545,681.221 L834,681.221 Q838.377,681.221 840.583,682.882 Q842.789,684.543 842.789,687.848 Q842.789,690.379 841.488,691.803 Q840.188,693.227 837.674,693.455 Q840.68,693.754 842.2,695.477 Q843.721,697.199 843.721,700.293 Q843.721,704.09 841.436,705.795 Q839.15,707.5 834,707.5 L825.545,707.5 z" fill="#000000"/>
+    </g>
+    <g>
+      <g>
+        <path d="M264.5,720.5 L336.5,720.5 L336.5,792.5 L264.5,792.5 L264.5,720.5 z" fill="#FFFFFF"/>
+        <path d="M264.5,720.5 L336.5,720.5 L336.5,792.5 L264.5,792.5 L264.5,720.5 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <text transform="matrix(1, 0, 0, 1, 300, 756)">
+          <tspan x="-18.062" y="20" font-family="Menlo-Bold" font-size="60" fill="#FFFFFF">C</tspan>
+        </text>
+        <path d="M313.608,774.74 Q311.558,775.795 309.302,776.322 Q307.046,776.85 304.556,776.85 Q295.708,776.85 291.05,771.02 Q286.392,765.189 286.392,754.174 Q286.392,743.129 291.05,737.299 Q295.708,731.469 304.556,731.469 Q307.046,731.469 309.331,731.996 Q311.616,732.523 313.608,733.578 L313.608,743.188 Q311.382,741.137 309.287,740.185 Q307.192,739.232 304.966,739.232 Q300.22,739.232 297.803,742.997 Q295.386,746.762 295.386,754.174 Q295.386,761.557 297.803,765.321 Q300.22,769.086 304.966,769.086 Q307.192,769.086 309.287,768.134 Q311.382,767.182 313.608,765.131 z" fill="#000000"/>
+      </g>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 85.918, 756)">
+        <tspan x="-54.185" y="17.5" font-family="Menlo-Bold" font-size="60" fill="#FFFFFF">ASL</tspan>
+      </text>
+      <path d="M49.781,737.67 L45.708,755.57 L53.882,755.57 z M44.507,729.76 L55.083,729.76 L66.89,773.5 L58.248,773.5 L55.552,762.689 L43.98,762.689 L41.343,773.5 L32.701,773.5 z M82.798,754.311 Q76.265,751.82 73.951,749.081 Q71.636,746.342 71.636,741.713 Q71.636,735.766 75.445,732.367 Q79.253,728.969 85.904,728.969 Q88.921,728.969 91.939,729.657 Q94.957,730.346 97.916,731.693 L97.916,740.131 Q95.132,738.168 92.261,737.143 Q89.39,736.117 86.578,736.117 Q83.443,736.117 81.773,737.377 Q80.103,738.637 80.103,740.98 Q80.103,742.797 81.319,743.983 Q82.535,745.17 86.402,746.605 L90.123,748.012 Q95.396,749.945 97.886,753.139 Q100.376,756.332 100.376,761.195 Q100.376,767.816 96.465,771.083 Q92.554,774.35 84.644,774.35 Q81.392,774.35 78.125,773.573 Q74.859,772.797 71.812,771.273 L71.812,762.338 Q75.269,764.799 78.506,766 Q81.744,767.201 84.908,767.201 Q88.101,767.201 89.859,765.751 Q91.617,764.301 91.617,761.693 Q91.617,759.73 90.445,758.251 Q89.273,756.771 87.046,755.922 z M110.572,773.5 L110.572,729.76 L119.214,729.76 L119.214,765.883 L137.701,765.883 L137.701,773.5 z" fill="#000000"/>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 971.418, 756)">
+        <tspan x="-18.062" y="20" font-family="Menlo-Bold" font-size="60" fill="#FFFFFF">0</tspan>
+      </text>
+      <path d="M956.96,754.174 Q956.96,742.807 960.564,737.138 Q964.167,731.469 971.404,731.469 Q978.669,731.469 982.273,737.123 Q985.876,742.777 985.876,754.174 Q985.876,765.541 982.273,771.195 Q978.669,776.85 971.404,776.85 Q964.167,776.85 960.564,771.181 Q956.96,765.512 956.96,754.174 z M967.039,765.863 Q968.416,769.525 971.404,769.525 Q974.421,769.525 975.798,765.863 Q977.175,762.201 977.175,754.174 Q977.175,751.127 976.97,748.725 L966.746,765.014 Q966.892,765.482 967.039,765.863 z M971.404,738.793 Q968.416,738.793 967.039,742.455 Q965.662,746.117 965.662,754.174 Q965.662,756.664 965.779,758.715 L975.857,742.631 Q975.828,742.543 975.798,742.455 Q974.421,738.793 971.404,738.793 z" fill="#000000"/>
+    </g>
+    <g>
+      <path d="M936.5,756.5 L880.9,756.5" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      <path d="M880.9,751.7 L868.1,756.5 L880.9,761.3 z" fill="#000000" fill-opacity="1" stroke="#000000" stroke-width="4" stroke-opacity="1"/>
+    </g>
+    <g>
+      <path d="M432.5,756.5 L376.9,756.5" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      <path d="M376.9,751.7 L364.1,756.5 L376.9,761.3 z" fill="#000000" fill-opacity="1" stroke="#000000" stroke-width="4" stroke-opacity="1"/>
+    </g>
+  </g>
+</svg>
+</p>
+<p>ASL shifts all bits left one position. 0 is shifted into bit 0 and the
+original bit 7 is shifted into the Carry.</p>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <group name="Branch Instructions">
+    <mnemonic id="BCC" name="Branch on Carry Clear"/>
+    <mnemonic id="BCS" name="Branch on Carry Set"/>
+    <mnemonic id="BEQ" name="Branch on EQual"/>
+    <mnemonic id="BNE" name="Branch on Not Equal"/>
+    <mnemonic id="BMI" name="Branch on MInus"/>
+    <mnemonic id="BPL" name="Branch on PLus"/>
+    <mnemonic id="BVC" name="Branch on oVerflow Clear"/>
+    <mnemonic id="BVS" name="Branch on oVerflow Set"/>
+    <description>
+<![CDATA[
+<p>All branches are relative mode and have a length of two bytes. Syntax is "Bxx
+Displacement" or (better) "Bxx Label". See the notes on the <a
+href="#PC">Program Counter</a> for more on displacements.</p>
+
+<p>Branches are dependant on the status of the flag bits when the op code is
+encountered. A branch not taken requires two machine cycles. Add one if the
+branch is taken and add one more if the branch crosses a page boundary.</p>
+
+<pre>
+MNEMONIC                       HEX
+BPL (Branch on PLus)           $10
+BMI (Branch on MInus)          $30
+BVC (Branch on oVerflow Clear) $50
+BVS (Branch on oVerflow Set)   $70
+BCC (Branch on Carry Clear)    $90
+BCS (Branch on Carry Set)      $B0
+BNE (Branch on Not Equal)      $D0
+BEQ (Branch on EQual)          $F0
+</pre>
+
+<p>There is no BRA (BRanch Always) instruction but it can be easily emulated
+by branching on the basis of a known condition. One of the best flags to use for
+this purpose is the <a href="#VFLAG">oVerflow</a> which is unchanged
+by all but addition and subtraction operations.</p>
+
+<p>A page boundary crossing occurs when the branch destination is on a different
+page than the instruction AFTER the branch instruction. For example:</p>
+
+<pre>
+  SEC
+  BCS LABEL
+  NOP
+</pre>
+
+<p>A page boundary crossing occurs (i.e. the BCS takes 4 cycles) when (the
+address of) LABEL and the NOP are on different pages. This means that</p>
+
+<pre>
+        CLV
+        BVC LABEL
+  LABEL NOP
+</pre>
+
+<p>the BVC instruction will take 3 cycles no matter what address it is located
+at.</p>
+]]>
+    </description>
+  </group>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="BIT" name="BIT (test BITs)" flags="NVZ">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Zero Page     BIT $44       $24
+Absolute      BIT $4400     $2C
+</pre>
+
+<p>BIT sets the Z flag as though the value in the address tested were ANDed
+with the accumulator. The N and V flags are set to match bits 7 and 6
+respectively in the value stored at the tested address.</p>
+
+<p>BIT is often used to skip one or two following bytes as in:</p>
+
+<pre>
+  CLOSE1 LDX #$10   If entered here, we
+         .BYTE $2C  effectively perform
+  CLOSE2 LDX #$20   a BIT test on $20A2,
+         .BYTE $2C  another one on $30A2,
+  CLOSE3 LDX #$30   and end up with the X
+  CLOSEX LDA #12    register still at $10
+         STA ICCOM,X upon arrival here.
+</pre>
+
+<p>Beware: a BIT instruction used in this way as a NOP does have effects: the flags
+may be modified, and the read of the absolute address, if it happens to access an
+I/O device, may cause an unwanted action.</p>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="BRK" name="BRK (BReaK)" flags="B">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Implied       BRK           $00
+</pre>
+
+<p>BRK causes a non-maskable interrupt and increments the program counter by
+one.  Therefore an <a href="#RTI">RTI</a> will go to the address of the BRK +2 
+so that BRK may be used to replace a two-byte instruction for debugging and the
+subsequent RTI will be correct.</p>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="CMP" name="CMP (CoMPare accumulator)" flags="NZC">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Immediate     CMP #$44      $C9
+Zero Page     CMP $44       $C5
+Zero Page,X   CMP $44,X     $D5
+Absolute      CMP $4400     $CD
+Absolute,X    CMP $4400,X   $DD
+Absolute,Y    CMP $4400,Y   $D9
+Indirect,X    CMP ($44,X)   $C1
+Indirect,Y    CMP ($44),Y   $D1
+
++ add 1 cycle if page boundary crossed
+</pre>
+
+<p>Compare sets flags as if a subtraction had been carried out. If the value
+in the accumulator is equal or greater than the compared value, the Carry will
+be set. The equal (Z) and negative (N) flags will be set based on equality or
+lack thereof and the sign (i.e. A&gt;=$80) of the accumulator.</p>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="CPX" name="CPX (ComPare X register)" flags="NZC">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Immediate     CPX #$44      $E0
+Zero Page     CPX $44       $E4
+Absolute      CPX $4400     $EC
+</pre>
+
+<p>Operation and flag results are identical to equivalent mode accumulator <a
+href="#CMP">CMP</a> ops.</p>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="CPY" name="CPY (ComPare Y register)" flags="NZC">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Immediate     CPY #$44      $C0
+Zero Page     CPY $44       $C4
+Absolute      CPY $4400     $CC
+</pre>
+
+<p>Operation and flag results are identical to equivalent mode accumulator <a
+href="#CMP">CMP</a> ops.</p>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="DEC" name="DEC (DECrement memory)" flags="NZ">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Zero Page     DEC $44       $C6
+Zero Page,X   DEC $44,X     $D6
+Absolute      DEC $4400     $CE
+Absolute,X    DEC $4400,X   $DE
+</pre>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="EOR" name="EOR (bitwise Exclusive OR)" flags="NZ">
+<![CDATA[
+<pre>
+MODE          SYNTAX       HEX
+Immediate     EOR #$44      $49
+Zero Page     EOR $44       $45
+Zero Page,X   EOR $44,X     $55
+Absolute      EOR $4400     $4D
+Absolute,X    EOR $4400,X   $5D
+Absolute,Y    EOR $4400,Y   $59
+Indirect,X    EOR ($44,X)   $41
+Indirect,Y    EOR ($44),Y   $51
+
++ add 1 cycle if page boundary crossed
+</pre>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <group name="Flag (Processor Status) Instructions">
+    <mnemonic id="CLC" name="CLear Carry"/>
+    <mnemonic id="SEC" name="SEt Carry"/>
+    <mnemonic id="CLD" name="CLear Decimal"/>
+    <mnemonic id="SED" name="SEt Decimal"/>
+    <mnemonic id="CLI" name="CLear Interrupt"/>
+    <mnemonic id="SEI" name="SEt Interrupt"/>
+    <description>
+<![CDATA[
+
+<p>Affect Flags: as noted</p>
+
+<p>These instructions are implied mode, have a length of one byte and require
+two machine cycles.</p>
+
+<pre>
+MNEMONIC                       HEX
+CLC (CLear Carry)              $18
+SEC (SEt Carry)                $38
+CLI (CLear Interrupt)          $58
+SEI (SEt Interrupt)            $78
+CLV (CLear oVerflow)           $B8
+CLD (CLear Decimal)            $D8
+SED (SEt Decimal)              $F8
+</pre>
+
+<p id="IFLAG">The Interrupt flag is used to prevent (SEI) or
+enable (CLI) maskable interrupts (aka IRQ's). It does not signal the presence or
+absence of an interrupt condition. The 6502 will set this flag automatically in
+response to an interrupt and restore it to its prior status on completion of the
+interrupt service routine. If you want your interrupt service routine to permit
+other maskable interrupts, you must clear the I flag in your code.</p>
+
+<p id="DFLAG">The Decimal flag controls how the 6502 adds and
+subtracts. If set, arithmetic is carried out in packed binary coded decimal.
+This flag is unchanged by interrupts and is unknown on power-up. The implication
+is that a CLD should be included in boot or interrupt coding.</p>
+
+<p id="VFLAG">The Overflow flag is generally misunderstood and
+therefore under-utilised. After an ADC or SBC instruction, the overflow flag
+will be set if the twos complement result is less than -128 or greater than
++127, and it will cleared otherwise. In twos complement, $80 through $FF
+represents -128 through -1, and $00 through $7F represents 0 through +127.
+Thus, after:</p>
+
+<pre>
+  CLC
+  LDA #$7F ;   +127
+  ADC #$01 ; +   +1
+</pre>
+
+<p>the overflow flag is 1 (+127 + +1 = +128), and after:</p>
+
+<pre>
+  CLC
+  LDA #$81 ;   -127
+  ADC #$FF ; +   -1
+</pre>
+
+<p>the overflow flag is 0 (-127 + -1 = -128). The overflow flag is not
+affected by increments, decrements, shifts and logical operations i.e. only
+ADC, BIT, CLV, PLP, RTI and SBC affect it. There is no op code to set the
+overflow but a BIT test on an RTS instruction will do the trick.</p>
+]]>
+</description>
+  </group>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="INC" name="INC (INCrement memory)" flags="NZ">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Zero Page     INC $44       $E6
+Zero Page,X   INC $44,X     $F6
+Absolute      INC $4400     $EE
+Absolute,X    INC $4400,X   $FE
+</pre>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="JMP" name="JMP (JuMP)">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Absolute      JMP $5597     $4C
+Indirect      JMP ($5597)   $6C
+</pre>
+
+<p>JMP transfers program execution to the following address (absolute) or to
+the location contained in the following address (indirect). Note that there is
+no carry associated with the indirect jump so: <strong>AN INDIRECT JUMP MUST NEVER USE A
+VECTOR BEGINNING ON THE LAST BYTE
+OF A PAGE</strong></p>
+
+<p>For example if address $3000 contains $40, $30FF contains $80, and $3100
+contains $50, the result of JMP ($30FF) will be a transfer of control to $4080
+rather than $5080 as you intended i.e. the 6502 took the low byte of the address
+from $30FF and the high byte from $3000.</p>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="JSR" name="JSR (Jump to SubRoutine)">
+  <![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Absolute      JSR $5597     $20
+</pre>
+
+<p>JSR pushes the address-1 of the next operation on to the stack before
+transferring program control to the following address. Subroutines are normally
+terminated by a <a href="#RTS">RTS</a> opcode.</p>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="LDA" name="LDA (LoaD Accumulator)" flags="NZ">
+  <![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Immediate     LDA #$44      $A9
+Zero Page     LDA $44       $A5
+Zero Page,X   LDA $44,X     $B5
+Absolute      LDA $4400     $AD
+Absolute,X    LDA $4400,X   $BD
+Absolute,Y    LDA $4400,Y   $B9
+Indirect,X    LDA ($44,X)   $A1
+Indirect,Y    LDA ($44),Y   $B1
+
++ add 1 cycle if page boundary crossed
+</pre>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="LDX" name="LDX (LoaD X register)" flags="NZ">
+  <![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Immediate     LDX #$44      $A2
+Zero Page     LDX $44       $A6
+Zero Page,Y   LDX $44,Y     $B6
+Absolute      LDX $4400     $AE
+Absolute,Y    LDX $4400,Y   $BE
+
++ add 1 cycle if page boundary crossed
+</pre>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="LDY" name="LDY (LoaD Y register)" flags="NZ">
+  <![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Immediate     LDY #$44      $A0
+Zero Page     LDY $44       $A4
+Zero Page,X   LDY $44,X     $B4
+Absolute      LDY $4400     $AC
+Absolute,X    LDY $4400,X   $BC
+
++ add 1 cycle if page boundary crossed
+</pre>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="LSR" name="LSR (Logical Shift Right)" flags="NZC">
+  <![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Accumulator   LSR A         $4A
+Zero Page     LSR $44       $46
+Zero Page,X   LSR $44,X     $56
+Absolute      LSR $4400     $4E
+Absolute,X    LSR $4400,X   $5E
+</pre>
+<p>
+  <g id="Layer_1" transform="translate(0, -471)">
+    <g>
+      <g>
+        <path d="M456.5,550 L504.5,550 L504.5,622 L456.5,622 L456.5,550 z" fill="#FFFFFF"/>
+        <path d="M456.5,550 L504.5,550 L504.5,622 L456.5,622 L456.5,550 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M504.5,550 L552.5,550 L552.5,622 L504.5,622 L504.5,550 z" fill="#FFFFFF"/>
+        <path d="M504.5,550 L552.5,550 L552.5,622 L504.5,622 L504.5,550 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M552.5,550 L600.5,550 L600.5,622 L552.5,622 L552.5,550 z" fill="#FFFFFF"/>
+        <path d="M552.5,550 L600.5,550 L600.5,622 L552.5,622 L552.5,550 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M600.5,550 L648.5,550 L648.5,622 L600.5,622 L600.5,550 z" fill="#FFFFFF"/>
+        <path d="M600.5,550 L648.5,550 L648.5,622 L600.5,622 L600.5,550 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M648.5,550 L696.5,550 L696.5,622 L648.5,622 L648.5,550 z" fill="#FFFFFF"/>
+        <path d="M648.5,550 L696.5,550 L696.5,622 L648.5,622 L648.5,550 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M696.5,550 L744.5,550 L744.5,622 L696.5,622 L696.5,550 z" fill="#FFFFFF"/>
+        <path d="M696.5,550 L744.5,550 L744.5,622 L696.5,622 L696.5,550 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M744.5,550 L792.5,550 L792.5,622 L744.5,622 L744.5,550 z" fill="#FFFFFF"/>
+        <path d="M744.5,550 L792.5,550 L792.5,622 L744.5,622 L744.5,550 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M792.5,550 L840.5,550 L840.5,622 L792.5,622 L792.5,550 z" fill="#FFFFFF"/>
+        <path d="M792.5,550 L840.5,550 L840.5,622 L792.5,622 L792.5,550 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 488.511, 525.5)">
+        <tspan x="-32.511" y="11.5" font-family="Menlo-Bold" font-size="36" fill="#FFFFFF">MSB</tspan>
+      </text>
+      <path d="M457.512,510.756 L463.699,510.756 L466.828,522.27 L469.939,510.756 L476.162,510.756 L476.162,537 L471.697,537 L471.697,515.977 L468.92,527.455 L464.789,527.455 L461.977,515.977 L461.977,537 L457.512,537 z M486.639,525.486 Q482.719,523.992 481.33,522.349 Q479.941,520.705 479.941,517.928 Q479.941,514.359 482.227,512.32 Q484.512,510.281 488.502,510.281 Q490.312,510.281 492.123,510.694 Q493.934,511.107 495.709,511.916 L495.709,516.979 Q494.039,515.801 492.316,515.186 Q490.594,514.57 488.906,514.57 Q487.025,514.57 486.023,515.326 Q485.021,516.082 485.021,517.488 Q485.021,518.578 485.751,519.29 Q486.48,520.002 488.801,520.863 L491.033,521.707 Q494.197,522.867 495.691,524.783 Q497.186,526.699 497.186,529.617 Q497.186,533.59 494.839,535.55 Q492.492,537.51 487.746,537.51 Q485.795,537.51 483.835,537.044 Q481.875,536.578 480.047,535.664 L480.047,530.303 Q482.121,531.779 484.063,532.5 Q486.006,533.221 487.904,533.221 Q489.82,533.221 490.875,532.351 Q491.93,531.48 491.93,529.916 Q491.93,528.738 491.227,527.851 Q490.523,526.963 489.188,526.453 z M506.555,525.082 L506.555,532.852 L510,532.852 Q512.479,532.852 513.472,532.008 Q514.465,531.164 514.465,529.072 Q514.465,526.945 513.428,526.014 Q512.391,525.082 510,525.082 z M506.555,514.852 L506.555,520.951 L510,520.951 Q511.969,520.951 512.804,520.248 Q513.639,519.545 513.639,517.928 Q513.639,516.311 512.786,515.581 Q511.934,514.852 510,514.852 z M501.545,510.721 L510,510.721 Q514.377,510.721 516.583,512.382 Q518.789,514.043 518.789,517.348 Q518.789,519.879 517.488,521.303 Q516.188,522.727 513.674,522.955 Q516.68,523.254 518.2,524.977 Q519.721,526.699 519.721,529.793 Q519.721,533.59 517.436,535.295 Q515.15,537 510,537 L501.545,537 z" fill="#000000"/>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 812.511, 525.5)">
+        <tspan x="-32.511" y="11.5" font-family="Menlo-Bold" font-size="36" fill="#FFFFFF">LSB</tspan>
+      </text>
+      <path d="M783.955,537 L783.955,510.756 L789.141,510.756 L789.141,532.43 L800.232,532.43 L800.232,537 z M810.639,525.486 Q806.719,523.992 805.33,522.349 Q803.941,520.705 803.941,517.928 Q803.941,514.359 806.227,512.32 Q808.512,510.281 812.502,510.281 Q814.312,510.281 816.123,510.694 Q817.934,511.107 819.709,511.916 L819.709,516.979 Q818.039,515.801 816.316,515.186 Q814.594,514.57 812.906,514.57 Q811.025,514.57 810.023,515.326 Q809.021,516.082 809.021,517.488 Q809.021,518.578 809.751,519.29 Q810.48,520.002 812.801,520.863 L815.033,521.707 Q818.197,522.867 819.691,524.783 Q821.186,526.699 821.186,529.617 Q821.186,533.59 818.839,535.55 Q816.492,537.51 811.746,537.51 Q809.795,537.51 807.835,537.044 Q805.875,536.578 804.047,535.664 L804.047,530.303 Q806.121,531.779 808.063,532.5 Q810.006,533.221 811.904,533.221 Q813.82,533.221 814.875,532.351 Q815.93,531.48 815.93,529.916 Q815.93,528.738 815.227,527.851 Q814.523,526.963 813.188,526.453 z M830.555,525.082 L830.555,532.852 L834,532.852 Q836.479,532.852 837.472,532.008 Q838.465,531.164 838.465,529.072 Q838.465,526.945 837.428,526.014 Q836.391,525.082 834,525.082 z M830.555,514.852 L830.555,520.951 L834,520.951 Q835.969,520.951 836.804,520.248 Q837.639,519.545 837.639,517.928 Q837.639,516.311 836.786,515.581 Q835.934,514.852 834,514.852 z M825.545,510.721 L834,510.721 Q838.377,510.721 840.583,512.382 Q842.789,514.043 842.789,517.348 Q842.789,519.879 841.488,521.303 Q840.188,522.727 837.674,522.955 Q840.68,523.254 842.2,524.977 Q843.721,526.699 843.721,529.793 Q843.721,533.59 841.436,535.295 Q839.15,537 834,537 L825.545,537 z" fill="#000000"/>
+    </g>
+    <g>
+      <g>
+        <path d="M264.5,550 L336.5,550 L336.5,622 L264.5,622 L264.5,550 z" fill="#FFFFFF"/>
+        <path d="M264.5,550 L336.5,550 L336.5,622 L264.5,622 L264.5,550 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <text transform="matrix(1, 0, 0, 1, 300, 585.5)">
+          <tspan x="-18.062" y="20" font-family="Menlo-Bold" font-size="60" fill="#FFFFFF">C</tspan>
+        </text>
+        <path d="M313.608,604.24 Q311.558,605.295 309.302,605.822 Q307.046,606.35 304.556,606.35 Q295.708,606.35 291.05,600.52 Q286.392,594.689 286.392,583.674 Q286.392,572.629 291.05,566.799 Q295.708,560.969 304.556,560.969 Q307.046,560.969 309.331,561.496 Q311.616,562.023 313.608,563.078 L313.608,572.688 Q311.382,570.637 309.287,569.685 Q307.192,568.732 304.966,568.732 Q300.22,568.732 297.803,572.497 Q295.386,576.262 295.386,583.674 Q295.386,591.057 297.803,594.821 Q300.22,598.586 304.966,598.586 Q307.192,598.586 309.287,597.634 Q311.382,596.682 313.608,594.631 z" fill="#000000"/>
+      </g>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 85.918, 585.5)">
+        <tspan x="-54.185" y="17.5" font-family="Menlo-Bold" font-size="60" fill="#FFFFFF">LSR</tspan>
+      </text>
+      <path d="M38.326,603 L38.326,559.26 L46.968,559.26 L46.968,595.383 L65.455,595.383 L65.455,603 z M82.798,583.811 Q76.265,581.32 73.951,578.581 Q71.636,575.842 71.636,571.213 Q71.636,565.266 75.445,561.867 Q79.253,558.469 85.904,558.469 Q88.921,558.469 91.939,559.157 Q94.957,559.846 97.916,561.193 L97.916,569.631 Q95.132,567.668 92.261,566.643 Q89.39,565.617 86.578,565.617 Q83.443,565.617 81.773,566.877 Q80.103,568.137 80.103,570.48 Q80.103,572.297 81.319,573.483 Q82.535,574.67 86.402,576.105 L90.123,577.512 Q95.396,579.445 97.886,582.639 Q100.376,585.832 100.376,590.695 Q100.376,597.316 96.465,600.583 Q92.554,603.85 84.644,603.85 Q81.392,603.85 78.125,603.073 Q74.859,602.297 71.812,600.773 L71.812,591.838 Q75.269,594.299 78.506,595.5 Q81.744,596.701 84.908,596.701 Q88.101,596.701 89.859,595.251 Q91.617,593.801 91.617,591.193 Q91.617,589.23 90.445,587.751 Q89.273,586.271 87.046,585.422 z M127.623,582.346 Q128.912,582.609 129.864,583.562 Q130.816,584.514 132.193,587.268 L140.103,603 L130.611,603 L125.337,591.955 Q125.103,591.486 124.722,590.666 Q122.408,585.715 119.273,585.715 L116.519,585.715 L116.519,603 L107.876,603 L107.876,559.26 L120.357,559.26 Q128.794,559.26 132.471,562.248 Q136.148,565.236 136.148,571.975 Q136.148,576.486 133.951,579.152 Q131.753,581.818 127.623,582.346 z M116.519,566.525 L116.519,578.449 L120.591,578.449 Q124.136,578.449 125.674,577.058 Q127.212,575.666 127.212,572.473 Q127.212,569.279 125.689,567.902 Q124.166,566.525 120.591,566.525 z" fill="#000000"/>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 371.418, 585.5)">
+        <tspan x="-18.062" y="20" font-family="Menlo-Bold" font-size="60" fill="#FFFFFF">0</tspan>
+      </text>
+      <path d="M356.96,583.674 Q356.96,572.307 360.564,566.638 Q364.167,560.969 371.404,560.969 Q378.669,560.969 382.273,566.623 Q385.876,572.277 385.876,583.674 Q385.876,595.041 382.273,600.695 Q378.669,606.35 371.404,606.35 Q364.167,606.35 360.564,600.681 Q356.96,595.012 356.96,583.674 z M367.039,595.363 Q368.416,599.025 371.404,599.025 Q374.421,599.025 375.798,595.363 Q377.175,591.701 377.175,583.674 Q377.175,580.627 376.97,578.225 L366.746,594.514 Q366.892,594.982 367.039,595.363 z M371.404,568.293 Q368.416,568.293 367.039,571.955 Q365.662,575.617 365.662,583.674 Q365.662,586.164 365.779,588.215 L375.857,572.131 Q375.828,572.043 375.798,571.955 Q374.421,568.293 371.404,568.293 z" fill="#000000"/>
+    </g>
+    <g>
+      <path d="M180.5,586 L224.1,586" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      <path d="M224.1,590.8 L236.9,586 L224.1,581.2 z" fill="#000000" fill-opacity="1" stroke="#000000" stroke-width="4" stroke-opacity="1"/>
+    </g>
+    <g>
+      <path d="M396.5,586 L416.1,586" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      <path d="M416.1,590.8 L428.9,586 L416.1,581.2 z" fill="#000000" fill-opacity="1" stroke="#000000" stroke-width="4" stroke-opacity="1"/>
+    </g>
+    <path d="M180.5,586 L180.5,480.5" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+    <path d="M180.5,480.5 L972.5,480.5" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+    <path d="M972.5,480.5 L972.5,586" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+    <path d="M972.5,586 L840.5,586" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+  </g>
+</svg>
+
+</p>
+<p>LSR shifts all bits right one position. 0 is shifted into bit 7 and the
+original bit 0 is shifted into the Carry.</p>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="NOP" name="NOP (No OPeration)">
+  <![CDATA[
+<pre>MODE           SYNTAX       HEX LEN TIM
+Implied       NOP           $EA  1   2
+</pre>
+
+<p>NOP is used to reserve space for future modifications or effectively REM
+out existing code.</p>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="ORA" name="ORA (bitwise OR with Accumulator)" flags="NZ">
+  <![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Immediate     ORA #$44      $09
+Zero Page     ORA $44       $05
+Zero Page,X   ORA $44,X     $15
+Absolute      ORA $4400     $0D
+Absolute,X    ORA $4400,X   $1D
+Absolute,Y    ORA $4400,Y   $19
+Indirect,X    ORA ($44,X)   $01
+Indirect,Y    ORA ($44),Y   $11
+
++ add 1 cycle if page boundary crossed
+</pre>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <group name="Register Instructions">
+    <mnemonic id="TAX" flags="NZ" name="Transfer A to X" />
+    <mnemonic id="TXA" flags="NZ" name="Transfer X to A" />
+    <mnemonic id="TAY" flags="NZ" name="Transfer A to Y"/>
+    <mnemonic id="TYA" flags="NZ" name="Transfer Y to A"/>
+    <mnemonic id="INX" flags="NZ" name="INcrement X"/>
+    <mnemonic id="DEX" flags="NZ" name="DEcrement X"/>
+    <mnemonic id="INY" flags="NZ" name="INcrement Y"/>
+    <mnemonic id="DEY" flags="NZ" name="DEcrement Y"/>
+    <description>
+<![CDATA[
+<p>These instructions are implied mode, have a length of one byte and require
+two machine cycles.</p>
+
+<pre>
+MNEMONIC                 HEX
+TAX (Transfer A to X)    $AA
+TXA (Transfer X to A)    $8A
+DEX (DEcrement X)        $CA
+INX (INcrement X)        $E8
+TAY (Transfer A to Y)    $A8
+TYA (Transfer Y to A)    $98
+DEY (DEcrement Y)        $88
+INY (INcrement Y)        $C8
+</pre>
+]]>
+</description>
+  </group>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="ROL" name="ROL (ROtate Left)" flags="NZC">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Accumulator   ROL A         $2A
+Zero Page     ROL $44       $26
+Zero Page,X   ROL $44,X     $36
+Absolute      ROL $4400     $2E
+Absolute,X    ROL $4400,X   $3E
+</pre>
+<p>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0" width="296.7" height="47.85" viewBox="0, 0, 989, 159.5">
+  <g id="Layer_1" transform="translate(-0, -279)">
+    <g>
+      <g>
+        <path d="M456.5,358 L504.5,358 L504.5,430 L456.5,430 L456.5,358 z" fill="#FFFFFF"/>
+        <path d="M456.5,358 L504.5,358 L504.5,430 L456.5,430 L456.5,358 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M504.5,358 L552.5,358 L552.5,430 L504.5,430 L504.5,358 z" fill="#FFFFFF"/>
+        <path d="M504.5,358 L552.5,358 L552.5,430 L504.5,430 L504.5,358 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M552.5,358 L600.5,358 L600.5,430 L552.5,430 L552.5,358 z" fill="#FFFFFF"/>
+        <path d="M552.5,358 L600.5,358 L600.5,430 L552.5,430 L552.5,358 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M600.5,358 L648.5,358 L648.5,430 L600.5,430 L600.5,358 z" fill="#FFFFFF"/>
+        <path d="M600.5,358 L648.5,358 L648.5,430 L600.5,430 L600.5,358 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M648.5,358 L696.5,358 L696.5,430 L648.5,430 L648.5,358 z" fill="#FFFFFF"/>
+        <path d="M648.5,358 L696.5,358 L696.5,430 L648.5,430 L648.5,358 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M696.5,358 L744.5,358 L744.5,430 L696.5,430 L696.5,358 z" fill="#FFFFFF"/>
+        <path d="M696.5,358 L744.5,358 L744.5,430 L696.5,430 L696.5,358 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M744.5,358 L792.5,358 L792.5,430 L744.5,430 L744.5,358 z" fill="#FFFFFF"/>
+        <path d="M744.5,358 L792.5,358 L792.5,430 L744.5,430 L744.5,358 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M792.5,358 L840.5,358 L840.5,430 L792.5,430 L792.5,358 z" fill="#FFFFFF"/>
+        <path d="M792.5,358 L840.5,358 L840.5,430 L792.5,430 L792.5,358 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 488.511, 333.5)">
+        <tspan x="-32.511" y="11.5" font-family="Menlo-Bold" font-size="36" fill="#FFFFFF">MSB</tspan>
+      </text>
+      <path d="M457.512,318.756 L463.699,318.756 L466.828,330.27 L469.939,318.756 L476.162,318.756 L476.162,345 L471.697,345 L471.697,323.977 L468.92,335.455 L464.789,335.455 L461.977,323.977 L461.977,345 L457.512,345 z M486.639,333.486 Q482.719,331.992 481.33,330.349 Q479.941,328.705 479.941,325.928 Q479.941,322.359 482.227,320.32 Q484.512,318.281 488.502,318.281 Q490.312,318.281 492.123,318.694 Q493.934,319.107 495.709,319.916 L495.709,324.979 Q494.039,323.801 492.316,323.186 Q490.594,322.57 488.906,322.57 Q487.025,322.57 486.023,323.326 Q485.021,324.082 485.021,325.488 Q485.021,326.578 485.751,327.29 Q486.48,328.002 488.801,328.863 L491.033,329.707 Q494.197,330.867 495.691,332.783 Q497.186,334.699 497.186,337.617 Q497.186,341.59 494.839,343.55 Q492.492,345.51 487.746,345.51 Q485.795,345.51 483.835,345.044 Q481.875,344.578 480.047,343.664 L480.047,338.303 Q482.121,339.779 484.063,340.5 Q486.006,341.221 487.904,341.221 Q489.82,341.221 490.875,340.351 Q491.93,339.48 491.93,337.916 Q491.93,336.738 491.227,335.851 Q490.523,334.963 489.188,334.453 z M506.555,333.082 L506.555,340.852 L510,340.852 Q512.479,340.852 513.472,340.008 Q514.465,339.164 514.465,337.072 Q514.465,334.945 513.428,334.014 Q512.391,333.082 510,333.082 z M506.555,322.852 L506.555,328.951 L510,328.951 Q511.969,328.951 512.804,328.248 Q513.639,327.545 513.639,325.928 Q513.639,324.311 512.786,323.581 Q511.934,322.852 510,322.852 z M501.545,318.721 L510,318.721 Q514.377,318.721 516.583,320.382 Q518.789,322.043 518.789,325.348 Q518.789,327.879 517.488,329.303 Q516.188,330.727 513.674,330.955 Q516.68,331.254 518.2,332.977 Q519.721,334.699 519.721,337.793 Q519.721,341.59 517.436,343.295 Q515.15,345 510,345 L501.545,345 z" fill="#000000"/>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 812.511, 333.5)">
+        <tspan x="-32.511" y="11.5" font-family="Menlo-Bold" font-size="36" fill="#FFFFFF">LSB</tspan>
+      </text>
+      <path d="M783.955,345 L783.955,318.756 L789.141,318.756 L789.141,340.43 L800.232,340.43 L800.232,345 z M810.639,333.486 Q806.719,331.992 805.33,330.349 Q803.941,328.705 803.941,325.928 Q803.941,322.359 806.227,320.32 Q808.512,318.281 812.502,318.281 Q814.312,318.281 816.123,318.694 Q817.934,319.107 819.709,319.916 L819.709,324.979 Q818.039,323.801 816.316,323.186 Q814.594,322.57 812.906,322.57 Q811.025,322.57 810.023,323.326 Q809.021,324.082 809.021,325.488 Q809.021,326.578 809.751,327.29 Q810.48,328.002 812.801,328.863 L815.033,329.707 Q818.197,330.867 819.691,332.783 Q821.186,334.699 821.186,337.617 Q821.186,341.59 818.839,343.55 Q816.492,345.51 811.746,345.51 Q809.795,345.51 807.835,345.044 Q805.875,344.578 804.047,343.664 L804.047,338.303 Q806.121,339.779 808.063,340.5 Q810.006,341.221 811.904,341.221 Q813.82,341.221 814.875,340.351 Q815.93,339.48 815.93,337.916 Q815.93,336.738 815.227,335.851 Q814.523,334.963 813.188,334.453 z M830.555,333.082 L830.555,340.852 L834,340.852 Q836.479,340.852 837.472,340.008 Q838.465,339.164 838.465,337.072 Q838.465,334.945 837.428,334.014 Q836.391,333.082 834,333.082 z M830.555,322.852 L830.555,328.951 L834,328.951 Q835.969,328.951 836.804,328.248 Q837.639,327.545 837.639,325.928 Q837.639,324.311 836.786,323.581 Q835.934,322.852 834,322.852 z M825.545,318.721 L834,318.721 Q838.377,318.721 840.583,320.382 Q842.789,322.043 842.789,325.348 Q842.789,327.879 841.488,329.303 Q840.188,330.727 837.674,330.955 Q840.68,331.254 842.2,332.977 Q843.721,334.699 843.721,337.793 Q843.721,341.59 841.436,343.295 Q839.15,345 834,345 L825.545,345 z" fill="#000000"/>
+    </g>
+    <g>
+      <g>
+        <path d="M264.5,358 L336.5,358 L336.5,430 L264.5,430 L264.5,358 z" fill="#FFFFFF"/>
+        <path d="M264.5,358 L336.5,358 L336.5,430 L264.5,430 L264.5,358 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <text transform="matrix(1, 0, 0, 1, 300, 393.5)">
+          <tspan x="-18.062" y="20" font-family="Menlo-Bold" font-size="60" fill="#FFFFFF">C</tspan>
+        </text>
+        <path d="M313.608,412.24 Q311.558,413.295 309.302,413.822 Q307.046,414.35 304.556,414.35 Q295.708,414.35 291.05,408.52 Q286.392,402.689 286.392,391.674 Q286.392,380.629 291.05,374.799 Q295.708,368.969 304.556,368.969 Q307.046,368.969 309.331,369.496 Q311.616,370.023 313.608,371.078 L313.608,380.688 Q311.382,378.637 309.287,377.685 Q307.192,376.732 304.966,376.732 Q300.22,376.732 297.803,380.497 Q295.386,384.262 295.386,391.674 Q295.386,399.057 297.803,402.821 Q300.22,406.586 304.966,406.586 Q307.192,406.586 309.287,405.634 Q311.382,404.682 313.608,402.631 z" fill="#000000"/>
+      </g>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 85.918, 393.5)">
+        <tspan x="-54.185" y="17.5" font-family="Menlo-Bold" font-size="60" fill="#FFFFFF">ROL</tspan>
+      </text>
+      <path d="M55.376,390.346 Q56.666,390.609 57.618,391.562 Q58.57,392.514 59.947,395.268 L67.857,411 L58.365,411 L53.091,399.955 Q52.857,399.486 52.476,398.666 Q50.162,393.715 47.027,393.715 L44.273,393.715 L44.273,411 L35.63,411 L35.63,367.26 L48.111,367.26 Q56.548,367.26 60.225,370.248 Q63.902,373.236 63.902,379.975 Q63.902,384.486 61.705,387.152 Q59.507,389.818 55.376,390.346 z M44.273,374.525 L44.273,386.449 L48.345,386.449 Q51.89,386.449 53.428,385.058 Q54.966,383.666 54.966,380.473 Q54.966,377.279 53.443,375.902 Q51.919,374.525 48.345,374.525 z M85.904,374.232 Q82.593,374.232 81.07,377.763 Q79.546,381.293 79.546,389.174 Q79.546,397.025 81.07,400.556 Q82.593,404.086 85.904,404.086 Q89.244,404.086 90.767,400.556 Q92.291,397.025 92.291,389.174 Q92.291,381.293 90.767,377.763 Q89.244,374.232 85.904,374.232 z M70.552,389.174 Q70.552,377.953 74.434,372.211 Q78.316,366.469 85.904,366.469 Q93.521,366.469 97.403,372.211 Q101.285,377.953 101.285,389.174 Q101.285,400.365 97.403,406.107 Q93.521,411.85 85.904,411.85 Q78.316,411.85 74.434,406.107 Q70.552,400.365 70.552,389.174 z M110.572,411 L110.572,367.26 L119.214,367.26 L119.214,403.383 L137.701,403.383 L137.701,411 z" fill="#000000"/>
+    </g>
+    <path d="M180.5,394 L180.5,288.5" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+    <path d="M180.5,288.5 L972.5,288.5" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+    <path d="M972.5,288.5 L972.5,394" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+    <path d="M180.5,394 L264.5,394" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+    <g>
+      <path d="M972.5,394 L880.9,394" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      <path d="M880.9,389.2 L868.1,394 L880.9,398.8 z" fill="#000000" fill-opacity="1" stroke="#000000" stroke-width="4" stroke-opacity="1"/>
+    </g>
+    <g>
+      <path d="M432.5,394 L376.9,394" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      <path d="M376.9,389.2 L364.1,394 L376.9,398.8 z" fill="#000000" fill-opacity="1" stroke="#000000" stroke-width="4" stroke-opacity="1"/>
+    </g>
+  </g>
+</svg>
+</p>
+<p>ROL shifts all bits left one position. The Carry is shifted into bit 0 and
+the original bit 7 is shifted into the Carry.</p>
+
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="ROR" name="ROR (ROtate Right)" flags="NZC">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Accumulator   ROR A         $6A
+Zero Page     ROR $44       $66
+Zero Page,X   ROR $44,X     $76
+Absolute      ROR $4400     $6E
+Absolute,X    ROR $4400,X   $7E
+</pre>
+<p>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0" width="294.3" height="47.85" viewBox="0, 0, 981, 159.5">
+  <g id="Layer_1" transform="translate(12, -87)">
+    <g>
+      <g>
+        <path d="M444.5,166 L492.5,166 L492.5,238 L444.5,238 L444.5,166 z" fill="#FFFFFF"/>
+        <path d="M444.5,166 L492.5,166 L492.5,238 L444.5,238 L444.5,166 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M492.5,166 L540.5,166 L540.5,238 L492.5,238 L492.5,166 z" fill="#FFFFFF"/>
+        <path d="M492.5,166 L540.5,166 L540.5,238 L492.5,238 L492.5,166 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M540.5,166 L588.5,166 L588.5,238 L540.5,238 L540.5,166 z" fill="#FFFFFF"/>
+        <path d="M540.5,166 L588.5,166 L588.5,238 L540.5,238 L540.5,166 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M588.5,166 L636.5,166 L636.5,238 L588.5,238 L588.5,166 z" fill="#FFFFFF"/>
+        <path d="M588.5,166 L636.5,166 L636.5,238 L588.5,238 L588.5,166 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M636.5,166 L684.5,166 L684.5,238 L636.5,238 L636.5,166 z" fill="#FFFFFF"/>
+        <path d="M636.5,166 L684.5,166 L684.5,238 L636.5,238 L636.5,166 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M684.5,166 L732.5,166 L732.5,238 L684.5,238 L684.5,166 z" fill="#FFFFFF"/>
+        <path d="M684.5,166 L732.5,166 L732.5,238 L684.5,238 L684.5,166 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M732.5,166 L780.5,166 L780.5,238 L732.5,238 L732.5,166 z" fill="#FFFFFF"/>
+        <path d="M732.5,166 L780.5,166 L780.5,238 L732.5,238 L732.5,166 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <path d="M780.5,166 L828.5,166 L828.5,238 L780.5,238 L780.5,166 z" fill="#FFFFFF"/>
+        <path d="M780.5,166 L828.5,166 L828.5,238 L780.5,238 L780.5,166 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 476.511, 141.5)">
+        <tspan x="-32.511" y="11.5" font-family="Menlo-Bold" font-size="36" fill="#FFFFFF">MSB</tspan>
+      </text>
+      <path d="M445.512,126.756 L451.699,126.756 L454.828,138.27 L457.939,126.756 L464.162,126.756 L464.162,153 L459.697,153 L459.697,131.977 L456.92,143.455 L452.789,143.455 L449.977,131.977 L449.977,153 L445.512,153 z M474.639,141.486 Q470.719,139.992 469.33,138.349 Q467.941,136.705 467.941,133.928 Q467.941,130.359 470.227,128.32 Q472.512,126.281 476.502,126.281 Q478.312,126.281 480.123,126.694 Q481.934,127.107 483.709,127.916 L483.709,132.979 Q482.039,131.801 480.316,131.186 Q478.594,130.57 476.906,130.57 Q475.025,130.57 474.023,131.326 Q473.021,132.082 473.021,133.488 Q473.021,134.578 473.751,135.29 Q474.48,136.002 476.801,136.863 L479.033,137.707 Q482.197,138.867 483.691,140.783 Q485.186,142.699 485.186,145.617 Q485.186,149.59 482.839,151.55 Q480.492,153.51 475.746,153.51 Q473.795,153.51 471.835,153.044 Q469.875,152.578 468.047,151.664 L468.047,146.303 Q470.121,147.779 472.063,148.5 Q474.006,149.221 475.904,149.221 Q477.82,149.221 478.875,148.351 Q479.93,147.48 479.93,145.916 Q479.93,144.738 479.227,143.851 Q478.523,142.963 477.188,142.453 z M494.555,141.082 L494.555,148.852 L498,148.852 Q500.479,148.852 501.472,148.008 Q502.465,147.164 502.465,145.072 Q502.465,142.945 501.428,142.014 Q500.391,141.082 498,141.082 z M494.555,130.852 L494.555,136.951 L498,136.951 Q499.969,136.951 500.804,136.248 Q501.639,135.545 501.639,133.928 Q501.639,132.311 500.786,131.581 Q499.934,130.852 498,130.852 z M489.545,126.721 L498,126.721 Q502.377,126.721 504.583,128.382 Q506.789,130.043 506.789,133.348 Q506.789,135.879 505.488,137.303 Q504.188,138.727 501.674,138.955 Q504.68,139.254 506.2,140.977 Q507.721,142.699 507.721,145.793 Q507.721,149.59 505.436,151.295 Q503.15,153 498,153 L489.545,153 z" fill="#000000"/>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 800.511, 141.5)">
+        <tspan x="-32.511" y="11.5" font-family="Menlo-Bold" font-size="36" fill="#FFFFFF">LSB</tspan>
+      </text>
+      <path d="M771.955,153 L771.955,126.756 L777.141,126.756 L777.141,148.43 L788.232,148.43 L788.232,153 z M798.639,141.486 Q794.719,139.992 793.33,138.349 Q791.941,136.705 791.941,133.928 Q791.941,130.359 794.227,128.32 Q796.512,126.281 800.502,126.281 Q802.312,126.281 804.123,126.694 Q805.934,127.107 807.709,127.916 L807.709,132.979 Q806.039,131.801 804.316,131.186 Q802.594,130.57 800.906,130.57 Q799.025,130.57 798.023,131.326 Q797.021,132.082 797.021,133.488 Q797.021,134.578 797.751,135.29 Q798.48,136.002 800.801,136.863 L803.033,137.707 Q806.197,138.867 807.691,140.783 Q809.186,142.699 809.186,145.617 Q809.186,149.59 806.839,151.55 Q804.492,153.51 799.746,153.51 Q797.795,153.51 795.835,153.044 Q793.875,152.578 792.047,151.664 L792.047,146.303 Q794.121,147.779 796.063,148.5 Q798.006,149.221 799.904,149.221 Q801.82,149.221 802.875,148.351 Q803.93,147.48 803.93,145.916 Q803.93,144.738 803.227,143.851 Q802.523,142.963 801.188,142.453 z M818.555,141.082 L818.555,148.852 L822,148.852 Q824.479,148.852 825.472,148.008 Q826.465,147.164 826.465,145.072 Q826.465,142.945 825.428,142.014 Q824.391,141.082 822,141.082 z M818.555,130.852 L818.555,136.951 L822,136.951 Q823.969,136.951 824.804,136.248 Q825.639,135.545 825.639,133.928 Q825.639,132.311 824.786,131.581 Q823.934,130.852 822,130.852 z M813.545,126.721 L822,126.721 Q826.377,126.721 828.583,128.382 Q830.789,130.043 830.789,133.348 Q830.789,135.879 829.488,137.303 Q828.188,138.727 825.674,138.955 Q828.68,139.254 830.2,140.977 Q831.721,142.699 831.721,145.793 Q831.721,149.59 829.436,151.295 Q827.15,153 822,153 L813.545,153 z" fill="#000000"/>
+    </g>
+    <g>
+      <g>
+        <path d="M252.5,166 L324.5,166 L324.5,238 L252.5,238 L252.5,166 z" fill="#FFFFFF"/>
+        <path d="M252.5,166 L324.5,166 L324.5,238 L252.5,238 L252.5,166 z" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      </g>
+      <g>
+        <text transform="matrix(1, 0, 0, 1, 288, 201.5)">
+          <tspan x="-18.062" y="20" font-family="Menlo-Bold" font-size="60" fill="#FFFFFF">C</tspan>
+        </text>
+        <path d="M301.608,220.24 Q299.558,221.295 297.302,221.822 Q295.046,222.35 292.556,222.35 Q283.708,222.35 279.05,216.52 Q274.392,210.689 274.392,199.674 Q274.392,188.629 279.05,182.799 Q283.708,176.969 292.556,176.969 Q295.046,176.969 297.331,177.496 Q299.616,178.023 301.608,179.078 L301.608,188.688 Q299.382,186.637 297.287,185.685 Q295.192,184.732 292.966,184.732 Q288.22,184.732 285.803,188.497 Q283.386,192.262 283.386,199.674 Q283.386,207.057 285.803,210.821 Q288.22,214.586 292.966,214.586 Q295.192,214.586 297.287,213.634 Q299.382,212.682 301.608,210.631 z" fill="#000000"/>
+      </g>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 73.918, 201.5)">
+        <tspan x="-54.185" y="17.5" font-family="Menlo-Bold" font-size="60" fill="#FFFFFF">ROR</tspan>
+      </text>
+      <path d="M43.376,198.346 Q44.666,198.609 45.618,199.562 Q46.57,200.514 47.947,203.268 L55.857,219 L46.365,219 L41.091,207.955 Q40.857,207.486 40.476,206.666 Q38.162,201.715 35.027,201.715 L32.273,201.715 L32.273,219 L23.63,219 L23.63,175.26 L36.111,175.26 Q44.548,175.26 48.225,178.248 Q51.902,181.236 51.902,187.975 Q51.902,192.486 49.705,195.152 Q47.507,197.818 43.376,198.346 z M32.273,182.525 L32.273,194.449 L36.345,194.449 Q39.89,194.449 41.428,193.058 Q42.966,191.666 42.966,188.473 Q42.966,185.279 41.443,183.902 Q39.919,182.525 36.345,182.525 z M73.904,182.232 Q70.593,182.232 69.07,185.763 Q67.546,189.293 67.546,197.174 Q67.546,205.025 69.07,208.556 Q70.593,212.086 73.904,212.086 Q77.244,212.086 78.767,208.556 Q80.291,205.025 80.291,197.174 Q80.291,189.293 78.767,185.763 Q77.244,182.232 73.904,182.232 z M58.552,197.174 Q58.552,185.953 62.434,180.211 Q66.316,174.469 73.904,174.469 Q81.521,174.469 85.403,180.211 Q89.285,185.953 89.285,197.174 Q89.285,208.365 85.403,214.107 Q81.521,219.85 73.904,219.85 Q66.316,219.85 62.434,214.107 Q58.552,208.365 58.552,197.174 z M115.623,198.346 Q116.912,198.609 117.864,199.562 Q118.816,200.514 120.193,203.268 L128.103,219 L118.611,219 L113.337,207.955 Q113.103,207.486 112.722,206.666 Q110.408,201.715 107.273,201.715 L104.519,201.715 L104.519,219 L95.876,219 L95.876,175.26 L108.357,175.26 Q116.794,175.26 120.471,178.248 Q124.148,181.236 124.148,187.975 Q124.148,192.486 121.951,195.152 Q119.753,197.818 115.623,198.346 z M104.519,182.525 L104.519,194.449 L108.591,194.449 Q112.136,194.449 113.674,193.058 Q115.212,191.666 115.212,188.473 Q115.212,185.279 113.689,183.902 Q112.166,182.525 108.591,182.525 z" fill="#000000"/>
+    </g>
+    <g>
+      <path d="M168.5,202 L212.1,202" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      <path d="M212.1,206.8 L224.9,202 L212.1,197.2 z" fill="#000000" fill-opacity="1" stroke="#000000" stroke-width="4" stroke-opacity="1"/>
+    </g>
+    <g>
+      <path d="M348.5,202 L404.1,202" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+      <path d="M404.1,206.8 L416.9,202 L404.1,197.2 z" fill="#000000" fill-opacity="1" stroke="#000000" stroke-width="4" stroke-opacity="1"/>
+    </g>
+    <path d="M168.5,202 L168.5,96.5" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+    <path d="M168.5,96.5 L960.5,96.5" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+    <path d="M960.5,96.5 L960.5,202" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+    <path d="M960.5,202 L828.5,202" fill-opacity="0" stroke="#000000" stroke-width="4"/>
+  </g>
+</svg>
+
+</p>
+<p>ROR shifts all bits right one position. The Carry is shifted into bit 7
+and the original bit 0 is shifted into the Carry.</p>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+
+  <mnemonic id="RTI" name="RTI (ReTurn from Interrupt)">
+<![CDATA[
+<p>Affects Flags: all</p>
+
+<pre>
+MODE          SYNTAX        HEX
+Implied       RTI           $40
+</pre>
+
+<p>RTI retrieves the Processor Status Word (flags) and the Program Counter
+from the stack in that order (interrupts push the PC first and then the PSW).</p>
+<p>Note that unlike RTS, the return address on the stack is the actual address
+rather than the address-1.</p>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="RTS" name="RTS (ReTurn from Subroutine)">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Implied       RTS           $60
+</pre>
+
+<p>RTS pulls the top two bytes off the stack (low byte first) and transfers
+program control to that address+1. It is used, as expected, to exit a subroutine
+invoked via <a href="#JSR">JSR</a> which
+pushed the address-1.</p>
+
+<p>RTS is frequently used to implement a jump table where addresses-1 are pushed
+onto the stack and accessed via RTS eg. to access the second of four routines:</p> 
+
+<pre> LDX #1
+ JSR EXEC
+ JMP SOMEWHERE
+
+LOBYTE
+ .BYTE &lt;ROUTINE0-1,&lt;ROUTINE1-1
+ .BYTE &lt;ROUTINE2-1,&lt;ROUTINE3-1
+
+HIBYTE
+ .BYTE &gt;ROUTINE0-1,&gt;ROUTINE1-1
+ .BYTE &gt;ROUTINE2-1,&gt;ROUTINE3-1
+
+EXEC
+ LDA HIBYTE,X
+ PHA
+ LDA LOBYTE,X
+ PHA
+ RTS
+</pre>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+
+  <mnemonic id="SBC" name="SBC (SuBtract with Carry)" flags="NVZC">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Immediate     SBC #$44      $E9
+Zero Page     SBC $44       $E5
+Zero Page,X   SBC $44,X     $F5
+Absolute      SBC $4400     $ED
+Absolute,X    SBC $4400,X   $FD
+Absolute,Y    SBC $4400,Y   $F9
+Indirect,X    SBC ($44,X)   $E1
+Indirect,Y    SBC ($44),Y   $F1
+
++ add 1 cycle if page boundary crossed
+</pre>
+
+<p>SBC results are dependant on the setting of the decimal flag. In decimal
+mode, subtraction is carried out on the assumption that the values involved are
+packed BCD (Binary Coded Decimal).</p>
+
+<p>There is no way to subtract without the carry which works as an inverse
+borrow. i.e, to subtract you set the carry before the operation. If the carry is
+cleared by the operation, it indicates a borrow occurred.</p>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="STA" name="STA (STore Accumulator)">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Zero Page     STA $44       $85
+Zero Page,X   STA $44,X     $95
+Absolute      STA $4400     $8D
+Absolute,X    STA $4400,X   $9D
+Absolute,Y    STA $4400,Y   $99
+Indirect,X    STA ($44,X)   $81
+Indirect,Y    STA ($44),Y   $91
+</pre>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <group name="Stack Instructions">
+    <mnemonic id="TXS" name="Transfer X to Stack pointer"/>
+    <mnemonic id="TSX" name="Transfer Stack pointer to X"/>
+    <mnemonic id="PHA" name="PusH Accumulator"/>
+    <mnemonic
+      id="PLA" name="PuLl Accumulator"/>
+    <mnemonic id="PHP" name="PusH Processor status"/>
+    <mnemonic id="PLP" name="PuLl Processor status"/>
+    <description>
+<![CDATA[
+<p>These instructions are implied mode, have a length of one byte and require
+machine cycles as indicated. The "PuLl" operations are known as "POP" on most
+other microprocessors. With the 6502, the stack is always on page one
+($100-$1FF) and works top down.</p>
+<pre>
+MNEMONIC                        HEX
+TXS (Transfer X to Stack ptr)   $9A
+TSX (Transfer Stack ptr to X)   $BA
+PHA (PusH Accumulator)          $48
+PLA (PuLl Accumulator)          $68
+PHP (PusH Processor status)     $08
+PLP (PuLl Processor status)     $28
+</pre>
+]]>
+</description>
+  </group>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="STX" name="STX (STore X register)">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Zero Page     STX $44       $86
+Zero Page,Y   STX $44,Y     $96
+Absolute      STX $4400     $8E
+</pre>
+]]>
+</mnemonic>
+  <!-- SECTION ============================================================== -->
+  <mnemonic id="STY" name="STY (STore Y register)">
+<![CDATA[
+<pre>
+MODE          SYNTAX        HEX
+Zero Page     STY $44       $84
+Zero Page,X   STY $44,X     $94
+Absolute      STY $4400     $8C
+</pre>
+]]>
+</mnemonic>
+</mnemonics0>
