@@ -9,7 +9,7 @@
  * Contributors:
  * Torkild Ulvøy Resheim <torkildr@gmail.com> - initial API and implementation
  */
-package net.resheim.eclipse.kickassembler.editor;
+package net.resheim.eclipse.cc.editor;
 
 import java.io.InputStream;
 import java.util.HashMap;

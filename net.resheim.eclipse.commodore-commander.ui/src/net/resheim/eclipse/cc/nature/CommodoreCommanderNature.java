@@ -1,4 +1,4 @@
-package net.resheim.eclipse.cc.builder;
+package net.resheim.eclipse.cc.nature;
 
 import org.eclipse.core.resources.ICommand;
 import org.eclipse.core.resources.IProject;
@@ -6,12 +6,14 @@ import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IProjectNature;
 import org.eclipse.core.runtime.CoreException;
 
+import net.resheim.eclipse.cc.builder.KickAssemblerBuilder;
+
 public class CommodoreCommanderNature implements IProjectNature {
 
 	/**
 	 * ID of this project nature
 	 */
-    public static final String NATURE_ID = "net.resheim.eclipse.commodore-commander.core.nature";
+	public static final String NATURE_ID = "net.resheim.eclipse.commodore-commander.ui.nature";
 
 	private IProject project;
 

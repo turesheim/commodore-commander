@@ -1,9 +1,10 @@
-package net.resheim.eclipse.cc.assembler;
+package net.resheim.eclipse.cc.core;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+
 
 import kickass.AssemblerToolbox;
 import kickass.common.assmbleinfo.AssembleInfoManager;
@@ -51,7 +53,6 @@ import kickass.state.libraries.ILibrary;
 import kickass.state.libraries.LibConstant;
 import kickass.state.miscoutput.ByteDumpWriter;
 import kickass.state.scope.symboltable.SymbolStatus;
-import net.resheim.eclipse.cc.builder.KickAssemblerBuilder;
 
 /**
  * A copy of KickAssembler with a few members exposed for the benefit of @see
@@ -64,17 +65,17 @@ public class KickAssemblerWrapper {
 	private static final String PLUGIN_FILE = "/KickAss.plugin";
 	private EvaluationState state = new EvaluationState();
 
-	public static void main(String[] var0) {
-		System.exit((new KickAssemblerWrapper()).execute(var0));
-	}
+//	public static void main(String[] var0) {
+//		System.exit((new KickAssemblerWrapper()).execute(var0));
+//	}
+//
+//	public static int main2(String[] var0) {
+//		return (new KickAssemblerWrapper()).execute(var0);
+//	}
 
-	public static int main2(String[] var0) {
-		return (new KickAssemblerWrapper()).execute(var0);
-	}
 
-	public int execute(String[] var1) {
-        // TODO: Use this to get output to the correct console
-		this.getState().log.addPrintStream(System.out);
+    public int execute(String[] var1, OutputStream out) {
+		this.getState().log.addPrintStream(new PrintStream((OutputStream) out));
         this.getState().log.println(
                 StringUtil.centerPad(54, "Kick Assembler v" + KickAssemblerSetup.versionString + " by Mads Nielsen"));
 		int var2 = 0;

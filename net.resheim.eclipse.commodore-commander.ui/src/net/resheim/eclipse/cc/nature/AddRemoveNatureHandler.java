@@ -1,4 +1,4 @@
-package net.resheim.eclipse.cc.core;
+package net.resheim.eclipse.cc.nature;
 
 import java.util.Iterator;
 import org.eclipse.core.commands.*;
@@ -9,8 +9,6 @@ import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.handlers.HandlerUtil;
-
-import net.resheim.eclipse.cc.builder.CommodoreCommanderNature;
 
 public class AddRemoveNatureHandler extends AbstractHandler {
 

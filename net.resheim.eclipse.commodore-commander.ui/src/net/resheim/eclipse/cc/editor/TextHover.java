@@ -1,4 +1,4 @@
-package net.resheim.eclipse.kickassembler.editor;
+package net.resheim.eclipse.cc.editor;
 
 import org.eclipse.jface.internal.text.html.BrowserInformationControl;
 import org.eclipse.jface.text.BadLocationException;
@@ -15,8 +15,8 @@ import org.eclipse.jface.text.Region;
 import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.swt.widgets.Shell;
 
-import net.resheim.eclipse.kickassembler.editor.IOMap.Entry;
-import net.resheim.eclipse.kickassembler.editor.Mnemonics.Mnemonic;
+import net.resheim.eclipse.cc.editor.IOMap.Entry;
+import net.resheim.eclipse.cc.editor.Mnemonics.Mnemonic;
 
 class TextHover implements ITextHover, ITextHoverExtension {
 	// CSS Colors: http://davidbau.com/colors/

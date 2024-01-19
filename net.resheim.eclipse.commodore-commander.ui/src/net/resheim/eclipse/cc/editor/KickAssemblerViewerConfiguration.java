@@ -9,15 +9,16 @@
  * Contributors:
  * Torkild Ulvøy Resheim <torkildr@gmail.com> - initial API and implementation
  */
-package net.resheim.eclipse.kickassembler.editor;
+package net.resheim.eclipse.cc.editor;
 
 import org.eclipse.jface.text.ITextHover;
 import org.eclipse.jface.text.presentation.IPresentationReconciler;
 import org.eclipse.jface.text.source.ISourceViewer;
-import org.eclipse.jface.text.source.SourceViewerConfiguration;
 import org.eclipse.tm4e.ui.text.TMPresentationReconciler;
+import org.eclipse.ui.editors.text.TextSourceViewerConfiguration;
 
-public class KickAssemblerViewerConfiguration extends SourceViewerConfiguration {
+// TODO: Considering including code from ExtensionBasedTextViewerConfiguration
+public class KickAssemblerViewerConfiguration extends TextSourceViewerConfiguration {
 
 
 	public KickAssemblerViewerConfiguration() {
