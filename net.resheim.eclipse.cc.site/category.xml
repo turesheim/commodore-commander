@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature id="net.resheim.eclipse.cc.feature"/>
+   <category-def name="main" label="Commodore Commander for Eclipse">
+      <description>
+         TBD
+      </description>
+   </category-def>
+</site>
