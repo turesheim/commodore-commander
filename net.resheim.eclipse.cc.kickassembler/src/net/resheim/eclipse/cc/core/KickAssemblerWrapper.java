@@ -65,19 +65,9 @@ public class KickAssemblerWrapper {
 	private static final String PLUGIN_FILE = "/KickAss.plugin";
 	private EvaluationState state = new EvaluationState();
 
-//	public static void main(String[] var0) {
-//		System.exit((new KickAssemblerWrapper()).execute(var0));
-//	}
-//
-//	public static int main2(String[] var0) {
-//		return (new KickAssemblerWrapper()).execute(var0);
-//	}
-
-
     public int execute(String[] var1, OutputStream out) {
 		this.getState().log.addPrintStream(new PrintStream((OutputStream) out));
-        this.getState().log.println(
-                StringUtil.centerPad(54, "Kick Assembler v" + KickAssemblerSetup.versionString + " by Mads Nielsen"));
+        this.getState().log.println("Kick Assembler v" + KickAssemblerSetup.versionString + " by Mads Nielsen");
 		int var2 = 0;
 
 		try {
@@ -478,4 +468,5 @@ public class KickAssemblerWrapper {
 	public EvaluationState getState() {
 		return state;
 	}
+
 }
