@@ -1,3 +1,14 @@
+/**
+ * Copyright (c) 2024 Torkild Ulvøy Resheim.
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ * Torkild Ulvøy Resheim <torkildr@gmail.com> - initial API and implementation
+ */
 package net.resheim.eclipse.cc.builder;
 
 import java.net.URI;
@@ -15,9 +26,7 @@ import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.ui.console.ConsolePlugin;
-import org.eclipse.ui.console.IConsole;
-import org.eclipse.ui.console.IConsoleManager;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.console.MessageConsoleStream;
 
@@ -28,7 +37,7 @@ import net.resheim.eclipse.cc.ui.ConsoleFactory;
 
 public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
-	class SampleDeltaVisitor implements IResourceDeltaVisitor {
+	class ResourceDeltaVisitor implements IResourceDeltaVisitor {
 		@Override
 		public boolean visit(IResourceDelta delta) throws CoreException {
 			IResource resource = delta.getResource();
@@ -53,7 +62,6 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 	class SampleResourceVisitor implements IResourceVisitor {
 		public boolean visit(IResource resource) {
 			buildAssembly(resource);
-			// return true to continue visiting children.
 			return true;
 		}
 	}
@@ -103,14 +111,20 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			MessageConsole console = ConsoleFactory.findConsole();
 			MessageConsoleStream out = console.newMessageStream();
 			wrapper.execute(new String[] { "-libdir", file.getProject().getFolder("library").getLocation().toOSString(),
-					file.getLocation().toOSString() }, out);
+					file.getLocation().toOSString(), "-asminfo", "all", "-symbolfile" }, out);
 			for (IDiagnostic iDiagnostic : wrapper.getState().diagnosticMgr.getErrors()) {
 				addDiagnosticMessage(iDiagnostic);
 			}
 			for (IDiagnostic iDiagnostic : wrapper.getState().diagnosticMgr.getWarnings()) {
 				addDiagnosticMessage(iDiagnostic);
 			}
-
+			// Make sure any changes in the file systems are reflected in the
+			// Eclipse viewers.
+			try {
+				resource.getProject().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -147,6 +161,6 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
 	protected void incrementalBuild(IResourceDelta delta, IProgressMonitor monitor) throws CoreException {
 		// the visitor does the work.
-		delta.accept(new SampleDeltaVisitor());
+		delta.accept(new ResourceDeltaVisitor());
 	}
 }
