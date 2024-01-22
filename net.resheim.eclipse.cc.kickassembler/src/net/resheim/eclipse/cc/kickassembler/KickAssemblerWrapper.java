@@ -1,4 +1,4 @@
-package net.resheim.eclipse.cc.core;
+package net.resheim.eclipse.cc.kickassembler;
 
 import java.io.File;
 import java.io.IOException;

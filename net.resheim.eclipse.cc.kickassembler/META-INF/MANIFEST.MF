@@ -6,7 +6,7 @@ Bundle-Version: 1.2.0.qualifier
 Export-Package: kickass.common.diagnostics,
  kickass.parsing.sourcelocation,
  kickass.state,
- net.resheim.eclipse.cc.core
+ net.resheim.eclipse.cc.kickassembler
 Require-Bundle: org.eclipse.core.resources,
  org.eclipse.core.runtime
 Bundle-Vendor: Torkild U. Resheim

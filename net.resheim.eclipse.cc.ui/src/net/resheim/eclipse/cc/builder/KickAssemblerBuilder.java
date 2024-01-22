@@ -32,7 +32,7 @@ import org.eclipse.ui.console.MessageConsoleStream;
 
 import kickass.common.diagnostics.DiagnosticType;
 import kickass.common.diagnostics.IDiagnostic;
-import net.resheim.eclipse.cc.core.KickAssemblerWrapper;
+import net.resheim.eclipse.cc.kickassembler.KickAssemblerWrapper;
 import net.resheim.eclipse.cc.ui.ConsoleFactory;
 
 public class KickAssemblerBuilder extends IncrementalProjectBuilder {
