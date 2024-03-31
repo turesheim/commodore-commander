@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: KickAssembler Parser
+Bundle-SymbolicName: net.resheim.eclipse.cc.kickassembler.parser
+Bundle-Version: 1.2.0.qualifier
+Bundle-Vendor: Torkild U. Resheim
+Automatic-Module-Name: net.resheim.eclipse.cc.kickassembler.parser
+Bundle-ClassPath: lib/antlr-runtime-4.13.1.jar,
+ .
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Import-Package: org.junit;version="[4.13.0,5.0.0]"
+Require-Bundle: org.junit,
+ junit-jupiter-api
