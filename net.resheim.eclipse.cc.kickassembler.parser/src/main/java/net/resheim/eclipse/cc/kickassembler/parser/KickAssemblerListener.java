@@ -197,4 +197,24 @@ public interface KickAssemblerListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitLabelIndexed(KickAssemblerParser.LabelIndexedContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KickAssemblerParser#currentAddress}.
+	 * @param ctx the parse tree
+	 */
+	void enterCurrentAddress(KickAssemblerParser.CurrentAddressContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KickAssemblerParser#currentAddress}.
+	 * @param ctx the parse tree
+	 */
+	void exitCurrentAddress(KickAssemblerParser.CurrentAddressContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KickAssemblerParser#labelReference}.
+	 * @param ctx the parse tree
+	 */
+	void enterLabelReference(KickAssemblerParser.LabelReferenceContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KickAssemblerParser#labelReference}.
+	 * @param ctx the parse tree
+	 */
+	void exitLabelReference(KickAssemblerParser.LabelReferenceContext ctx);
 }

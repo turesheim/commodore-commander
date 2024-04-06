@@ -59,6 +59,100 @@ class KickAssemblerGrammarTest {
     }
 
     @Test
+    void testImmediateWithLabelAddressing() {
+        parse("lda label:#$ff\n");
+    }
+
+    @Test
+    void testIMultilLabelAddressingJumpBackward() {
+        String code = """
+                        ldx #100
+                !loop:  inc $d020
+                        dex
+                        bne !loop- // Jumps to the previous instance of !loop
+
+                        ldx #100
+                !loop:  inc $d021
+                        dex
+                        bne !loop- // Jumps to the previous instance of !loop
+                """;
+        parse(code);
+    }
+
+    @Test
+    void testIMultilLabelAddressingJumpForward() {
+        String code = """
+                        ldx #10
+                !loop:
+                        jmp !+ // Jumps over the two next nops to the ! label
+                        nop
+                        nop
+                !:      jmp !+ // Jumps over the two next nops to the ! label
+                        nop
+                        nop
+                !:
+                        dex
+                        bne !loop- // Jumps to the previous !loop label
+                """;
+        parse(code);
+    }
+
+    @Test
+    void testIMultilLabelAddressingSkip() {
+        String code = """
+                        jmp !+++ // Jumps to the third '!' label
+                !:      nop
+                !:      nop
+                !:              // <- here!
+                """;
+        parse(code);
+    }
+
+    @Test
+    void testJumpWithCurrentAddress() {
+        String code = """
+                // Jumps with '*'
+                        jmp *
+
+                        inc $d020
+                        inc $d021
+                        jmp *-6
+
+                """;
+        parse(code);
+    }
+
+    @Test
+    void testJumpWithLabel() {
+        String code = """
+                // The same jumps with labels
+                this:   jmp this
+
+                !loop:  inc $d020
+                        inc $d021
+                        jmp !loop-
+                """;
+        parse(code);
+    }
+
+//    @Test
+//    void testJumpUnresolvedZeropage() {
+//        String code = """
+//                // Uses zeropage form of lda and sta eventhough the labels is first
+//                // resolved later
+//                lda zpReg1
+//                sta zpReg2
+//
+//                *=$10 virtual
+//                .zp {
+//                zpReg1: .byte 0
+//                zpReg2: .byte 0
+//                }
+//                """;
+//        parse(code);
+//    }
+
+    @Test
     void testZeropageAddressing() {
         parse("lda $30\n");
     }

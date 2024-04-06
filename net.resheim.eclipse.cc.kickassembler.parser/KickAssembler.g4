@@ -4,6 +4,9 @@
  * Since the main goal for this project is to create a modern IDE for the
  * Commodore 64, none of the 65C02 variants are supported in this grammar.
  *
+ * The KickAssembler compiler supports a wide range of different instructions
+ * and features. This parser does not (yet) cover all of these.
+ *
  */
 grammar KickAssembler;
 
@@ -17,7 +20,7 @@ line            : ( instruction | labelDeclaration )? EOL ;
 
 instruction     : labelDeclaration? OPCODE operand? ;
 
-labelDeclaration: IDENTIFIER COLON ;
+labelDeclaration: BANG? IDENTIFIER? COLON ;
 
 operand:          immediate
                 | zeroPage
@@ -33,9 +36,10 @@ operand:          immediate
                 | labelY
                 | labelIndirect
                 | labelIndexed
+                | currentAddress // Only for JMP?
                 ;
 
-immediate       : HASH ( HEX_LITERAL | BINARY_LITERAL | DECIMAL_LITERAL );
+immediate       : (IDENTIFIER COLON)? HASH ( HEX_LITERAL | BINARY_LITERAL | DECIMAL_LITERAL );
 zeroPage        : HEX_LITERAL ;
 zeroPageX       : HEX_LITERAL COMMA X ;
 zeroPageY       : HEX_LITERAL COMMA Y ;
@@ -44,11 +48,14 @@ absoluteX       : HEX_LONG_LITERAL COMMA X ;
 absoluteY       : HEX_LONG_LITERAL COMMA Y ;
 indirect        : LEFT_PAREN HEX_LONG_LITERAL RIGHT_PAREN ;
 indirectIndexed : LEFT_PAREN HEX_LITERAL RIGHT_PAREN COMMA Y;
-label           : IDENTIFIER ;
-labelX          : IDENTIFIER COMMA X ;
-labelY          : IDENTIFIER COMMA Y ;
-labelIndirect   : LEFT_PAREN IDENTIFIER RIGHT_PAREN ;
-labelIndexed    : LEFT_PAREN IDENTIFIER RIGHT_PAREN COMMA Y;
+label           : labelReference ;
+labelX          : labelReference COMMA X ;
+labelY          : labelReference COMMA Y ;
+labelIndirect   : LEFT_PAREN labelReference RIGHT_PAREN ;
+labelIndexed    : LEFT_PAREN labelReference RIGHT_PAREN COMMA Y ;
+currentAddress  : ASTERISK ( ( PLUS | MINUS ) DECIMAL_LITERAL )* ;
+
+labelReference: IDENTIFIER | BANG IDENTIFIER | BANG IDENTIFIER? ( PLUS | MINUS )+ ;
 
 
 BLOCK_COMMENT   : '/*' .*? '*/' -> channel(HIDDEN);
@@ -64,6 +71,8 @@ OPCODE          :
                 | 'stx' | 'sty' | 'tax' | 'tay' | 'tsx' | 'txa' | 'txs' | 'tya'
                 );
 
+
+ASTERISK        : '*' ;
 COLON           : ':' ;
 HASH            : '#' ;
 COMMA           : ',' ;
@@ -71,14 +80,17 @@ X               : 'x' ;
 Y               : 'y' ;
 LEFT_PAREN      : '(' ;
 RIGHT_PAREN     : ')' ;
-SEMI            : ';' ;
+LEFT_BRACE      : '{' ;
+RIGHT_BRACE     : '}' ;
+BANG            : '!' ;
+PLUS            : '+' ;
+MINUS           : '-' ;
 EOL             : '\r\n' | '\n' ;
 WS              : [ \t]+  -> channel(HIDDEN) ;
 
 IDENTIFIER      : [a-z_] [a-z0-9_]*;
 
-HEX_LITERAL: '$' HEX_DIGIT HEX_DIGIT;
-HEX_LONG_LITERAL: '$' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT;
-HEX_DIGIT       : [0-9a-f] ;
+DECIMAL_LITERAL : [0-9]+;
+HEX_LITERAL     : '$' [0-9a-f] [0-9a-f];
+HEX_LONG_LITERAL: '$' [0-9a-f] [0-9a-f] [0-9a-f] [0-9a-f];
 BINARY_LITERAL  : '%' [01]+ ;
-DECIMAL_LITERAL : [0-9]+ ;

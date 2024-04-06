@@ -240,6 +240,30 @@ public class KickAssemblerBaseListener implements KickAssemblerListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitLabelIndexed(KickAssemblerParser.LabelIndexedContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterCurrentAddress(KickAssemblerParser.CurrentAddressContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitCurrentAddress(KickAssemblerParser.CurrentAddressContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLabelReference(KickAssemblerParser.LabelReferenceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLabelReference(KickAssemblerParser.LabelReferenceContext ctx) { }
 
 	/**
 	 * {@inheritDoc}
