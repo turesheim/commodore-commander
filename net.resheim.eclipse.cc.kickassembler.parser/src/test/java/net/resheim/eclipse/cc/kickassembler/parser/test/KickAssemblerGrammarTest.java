@@ -26,6 +26,16 @@ class KickAssemblerGrammarTest {
     }
 
     @Test
+    void testBlockComment() {
+        String code = """
+                /*
+                    Dette er en test
+                */
+                """;
+        parse(code);
+    }
+
+    @Test
     void testLabelInstruction() {
         String code = """
                 loop: inc $20
@@ -190,6 +200,14 @@ class KickAssemblerGrammarTest {
     @Test
     void testIndirectAddressing() {
         parse("lda ($1000)");
+    }
+
+    /**
+     * Sets the memory position to a given value.
+     */
+    @Test
+    public void tesAssemblerDirective_memoryPosition() {
+        parse("*=$1000 \"Program\"");
     }
 
     /**

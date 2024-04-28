@@ -65,6 +65,18 @@ public class KickAssemblerBaseListener implements KickAssemblerListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterBlockDeclaration(KickAssemblerParser.BlockDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitBlockDeclaration(KickAssemblerParser.BlockDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterOperand(KickAssemblerParser.OperandContext ctx) { }
 	/**
 	 * {@inheritDoc}

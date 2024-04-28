@@ -16,11 +16,13 @@ options {
 
 program         : line* EOF;
 
-line            : ( instruction | labelDeclaration )? EOL ;
+line            : ( instruction | labelDeclaration | blockDeclaration )? EOL ;
 
 instruction     : labelDeclaration? OPCODE operand? ;
 
 labelDeclaration: BANG? IDENTIFIER? COLON ;
+
+blockDeclaration: ASTERISK EQUALS HEX_LONG_LITERAL STRING_LITERAL;
 
 operand:          immediate
                 | zeroPage | zeroPageX | zeroPageY
@@ -59,7 +61,7 @@ OPCODE          :
                 );
 
 KEYWORD         :
-                ( '*=' | '.align' | '.assert' | '.asserterror' | '.break'
+                ( '.align' | '.assert' | '.asserterror' | '.break'
                 | '.by' | '.byte' | '.const' | '.cpu' | '.define' | '.disk'
                 | '.dw' | '.dword' | '.encoding' | '.enum' | '.error'
                 | '.errorif' | '.eval' | '.file' | '.filemodify'
@@ -73,15 +75,15 @@ KEYWORD         :
                 );
 
 COLOR           :
-                ( 'black' | 'white' | 'red' | 'cyan' | 'purple' | 'green'
-                | 'blue' | 'yellow' | 'orange' | 'brown' | 'light_red'
+                ( 'black' | 'white'  | 'red'    | 'cyan'  | 'purple' | 'green'
+                | 'blue'  | 'yellow' | 'orange' | 'brown' | 'light_red'
                 | 'dark_gray' | 'dark_grey' | 'gray' | 'grey' | 'light_green'
                 | 'light_blue' | 'light_gray' | 'light_grey'
                 ) -> channel(HIDDEN);
 
 PREPROCESSORS   :
                 ( '#import' | '#if' | '#else' | '#endif' | '#define' | '#undef'
-                | '#elif' | '#importif' | '#importonce'
+                | '#elif'   | '#importif'     | '#importonce'
                 )  -> channel(HIDDEN);
 
 
@@ -107,6 +109,7 @@ DECIMAL_LITERAL : [0-9]+ ;
 HEX_LITERAL     : '$' [0-9a-f] [0-9a-f] ;
 HEX_LONG_LITERAL: '$' [0-9a-f] [0-9a-f] [0-9a-f] [0-9a-f] ;
 BINARY_LITERAL  : '%' [01]+ ;
+STRING_LITERAL  : '"' ~["]* '"';
 
 // Structures to ignore for now
 DIRECTIVE       : KEYWORD ( ~[\r\n{]* | EOL ) -> channel(HIDDEN) ;

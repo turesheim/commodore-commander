@@ -48,6 +48,16 @@ public interface KickAssemblerListener extends ParseTreeListener {
 	 */
 	void exitLabelDeclaration(KickAssemblerParser.LabelDeclarationContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link KickAssemblerParser#blockDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterBlockDeclaration(KickAssemblerParser.BlockDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KickAssemblerParser#blockDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitBlockDeclaration(KickAssemblerParser.BlockDeclarationContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link KickAssemblerParser#operand}.
 	 * @param ctx the parse tree
 	 */

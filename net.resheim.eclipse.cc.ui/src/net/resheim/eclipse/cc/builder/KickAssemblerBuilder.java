@@ -164,5 +164,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 	protected void incrementalBuild(IResourceDelta delta, IProgressMonitor monitor) throws CoreException {
 		// the visitor does the work.
 		delta.accept(new ResourceDeltaVisitor());
+		// XXX: Sett opp preferanse for hva som er hovedapplikasjonen
+		fullBuild(monitor);
 	}
 }
