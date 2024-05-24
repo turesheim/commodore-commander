@@ -28,6 +28,16 @@ public interface KickAssemblerListener extends ParseTreeListener {
 	 */
 	void exitLine(KickAssemblerParser.LineContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link KickAssemblerParser#import_code}.
+	 * @param ctx the parse tree
+	 */
+	void enterImport_code(KickAssemblerParser.Import_codeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KickAssemblerParser#import_code}.
+	 * @param ctx the parse tree
+	 */
+	void exitImport_code(KickAssemblerParser.Import_codeContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link KickAssemblerParser#instruction}.
 	 * @param ctx the parse tree
 	 */
@@ -217,6 +227,16 @@ public interface KickAssemblerListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitCurrentAddress(KickAssemblerParser.CurrentAddressContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KickAssemblerParser#number}.
+	 * @param ctx the parse tree
+	 */
+	void enterNumber(KickAssemblerParser.NumberContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KickAssemblerParser#number}.
+	 * @param ctx the parse tree
+	 */
+	void exitNumber(KickAssemblerParser.NumberContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link KickAssemblerParser#labelReference}.
 	 * @param ctx the parse tree

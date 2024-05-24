@@ -41,6 +41,18 @@ public class KickAssemblerBaseListener implements KickAssemblerListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterImport_code(KickAssemblerParser.Import_codeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitImport_code(KickAssemblerParser.Import_codeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterInstruction(KickAssemblerParser.InstructionContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -264,6 +276,18 @@ public class KickAssemblerBaseListener implements KickAssemblerListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitCurrentAddress(KickAssemblerParser.CurrentAddressContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterNumber(KickAssemblerParser.NumberContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitNumber(KickAssemblerParser.NumberContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

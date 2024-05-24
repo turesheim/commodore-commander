@@ -1,5 +1,7 @@
 package net.resheim.eclipse.cc.kickassembler.parser.test;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -604,6 +606,11 @@ class KickAssemblerGrammarTest {
     @Test
     public void testAssemblerDirective_zp() {
         parse(".zp { label: .byte 0 ... }");
+    }
+
+    @Test
+    void testPreprocessor_import() throws Exception {
+        parse("#import \"library/libSprite.asm\"");
     }
 
 }

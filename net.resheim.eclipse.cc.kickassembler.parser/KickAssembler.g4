@@ -1,11 +1,11 @@
 /*
- *  A basic grammar for 6502 assembly and KickAssembler.
+ *  This is a basic grammar for 6502 assembly and KickAssembler.
  *
  * Since the main goal for this project is to create a modern IDE for the
  * Commodore 64, none of the 65C02 variants are supported in this grammar.
  *
  * The KickAssembler compiler supports a wide range of different instructions
- * and features. This parser does not (yet) cover all of these.
+ * and features. It may be
  *
  */
 grammar KickAssembler;
@@ -16,13 +16,15 @@ options {
 
 program         : line* EOF;
 
-line            : ( instruction | labelDeclaration | blockDeclaration )? EOL ;
+line            : ( instruction | labelDeclaration | blockDeclaration | import_code )? EOL ;
+
+import_code     : P_IMPORT STRING_LITERAL;
 
 instruction     : labelDeclaration? OPCODE operand? ;
 
 labelDeclaration: BANG? IDENTIFIER? COLON ;
 
-blockDeclaration: ASTERISK EQUALS HEX_LONG_LITERAL STRING_LITERAL;
+blockDeclaration: ASTERISK EQUALS number ( STRING_LITERAL | IDENTIFIER );
 
 operand:          immediate
                 | zeroPage | zeroPageX | zeroPageY
@@ -47,6 +49,8 @@ labelY          : labelReference COMMA Y ;
 labelIndirect   : LEFT_PAREN labelReference RIGHT_PAREN ;
 labelIndexed    : LEFT_PAREN labelReference RIGHT_PAREN COMMA Y ;
 currentAddress  : ASTERISK ( ( PLUS | MINUS ) DECIMAL_LITERAL )* ;
+
+number          : ( DECIMAL_LITERAL | HEX_LONG_LITERAL | HEX_LITERAL ) ;
 
 labelReference: IDENTIFIER | BANG IDENTIFIER | BANG IDENTIFIER? ( PLUS | MINUS )+ ;
 
@@ -81,10 +85,16 @@ COLOR           :
                 | 'light_blue' | 'light_gray' | 'light_grey'
                 ) -> channel(HIDDEN);
 
-PREPROCESSORS   :
-                ( '#import' | '#if' | '#else' | '#endif' | '#define' | '#undef'
-                | '#elif'   | '#importif'     | '#importonce'
-                )  -> channel(HIDDEN);
+// Preprocessors
+P_IMPORT          : '#import';
+P_IF              : '#if';
+P_ELSE            : '#else';
+P_ENDIF           : '#endif';
+P_DEFINE          : '#define';
+P_UNDEF           : '#undef';
+P_ELIF            : '#elif';
+P_IMPORTIF        : '#importif';
+P_IMPORTONCE      : '#importonce';
 
 
 ASTERISK        : '*' ;
@@ -116,3 +126,4 @@ DIRECTIVE       : KEYWORD ( ~[\r\n{]* | EOL ) -> channel(HIDDEN) ;
 BLOCK_COMMENT   : '/*' .*? '*/' -> channel(HIDDEN) ;
 LINE_COMMENT    : '//' ~[\r\n]* -> channel(HIDDEN) ;
 DIRECTIVE_BLOCK : '{' .*? '}' -> channel(HIDDEN) ;
+
