@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Versatile Commodore Emulator
+Bundle-SymbolicName: net.sourceforge.vice
+Bundle-Version: 3.8.0.qualifier
+Automatic-Module-Name: net.sourceforce.vice
+Bundle-RequiredExecutionEnvironment: JavaSE-11

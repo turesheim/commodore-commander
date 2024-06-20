@@ -1,5 +1,7 @@
 package net.resheim.eclipse.cc.launch;
 
+import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,13 +13,17 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.core.model.ILaunchConfigurationDelegate;
+import org.osgi.framework.Bundle;
 
 import com.pty4j.PtyProcess;
 import com.pty4j.PtyProcessBuilder;
@@ -58,8 +64,14 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 			// program file's folder or in one of the parent folders.
 			IPath viceconfig = findViceConfig(file.getRawLocation());
 
-			// XXX: Add preferences for executable location
-			args.add("/opt/homebrew/bin/x64sc");
+			// The VICE startup routine (in bin) is basically a script that
+			// detects the current folder and derives what machine to emulate
+			// from that. We call the main script directly and emulate this
+			// behaviour.
+			Bundle vice = Platform.getBundle("net.sourceforge.vice");
+			URL fileURL = FileLocator.find(vice, new Path("vice/VICE.app/Contents/Resources/script"), null);
+			File x64sc = new File(FileLocator.toFileURL(fileURL).getPath());
+			args.add(x64sc.toString());
 
 			// We only need to set the monitor commands file if we intend to do
 			// debugging – assuming that KickAssembler has created it.
@@ -78,10 +90,11 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 				args.add(viceconfig.toOSString());
 			}
 
-			// the program file
+			// Add the commodore program file
 			args.add(file.getRawLocation().toPath().toString()); // $NON-NLS-1$
 
 			Map<String, String> env = new HashMap<>(System.getenv());
+			env.put("PROGRAM", "x64sc");
 			env.put("TERM", "dumb");
 			PtyProcess process = new PtyProcessBuilder()
 					.setCommand(args.toArray(new String[0]))
