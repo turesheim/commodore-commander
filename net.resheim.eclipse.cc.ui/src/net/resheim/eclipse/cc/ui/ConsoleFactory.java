@@ -17,6 +17,11 @@ import org.eclipse.ui.console.IConsoleFactory;
 import org.eclipse.ui.console.IConsoleManager;
 import org.eclipse.ui.console.MessageConsole;
 
+/**
+ * Factory for producing an instance of the "Commodore Commander" console view.
+ * This is used both for outputting log messages from the (KickAssembler)
+ * compiler.
+ */
 public class ConsoleFactory implements IConsoleFactory {
 
 	public static final String CONSOLE_NAME = "Commodore Commander";

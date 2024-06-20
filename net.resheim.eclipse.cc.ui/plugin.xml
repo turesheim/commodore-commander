@@ -166,7 +166,7 @@
       <super
             type="org.eclipse.core.resources.problemmarker">
       </super>
-      <super type="org.eclipse.core.resources.textmarker"/> 
+      <super type="org.eclipse.core.resources.textmarker"/>
       <persistent
             value="false">
       </persistent>
@@ -178,6 +178,35 @@
             icon="icons/console_view.png"
             label="Commodore Commander">
       </consoleFactory>
+   </extension>
+   <extension
+         point="org.eclipse.debug.core.launchConfigurationTypes">
+      <launchConfigurationType
+            delegate="net.resheim.eclipse.cc.launch.VICELaunchDelegate"
+            delegateDescription="The VICE Launcher supports running and debugging of Commodore programs."
+            delegateName="VICE Launcher"
+            id="net.resheim.eclipse.cc.ui.launchConfigurationType_VICE"
+            modes="run,debug"
+            name="Commodore Program"
+            public="true">
+      </launchConfigurationType>
+   </extension>
+   <extension
+         point="org.eclipse.debug.ui.launchConfigurationTabGroups">
+      <launchConfigurationTabGroup
+            class="net.resheim.eclipse.cc.launch.VICELaunchConfigurationTabGroup"
+            description="VICE Launch"
+            id="net.resheim.eclipse.cc.ui.launchConfigurationTabGroup1"
+            type="net.resheim.eclipse.cc.ui.launchConfigurationType_VICE">
+      </launchConfigurationTabGroup>
+   </extension>
+   <extension
+         point="org.eclipse.debug.ui.launchConfigurationTypeImages">
+      <launchConfigurationTypeImage
+            configTypeID="net.resheim.eclipse.cc.ui.launchConfigurationType_VICE"
+            icon="icons/console_view.png"
+            id="net.resheim.eclipse.cc.ui.launchConfigurationTypeImage">
+      </launchConfigurationTypeImage>
    </extension>
 
 </plugin>

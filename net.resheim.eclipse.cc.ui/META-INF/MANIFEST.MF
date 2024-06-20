@@ -15,7 +15,11 @@ Bundle-ClassPath: .,
  lib/jaxb-core.jar,
  lib/jaxb-impl.jar,
  lib/jaxb-jxc.jar,
- lib/jaxb-xjc.jar
+ lib/jaxb-xjc.jar,
+ lib/pty4j-0.12.29.jar,
+ lib/annotations-24.0.1.jar,
+ lib/purejavacomm-0.0.11.1.jar,
+ lib/kotlin-stdlib-2.0.0.jar
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Require-Bundle: org.eclipse.jface.text,
  org.eclipse.core.runtime,
@@ -27,6 +31,11 @@ Require-Bundle: org.eclipse.jface.text,
  org.eclipse.tm4e.languageconfiguration,
  net.resheim.eclipse.cc.kickassembler,
  org.eclipse.ui.console;bundle-version="3.13.100",
- org.eclipse.core.resources
+ org.eclipse.core.resources,
+ org.eclipse.debug.core;bundle-version="3.21.400",
+ org.eclipse.debug.ui;bundle-version="3.18.400",
+ slf4j.api;bundle-version="2.0.13",
+ com.sun.jna;bundle-version="5.14.0",
+ com.sun.jna.platform;bundle-version="5.14.0"
 Export-Package: net.resheim.eclipse.cc.nature
 Import-Package: net.resheim.eclipse.cc.nature
