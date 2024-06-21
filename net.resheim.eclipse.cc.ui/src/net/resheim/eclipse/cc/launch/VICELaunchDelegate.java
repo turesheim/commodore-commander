@@ -51,6 +51,7 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 			throws CoreException {
 		final String projectName = configuration.getAttribute(ICCLaunchConfigurationConstants.ATTR_PROJECT_NAME, "");
 		final String fileName = configuration.getAttribute(ICCLaunchConfigurationConstants.ATTR_FILE_NAME, "");
+		final String target = configuration.getAttribute(ICCLaunchConfigurationConstants.ATTR_TARGET, "");
 		boolean debug = mode.equals(ILaunchManager.DEBUG_MODE);
 
 		try {
@@ -94,7 +95,7 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 			args.add(file.getRawLocation().toPath().toString()); // $NON-NLS-1$
 
 			Map<String, String> env = new HashMap<>(System.getenv());
-			env.put("PROGRAM", "x64sc");
+			env.put("PROGRAM", target);
 			env.put("TERM", "dumb");
 			PtyProcess process = new PtyProcessBuilder()
 					.setCommand(args.toArray(new String[0]))

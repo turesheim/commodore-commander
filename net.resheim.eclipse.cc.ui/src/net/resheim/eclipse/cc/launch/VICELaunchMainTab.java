@@ -33,6 +33,7 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
 
 import net.resheim.eclipse.cc.nature.CommodoreCommanderNature;
+import org.eclipse.swt.widgets.Combo;
 
 public class VICELaunchMainTab extends AbstractLaunchConfigurationTab {
 	ILaunchConfigurationDialog fDialog;
@@ -42,8 +43,6 @@ public class VICELaunchMainTab extends AbstractLaunchConfigurationTab {
 	Button fObjectSelect = null;
 	Text fProject = null;
 	Text fFile = null;
-	Text fTemplate = null;
-	Text fObject = null;
 
 	/**
 	 * A listener which handles widget change events for the controls in this tab.
@@ -69,6 +68,7 @@ public class VICELaunchMainTab extends AbstractLaunchConfigurationTab {
 	}
 
 	private WidgetListener fListener = new WidgetListener();
+	private Combo fTarget;
 
 	public VICELaunchMainTab(ILaunchConfigurationDialog dialog) {
 		this.fDialog = dialog;
@@ -121,7 +121,21 @@ public class VICELaunchMainTab extends AbstractLaunchConfigurationTab {
 		fFileSelect.setText("Browse");
 		fFileSelect.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
 		fFileSelect.setFont(font);
+
+		Label lblTarget = new Label(comp, SWT.NONE);
+		lblTarget.setText("Target:");
+		lblTarget.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
+		lblTarget.setFont(font);
 		fFileSelect.addSelectionListener(fListener);
+
+		fTarget = new Combo(comp, SWT.READ_ONLY);
+		fTarget.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		for (String target : ICCLaunchConfigurationConstants.TARGET_IDS) {
+			fTarget.add(target);
+		}
+		fTarget.addSelectionListener(fListener);
+		new Label(comp, SWT.NONE);
+
 
 	}
 
@@ -135,13 +149,15 @@ public class VICELaunchMainTab extends AbstractLaunchConfigurationTab {
 	public void initializeFrom(ILaunchConfiguration configuration) {
 		updateProjectFromConfig(configuration);
 		updateFileFromConfig(configuration);
-
+		updateTargetFromConfig(configuration);
 	}
+
 
 	@Override
 	public void performApply(ILaunchConfigurationWorkingCopy configuration) {
 		configuration.setAttribute(ICCLaunchConfigurationConstants.ATTR_PROJECT_NAME, fProject.getText());
 		configuration.setAttribute(ICCLaunchConfigurationConstants.ATTR_FILE_NAME, fFile.getText());
+		configuration.setAttribute(ICCLaunchConfigurationConstants.ATTR_TARGET, fTarget.getText());
 	}
 
 	/**
@@ -296,6 +312,15 @@ public class VICELaunchMainTab extends AbstractLaunchConfigurationTab {
 		} catch (CoreException ce) {
 		}
 		fFile.setText(fileName);
+	}
+
+	private void updateTargetFromConfig(ILaunchConfiguration config) {
+		String target = ""; //$NON-NLS-1$
+		try {
+			target = config.getAttribute(ICCLaunchConfigurationConstants.ATTR_TARGET, "");
+		} catch (CoreException ce) {
+		}
+		fTarget.setText(target);
 	}
 
 }
