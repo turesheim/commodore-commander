@@ -6,6 +6,9 @@
    <feature id="net.sourceforge.vice.feature" os="macosx" ws="cocoa" arch="aarch64">
       <category name="main"/>
    </feature>
+   <feature id="kickassembler.feature">
+      <category name="main"/>
+   </feature>
    <category-def name="main" label="Commodore Commander">
       <description>
          TBD

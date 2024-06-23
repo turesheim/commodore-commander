@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="kickassembler.feature"
+      label="Kick Assembler"
+      version="5.25.0.qualifier"
+      provider-name="Torkild U. Resheim"
+      plugin="kickassembler">
+
+   <description url="http://www.theweb.dk/KickAssembler/.">
+      An assembler for MOS 6502/6510 processors.
+   </description>
+
+   <copyright>
+      Copyright Mads Nielsen and contributors.
+   </copyright>
+
+   <license url="http://www.theweb.dk/KickAssembler/Main.html
+http://www.theweb.dk/KickAssembler/Main.html">
+      Kick Assembler Redistribution Notice
+
+This package includes Kick Assembler, a popular cross-assembler for the MOS 6510/6502 CPU developed by Mads Nielsen. The author publishes this software without an official license. Standard freeware use is assumed, but for detailed license information and terms of use, please refer to the official Kick Assembler website:
+
+http://www.theweb.dk/KickAssembler/Main.html
+
+By using this software, you agree to comply with any terms and conditions set forth by the author. For further inquiries or clarification on the licensing, please contact Mads Nielsen directly through the contact information provided on the official website.
+   </license>
+
+   <plugin
+         id="kickassembler"
+         version="0.0.0"/>
+
+</feature>

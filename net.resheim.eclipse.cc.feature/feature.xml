@@ -18,13 +18,17 @@
       %license
    </license>
 
+   <includes
+         id="net.sourceforge.vice.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="kickassembler.feature"
+         version="0.0.0"/>
+
    <requires>
       <import feature="org.eclipse.tm4e.feature" version="0.6.1.202308132047" match="compatible"/>
    </requires>
-
-   <plugin
-         id="net.resheim.eclipse.cc.kickassembler"
-         version="0.0.0"/>
 
    <plugin
          id="net.resheim.eclipse.cc.ui"

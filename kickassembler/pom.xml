@@ -11,8 +11,9 @@
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>net.resheim.eclipse.cc.kickassembler</artifactId>
+	<artifactId>kickassembler</artifactId>
 	<packaging>eclipse-plugin</packaging>
+	<version>5.25.0-SNAPSHOT</version>
 
 	<properties>
 		<tycho.scmUrl>scm:git:git://github.com/turesheim/commodore-commander.git</tycho.scmUrl>

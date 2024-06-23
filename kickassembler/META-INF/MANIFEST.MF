@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Commodore Commander Kick Assembler
-Bundle-SymbolicName: net.resheim.eclipse.cc.kickassembler;singleton:=true
-Bundle-Version: 1.0.0.qualifier
+Bundle-Name: Kick Assembler
+Bundle-SymbolicName: kickassembler;singleton:=true
+Bundle-Version: 5.25.0.qualifier
 Export-Package: kickass.common.diagnostics,
  kickass.parsing.sourcelocation,
  kickass.state,
