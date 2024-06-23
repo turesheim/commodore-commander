@@ -96,9 +96,9 @@ public class KickAssemblerWrapper {
 		File var4 = new File(".");
 		var3.libPath.add(var4);
 		KickAssemblerPluginConfigParser.parsePluginFile("/KickAss.plugin", var1);
-		String[] var5 = KickAssemblerOptionsConfigParser.parseOptionConfigFile("/KickAss.cfg");
+//		String[] var5 = KickAssemblerOptionsConfigParser.parseOptionConfigFile("/KickAss.cfg");
 		KickAssemblerParametersParser var6 = new KickAssemblerParametersParser(var1.log);
-		var6.parseArgs(var5, var3);
+//		var6.parseArgs(var5, var3);
 		var6.parseArgs(var2, var3);
 		if (var3.inputFileName == null) {
 			throw new AsmErrorException("No inputfile supplied.");
