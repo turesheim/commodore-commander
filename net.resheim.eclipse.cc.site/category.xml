@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature id="net.resheim.eclipse.cc.feature"/>
-   <category-def name="main" label="Commodore Commander for Eclipse">
+   <feature id="net.resheim.eclipse.cc.feature">
+      <category name="main"/>
+   </feature>
+   <feature id="net.sourceforge.vice.feature" os="macosx" ws="cocoa" arch="aarch64">
+      <category name="main"/>
+   </feature>
+   <category-def name="main" label="Commodore Commander">
       <description>
          TBD
       </description>

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Commodore Commander
 Bundle-SymbolicName: net.resheim.eclipse.cc.ui;singleton:=true
 Bundle-Vendor: Torkild U. Resheim
-Bundle-Version: 1.2.0.qualifier
+Bundle-Version: 1.0.0.qualifier
 Automatic-Module-Name: net.resheim.eclipse.cc.ui
 Bundle-ActivationPolicy: lazy
 Bundle-Activator: net.resheim.eclipse.cc.editor.CommodoreCommanderPlugin
@@ -20,7 +20,7 @@ Bundle-ClassPath: .,
  lib/annotations-24.0.1.jar,
  lib/purejavacomm-0.0.11.1.jar,
  lib/kotlin-stdlib-2.0.0.jar
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-21
 Require-Bundle: org.eclipse.jface.text,
  org.eclipse.core.runtime,
  org.eclipse.ui,
@@ -32,8 +32,8 @@ Require-Bundle: org.eclipse.jface.text,
  net.resheim.eclipse.cc.kickassembler,
  org.eclipse.ui.console;bundle-version="3.13.100",
  org.eclipse.core.resources,
- org.eclipse.debug.core;bundle-version="3.21.400",
- org.eclipse.debug.ui;bundle-version="3.18.400",
+ org.eclipse.debug.core,
+ org.eclipse.debug.ui,
  slf4j.api;bundle-version="2.0.13",
  com.sun.jna;bundle-version="5.14.0",
  com.sun.jna.platform;bundle-version="5.14.0"
