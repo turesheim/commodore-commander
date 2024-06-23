@@ -111,7 +111,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			MessageConsole console = ConsoleFactory.findConsole();
 			MessageConsoleStream out = console.newMessageStream();
 			wrapper.execute(new String[] { "-libdir", file.getProject().getFolder("library").getLocation().toOSString(),
-					file.getLocation().toOSString(), "-asminfo", "all", "-symbolfile" }, out);
+					file.getLocation().toOSString(), "-asminfo", "all", "-vicesymbols" }, out);
 			for (IDiagnostic iDiagnostic : wrapper.getState().diagnosticMgr.getErrors()) {
 				addDiagnosticMessage(iDiagnostic);
 			}
