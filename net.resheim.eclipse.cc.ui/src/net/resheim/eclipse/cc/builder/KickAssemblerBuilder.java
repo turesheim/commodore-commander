@@ -13,6 +13,9 @@ package net.resheim.eclipse.cc.builder;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.resources.IFile;
@@ -37,33 +40,51 @@ import net.resheim.eclipse.cc.ui.ConsoleFactory;
 
 public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
-	class ResourceDeltaVisitor implements IResourceDeltaVisitor {
+	private class ResourceDeltaVisitor implements IResourceDeltaVisitor {
+
+		List<AssemblyFile> roots = null;
+
+		public ResourceDeltaVisitor(List<AssemblyFile> roots) {
+			this.roots = roots;
+		}
+
 		@Override
 		public boolean visit(IResourceDelta delta) throws CoreException {
 			IResource resource = delta.getResource();
-			switch (delta.getKind()) {
-			case IResourceDelta.ADDED:
-				// handle added resource
-				buildAssembly(resource);
-				break;
-			case IResourceDelta.REMOVED:
-				// handle removed resource
-				break;
-			case IResourceDelta.CHANGED:
-				// handle changed resource
-				buildAssembly(resource);
-				break;
+			if (delta.getKind() == IResourceDelta.REMOVED) {
+				// just build all roots, we currently cannot determine the tree
+				// of those files that have been removed
+				for (AssemblyFile assemblyFile : roots) {
+					buildAssembly(assemblyFile);
+				}
+			} else {
+				for (AssemblyFile assemblyFile : roots) {
+					if (assemblyFile.containsResource(resource)) {
+						buildAssembly(assemblyFile);
+					}
+				}
 			}
 			// return true to continue visiting children.
 			return true;
 		}
 	}
 
-	class SampleResourceVisitor implements IResourceVisitor {
+	private class TreeBuildingResourceVisitor implements IResourceVisitor {
+
 		public boolean visit(IResource resource) {
-			buildAssembly(resource);
+			if (resource instanceof IFile && resource.getName().endsWith(".asm")) {
+				AssemblyFile file = new AssemblyFile(resource, null);
+				KickAssemblerProjectParser parser = new KickAssemblerProjectParser(file);
+				afm.addFile(file);
+				try {
+					parser.parseFile(resource);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 			return true;
 		}
+
 	}
 
 	public static final String BUILDER_ID = "net.resheim.eclipse.cc.ui.kickassemblerBuilder";
@@ -83,50 +104,100 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
+	public class AssemblyFileManager {
+
+		// Contains all assembly files found
+		private List<AssemblyFile> allFiles;
+
+		public AssemblyFileManager() {
+			this.allFiles = new ArrayList<>();
+		}
+
+		public void clear() {
+			allFiles.clear();
+		}
+
+		public void addFile(AssemblyFile file) {
+			allFiles.add(file);
+		}
+
+		private void buildTree(AssemblyFile file, List<AssemblyFile> files) {
+			HashMap<IResource, AssemblyFile> inclusions = file.getInclusions();
+			for (AssemblyFile child : inclusions.values()) {
+				buildTree(child, files);
+				// determine whether or not the child is contained in the all
+				// files list, if so we will remove it since it has a parent
+				for (AssemblyFile base : allFiles) {
+					if (base.getResource() != null && child.getResource() != null) {
+						if (child.getResource().equals(base.getResource())) {
+							files.remove(base);
+						}
+					}
+				}
+			}
+		}
+
+		public List<AssemblyFile> consolidateTrees() {
+			List<AssemblyFile> allFilesCopy = new ArrayList<>(allFiles);
+			for (AssemblyFile assemblyFile : allFiles) {
+				buildTree(assemblyFile, allFilesCopy);
+			}
+			return allFilesCopy;
+		}
+
+	}
+
+	AssemblyFileManager afm = new AssemblyFileManager();
+
 	@Override
 	protected IProject[] build(int kind, Map<String, String> args, IProgressMonitor monitor) throws CoreException {
+		// Parse all assembly files and determine the import tree structure.
+		afm.clear();
+		getProject().accept(new TreeBuildingResourceVisitor());
+		List<AssemblyFile> roots = afm.consolidateTrees();
+		// for debugging only
+		roots.forEach(f -> {
+			System.out.println("rootfile = " + f.getResource());
+			f.printTree("  ");
+		});
+
 		if (kind == FULL_BUILD) {
-			fullBuild(monitor);
+			fullBuild(monitor, roots);
 		} else {
 			IResourceDelta delta = getDelta(getProject());
 			if (delta == null) {
-				fullBuild(monitor);
+				fullBuild(monitor, roots);
 			} else {
-				incrementalBuild(delta, monitor);
+				incrementalBuild(delta, monitor, roots);
 			}
 		}
 		return null;
 	}
 
 	protected void clean(IProgressMonitor monitor) throws CoreException {
-		// delete markers set and files created
-		getProject().deleteMarkers(MARKER_TYPE, true, IResource.DEPTH_INFINITE);
 	}
 
-	void buildAssembly(IResource resource) {
-		if (resource instanceof IFile && resource.getName().endsWith(".asm")) {
-			IFile file = (IFile) resource;
-			deleteMarkers(file);
-			KickAssemblerWrapper wrapper = new KickAssemblerWrapper();
-			MessageConsole console = ConsoleFactory.findConsole();
-			MessageConsoleStream out = console.newMessageStream();
-			wrapper.execute(new String[] { "-libdir", file.getProject().getFolder("library").getLocation().toOSString(),
-					file.getLocation().toOSString(), "-odir", "out", "-showmem", "-asminfo", "all", "-vicesymbols" },
-					out);
+	void buildAssembly(AssemblyFile assemblyFile) {
+		clearMarkers(assemblyFile);
+		IFile file = (IFile) assemblyFile.getResource();
+		KickAssemblerWrapper wrapper = new KickAssemblerWrapper();
+		MessageConsole console = ConsoleFactory.findConsole();
+		MessageConsoleStream out = console.newMessageStream();
+		wrapper.execute(new String[] { "-libdir", file.getProject().getFolder("library").getLocation().toOSString(),
+				file.getLocation().toOSString(), "-odir", "out", "-showmem", "-asminfo", "all", "-vicesymbols" }, out);
 
-			for (IDiagnostic iDiagnostic : wrapper.getState().diagnosticMgr.getErrors()) {
-				addDiagnosticMessage(iDiagnostic);
-			}
-			for (IDiagnostic iDiagnostic : wrapper.getState().diagnosticMgr.getWarnings()) {
-				addDiagnosticMessage(iDiagnostic);
-			}
-			// Make sure any changes in the file systems are reflected in the
-			// Eclipse viewers.
-			try {
-				resource.getProject().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
-			} catch (CoreException e) {
-				e.printStackTrace();
-			}
+		for (IDiagnostic iDiagnostic : wrapper.getState().diagnosticMgr.getErrors()) {
+			addDiagnosticMessage(iDiagnostic);
+		}
+		for (IDiagnostic iDiagnostic : wrapper.getState().diagnosticMgr.getWarnings()) {
+			addDiagnosticMessage(iDiagnostic);
+		}
+		// Make sure any changes in the file systems are reflected in the
+		// Eclipse viewers.
+		try {
+			file.getProject().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
+		} catch (CoreException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -147,22 +218,29 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
-	private void deleteMarkers(IFile file) {
+	private void clearMarkers(AssemblyFile file) {
 		try {
-			file.deleteMarkers(MARKER_TYPE, false, IResource.DEPTH_ZERO);
+			IResource r = file.getResource();
+			if (r != null) {
+				r.deleteMarkers(MARKER_TYPE, false, IResource.DEPTH_ZERO);
+			}
+			for (AssemblyFile child : file.getInclusions().values()) {
+				clearMarkers(child);
+			}
 		} catch (CoreException ce) {
 		}
 	}
 
-	protected void fullBuild(final IProgressMonitor monitor) throws CoreException {
-		try {
-			getProject().accept(new SampleResourceVisitor());
-		} catch (CoreException e) {
+	private void fullBuild(final IProgressMonitor monitor, List<AssemblyFile> roots) throws CoreException {
+		// there is only a need to build the root files
+		for (AssemblyFile assemblyFile : roots) {
+			buildAssembly(assemblyFile);
 		}
 	}
 
-	protected void incrementalBuild(IResourceDelta delta, IProgressMonitor monitor) throws CoreException {
-		// the visitor does the work.
-		delta.accept(new ResourceDeltaVisitor());
+	private void incrementalBuild(IResourceDelta delta, IProgressMonitor monitor, List<AssemblyFile> roots)
+			throws CoreException {
+		delta.accept(new ResourceDeltaVisitor(roots));
 	}
+
 }

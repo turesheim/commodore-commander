@@ -109,6 +109,7 @@
 
   <modules>
     <module>net.resheim.eclipse.cc.ui</module>
+    <module>net.resheim.eclipse.cc.kickassembler.parser</module>
     <module>net.resheim.eclipse.cc.feature</module>
     <module>net.resheim.eclipse.cc.site</module>
     <module>net.sourceforge.vice</module>

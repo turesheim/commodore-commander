@@ -34,4 +34,8 @@
          id="net.resheim.eclipse.cc.ui"
          version="0.0.0"/>
 
+   <plugin
+         id="net.resheim.eclipse.cc.kickassembler.parser"
+         version="0.0.0"/>
+
 </feature>
