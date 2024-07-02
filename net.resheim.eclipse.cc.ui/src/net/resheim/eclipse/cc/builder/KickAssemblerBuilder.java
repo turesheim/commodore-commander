@@ -13,6 +13,9 @@ package net.resheim.eclipse.cc.builder;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.resources.IFile;
@@ -37,33 +40,46 @@ import net.resheim.eclipse.cc.ui.ConsoleFactory;
 
 public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
-	class ResourceDeltaVisitor implements IResourceDeltaVisitor {
+	private class ResourceDeltaVisitor implements IResourceDeltaVisitor {
+
+		List<AssemblyFile> roots = null;
+
+		public ResourceDeltaVisitor(List<AssemblyFile> roots) {
+			this.roots = roots;
+		}
+
 		@Override
 		public boolean visit(IResourceDelta delta) throws CoreException {
+			List<IResource> rootsToBuild = new ArrayList<>();
 			IResource resource = delta.getResource();
-			switch (delta.getKind()) {
-			case IResourceDelta.ADDED:
-				// handle added resource
-				buildAssembly(resource);
-				break;
-			case IResourceDelta.REMOVED:
-				// handle removed resource
-				break;
-			case IResourceDelta.CHANGED:
-				// handle changed resource
-				buildAssembly(resource);
-				break;
+			for (AssemblyFile assemblyFile : roots) {
+				if (assemblyFile.containsResource(resource)) {
+					rootsToBuild.add(assemblyFile.getResource());
+					buildAssembly(assemblyFile.getResource());
+				}
 			}
 			// return true to continue visiting children.
 			return true;
 		}
 	}
 
-	class SampleResourceVisitor implements IResourceVisitor {
+
+	private class TreeBuildingResourceVisitor implements IResourceVisitor {
+
 		public boolean visit(IResource resource) {
-			buildAssembly(resource);
+			if (resource instanceof IFile && resource.getName().endsWith(".asm")) {
+				AssemblyFile file = new AssemblyFile(resource, null);
+				KickAssemblerProjectParser parser = new KickAssemblerProjectParser(file);
+				afm.addFile(file);
+				try {
+					parser.parseFile(resource);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 			return true;
 		}
+
 	}
 
 	public static final String BUILDER_ID = "net.resheim.eclipse.cc.ui.kickassemblerBuilder";
@@ -83,16 +99,70 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
+	public class AssemblyFileManager {
+
+		// Contains all assembly files found
+		private List<AssemblyFile> allFiles;
+
+		public AssemblyFileManager() {
+			this.allFiles = new ArrayList<>();
+		}
+
+		public void clear() {
+			allFiles.clear();
+		}
+
+		public void addFile(AssemblyFile file) {
+			allFiles.add(file);
+		}
+
+		private void buildTree(AssemblyFile file, List<AssemblyFile> files) {
+			HashMap<IResource, AssemblyFile> inclusions = file.getInclusions();
+			for (AssemblyFile child : inclusions.values()) {
+				buildTree(child, files);
+				// determine whether or not the child is contained in the all
+				// files list, if so we will remove it since it has a parent
+				for (AssemblyFile base : allFiles) {
+					if (child.getResource().equals(base.getResource())) {
+						files.remove(base);
+					}
+				}
+			}
+		}
+
+		public List<AssemblyFile> consolidateTrees() {
+			List<AssemblyFile> allFilesCopy = new ArrayList<>(allFiles);
+			for (AssemblyFile assemblyFile : allFiles) {
+				buildTree(assemblyFile, allFilesCopy);
+			}
+			return allFilesCopy;
+		}
+
+	}
+
+	AssemblyFileManager afm = new AssemblyFileManager();
+
 	@Override
 	protected IProject[] build(int kind, Map<String, String> args, IProgressMonitor monitor) throws CoreException {
+		// Parse all assembly files and determine the import tree structure.
+		// This way we can limit th
+		afm.clear();
+		getProject().accept(new TreeBuildingResourceVisitor());
+		List<AssemblyFile> roots = afm.consolidateTrees();
+		// for debugging only
+		roots.forEach(f -> {
+			System.out.println("rootfile = " + f.getResource());
+			f.printTree("  ");
+		});
+
 		if (kind == FULL_BUILD) {
-			fullBuild(monitor);
+			fullBuild(monitor, roots);
 		} else {
 			IResourceDelta delta = getDelta(getProject());
 			if (delta == null) {
-				fullBuild(monitor);
+				fullBuild(monitor, roots);
 			} else {
-				incrementalBuild(delta, monitor);
+				incrementalBuild(delta, monitor, roots);
 			}
 		}
 		return null;
@@ -154,17 +224,16 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
-	protected void fullBuild(final IProgressMonitor monitor) throws CoreException {
-		try {
-			getProject().accept(new SampleResourceVisitor());
-		} catch (CoreException e) {
+	private void fullBuild(final IProgressMonitor monitor, List<AssemblyFile> roots) throws CoreException {
+		// there is only a need to build the root files
+		for (AssemblyFile assemblyFile : roots) {
+			buildAssembly(assemblyFile.getResource());
 		}
 	}
 
-	protected void incrementalBuild(IResourceDelta delta, IProgressMonitor monitor) throws CoreException {
-		// the visitor does the work.
-		delta.accept(new ResourceDeltaVisitor());
-		// XXX: Sett opp preferanse for hva som er hovedapplikasjonen
-		fullBuild(monitor);
+	private void incrementalBuild(IResourceDelta delta, IProgressMonitor monitor, List<AssemblyFile> roots)
+			throws CoreException {
+		delta.accept(new ResourceDeltaVisitor(roots));
 	}
+
 }

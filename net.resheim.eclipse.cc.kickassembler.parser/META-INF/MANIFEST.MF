@@ -2,12 +2,28 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: KickAssembler Parser
 Bundle-SymbolicName: net.resheim.eclipse.cc.kickassembler.parser
-Bundle-Version: 1.2.0.qualifier
+Bundle-Version: 1.0.0.qualifier
 Bundle-Vendor: Torkild U. Resheim
 Automatic-Module-Name: net.resheim.eclipse.cc.kickassembler.parser
+Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: lib/antlr-runtime-4.13.1.jar,
  .
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-21
 Import-Package: org.junit;version="[4.13.0,5.0.0]"
-Require-Bundle: org.junit,
- junit-jupiter-api
+Require-Bundle: junit-jupiter-api;bundle-version="5.10.2",
+ org.eclipse.core.runtime;bundle-version="3.31.100",
+ org.eclipse.core.resources;bundle-version="3.20.200"
+Export-Package: net.resheim.eclipse.cc.kickassembler.parser;uses:="org.antlr.v4.runtime,org.antlr.v4.runtime.tree,org.antlr.v4.runtime.atn",
+ org.antlr.v4.runtime;
+  uses:="new org.antlr.v4.runtime,
+   org.antlr.v4.runtime.dfa,
+   org.antlr.v4.runtime.atn,
+   org.antlr.v4.runtime.tree,
+   org.antlr.v4.runtime.misc,
+   org.antlr.v4.runtime.tree.pattern",
+ org.antlr.v4.runtime.atn;uses:="org.antlr.v4.runtime,org.antlr.v4.runtime.dfa,org.antlr.v4.runtime.misc",
+ org.antlr.v4.runtime.dfa;uses:="org.antlr.v4.runtime,org.antlr.v4.runtime.atn",
+ org.antlr.v4.runtime.misc;uses:="org.antlr.v4.runtime,org.antlr.v4.runtime.atn",
+ org.antlr.v4.runtime.tree;uses:="org.antlr.v4.runtime,org.antlr.v4.runtime.misc",
+ org.antlr.v4.runtime.tree.pattern;uses:="org.antlr.v4.runtime,org.antlr.v4.runtime.tree,org.antlr.v4.runtime.misc",
+ org.antlr.v4.runtime.tree.xpath;uses:="org.antlr.v4.runtime,org.antlr.v4.runtime.tree,org.antlr.v4.runtime.atn"

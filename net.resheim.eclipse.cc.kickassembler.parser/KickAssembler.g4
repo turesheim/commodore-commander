@@ -18,7 +18,7 @@ program         : line* EOF;
 
 line            : ( instruction | labelDeclaration | blockDeclaration | import_code )? EOL ;
 
-import_code     : P_IMPORT STRING_LITERAL;
+import_code     : ( P_IMPORT | P_IMPORTIF ) fileName=STRING_LITERAL;
 
 instruction     : labelDeclaration? OPCODE operand? ;
 
