@@ -55,12 +55,12 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 				// just build all roots, we currently cannot determine the tree
 				// of those files that have been removed
 				for (AssemblyFile assemblyFile : roots) {
-					buildAssembly(assemblyFile.getResource());
+					buildAssembly(assemblyFile);
 				}
 			} else {
 				for (AssemblyFile assemblyFile : roots) {
 					if (assemblyFile.containsResource(resource)) {
-						buildAssembly(assemblyFile.getResource());
+						buildAssembly(assemblyFile);
 					}
 				}
 			}
@@ -68,7 +68,6 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			return true;
 		}
 	}
-
 
 	private class TreeBuildingResourceVisitor implements IResourceVisitor {
 
@@ -152,10 +151,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
 	@Override
 	protected IProject[] build(int kind, Map<String, String> args, IProgressMonitor monitor) throws CoreException {
-		// TODO: Only clean those markers that are involved
-		getProject().deleteMarkers(MARKER_TYPE, true, IResource.DEPTH_INFINITE);
 		// Parse all assembly files and determine the import tree structure.
-		// This way we can limit th
 		afm.clear();
 		getProject().accept(new TreeBuildingResourceVisitor());
 		List<AssemblyFile> roots = afm.consolidateTrees();
@@ -179,34 +175,29 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 	}
 
 	protected void clean(IProgressMonitor monitor) throws CoreException {
-		// delete markers set and files created
-		getProject().deleteMarkers(MARKER_TYPE, true, IResource.DEPTH_INFINITE);
 	}
 
-	void buildAssembly(IResource resource) {
-		if (resource instanceof IFile && resource.getName().endsWith(".asm")) {
-			IFile file = (IFile) resource;
-			deleteMarkers(file);
-			KickAssemblerWrapper wrapper = new KickAssemblerWrapper();
-			MessageConsole console = ConsoleFactory.findConsole();
-			MessageConsoleStream out = console.newMessageStream();
-			wrapper.execute(new String[] { "-libdir", file.getProject().getFolder("library").getLocation().toOSString(),
-					file.getLocation().toOSString(), "-odir", "out", "-showmem", "-asminfo", "all", "-vicesymbols" },
-					out);
+	void buildAssembly(AssemblyFile assemblyFile) {
+		clearMarkers(assemblyFile);
+		IFile file = (IFile) assemblyFile.getResource();
+		KickAssemblerWrapper wrapper = new KickAssemblerWrapper();
+		MessageConsole console = ConsoleFactory.findConsole();
+		MessageConsoleStream out = console.newMessageStream();
+		wrapper.execute(new String[] { "-libdir", file.getProject().getFolder("library").getLocation().toOSString(),
+				file.getLocation().toOSString(), "-odir", "out", "-showmem", "-asminfo", "all", "-vicesymbols" }, out);
 
-			for (IDiagnostic iDiagnostic : wrapper.getState().diagnosticMgr.getErrors()) {
-				addDiagnosticMessage(iDiagnostic);
-			}
-			for (IDiagnostic iDiagnostic : wrapper.getState().diagnosticMgr.getWarnings()) {
-				addDiagnosticMessage(iDiagnostic);
-			}
-			// Make sure any changes in the file systems are reflected in the
-			// Eclipse viewers.
-			try {
-				resource.getProject().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
-			} catch (CoreException e) {
-				e.printStackTrace();
-			}
+		for (IDiagnostic iDiagnostic : wrapper.getState().diagnosticMgr.getErrors()) {
+			addDiagnosticMessage(iDiagnostic);
+		}
+		for (IDiagnostic iDiagnostic : wrapper.getState().diagnosticMgr.getWarnings()) {
+			addDiagnosticMessage(iDiagnostic);
+		}
+		// Make sure any changes in the file systems are reflected in the
+		// Eclipse viewers.
+		try {
+			file.getProject().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
+		} catch (CoreException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -227,9 +218,15 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
-	private void deleteMarkers(IFile file) {
+	private void clearMarkers(AssemblyFile file) {
 		try {
-			file.deleteMarkers(MARKER_TYPE, false, IResource.DEPTH_ZERO);
+			IResource r = file.getResource();
+			if (r != null) {
+				r.deleteMarkers(MARKER_TYPE, false, IResource.DEPTH_ZERO);
+			}
+			for (AssemblyFile child : file.getInclusions().values()) {
+				clearMarkers(child);
+			}
 		} catch (CoreException ce) {
 		}
 	}
@@ -237,7 +234,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 	private void fullBuild(final IProgressMonitor monitor, List<AssemblyFile> roots) throws CoreException {
 		// there is only a need to build the root files
 		for (AssemblyFile assemblyFile : roots) {
-			buildAssembly(assemblyFile.getResource());
+			buildAssembly(assemblyFile);
 		}
 	}
 
