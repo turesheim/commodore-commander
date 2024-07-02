@@ -40,7 +40,7 @@ public class AssemblyFile {
 
 	public void printTree(String indent) {
 		if (resource != null)
-		System.out.println(indent + resource.getName());
+			System.out.println(indent + resource.getName());
 		for (Map.Entry<IResource, AssemblyFile> entry : inclusions.entrySet()) {
 			entry.getValue().printTree(indent + "  ");
 		}
@@ -51,12 +51,14 @@ public class AssemblyFile {
 	}
 
 	public boolean containsResource(IResource targetResource) {
-		if (this.resource.equals(targetResource)) {
-			return true;
-		}
-		for (AssemblyFile child : inclusions.values()) {
-			if (child.containsResource(targetResource)) {
+		if (resource != null) {
+			if (this.resource.equals(targetResource)) {
 				return true;
+			}
+			for (AssemblyFile child : inclusions.values()) {
+				if (child.containsResource(targetResource)) {
+					return true;
+				}
 			}
 		}
 		return false;

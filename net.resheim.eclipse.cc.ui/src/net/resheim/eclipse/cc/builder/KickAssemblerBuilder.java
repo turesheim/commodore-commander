@@ -50,12 +50,18 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
 		@Override
 		public boolean visit(IResourceDelta delta) throws CoreException {
-			List<IResource> rootsToBuild = new ArrayList<>();
 			IResource resource = delta.getResource();
-			for (AssemblyFile assemblyFile : roots) {
-				if (assemblyFile.containsResource(resource)) {
-					rootsToBuild.add(assemblyFile.getResource());
+			if (delta.getKind() == IResourceDelta.REMOVED) {
+				// just build all roots, we currently cannot determine the tree
+				// of those files that have been removed
+				for (AssemblyFile assemblyFile : roots) {
 					buildAssembly(assemblyFile.getResource());
+				}
+			} else {
+				for (AssemblyFile assemblyFile : roots) {
+					if (assemblyFile.containsResource(resource)) {
+						buildAssembly(assemblyFile.getResource());
+					}
 				}
 			}
 			// return true to continue visiting children.
@@ -123,8 +129,10 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 				// determine whether or not the child is contained in the all
 				// files list, if so we will remove it since it has a parent
 				for (AssemblyFile base : allFiles) {
-					if (child.getResource().equals(base.getResource())) {
-						files.remove(base);
+					if (base.getResource() != null && child.getResource() != null) {
+						if (child.getResource().equals(base.getResource())) {
+							files.remove(base);
+						}
 					}
 				}
 			}
@@ -144,6 +152,8 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
 	@Override
 	protected IProject[] build(int kind, Map<String, String> args, IProgressMonitor monitor) throws CoreException {
+		// TODO: Only clean those markers that are involved
+		getProject().deleteMarkers(MARKER_TYPE, true, IResource.DEPTH_INFINITE);
 		// Parse all assembly files and determine the import tree structure.
 		// This way we can limit th
 		afm.clear();
