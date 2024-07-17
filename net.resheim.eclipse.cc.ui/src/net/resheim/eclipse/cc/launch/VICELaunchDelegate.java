@@ -23,15 +23,19 @@ import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.core.model.ILaunchConfigurationDelegate;
+import org.eclipse.debug.core.model.IProcess;
 import org.osgi.framework.Bundle;
 
 import com.pty4j.PtyProcess;
 import com.pty4j.PtyProcessBuilder;
 
+import net.resheim.eclipse.cc.vice.debug.VICEDebugTarget;
+
 /**
  * Don't really care about debug vs run mode currently
  */
 public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
+
 
 	private IPath findViceConfig(IPath file) {
 		IPath folder = file.removeLastSegments(1);
@@ -83,6 +87,13 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 					args.add(mcommands.toOSString());
 				}
 				args.add("-nativemonitor");
+
+//				// break as soon as the kernal is ready
+				args.add("-initbreak");
+				args.add("ready");
+				args.add("-binarymonitor");
+				args.add("-binarymonitoraddress");
+				args.add("127.0.0.1:6502");
 			}
 
 			// Point to the VICE configuration file if it exists
@@ -104,8 +115,11 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 					.start();
 
 			Map<String, String> attributes = new HashMap<>();
-			DebugPlugin.newProcess(launch, process, fileName, attributes);
-
+			IProcess newProcess = DebugPlugin.newProcess(launch, process, fileName, attributes);
+			if (debug) {
+				VICEDebugTarget debugTarget = new VICEDebugTarget(newProcess, launch);
+				launch.addDebugTarget(debugTarget);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
