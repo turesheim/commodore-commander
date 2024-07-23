@@ -16,9 +16,11 @@ import org.eclipse.debug.core.model.IRegisterGroup;
 import org.eclipse.debug.core.model.IStackFrame;
 import org.eclipse.debug.core.model.IThread;
 
+import net.resheim.eclipse.cc.disassembler.Disassembler;
 import net.resheim.eclipse.cc.vice.debug.IBinaryMonitor.Command;
 
 /**
+ * The one and only thread in this debug model.
  *
  * @since 1.0
  * @author Torkild Ulvøy Resheim
@@ -46,11 +48,14 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 	/** A re-usable stack frame */
 	private final VICEStackFrame stackFrame;
 
-	public VICEThread(IDebugTarget target, Socket socket) {
+	private final Disassembler disassembler;
+
+	public VICEThread(IDebugTarget target, Socket socket, Disassembler disassembler) {
 		super(target);
 		this.socket = socket;
+		this.disassembler = disassembler;
 		this.counter = new AtomicInteger();
-		this.stackFrame = new VICEStackFrame(this);
+		this.stackFrame = new VICEStackFrame(this, disassembler);
 		DebugPlugin.getDefault().addDebugEventListener(this);
 		createListener();
 	}
@@ -181,6 +186,13 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 		}
 	}
 
+	public static byte[] shortToBytes(short value) {
+		byte[] bytes = new byte[2];
+		bytes[0] = (byte) (value & 0xFF); // Low byte
+		bytes[1] = (byte) ((value >> 8) & 0xFF); // High byte
+		return bytes;
+	}
+
 	/**
 	 * Deal with the debug events that are triggered, typically by
 	 * {@link MonitorInputStreamListener} when responding to the VICE Monitor
@@ -201,7 +213,20 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 						if (!iRegisterGroup.hasRegisters()) {
 							sendCommand(Command.REGISTERS_AVAILABLE, new byte[] { 0x00 });
 						}
-					} catch (DebugException e) {
+						// the result from the command does state the start
+						// address, so it's hard to figure it out unless we
+						// somehow pass that value. We just get everything for now
+						sendCommand(Command.MEMORY_GET,
+								new byte[] { 0x00, // side effects
+										0x00, // start address LSB
+										0x00, // start address MSB
+										(byte) 0xff, // end address LSB
+										(byte) 0xff, // end address MSB
+										0x00, // memspace
+										0x00, // bank ID LSB
+										0x00 // bank ID MSB
+								});
+					} catch (Exception e) {
 						e.printStackTrace();
 					}
 				}
@@ -228,6 +253,14 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 				}
 			}
 		}
+	}
+
+	public Disassembler getDisassembler() {
+		return disassembler;
+	}
+
+	public byte[] getComputerMemory() {
+		return task.getComputerMemory();
 	}
 
 }

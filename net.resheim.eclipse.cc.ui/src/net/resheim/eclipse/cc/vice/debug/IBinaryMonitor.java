@@ -9,6 +9,11 @@ package net.resheim.eclipse.cc.vice.debug;
 public interface IBinaryMonitor {
 
 	public final byte[] EMPTY_COMMAND_BODY = {};
+	/**
+	 * A debug event detail notifying listeners that the computer memory has been
+	 * updated and a new disassembly should be executed.
+	 */
+	public final int DISASSEMBLE = 99;
 
 	public enum Response {
 		/**

@@ -6,6 +6,8 @@ import org.eclipse.debug.core.model.IStackFrame;
 import org.eclipse.debug.core.model.IThread;
 import org.eclipse.debug.core.model.IVariable;
 
+import net.resheim.eclipse.cc.disassembler.Disassembler;
+
 /**
  *
  * @since 1.0
@@ -16,11 +18,14 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 	/** A reusable register group */
 	private VICERegisterGroup registerGroup;
 
-	private IThread thread;
+	private final IThread thread;
 
-	public VICEStackFrame(IThread thread) {
+	private final Disassembler disassembler;
+
+	public VICEStackFrame(IThread thread, Disassembler disassembler) {
 		super(thread.getDebugTarget());
 		this.thread = thread;
+		this.disassembler = disassembler;
 		this.registerGroup = new VICERegisterGroup(getDebugTarget());
 	}
 
@@ -141,5 +146,9 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 	@Override
 	public boolean hasRegisterGroups() throws DebugException {
 		return true;
+	}
+
+	public short getProgramCounter() throws NumberFormatException, DebugException {
+		return registerGroup.getProgramCounter();
 	}
 }

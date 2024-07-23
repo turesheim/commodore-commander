@@ -18,6 +18,8 @@ public class VICERegisterGroup extends VICEDebugElement implements IRegisterGrou
 
 	private HashMap<Byte, VICERegister> registers = new HashMap<>();
 
+	private byte pcId;
+
 	public VICERegisterGroup(IDebugTarget target) {
 		super(target);
 	}
@@ -39,6 +41,9 @@ public class VICERegisterGroup extends VICEDebugElement implements IRegisterGrou
 
 	public void addRegister(byte id, String name, short value, byte size) {
 		registers.put(id, new VICERegister(getDebugTarget(), this, name, value, size));
+		if (name.equals("PC")) {
+			pcId = id;
+		}
 	}
 
 	public VICERegister getRegisterByName(String name) throws DebugException {
@@ -52,6 +57,15 @@ public class VICERegisterGroup extends VICEDebugElement implements IRegisterGrou
 	public VICERegister getRegisterById(Byte id) throws DebugException {
 		return registers.get(id);
 
+	}
+
+	public short getProgramCounter() throws DebugException {
+		VICERegister viceRegister = registers.get(pcId);
+		if (viceRegister != null) {
+			Scalar value = (Scalar) viceRegister.getValue();
+			return value.getValue();
+		}
+		return -1;
 	}
 
 }

@@ -9,6 +9,21 @@ import org.eclipse.debug.core.DebugEvent;
 import net.resheim.eclipse.cc.vice.debug.IBinaryMonitor.Command;
 import net.resheim.eclipse.cc.vice.debug.IBinaryMonitor.Response;
 
+/**
+ * This type handles the responsive end of the <i>VICE Binary Monitor</i>
+ * connection. It will keep a local representation of data obtained from the
+ * monitor.
+ *
+ * <p>
+ * Note that this type will fire {@link DebugEvent}s on behalf of the
+ * {@link VICEThread} whenever parsing of the monitor response or event is
+ * completed.
+ * </p>
+ *
+ * @since 1.0
+ * @author Torkild Ulvøy Resheim
+ *
+ */
 public class MonitorInputStreamListener implements Runnable {
 
 	private final InputStream inputStream;
@@ -19,7 +34,13 @@ public class MonitorInputStreamListener implements Runnable {
 	 * sent, since the emulator will respond by suspending and sending a list of
 	 * register values.
 	 */
-	private final short[] values = new short[256];
+	private final short[] registerValues = new short[256];
+
+	/**
+	 * The current value of the computer's memory. 64kiB in this case as we are
+	 * targetting the Commodore 64.
+	 */
+	private final byte[] computerMemory = new byte[65_536];
 
 
 	public MonitorInputStreamListener(VICEThread viceThread, InputStream inputStream) {
@@ -105,6 +126,9 @@ public class MonitorInputStreamListener implements Runnable {
 		}
 		else if (header.responseType == Response.RESUMED.getCode())
 			thread.fireResumeEvent(0);
+		else if (header.responseType == Command.MEMORY_GET.getCode())
+			// TODO Handle that we may not be reading the entire 64k
+			parseMemoryGet(bodyBytes);
 		else if (header.responseType == Command.QUIT.getCode())
 			// VICE will typically segfault here, and it appears there is nothing we can do
 			// about it - we can avoid it by killing the IProcess first, but that is nasty
@@ -139,7 +163,7 @@ public class MonitorInputStreamListener implements Runnable {
 					sb.append(n);
 				} // for char
 				if (registerGroup.getRegisterById(id) == null) {
-					registerGroup.addRegister(id, sb.toString(), values[id], bitSize);
+					registerGroup.addRegister(id, sb.toString(), registerValues[id], bitSize);
 				}
 			} // for item
 		} catch (Exception e) {
@@ -174,7 +198,7 @@ public class MonitorInputStreamListener implements Runnable {
 				// get the value // length is three or more!
 				if (size == 3) {
 					short value = buffer.getShort();
-					values[id] = (short) value;
+					registerValues[id] = (short) value;
 					if (registerGroup.getRegisterById(id) != null) {
 						registerGroup.getRegisterById(id).internalSetValue(value);
 					}
@@ -187,5 +211,27 @@ public class MonitorInputStreamListener implements Runnable {
 		}
 	}
 
+	private void parseMemoryGet(byte[] responseBody) {
+		// the response sadly does _not_ contain the starting address and we
+		// have no way of knowing that unless connected to the command that requested
+		// this data – therefore we will always read the full 64kiB each time
+		try {
+			ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
+			buffer.order(ByteOrder.LITTLE_ENDIAN); // Set buffer to little endian
+			int items = buffer.getShort() & 0xFF; // Length of the memory segment
+			if (items == 0)
+				items = 65_535;
+			for (int i = 0; i < items; i++) {
+				getComputerMemory()[i] = buffer.get();
+			}
+			thread.fireEvent(new DebugEvent(thread, DebugEvent.MODEL_SPECIFIC, IBinaryMonitor.DISASSEMBLE));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public byte[] getComputerMemory() {
+		return computerMemory;
+	}
 
 }
