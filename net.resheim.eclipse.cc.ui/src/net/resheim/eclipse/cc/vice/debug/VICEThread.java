@@ -4,7 +4,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.debug.core.DebugEvent;
@@ -21,6 +20,7 @@ import net.resheim.eclipse.cc.disassembler.Disassembler;
 import net.resheim.eclipse.cc.vice.debug.IBinaryMonitor.Command;
 
 /**
+ * The one and only thread in this debug model.
  *
  * @since 1.0
  * @author Torkild Ulvøy Resheim
@@ -213,10 +213,9 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 						if (!iRegisterGroup.hasRegisters()) {
 							sendCommand(Command.REGISTERS_AVAILABLE, new byte[] { 0x00 });
 						}
-						short programCounter = stackFrame.getProgramCounter();
-//						if (programCounter > 0) {
-//							byte[] start = shortToBytes(programCounter);
-//							byte[] end = shortToBytes((short) (programCounter + 256));
+						// the result from the command does state the start
+						// address, so it's hard to figure it out unless we
+						// somehow pass that value. We just get everything for now
 						sendCommand(Command.MEMORY_GET,
 								new byte[] { 0x00, // side effects
 										0x00, // start address LSB
@@ -227,17 +226,6 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 										0x00, // bank ID LSB
 										0x00 // bank ID MSB
 								});
-//						sendCommand(Command.MEMORY_GET,
-//								new byte[] { 0x00, // side effects
-//										start[0], // start address LSB
-//										start[1], // start address MSB
-//										end[0], // end address LSB
-//										end[1], // end address MSB
-//										0x00, // memspace
-//										0x00, // bank ID LSB
-//										0x00 // bank ID MSB
-//								});
-//						}
 					} catch (Exception e) {
 						e.printStackTrace();
 					}

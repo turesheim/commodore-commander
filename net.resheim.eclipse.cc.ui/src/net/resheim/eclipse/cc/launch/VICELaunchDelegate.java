@@ -35,7 +35,11 @@ import net.resheim.eclipse.cc.disassembler.LabelFileParser;
 import net.resheim.eclipse.cc.vice.debug.VICEDebugTarget;
 
 /**
- * Don't really care about debug vs run mode currently
+ * Launch delegate for the VICE emulator supporting both <i>run</i> and
+ * <i>debug</i> modes.
+ *
+ * @since 1.0
+ * @author Torkild Ulvøy Resheim
  */
 public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 
@@ -68,7 +72,7 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 			IProject project = root.getProject(projectName);
 			IFile file = project.getFile(fileName);
 
-			// We're assuming that there is a viceconfig somewhere in the
+			// We're looking for a viceconfig somewhere in the
 			// program file's folder or in one of the parent folders.
 			IPath viceconfig = findViceConfig(file.getRawLocation());
 
@@ -92,14 +96,19 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 					args.add(mcommands.toOSString());
 					labels = LabelFileParser.parse(mcommands.toFile());
 				}
+				// In case one wants to telnet to the address and use the text
+				// mode monitor
 				args.add("-remotemonitor");
 				args.add("-remotemonitoraddress");
 				args.add("127.0.0.1:6510");
 
+				// Open port for the binary monitor that is implemented in the
+				// net.resheim.eclipse.cc.vice.debug package
 				args.add("-binarymonitor");
 				args.add("-binarymonitoraddress");
 				args.add("127.0.0.1:6502");
-				// break as soon as the kernal is ready
+				// Break as soon as the kernal is ready, this should part of the
+				// launch configuration setting
 				args.add("-initbreak");
 				args.add("ready");
 			}
@@ -110,7 +119,7 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 				args.add(viceconfig.toOSString());
 			}
 
-			// Add the commodore program file
+			// Add the path to the program file
 			args.add(file.getRawLocation().toPath().toString()); // $NON-NLS-1$
 
 			Map<String, String> env = new HashMap<>(System.getenv());

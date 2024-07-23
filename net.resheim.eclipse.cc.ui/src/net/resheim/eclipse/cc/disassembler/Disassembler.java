@@ -41,6 +41,9 @@ public class Disassembler {
 		/** BRK */
 		IMPLIED;
 
+		/**
+		 * @return the number of bytes required for the instruction
+		 */
 		public int getLength() {
 			switch (this.name()) {
 			case "IMMEDIATE":
@@ -433,10 +436,15 @@ public class Disassembler {
 
 	public List<Disassembly> disassemble(byte[] code) {
 		List<Disassembly> instructions = new ArrayList<>();
-		for (int address = 0; address < code.length - 3;) {
-			//
+		int address = 0;
+		do {
+			if (address >= code.length) {
+				break;
+			}
 			int opCode = Byte.toUnsignedInt(code[address]);
 			Opcode op = opcodeTable.get(opCode);
+
+			// get the length of the operation
 			int length = op.mode.getLength();
 
 			StringBuilder sb = new StringBuilder();
@@ -458,6 +466,7 @@ public class Disassembler {
 			} else {
 				sb.append("   ");
 			}
+
 			sb.append("   ");
 
 			sb.append(op.mnemonic.toLowerCase());
@@ -483,7 +492,6 @@ public class Disassembler {
 				} else {
 					sb.append(" $" + String.format("%04X", pointer_address));
 				}
-				// sb.append(" $" + String.format("%04X", pointer));
 				if (op.mode == AddressingMode.ABSOLUTE_X)
 					sb.append(",X");
 				if (op.mode == AddressingMode.ABSOLUTE_Y)
@@ -510,7 +518,7 @@ public class Disassembler {
 			}
 			instructions.add(new Disassembly(address, sb.toString(), length));
 			address += length;
-		}
+		} while (true);
 		return instructions;
 	}
 }
