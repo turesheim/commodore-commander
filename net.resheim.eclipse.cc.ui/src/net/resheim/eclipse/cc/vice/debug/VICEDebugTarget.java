@@ -12,6 +12,8 @@ import org.eclipse.debug.core.model.IMemoryBlock;
 import org.eclipse.debug.core.model.IProcess;
 import org.eclipse.debug.core.model.IThread;
 
+import net.resheim.eclipse.cc.disassembler.Disassembler;
+
 /**
  * Delegates mostly to IThread, except for opening the socket communication with
  * the VICE Debug Monitor.
@@ -23,22 +25,22 @@ public class VICEDebugTarget extends VICEDebugElement implements IDebugTarget {
 
 	private static final int MAX_CONNECTION_ATTEMPTS = 30;
 
-	ILaunch launch;
+	private ILaunch launch;
 
-	IProcess process;
+	private IProcess process;
 
 	/** Connection to VICE Binary Monitor (localhost:6502) */
-	Socket socket;
+	private Socket socket;
 
 	/** We have only one thread */
-	IThread thread;
+	private IThread thread;
 
-	public VICEDebugTarget(IProcess process, ILaunch launch) {
+	public VICEDebugTarget(IProcess process, ILaunch launch, Disassembler disassembler) {
 		super(null);
 		this.process = process;
 		this.launch = launch;
 		this.socket = connect();
-		this.thread = new VICEThread(this, socket);
+		this.thread = new VICEThread(this, socket, disassembler);
 		fireCreationEvent();
 	}
 

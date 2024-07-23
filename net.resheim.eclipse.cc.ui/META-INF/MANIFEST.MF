@@ -4,6 +4,7 @@ Bundle-Name: Commodore Commander
 Bundle-SymbolicName: net.resheim.eclipse.cc.ui;singleton:=true
 Bundle-Vendor: Torkild U. Resheim
 Bundle-Version: 1.0.0.qualifier
+Import-Package: jakarta.inject;version="[2.0.0,3.0.0)"
 Automatic-Module-Name: net.resheim.eclipse.cc.ui
 Bundle-ActivationPolicy: lazy
 Bundle-Activator: net.resheim.eclipse.cc.editor.CommodoreCommanderPlugin

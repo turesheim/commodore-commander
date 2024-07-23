@@ -62,4 +62,8 @@ public class Scalar extends VICEDebugElement implements IValue {
 		this.value = value;
 	}
 
+	public short getValue() {
+		return value;
+	}
+
 }

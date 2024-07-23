@@ -208,5 +208,63 @@
             id="net.resheim.eclipse.cc.ui.launchConfigurationTypeImage">
       </launchConfigurationTypeImage>
    </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            id="net.resheim.eclipse.cc.ui"
+            name="Debug">
+      </category>
+      <view
+            category="net.resheim.eclipse.cc.ui"
+            class="net.resheim.eclipse.cc.ui.views.DisassemblyView"
+            icon="icons/disassembly_view.gif"
+            id="net.resheim.eclipse.cc.ui.views.DisassemblyView"
+            inject="true"
+            name="Disassembly">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.eclipse.jdt.ui.JavaPerspective">
+         <view
+               id="net.resheim.eclipse.cc.ui.views.DisassemblyView"
+               ratio="0.5"
+               relationship="right"
+               relative="org.eclipse.ui.views.ProblemView">
+         </view>
+      </perspectiveExtension>
+   </extension>
+   <extension
+         point="org.eclipse.help.contexts">
+      <contexts
+            file="contexts.xml">
+      </contexts>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors.annotationTypes">
+      <type
+            markerSeverity="0"
+            name="net.resheim.eclipse.cc.pc">
+      </type>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors.markerAnnotationSpecification">
+      <specification
+            annotationType="net.resheim.eclipse.cc.pc"
+            colorPreferenceKey="pcIndicatorColor"
+            colorPreferenceValue="212,212,212"
+            highlightPreferenceKey="pcIndicatorHighlight"
+            highlightPreferenceValue="true"
+            icon="icons/inst_ptr_top.png"
+            includeOnPreferencePage="true"
+            label="Program Counter"
+            overviewRulerPreferenceKey="pcIndicatorOverviewRuler"
+            overviewRulerPreferenceValue="true"
+            presentationLayer="4"
+            verticalRulerPreferenceKey="pcIndicatorVerticalRuler"
+            verticalRulerPreferenceValue="true">
+      </specification>
+   </extension>
 
 </plugin>

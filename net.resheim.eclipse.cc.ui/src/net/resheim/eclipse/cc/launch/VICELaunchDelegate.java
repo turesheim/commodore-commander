@@ -29,6 +29,9 @@ import org.osgi.framework.Bundle;
 import com.pty4j.PtyProcess;
 import com.pty4j.PtyProcessBuilder;
 
+import net.resheim.eclipse.cc.disassembler.Disassembler;
+import net.resheim.eclipse.cc.disassembler.Label;
+import net.resheim.eclipse.cc.disassembler.LabelFileParser;
 import net.resheim.eclipse.cc.vice.debug.VICEDebugTarget;
 
 /**
@@ -78,6 +81,8 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 			File x64sc = new File(FileLocator.toFileURL(fileURL).getPath());
 			args.add(x64sc.toString());
 
+			HashMap<Integer, Label> labels = new HashMap<>();
+
 			// We only need to set the monitor commands file if we intend to do
 			// debugging – assuming that KickAssembler has created it.
 			if (debug) {
@@ -85,15 +90,18 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 				if (mcommands.toFile().exists()) {
 					args.add("-moncommands");
 					args.add(mcommands.toOSString());
+					labels = LabelFileParser.parse(mcommands.toFile());
 				}
-				args.add("-nativemonitor");
+				args.add("-remotemonitor");
+				args.add("-remotemonitoraddress");
+				args.add("127.0.0.1:6510");
 
-//				// break as soon as the kernal is ready
-				args.add("-initbreak");
-				args.add("ready");
 				args.add("-binarymonitor");
 				args.add("-binarymonitoraddress");
 				args.add("127.0.0.1:6502");
+				// break as soon as the kernal is ready
+				args.add("-initbreak");
+				args.add("ready");
 			}
 
 			// Point to the VICE configuration file if it exists
@@ -117,7 +125,8 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 			Map<String, String> attributes = new HashMap<>();
 			IProcess newProcess = DebugPlugin.newProcess(launch, process, fileName, attributes);
 			if (debug) {
-				VICEDebugTarget debugTarget = new VICEDebugTarget(newProcess, launch);
+				Disassembler disassembler = new Disassembler(labels);
+				VICEDebugTarget debugTarget = new VICEDebugTarget(newProcess, launch, disassembler);
 				launch.addDebugTarget(debugTarget);
 			}
 		} catch (Exception e) {
