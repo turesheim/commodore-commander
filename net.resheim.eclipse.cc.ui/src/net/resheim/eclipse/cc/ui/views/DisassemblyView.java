@@ -108,8 +108,7 @@ public class DisassemblyView extends ViewPart implements IDebugEventSetListener 
 		ColorRegistry colorRegistry = currentTheme.getColorRegistry();
 		annotationRuler.setBackground(colorRegistry.get("org.eclipse.ui.workbench.ACTIVE_TAB_BG_START"));
 
-		viewer = new TMViewer(parent, cr, null, isListenerAttached(), SWT.BORDER | SWT.V_SCROLL);
-		// viewer = new SourceViewer(parent, cr, SWT.BORDER | SWT.V_SCROLL);
+		viewer = new SourceViewer(parent, cr, SWT.BORDER | SWT.V_SCROLL);
 		viewer.setEditable(false); // TODO: consider making it editable
 
 		Font font = JFaceResources.getTextFont();
