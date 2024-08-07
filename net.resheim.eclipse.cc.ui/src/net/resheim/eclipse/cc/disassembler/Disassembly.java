@@ -1,7 +1,7 @@
 package net.resheim.eclipse.cc.disassembler;
 
 /**
- * First iteration of a 6502 disassembler.
+ * This type represents one disassembled instruction.
  *
  * @since 1.0
  * @author Torkild Ulvøy Resheim

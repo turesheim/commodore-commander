@@ -438,7 +438,7 @@ public class Disassembler {
 		List<Disassembly> instructions = new ArrayList<>();
 		int address = 0;
 		do {
-			if (address >= code.length) {
+			if (address == code.length || address >= 65_535) {
 				break;
 			}
 			int opCode = Byte.toUnsignedInt(code[address]);
