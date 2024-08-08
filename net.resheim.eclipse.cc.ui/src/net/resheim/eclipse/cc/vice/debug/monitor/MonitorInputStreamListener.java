@@ -14,12 +14,12 @@ import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.IBreakpointManager;
 import org.eclipse.debug.core.model.IBreakpoint;
 
-import net.resheim.eclipse.cc.disassembler.Checkpoint;
-import net.resheim.eclipse.cc.disassembler.Checkpoint.Operation;
+import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
 import net.resheim.eclipse.cc.vice.debug.model.VICERegisterGroup;
 import net.resheim.eclipse.cc.vice.debug.model.VICEStackFrame;
 import net.resheim.eclipse.cc.vice.debug.model.VICEThread;
+import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Operation;
 import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.Command;
 import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.Response;
 

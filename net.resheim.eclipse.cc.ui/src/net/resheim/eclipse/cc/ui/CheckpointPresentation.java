@@ -7,7 +7,7 @@ import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IEditorInput;
 
-import net.resheim.eclipse.cc.disassembler.Checkpoint;
+import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
 
 public class CheckpointPresentation implements IDebugModelPresentation {
 

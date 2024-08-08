@@ -1,4 +1,4 @@
-package net.resheim.eclipse.cc.disassembler;
+package net.resheim.eclipse.cc.vice.debug.model;
 
 import java.util.EnumSet;
 
@@ -8,8 +8,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.model.Breakpoint;
 import org.eclipse.debug.core.model.IBreakpoint;
-
-import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
 
 /**
  *

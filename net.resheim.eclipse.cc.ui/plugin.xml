@@ -269,7 +269,7 @@
    <extension
          point="org.eclipse.debug.core.breakpoints">
       <breakpoint
-            class="net.resheim.eclipse.cc.disassembler.Checkpoint"
+            class="net.resheim.eclipse.cc.vice.debug.model.Checkpoint"
             id="net.resheim.eclipse.cc.checkpoint"
             markerType="net.resheim.eclipse.cc.checkpointMarker"
             name="Checkpoint">

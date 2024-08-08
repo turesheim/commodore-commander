@@ -18,7 +18,6 @@ import org.eclipse.debug.core.model.IMemoryBlock;
 import org.eclipse.debug.core.model.IProcess;
 import org.eclipse.debug.core.model.IThread;
 
-import net.resheim.eclipse.cc.disassembler.Checkpoint;
 import net.resheim.eclipse.cc.disassembler.Disassembler;
 
 /**
