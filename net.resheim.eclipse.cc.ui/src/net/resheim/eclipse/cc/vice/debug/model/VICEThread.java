@@ -1,4 +1,4 @@
-package net.resheim.eclipse.cc.vice.debug;
+package net.resheim.eclipse.cc.vice.debug.model;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -18,7 +18,9 @@ import org.eclipse.debug.core.model.IStackFrame;
 import org.eclipse.debug.core.model.IThread;
 
 import net.resheim.eclipse.cc.disassembler.Disassembler;
-import net.resheim.eclipse.cc.vice.debug.IBinaryMonitor.Command;
+import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor;
+import net.resheim.eclipse.cc.vice.debug.monitor.MonitorInputStreamListener;
+import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.Command;
 
 /**
  * The one and only thread in this debug model.

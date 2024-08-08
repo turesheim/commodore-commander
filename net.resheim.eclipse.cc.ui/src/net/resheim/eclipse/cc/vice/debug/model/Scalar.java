@@ -1,4 +1,4 @@
-package net.resheim.eclipse.cc.vice.debug;
+package net.resheim.eclipse.cc.vice.debug.model;
 
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IDebugTarget;

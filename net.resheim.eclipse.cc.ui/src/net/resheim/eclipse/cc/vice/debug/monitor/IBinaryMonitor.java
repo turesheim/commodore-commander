@@ -1,4 +1,4 @@
-package net.resheim.eclipse.cc.vice.debug;
+package net.resheim.eclipse.cc.vice.debug.monitor;
 
 /**
  * Various constants related to the VICE Binary Monitor.

@@ -1,4 +1,4 @@
-package net.resheim.eclipse.cc.vice.debug;
+package net.resheim.eclipse.cc.vice.debug.model;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;

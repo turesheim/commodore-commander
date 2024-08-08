@@ -9,7 +9,7 @@ import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.model.Breakpoint;
 import org.eclipse.debug.core.model.IBreakpoint;
 
-import net.resheim.eclipse.cc.vice.debug.VICEDebugTarget;
+import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
 
 /**
  *

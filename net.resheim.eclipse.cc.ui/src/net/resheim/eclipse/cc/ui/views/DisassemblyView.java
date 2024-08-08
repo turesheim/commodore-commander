@@ -46,9 +46,9 @@ import org.eclipse.ui.themes.ITheme;
 import jakarta.inject.Inject;
 import net.resheim.eclipse.cc.disassembler.Disassembler;
 import net.resheim.eclipse.cc.disassembler.Disassembly;
-import net.resheim.eclipse.cc.vice.debug.IBinaryMonitor;
-import net.resheim.eclipse.cc.vice.debug.VICEStackFrame;
-import net.resheim.eclipse.cc.vice.debug.VICEThread;
+import net.resheim.eclipse.cc.vice.debug.model.VICEStackFrame;
+import net.resheim.eclipse.cc.vice.debug.model.VICEThread;
+import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor;
 
 public class DisassemblyView extends ViewPart implements IDebugEventSetListener {
 

@@ -32,7 +32,7 @@ import com.pty4j.PtyProcessBuilder;
 import net.resheim.eclipse.cc.disassembler.Disassembler;
 import net.resheim.eclipse.cc.disassembler.Label;
 import net.resheim.eclipse.cc.disassembler.LabelFileParser;
-import net.resheim.eclipse.cc.vice.debug.VICEDebugTarget;
+import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
 
 /**
  * Launch delegate for the VICE emulator supporting both <i>run</i> and
