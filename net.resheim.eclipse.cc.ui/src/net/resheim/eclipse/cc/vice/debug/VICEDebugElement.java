@@ -11,13 +11,15 @@ import org.eclipse.debug.core.model.IDebugTarget;
  */
 public class VICEDebugElement extends DebugElement {
 
+	public static final String DEBUG_MODEL_ID = "net.resheim.eclipse.cc.vice.debug";
+
 	public VICEDebugElement(IDebugTarget target) {
 		super(target);
 	}
 
 	@Override
 	public String getModelIdentifier() {
-		return "net.resheim.eclipse.cc.vice.debug";
+		return DEBUG_MODEL_ID;
 	}
 
 }
