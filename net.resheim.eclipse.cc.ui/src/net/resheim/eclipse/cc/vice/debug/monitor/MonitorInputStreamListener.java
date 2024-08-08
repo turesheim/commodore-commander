@@ -3,10 +3,7 @@ package net.resheim.eclipse.cc.vice.debug.monitor;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.Map;
 
-import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugEvent;
@@ -15,11 +12,11 @@ import org.eclipse.debug.core.IBreakpointManager;
 import org.eclipse.debug.core.model.IBreakpoint;
 
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
+import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Operation;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
 import net.resheim.eclipse.cc.vice.debug.model.VICERegisterGroup;
 import net.resheim.eclipse.cc.vice.debug.model.VICEStackFrame;
 import net.resheim.eclipse.cc.vice.debug.model.VICEThread;
-import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Operation;
 import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.Command;
 import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.Response;
 
@@ -96,6 +93,7 @@ public class MonitorInputStreamListener implements Runnable {
 
 				} // if
 			} // while
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

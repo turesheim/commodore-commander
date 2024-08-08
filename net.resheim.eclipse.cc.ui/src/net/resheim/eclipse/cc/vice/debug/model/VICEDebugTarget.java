@@ -4,13 +4,9 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 import org.eclipse.core.resources.IMarkerDelta;
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.debug.core.DebugEvent;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.DebugPlugin;
-import org.eclipse.debug.core.IBreakpointListener;
 import org.eclipse.debug.core.IBreakpointManagerListener;
-import org.eclipse.debug.core.IBreakpointsListener;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.model.IBreakpoint;
 import org.eclipse.debug.core.model.IDebugTarget;
@@ -24,8 +20,6 @@ import net.resheim.eclipse.cc.disassembler.Disassembler;
  * Delegates mostly to IThread, except for opening the socket communication with
  * the VICE Debug Monitor.
  *
- * https://git.eclipse.org/r/plugins/gitiles/platform/eclipse.platform.debug/+/1c1d17b82a223fb8fcc69b4883a71b8744899ccb/org.eclipse.debug.examples.core/src/org/eclipse/debug/examples/core/pda/model/PDADebugTarget.java
- *
  * @since 1.0
  * @author Torkild Ulvøy Resheim
  */
@@ -36,6 +30,7 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	private ILaunch launch;
 
+	/** The associated system process */
 	private IProcess process;
 
 	/** Connection to VICE Binary Monitor (localhost:6502) */

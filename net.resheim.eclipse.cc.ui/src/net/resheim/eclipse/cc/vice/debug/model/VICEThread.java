@@ -58,7 +58,7 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 		this.socket = socket;
 		this.disassembler = disassembler;
 		this.counter = new AtomicInteger();
-		this.stackFrame = new VICEStackFrame(this, disassembler);
+		this.stackFrame = new VICEStackFrame(this);
 		DebugPlugin.getDefault().addDebugEventListener(this);
 		createMonitorInterface();
 	}

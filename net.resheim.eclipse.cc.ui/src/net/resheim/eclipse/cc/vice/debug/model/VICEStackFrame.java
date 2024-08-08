@@ -6,8 +6,6 @@ import org.eclipse.debug.core.model.IStackFrame;
 import org.eclipse.debug.core.model.IThread;
 import org.eclipse.debug.core.model.IVariable;
 
-import net.resheim.eclipse.cc.disassembler.Disassembler;
-
 /**
  *
  * @since 1.0
@@ -20,12 +18,9 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 
 	private final IThread thread;
 
-	private final Disassembler disassembler;
-
-	public VICEStackFrame(IThread thread, Disassembler disassembler) {
+	public VICEStackFrame(IThread thread) {
 		super(thread.getDebugTarget());
 		this.thread = thread;
-		this.disassembler = disassembler;
 		this.registerGroup = new VICERegisterGroup(getDebugTarget());
 	}
 
