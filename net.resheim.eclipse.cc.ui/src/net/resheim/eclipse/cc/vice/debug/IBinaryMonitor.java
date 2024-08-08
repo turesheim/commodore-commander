@@ -29,7 +29,7 @@ public interface IBinaryMonitor {
 		 * Response code: <b><code>0x31</code></b>
 		 * <p>
 		 */
-		REGISTER((byte) 0x31),
+		REGISTER_INFO((byte) 0x31),
 		/**
 		 * When the CPU jams
 		 * <p>
@@ -59,7 +59,7 @@ public interface IBinaryMonitor {
 		 * Response code: <b><code>0x11</code></b>
 		 * <p>
 		 */
-		CHECKPOINT((byte) 0x11);
+		CHECKPOINT_INFO((byte) 0x11);
 
 		private final byte code;
 
@@ -328,7 +328,7 @@ public interface IBinaryMonitor {
 					return cmd.name();
 				}
 			}
-			return "Unknown command";
+			return "Unknown command " + code;
 		}
 
 		public static boolean hasCode(byte code) {

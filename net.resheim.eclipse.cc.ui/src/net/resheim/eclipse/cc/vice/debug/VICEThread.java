@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.debug.core.DebugEvent;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.DebugPlugin;
+import org.eclipse.debug.core.IBreakpointManager;
 import org.eclipse.debug.core.IDebugEventSetListener;
 import org.eclipse.debug.core.model.IBreakpoint;
 import org.eclipse.debug.core.model.IDebugTarget;
@@ -57,7 +58,7 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 		this.counter = new AtomicInteger();
 		this.stackFrame = new VICEStackFrame(this, disassembler);
 		DebugPlugin.getDefault().addDebugEventListener(this);
-		createListener();
+		createMonitorInterface();
 	}
 
 	@Override
@@ -160,10 +161,13 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 
 	@Override
 	public IBreakpoint[] getBreakpoints() {
-		return new IBreakpoint[0];
+		// TODO: Return the limited set
+		IBreakpointManager breakpointManager = DebugPlugin.getDefault().getBreakpointManager();
+		IBreakpoint[] breakpoints = breakpointManager.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
+		return breakpoints;
 	}
 
-	private void createListener() {
+	private void createMonitorInterface() {
 		try {
 			out = new DataOutputStream(socket.getOutputStream());
 			in = new DataInputStream(socket.getInputStream());
@@ -175,9 +179,25 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 		}
 	}
 
-	private void sendCommand(Command command, byte[] commandBody) {
+	private static String byteToHex(byte b) {
+		String hex = Integer.toHexString(b & 0xFF);
+		return hex.length() == 1 ? "0" + hex : hex;
+	}
+
+	private synchronized void sendCommand(Command command, byte[] commandBody) {
+		int id = counter.incrementAndGet();
+		StringBuilder sb = new StringBuilder();
+		sb.append("<<< Request : ID " + String.format("$%08X", id));
+		sb.append(", type " + String.format("$%02X", command.getCode()) + " (" + command.name() + ")");
+		sb.append(", length " + commandBody.length);
+		sb.append(", body ");
+		for (byte b : commandBody) {
+			sb.append(byteToHex(b));
+			sb.append(" ");
+		}
+		System.out.println(sb);
 		try {
-			Message msg = new Message(counter.incrementAndGet(), command.getCode(), commandBody);
+			Message msg = new Message(id, command.getCode(), commandBody);
 			byte[] messageToSend = msg.buildMessage();
 			out.write(messageToSend);
 			out.flush();
@@ -205,7 +225,6 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 				System.out.println("VICEThread.handleDebugEvents(" + event + ")");
 				if (DebugEvent.SUSPEND == event.getKind()) {
 					currentState = State.SUSPENDED;
-					// Do we have register name? If not, get them
 					try {
 						// we assume the first register is the main CPU
 						IRegisterGroup iRegisterGroup = stackFrame.getRegisterGroups()[0];
@@ -213,9 +232,10 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 						if (!iRegisterGroup.hasRegisters()) {
 							sendCommand(Command.REGISTERS_AVAILABLE, new byte[] { 0x00 });
 						}
-						// the result from the command does state the start
-						// address, so it's hard to figure it out unless we
-						// somehow pass that value. We just get everything for now
+						// the result from the command does NOT include the
+						// start address of the data included, so it's hard to
+						// figure it out unless we somehow pass that value. We
+						// just read out the entire 64kiB for now.
 						sendCommand(Command.MEMORY_GET,
 								new byte[] { 0x00, // side effects
 										0x00, // start address LSB
@@ -226,6 +246,10 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 										0x00, // bank ID LSB
 										0x00 // bank ID MSB
 								});
+						// update the list of breakpoints, some may have been
+						// set by code or even another manually connected
+						// monitor
+						sendCommand(Command.CHECKPOINT_LIST, new byte[] {});
 					} catch (Exception e) {
 						e.printStackTrace();
 					}

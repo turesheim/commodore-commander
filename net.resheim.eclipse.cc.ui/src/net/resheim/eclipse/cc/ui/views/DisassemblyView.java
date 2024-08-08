@@ -238,7 +238,6 @@ public class DisassemblyView extends ViewPart implements IDebugEventSetListener 
 										IDocument document = viewer.getDocument();
 
 										try {
-											// Just add a breakpoint to for demonstration
 											int startOffset;
 											startOffset = document.getLineOffset(line - 1);
 											int length = document.getLineLength(line - 1);

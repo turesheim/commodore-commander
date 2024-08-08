@@ -3,21 +3,30 @@ package net.resheim.eclipse.cc.vice.debug;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugEvent;
+import org.eclipse.debug.core.DebugPlugin;
+import org.eclipse.debug.core.IBreakpointManager;
+import org.eclipse.debug.core.model.IBreakpoint;
 
+import net.resheim.eclipse.cc.disassembler.Checkpoint;
+import net.resheim.eclipse.cc.disassembler.Checkpoint.Operation;
 import net.resheim.eclipse.cc.vice.debug.IBinaryMonitor.Command;
 import net.resheim.eclipse.cc.vice.debug.IBinaryMonitor.Response;
 
 /**
  * This type handles the responsive end of the <i>VICE Binary Monitor</i>
  * connection. It will keep a local representation of data obtained from the
- * monitor.
+ * monitor and respond to events.
  *
  * <p>
- * Note that this type will fire {@link DebugEvent}s on behalf of the
- * {@link VICEThread} whenever parsing of the monitor response or event is
- * completed.
+ * This type will fire {@link DebugEvent}s on behalf of the {@link VICEThread}
+ * whenever parsing of the monitor response or event is completed.
  * </p>
  *
  * @since 1.0
@@ -38,10 +47,9 @@ public class MonitorInputStreamListener implements Runnable {
 
 	/**
 	 * The current value of the computer's memory. 64kiB in this case as we are
-	 * targetting the Commodore 64.
+	 * targeting the Commodore 64s main main memory.
 	 */
 	private final byte[] computerMemory = new byte[65_536];
-
 
 	public MonitorInputStreamListener(VICEThread viceThread, InputStream inputStream) {
 		this.inputStream = inputStream;
@@ -95,53 +103,99 @@ public class MonitorInputStreamListener implements Runnable {
 		return hex.length() == 1 ? "0" + hex : hex;
 	}
 
-	public void parseResponse(MessageResponse header, byte[] bodyBytes) {
+	private synchronized void parseResponse(MessageResponse header, byte[] responseBody) {
 
 		// ----------------------------------------------------------------------
 		// Use this for debugging, clean up and reimplement later
 		byte code = header.responseType;
 		// Some codes are reused for Response and command, response is probably
-		// the most accurate.
+		// the most accurate in this context.
 		String type = Response.hasCode(code) ? Response.getNameFromCode(code) : Command.getNameFromCode(code);
 		StringBuilder sb = new StringBuilder();
 		sb.append(">>> Response: ID " + String.format("$%08X", header.requestId));
-		sb.append(", error " + String.format("$%02X", header.errorCode));
 		sb.append(", type " + String.format("$%02X", header.responseType) + " ("
 				+ type + ")");
+		sb.append(", error " + String.format("$%02X", header.errorCode));
 		sb.append(", length " + header.bodyLength);
 		sb.append(", body ");
-		for (byte b : bodyBytes) {
+		for (int i = 0; i < responseBody.length; i++) {
+			byte b = responseBody[i];
 			sb.append(byteToHex(b));
 			sb.append(" ");
+			if (i == 31) {
+				sb.append("…");
+				break;
+			}
 		}
+		// print some debug info
 		System.out.println(sb);
+
 		// ----------------------------------------------------------------------
 
 		if (header.responseType == Response.STOPPED.getCode())
 			thread.fireSuspendEvent(0);
-		else if (header.responseType == Response.CHECKPOINT.getCode()) {
-			System.err.println("IMPLEMENT CHECKPOINT");
-			// code må være checkpoint nummer
-			thread.fireEvent(new DebugEvent(thread, DebugEvent.SUSPEND, DebugEvent.BREAKPOINT));
-		}
+		else if (header.responseType == Response.CHECKPOINT_INFO.getCode())
+			parseCheckpointInfo(responseBody);
 		else if (header.responseType == Response.RESUMED.getCode())
 			thread.fireResumeEvent(0);
 		else if (header.responseType == Command.MEMORY_GET.getCode())
 			// TODO Handle that we may not be reading the entire 64k
-			parseMemoryGet(bodyBytes);
+			parseMemoryGet(responseBody);
 		else if (header.responseType == Command.QUIT.getCode())
-			// VICE will typically segfault here, and it appears there is nothing we can do
-			// about it - we can avoid it by killing the IProcess first, but that is nasty
 			thread.fireTerminateEvent();
-		else if (header.responseType == Response.REGISTER.getCode())
-			parseRegistersGet(bodyBytes);
+		else if (header.responseType == Response.REGISTER_INFO.getCode())
+			parseRegistersGet(responseBody);
 		else if (header.responseType == Command.REGISTERS_AVAILABLE.getCode())
-			parseRegistersAvailable(bodyBytes);
+			parseRegistersAvailable(responseBody);
 		else
-			System.err.println("Unhandled command " + byteToHex(header.responseType));
+			// we may care
+			System.err.println("Unhandled command " + String.format("$%02X", header.responseType) + " (" + type + ")");
 
 	}
 
+
+	private void parseCheckpointInfo(byte[] responseBody) {
+		try {
+			IBreakpointManager breakpointManager = DebugPlugin.getDefault().getBreakpointManager();
+			IBreakpoint[] breakpoints = breakpointManager.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
+			ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
+			buffer.order(ByteOrder.LITTLE_ENDIAN);
+			Checkpoint cp = null;
+			// see if we have the breakpoint already
+			int id = buffer.getInt();
+			for (IBreakpoint iBreakpoint : breakpoints) {
+				if (iBreakpoint instanceof Checkpoint && ((Checkpoint) iBreakpoint).getNumber() == id) {
+					cp = (Checkpoint) iBreakpoint;
+				}
+			}
+			if (cp == null) {
+				cp = new Checkpoint(ResourcesPlugin.getWorkspace().getRoot(), 0);
+				cp.setNumber(id);
+			}
+			cp.setCurrentlyHit(buffer.get() == 0x01);
+			cp.setStartAddress(buffer.getShort());
+			cp.setEndAddress(buffer.getShort());
+			cp.setStopWhenHit(buffer.get() == 0x01);
+			buffer.get();
+			// cp.setEnabledRemotely(buffer.get() == 0x01);
+			cp.setOperation(Operation.parseByte(buffer.get()));
+			cp.setTemporary(buffer.get() == 0x01);
+			cp.setHitCount(id);
+			cp.setIgnoreCount(id);
+			cp.setHasCondition(buffer.get() == 0x01);
+			cp.setMemspace(buffer.get());
+			// we have hit a breakpoint, however a Response.STOPPED will always
+			// follow, so we're doing nothing for now
+			if (cp.isStopWhenHit() && cp.isCurrentlyHit()) {
+//			thread.fireEvent(new DebugEvent(thread, DebugEvent.SUSPEND, DebugEvent.BREAKPOINT));
+			}
+			breakpointManager.addBreakpoint(cp);
+			System.out.println(DebugPlugin.getDefault().getBreakpointManager().isRegistered(cp));
+
+		} catch (CoreException e) {
+			e.printStackTrace();
+		}
+	}
 
 	private void parseRegistersAvailable(byte[] responseBody) {
 		try {
@@ -149,8 +203,8 @@ public class MonitorInputStreamListener implements Runnable {
 			VICERegisterGroup registerGroup = (VICERegisterGroup) stackFrame.getRegisterGroups()[0];
 
 			ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
-			buffer.order(ByteOrder.LITTLE_ENDIAN); // Set buffer to little endian
-			short items = buffer.getShort(); // The count of the array items
+			buffer.order(ByteOrder.LITTLE_ENDIAN);
+			int items = buffer.getShort() & 0xFF;
 			// An array with items of structure:
 			for (int i = 0; i < items; i++) {
 				StringBuilder sb = new StringBuilder();
@@ -191,7 +245,7 @@ public class MonitorInputStreamListener implements Runnable {
 			VICERegisterGroup registerGroup = (VICERegisterGroup) stackFrame.getRegisterGroups()[0];
 			ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
 			buffer.order(ByteOrder.LITTLE_ENDIAN); // Set buffer to little endian
-			short items = buffer.getShort(); // The count of the array items
+			int items = buffer.getShort() & 0xFF;
 			for (int i = 0; i < items; i++) {
 				int size = buffer.get(); // Size of the item, excluding this byte
 				byte id = buffer.get(); // ID of the register
@@ -212,18 +266,17 @@ public class MonitorInputStreamListener implements Runnable {
 	}
 
 	private void parseMemoryGet(byte[] responseBody) {
-		// the response sadly does _not_ contain the starting address and we
-		// have no way of knowing that unless connected to the command that requested
-		// this data – therefore we will always read the full 64kiB each time
 		try {
 			ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
-			buffer.order(ByteOrder.LITTLE_ENDIAN); // Set buffer to little endian
-			int items = buffer.getShort() & 0xFF; // Length of the memory segment
+			buffer.order(ByteOrder.LITTLE_ENDIAN);
+			int items = buffer.getShort() & 0xFF;
+			// the response does _not_ contain the starting address and we
+			// have no way of knowing it unless connected to the command that
+			// requested this data – therefore we will always read the full 64kiB
+			// each time instead of implementing something elaborate
 			if (items == 0)
 				items = 65_535;
-			for (int i = 0; i < items; i++) {
-				getComputerMemory()[i] = buffer.get();
-			}
+			buffer.get(computerMemory, 0, items);
 			thread.fireEvent(new DebugEvent(thread, DebugEvent.MODEL_SPECIFIC, IBinaryMonitor.DISASSEMBLE));
 		} catch (Exception e) {
 			e.printStackTrace();

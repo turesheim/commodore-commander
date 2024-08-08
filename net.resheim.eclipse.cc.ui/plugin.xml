@@ -266,5 +266,29 @@
             verticalRulerPreferenceValue="true">
       </specification>
    </extension>
-
+   <extension
+         point="org.eclipse.debug.core.breakpoints">
+      <breakpoint
+            class="net.resheim.eclipse.cc.disassembler.Checkpoint"
+            id="net.resheim.eclipse.cc.checkpoint"
+            markerType="net.resheim.eclipse.cc.checkpointMarker"
+            name="Checkpoint">
+      </breakpoint>
+   </extension>
+   <extension
+         id="net.resheim.eclipse.cc.checkpointMarker"
+         name="Checkpoint"
+         point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.core.resources.marker"/>
+      <attribute name="location"/>
+      <attribute name="message"/>
+      <persistent value="true">
+      </persistent>
+  </extension>
+   <extension point="org.eclipse.debug.ui.debugModelPresentations">
+   <debugModelPresentation
+      id="net.resheim.eclipse.cc.vice.debug"
+      class="net.resheim.eclipse.cc.ui.CheckpointPresentation">
+   </debugModelPresentation>
+ </extension>
 </plugin>
