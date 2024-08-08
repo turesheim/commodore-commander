@@ -107,6 +107,30 @@ public class MonitorInputStreamListener implements Runnable {
 
 	private synchronized void parseResponse(MessageResponse header, byte[] responseBody) {
 
+		String type = debug(header, responseBody);
+
+		if (header.responseType == Response.STOPPED.getCode())
+			thread.fireSuspendEvent(0);
+		else if (header.responseType == Response.CHECKPOINT_INFO.getCode())
+			parseCheckpointInfo(responseBody);
+		else if (header.responseType == Response.RESUMED.getCode())
+			thread.fireResumeEvent(0);
+		else if (header.responseType == Command.MEMORY_GET.getCode())
+			// TODO Handle that we may not be reading the entire 64k
+			parseMemoryGet(responseBody);
+		else if (header.responseType == Command.QUIT.getCode())
+			thread.fireTerminateEvent();
+		else if (header.responseType == Response.REGISTER_INFO.getCode())
+			parseRegistersGet(responseBody);
+		else if (header.responseType == Command.REGISTERS_AVAILABLE.getCode())
+			parseRegistersAvailable(responseBody);
+		else
+			// we may care
+			System.err.println("Unhandled command " + String.format("$%02X", header.responseType) + " (" + type + ")");
+
+	}
+
+	private String debug(MessageResponse header, byte[] responseBody) {
 		// ----------------------------------------------------------------------
 		// Use this for debugging, clean up and reimplement later
 		byte code = header.responseType;
@@ -131,28 +155,7 @@ public class MonitorInputStreamListener implements Runnable {
 		}
 		// print some debug info
 		System.out.println(sb);
-
-		// ----------------------------------------------------------------------
-
-		if (header.responseType == Response.STOPPED.getCode())
-			thread.fireSuspendEvent(0);
-		else if (header.responseType == Response.CHECKPOINT_INFO.getCode())
-			parseCheckpointInfo(responseBody);
-		else if (header.responseType == Response.RESUMED.getCode())
-			thread.fireResumeEvent(0);
-		else if (header.responseType == Command.MEMORY_GET.getCode())
-			// TODO Handle that we may not be reading the entire 64k
-			parseMemoryGet(responseBody);
-		else if (header.responseType == Command.QUIT.getCode())
-			thread.fireTerminateEvent();
-		else if (header.responseType == Response.REGISTER_INFO.getCode())
-			parseRegistersGet(responseBody);
-		else if (header.responseType == Command.REGISTERS_AVAILABLE.getCode())
-			parseRegistersAvailable(responseBody);
-		else
-			// we may care
-			System.err.println("Unhandled command " + String.format("$%02X", header.responseType) + " (" + type + ")");
-
+		return type;
 	}
 
 
