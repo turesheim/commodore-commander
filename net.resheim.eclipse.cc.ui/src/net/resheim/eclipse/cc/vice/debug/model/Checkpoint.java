@@ -14,6 +14,9 @@ import org.eclipse.debug.core.model.IBreakpoint;
  *
  *
  * TODO: Send event to the {@link VICEDebugTarget}
+ *
+ * @since 1.0
+ * @author Torkild Ulvøy Resheim
  */
 public class Checkpoint extends Breakpoint {
 

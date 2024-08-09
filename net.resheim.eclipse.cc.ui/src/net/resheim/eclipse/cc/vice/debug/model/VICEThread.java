@@ -19,8 +19,9 @@ import org.eclipse.debug.core.model.IThread;
 
 import net.resheim.eclipse.cc.disassembler.Disassembler;
 import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor;
-import net.resheim.eclipse.cc.vice.debug.monitor.MonitorInputStreamListener;
-import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.Command;
+import net.resheim.eclipse.cc.vice.debug.monitor.Command;
+import net.resheim.eclipse.cc.vice.debug.monitor.MonitorEventDispatcher;
+import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.CommandID;
 
 /**
  * The one and only thread in this debug model.
@@ -38,7 +39,7 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 
 	Socket socket;
 
-	private MonitorInputStreamListener task;
+	private MonitorEventDispatcher task;
 
 	private DataOutputStream out;
 
@@ -80,13 +81,13 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 
 	@Override
 	public void resume() throws DebugException {
-		sendCommand(Command.EXIT, IBinaryMonitor.EMPTY_COMMAND_BODY);
+		sendCommand(CommandID.EXIT, IBinaryMonitor.EMPTY_COMMAND_BODY);
 	}
 
 	@Override
 	public void suspend() throws DebugException {
 		// any command will suspend
-		sendCommand(Command.PING, new byte[] { 0x00 });
+		sendCommand(CommandID.PING, new byte[] { 0x00 });
 	}
 
 	@Override
@@ -133,7 +134,7 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 
 	@Override
 	public void terminate() throws DebugException {
-		sendCommand(Command.QUIT, IBinaryMonitor.EMPTY_COMMAND_BODY);
+		sendCommand(CommandID.QUIT, IBinaryMonitor.EMPTY_COMMAND_BODY);
 	}
 
 	@Override
@@ -173,9 +174,8 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 		try {
 			out = new DataOutputStream(socket.getOutputStream());
 			in = new DataInputStream(socket.getInputStream());
-			task = new MonitorInputStreamListener(this, in);
-			listenerThread = new Thread(task);
-			listenerThread.start();
+			task = new MonitorEventDispatcher(this, in);
+			task.schedule();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -186,7 +186,7 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 		return hex.length() == 1 ? "0" + hex : hex;
 	}
 
-	private synchronized void sendCommand(Command command, byte[] commandBody) {
+	private synchronized void sendCommand(CommandID command, byte[] commandBody) {
 		int id = counter.incrementAndGet();
 		StringBuilder sb = new StringBuilder();
 		sb.append("<<< Request : ID " + String.format("$%08X", id));
@@ -199,7 +199,7 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 		}
 		System.out.println(sb);
 		try {
-			Message msg = new Message(id, command.getCode(), commandBody);
+			Command msg = new Command(id, command.getCode(), commandBody);
 			byte[] messageToSend = msg.buildMessage();
 			out.write(messageToSend);
 			out.flush();
@@ -217,7 +217,7 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 
 	/**
 	 * Deal with the debug events that are triggered, typically by
-	 * {@link MonitorInputStreamListener} when responding to the VICE Monitor
+	 * {@link MonitorEventDispatcher} when responding to the VICE Monitor
 	 * stream.
 	 */
 	@Override
@@ -232,13 +232,13 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 						IRegisterGroup iRegisterGroup = stackFrame.getRegisterGroups()[0];
 						// get all the register names, if we don't have them
 						if (!iRegisterGroup.hasRegisters()) {
-							sendCommand(Command.REGISTERS_AVAILABLE, new byte[] { 0x00 });
+							sendCommand(CommandID.REGISTERS_AVAILABLE, new byte[] { 0x00 });
 						}
 						// the result from the command does NOT include the
 						// start address of the data included, so it's hard to
 						// figure it out unless we somehow pass that value. We
 						// just read out the entire 64kiB for now.
-						sendCommand(Command.MEMORY_GET,
+						sendCommand(CommandID.MEMORY_GET,
 								new byte[] { 0x00, // side effects
 										0x00, // start address LSB
 										0x00, // start address MSB
@@ -251,7 +251,7 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 						// update the list of breakpoints, some may have been
 						// set by code or even another manually connected
 						// monitor
-						sendCommand(Command.CHECKPOINT_LIST, new byte[] {});
+						sendCommand(CommandID.CHECKPOINT_LIST, new byte[] {});
 					} catch (Exception e) {
 						e.printStackTrace();
 					}

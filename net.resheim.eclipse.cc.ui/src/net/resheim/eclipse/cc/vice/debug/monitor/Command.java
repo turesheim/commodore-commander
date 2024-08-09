@@ -1,8 +1,13 @@
-package net.resheim.eclipse.cc.vice.debug.model;
+package net.resheim.eclipse.cc.vice.debug.monitor;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-public class Message {
+/**
+ *
+ * @since 1.0
+ * @author Torkild Ulvøy Resheim
+ */
+public class Command {
     private static final byte STX = 0x02;
     private static final byte API_VERSION = 0x02;
 
@@ -10,7 +15,7 @@ public class Message {
     private byte commandType;
     private byte[] commandBody;
 
-    public Message(int requestId, byte commandType, byte[] commandBody) {
+    public Command(int requestId, byte commandType, byte[] commandBody) {
         this.requestId = requestId;
         this.commandType = commandType;
         this.commandBody = commandBody;

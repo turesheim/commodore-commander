@@ -15,7 +15,7 @@ public interface IBinaryMonitor {
 	 */
 	public final int DISASSEMBLE = 99;
 
-	public enum Response {
+	public enum ResponseID {
 		/**
 		 * This response type is returned for errors.
 		 * <p>
@@ -63,7 +63,7 @@ public interface IBinaryMonitor {
 
 		private final byte code;
 
-		Response(byte code) {
+		ResponseID(byte code) {
 			this.code = code;
 		}
 
@@ -72,7 +72,7 @@ public interface IBinaryMonitor {
 		}
 
 		public static String getNameFromCode(byte code) {
-			for (Response cmd : Response.values()) {
+			for (ResponseID cmd : ResponseID.values()) {
 				if (cmd.getCode() == code) {
 					return cmd.name();
 				}
@@ -81,7 +81,7 @@ public interface IBinaryMonitor {
 		}
 
 		public static boolean hasCode(byte code) {
-			for (Response cmd : Response.values()) {
+			for (ResponseID cmd : ResponseID.values()) {
 				if (cmd.getCode() == code) {
 					return true;
 				}
@@ -101,7 +101,7 @@ public interface IBinaryMonitor {
 		}
 	};
 
-	public enum Command {
+	public enum CommandID {
 		/**
 		 * Reads a chunk of memory from a start address to an end address (inclusive).
 		 * <p>
@@ -314,7 +314,7 @@ public interface IBinaryMonitor {
 
 		private final byte code;
 
-		Command(byte code) {
+		CommandID(byte code) {
 			this.code = code;
 		}
 
@@ -323,7 +323,7 @@ public interface IBinaryMonitor {
 		}
 
 		public static String getNameFromCode(byte code) {
-			for (Command cmd : Command.values()) {
+			for (CommandID cmd : CommandID.values()) {
 				if (cmd.getCode() == code) {
 					return cmd.name();
 				}
@@ -332,7 +332,7 @@ public interface IBinaryMonitor {
 		}
 
 		public static boolean hasCode(byte code) {
-			for (Command cmd : Command.values()) {
+			for (CommandID cmd : CommandID.values()) {
 				if (cmd.getCode() == code) {
 					return true;
 				}

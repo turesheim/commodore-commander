@@ -1,11 +1,16 @@
 package net.resheim.eclipse.cc.vice.debug.monitor;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.debug.core.DebugEvent;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.IBreakpointManager;
@@ -17,13 +22,13 @@ import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
 import net.resheim.eclipse.cc.vice.debug.model.VICERegisterGroup;
 import net.resheim.eclipse.cc.vice.debug.model.VICEStackFrame;
 import net.resheim.eclipse.cc.vice.debug.model.VICEThread;
-import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.Command;
-import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.Response;
+import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.CommandID;
+import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.ResponseID;
 
 /**
  * This type handles the responsive end of the <i>VICE Binary Monitor</i>
- * connection. It will keep a local representation of data obtained from the
- * monitor and respond to events.
+ * connection. It will listen to events from the monitor and fires corresponding
+ * debug events.
  *
  * <p>
  * This type will fire {@link DebugEvent}s on behalf of the {@link VICEThread}
@@ -34,7 +39,7 @@ import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.Response;
  * @author Torkild Ulvøy Resheim
  *
  */
-public class MonitorInputStreamListener implements Runnable {
+public class MonitorEventDispatcher extends Job {
 
 	private final InputStream inputStream;
 	private final VICEThread thread;
@@ -52,52 +57,10 @@ public class MonitorInputStreamListener implements Runnable {
 	 */
 	private final byte[] computerMemory = new byte[65_536];
 
-	public MonitorInputStreamListener(VICEThread viceThread, InputStream inputStream) {
+	public MonitorEventDispatcher(VICEThread viceThread, InputStream inputStream) {
+		super("Binary monitor dispach");
 		this.inputStream = inputStream;
 		this.thread = viceThread;
-	}
-
-	@Override
-	public void run() {
-
-		try {
-
-			while (!Thread.currentThread().isInterrupted()) {
-				if (inputStream.available() > 0) {
-
-					// read the header which is 12 bytes long
-					byte[] initialBytes = new byte[12];
-					inputStream.readNBytes(initialBytes, 0, 12);
-
-					ByteBuffer initialBuffer = ByteBuffer.wrap(initialBytes, 0, 12);
-					initialBuffer.order(ByteOrder.LITTLE_ENDIAN); // Set buffer to little endian
-
-					byte stx = initialBuffer.get(); // Byte 0: STX
-					assert (stx == MessageResponse.STX);
-
-					byte api_version = initialBuffer.get(); // Byte 1: API Version
-					assert (api_version == MessageResponse.API_VERSION);
-
-					int bodyLength = initialBuffer.getInt(); // Bytes 2-5: response body length (little endian)
-					byte responseType = initialBuffer.get(); // Byte 6: Response type
-					byte errorCode = initialBuffer.get(); // Byte 7: Error code
-					int requestId = initialBuffer.getInt(); // Bytes 8-11: Request ID (little endian)
-
-					MessageResponse header = new MessageResponse(responseType, errorCode, requestId, bodyLength);
-
-					byte[] bodyBytes = new byte[bodyLength];
-					inputStream.readNBytes(bodyBytes, 0, bodyLength);
-					assert (bodyLength == bodyBytes.length);
-
-					parseResponse(header, bodyBytes);
-
-				} // if
-			} // while
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
 	}
 
 	private static String byteToHex(byte b) {
@@ -105,24 +68,24 @@ public class MonitorInputStreamListener implements Runnable {
 		return hex.length() == 1 ? "0" + hex : hex;
 	}
 
-	private synchronized void parseResponse(MessageResponse header, byte[] responseBody) {
+	private synchronized void parseResponse(Response header, byte[] responseBody) {
 
 		String type = debug(header, responseBody);
 
-		if (header.responseType == Response.STOPPED.getCode())
+		if (header.responseType == ResponseID.STOPPED.getCode())
 			thread.fireSuspendEvent(0);
-		else if (header.responseType == Response.CHECKPOINT_INFO.getCode())
+		else if (header.responseType == ResponseID.CHECKPOINT_INFO.getCode())
 			parseCheckpointInfo(responseBody);
-		else if (header.responseType == Response.RESUMED.getCode())
+		else if (header.responseType == ResponseID.RESUMED.getCode())
 			thread.fireResumeEvent(0);
-		else if (header.responseType == Command.MEMORY_GET.getCode())
+		else if (header.responseType == CommandID.MEMORY_GET.getCode())
 			// TODO Handle that we may not be reading the entire 64k
 			parseMemoryGet(responseBody);
-		else if (header.responseType == Command.QUIT.getCode())
+		else if (header.responseType == CommandID.QUIT.getCode())
 			thread.fireTerminateEvent();
-		else if (header.responseType == Response.REGISTER_INFO.getCode())
+		else if (header.responseType == ResponseID.REGISTER_INFO.getCode())
 			parseRegistersGet(responseBody);
-		else if (header.responseType == Command.REGISTERS_AVAILABLE.getCode())
+		else if (header.responseType == CommandID.REGISTERS_AVAILABLE.getCode())
 			parseRegistersAvailable(responseBody);
 		else
 			// we may care
@@ -130,13 +93,13 @@ public class MonitorInputStreamListener implements Runnable {
 
 	}
 
-	private String debug(MessageResponse header, byte[] responseBody) {
+	private String debug(Response header, byte[] responseBody) {
 		// ----------------------------------------------------------------------
 		// Use this for debugging, clean up and reimplement later
 		byte code = header.responseType;
 		// Some codes are reused for Response and command, response is probably
 		// the most accurate in this context.
-		String type = Response.hasCode(code) ? Response.getNameFromCode(code) : Command.getNameFromCode(code);
+		String type = ResponseID.hasCode(code) ? ResponseID.getNameFromCode(code) : CommandID.getNameFromCode(code);
 		StringBuilder sb = new StringBuilder();
 		sb.append(">>> Response: ID " + String.format("$%08X", header.requestId));
 		sb.append(", type " + String.format("$%02X", header.responseType) + " ("
@@ -290,6 +253,46 @@ public class MonitorInputStreamListener implements Runnable {
 
 	public byte[] getComputerMemory() {
 		return computerMemory;
+	}
+
+	@Override
+	protected IStatus run(IProgressMonitor monitor) {
+		try {
+			while (!thread.isTerminated()) {
+				if (inputStream.available() > 0) {
+
+					// read the header which is 12 bytes long
+					byte[] initialBytes = new byte[12];
+					inputStream.readNBytes(initialBytes, 0, 12);
+
+					ByteBuffer initialBuffer = ByteBuffer.wrap(initialBytes, 0, 12);
+					initialBuffer.order(ByteOrder.LITTLE_ENDIAN); // Set buffer to little endian
+
+					byte stx = initialBuffer.get(); // Byte 0: STX
+					assert (stx == Response.STX);
+
+					byte api_version = initialBuffer.get(); // Byte 1: API Version
+					assert (api_version == Response.API_VERSION);
+
+					int bodyLength = initialBuffer.getInt(); // bytes 2-5: response body length (little endian)
+					byte responseType = initialBuffer.get(); // byte 6: Response type
+					byte errorCode = initialBuffer.get(); // byte 7: Error code
+					int requestId = initialBuffer.getInt(); // bytes 8-11: Request ID (little endian)
+
+					Response header = new Response(responseType, errorCode, requestId, bodyLength);
+
+					byte[] bodyBytes = new byte[bodyLength];
+					inputStream.readNBytes(bodyBytes, 0, bodyLength);
+					assert (bodyLength == bodyBytes.length);
+
+					parseResponse(header, bodyBytes);
+
+				} // if
+			} // while
+			return Status.OK_STATUS;
+		} catch (IOException e) {
+			return Status.error("Could not read from monitor", e);
+		}
 	}
 
 }
