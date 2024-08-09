@@ -39,15 +39,26 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 
 	Socket socket;
 
-	private MonitorEventDispatcher task;
+	/**
+	 * Listens to messages coming over the binary monitor port and reacts
+	 * accordingly
+	 */
+	private MonitorEventDispatcher eventDispatcher;
 
+	/** For sending messages to the binary monitor */
 	private DataOutputStream out;
 
+	/**
+	 * For reading messages from the binory monitor. Connected to
+	 * {@link MonitorEventDispatcher}
+	 */
+	private DataInputStream in;
+
+	/**
+	 * For keeping track of the messages sent VICE want unique identifiers.
+	 */
 	private AtomicInteger counter;
 
-	private Thread listenerThread;
-
-	private DataInputStream in;
 
 	/** A re-usable stack frame */
 	private final VICEStackFrame stackFrame;
@@ -61,7 +72,7 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 		this.counter = new AtomicInteger();
 		this.stackFrame = new VICEStackFrame(this);
 		DebugPlugin.getDefault().addDebugEventListener(this);
-		createMonitorInterface();
+		connectEventdDispatcherStreams();
 	}
 
 	@Override
@@ -170,39 +181,26 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 		return breakpoints;
 	}
 
-	private void createMonitorInterface() {
+	private void connectEventdDispatcherStreams() {
 		try {
 			out = new DataOutputStream(socket.getOutputStream());
 			in = new DataInputStream(socket.getInputStream());
-			task = new MonitorEventDispatcher(this, in);
-			task.schedule();
+			eventDispatcher = new MonitorEventDispatcher(this, in);
+			eventDispatcher.schedule();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	private static String byteToHex(byte b) {
-		String hex = Integer.toHexString(b & 0xFF);
-		return hex.length() == 1 ? "0" + hex : hex;
-	}
-
-	private synchronized void sendCommand(CommandID command, byte[] commandBody) {
+	private synchronized void sendCommand(CommandID command, byte[] body) {
 		int id = counter.incrementAndGet();
-		StringBuilder sb = new StringBuilder();
-		sb.append("<<< Request : ID " + String.format("$%08X", id));
-		sb.append(", type " + String.format("$%02X", command.getCode()) + " (" + command.name() + ")");
-		sb.append(", length " + commandBody.length);
-		sb.append(", body ");
-		for (byte b : commandBody) {
-			sb.append(byteToHex(b));
-			sb.append(" ");
-		}
-		System.out.println(sb);
 		try {
-			Command msg = new Command(id, command.getCode(), commandBody);
-			byte[] messageToSend = msg.buildMessage();
+			Command msg = new Command(id, command, body);
+			byte[] messageToSend = msg.build();
 			out.write(messageToSend);
 			out.flush();
+			// for debugging
+			System.out.println(msg);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -216,9 +214,8 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 	}
 
 	/**
-	 * Deal with the debug events that are triggered, typically by
-	 * {@link MonitorEventDispatcher} when responding to the VICE Monitor
-	 * stream.
+	 * Deal with some of the debug events that are triggered, typically by
+	 * {@link MonitorEventDispatcher} when responding to the VICE Monitor stream.
 	 */
 	@Override
 	public void handleDebugEvents(DebugEvent[] events) {
@@ -261,7 +258,6 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 				}
 				if (DebugEvent.TERMINATE == event.getKind()) {
 					currentState = State.TERMINATED;
-					listenerThread.interrupt();
 					try {
 						// Close down socket
 						if (!socket.isClosed()) {
@@ -286,7 +282,7 @@ public class VICEThread extends VICEDebugElement implements IThread, IDebugEvent
 	}
 
 	public byte[] getComputerMemory() {
-		return task.getComputerMemory();
+		return eventDispatcher.getComputerMemory();
 	}
 
 }

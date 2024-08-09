@@ -204,7 +204,6 @@ public class Checkpoint extends Breakpoint {
 	public void setEnabled(boolean enabled) throws CoreException {
 		this.enabled = enabled;
 		super.setEnabled(enabled);
-		System.out.println("Checkpoint.setEnabled()" + enabled);
 		DebugPlugin.getDefault().getBreakpointManager().fireBreakpointChanged(this);
 	}
 
