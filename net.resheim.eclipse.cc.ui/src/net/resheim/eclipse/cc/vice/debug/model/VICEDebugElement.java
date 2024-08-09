@@ -11,6 +11,10 @@ import org.eclipse.debug.core.model.IDebugTarget;
  */
 public class VICEDebugElement extends DebugElement {
 
+	public enum State {
+		RUNNING, STEPPING, SUSPENDED, TERMINATED
+	}
+
 	public static final String DEBUG_MODEL_ID = "net.resheim.eclipse.cc.vice.debug";
 
 	public VICEDebugElement(IDebugTarget target) {

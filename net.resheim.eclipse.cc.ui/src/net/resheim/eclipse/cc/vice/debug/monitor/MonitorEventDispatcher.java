@@ -19,6 +19,7 @@ import org.eclipse.debug.core.model.IBreakpoint;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Operation;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
+import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
 import net.resheim.eclipse.cc.vice.debug.model.VICERegisterGroup;
 import net.resheim.eclipse.cc.vice.debug.model.VICEStackFrame;
 import net.resheim.eclipse.cc.vice.debug.model.VICEThread;
@@ -42,7 +43,7 @@ import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.ResponseID;
 public class MonitorEventDispatcher extends Job {
 
 	private final InputStream inputStream;
-	private final VICEThread thread;
+	private final VICEDebugTarget debugTarget;
 
 	/**
 	 * Temporary array of register values. This is updated every time a command is
@@ -57,10 +58,10 @@ public class MonitorEventDispatcher extends Job {
 	 */
 	private final byte[] computerMemory = new byte[65_536];
 
-	public MonitorEventDispatcher(VICEThread viceThread, InputStream inputStream) {
+	public MonitorEventDispatcher(VICEDebugTarget debugTarget, InputStream inputStream) {
 		super("Binary monitor dispach");
 		this.inputStream = inputStream;
-		this.thread = viceThread;
+		this.debugTarget = debugTarget;
 	}
 
 	private static String byteToHex(byte b) {
@@ -73,16 +74,16 @@ public class MonitorEventDispatcher extends Job {
 		String type = debug(header, responseBody);
 
 		if (header.responseType == ResponseID.STOPPED.getCode())
-			thread.fireSuspendEvent(0);
+			debugTarget.fireSuspendEvent(0);
 		else if (header.responseType == ResponseID.CHECKPOINT_INFO.getCode())
 			parseCheckpointInfo(responseBody);
 		else if (header.responseType == ResponseID.RESUMED.getCode())
-			thread.fireResumeEvent(0);
+			debugTarget.fireResumeEvent(0);
 		else if (header.responseType == CommandID.MEMORY_GET.getCode())
 			// TODO Handle that we may not be reading the entire 64k
 			parseMemoryGet(responseBody);
 		else if (header.responseType == CommandID.QUIT.getCode())
-			thread.fireTerminateEvent();
+			debugTarget.fireTerminateEvent();
 		else if (header.responseType == ResponseID.REGISTER_INFO.getCode())
 			parseRegistersGet(responseBody);
 		else if (header.responseType == CommandID.REGISTERS_AVAILABLE.getCode())
@@ -167,7 +168,7 @@ public class MonitorEventDispatcher extends Job {
 
 	private void parseRegistersAvailable(byte[] responseBody) {
 		try {
-			VICEStackFrame stackFrame = (VICEStackFrame) thread.getTopStackFrame();
+			VICEStackFrame stackFrame = (VICEStackFrame) debugTarget.getThreads()[0].getTopStackFrame();
 			VICERegisterGroup registerGroup = (VICERegisterGroup) stackFrame.getRegisterGroups()[0];
 
 			ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
@@ -209,7 +210,7 @@ public class MonitorEventDispatcher extends Job {
 	 */
 	private void parseRegistersGet(byte[] responseBody) {
 		try {
-			VICEStackFrame stackFrame = (VICEStackFrame) thread.getTopStackFrame();
+			VICEStackFrame stackFrame = (VICEStackFrame) debugTarget.getThreads()[0].getTopStackFrame();
 			VICERegisterGroup registerGroup = (VICERegisterGroup) stackFrame.getRegisterGroups()[0];
 			ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
 			buffer.order(ByteOrder.LITTLE_ENDIAN); // Set buffer to little endian
@@ -245,7 +246,7 @@ public class MonitorEventDispatcher extends Job {
 			if (items == 0)
 				items = 65_535;
 			buffer.get(computerMemory, 0, items);
-			thread.fireEvent(new DebugEvent(thread, DebugEvent.MODEL_SPECIFIC, IBinaryMonitor.DISASSEMBLE));
+			debugTarget.fireEvent(new DebugEvent(debugTarget, DebugEvent.MODEL_SPECIFIC, IBinaryMonitor.DISASSEMBLE));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -258,7 +259,7 @@ public class MonitorEventDispatcher extends Job {
 	@Override
 	protected IStatus run(IProgressMonitor monitor) {
 		try {
-			while (!thread.isTerminated()) {
+			while (!debugTarget.isTerminated()) {
 				if (inputStream.available() > 0) {
 
 					// read the header which is 12 bytes long

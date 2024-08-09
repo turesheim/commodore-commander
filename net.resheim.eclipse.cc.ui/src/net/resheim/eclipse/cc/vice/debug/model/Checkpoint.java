@@ -11,10 +11,6 @@ import org.eclipse.debug.core.model.IBreakpoint;
 
 /**
  *
- *
- *
- * TODO: Send event to the {@link VICEDebugTarget}
- *
  * @since 1.0
  * @author Torkild Ulvøy Resheim
  */
@@ -202,9 +198,13 @@ public class Checkpoint extends Breakpoint {
 	}
 
 	public void setEnabled(boolean enabled) throws CoreException {
+		if (this.isEnabled() != enabled) {
+			this.enabled = enabled;
+			super.setEnabled(enabled);
+			DebugPlugin.getDefault().getBreakpointManager().fireBreakpointChanged(this);
+		}
 		this.enabled = enabled;
 		super.setEnabled(enabled);
-		DebugPlugin.getDefault().getBreakpointManager().fireBreakpointChanged(this);
 	}
 
 	public void setEndAddress(int endAddress) {

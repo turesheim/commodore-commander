@@ -73,12 +73,12 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 
 	@Override
 	public void resume() throws DebugException {
-		thread.resume();
+		getDebugTarget().resume();
 	}
 
 	@Override
 	public void suspend() throws DebugException {
-		thread.suspend();
+		getDebugTarget().suspend();
 	}
 
 	@Override
@@ -93,7 +93,7 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 
 	@Override
 	public void terminate() throws DebugException {
-		thread.terminate();
+		getDebugTarget().terminate();
 	}
 
 	@Override

@@ -32,7 +32,6 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
-import org.eclipse.tm4e.ui.internal.widgets.TMViewer;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IWorkbench;
@@ -46,8 +45,8 @@ import org.eclipse.ui.themes.ITheme;
 import jakarta.inject.Inject;
 import net.resheim.eclipse.cc.disassembler.Disassembler;
 import net.resheim.eclipse.cc.disassembler.Disassembly;
+import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
 import net.resheim.eclipse.cc.vice.debug.model.VICEStackFrame;
-import net.resheim.eclipse.cc.vice.debug.model.VICEThread;
 import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor;
 
 public class DisassemblyView extends ViewPart implements IDebugEventSetListener {
@@ -201,16 +200,17 @@ public class DisassemblyView extends ViewPart implements IDebugEventSetListener 
 	@Override
 	public void handleDebugEvents(DebugEvent[] events) {
 		for (DebugEvent event : events) {
-			if (event.getSource() instanceof VICEThread) {
+			if (event.getSource() instanceof VICEDebugTarget) {
 				try {
-					VICEStackFrame frame = (VICEStackFrame) ((VICEThread) event.getSource()).getTopStackFrame();
+					VICEStackFrame frame = (VICEStackFrame) ((VICEDebugTarget) event.getSource()).getThreads()[0]
+							.getTopStackFrame();
 					if (DebugEvent.MODEL_SPECIFIC == event.getKind()) {
 						annotationModel.removeAllAnnotations();
 						int pc = Short.toUnsignedInt(frame.getProgramCounter());
 						switch (event.getDetail()) {
 						case IBinaryMonitor.DISASSEMBLE:
-							Disassembler disassembler = ((VICEThread) event.getSource()).getDisassembler();
-							byte[] memory = ((VICEThread) event.getSource()).getComputerMemory();
+							Disassembler disassembler = ((VICEDebugTarget) event.getSource()).getDisassembler();
+							byte[] memory = ((VICEDebugTarget) event.getSource()).getComputerMemory();
 							// We only care about disassembling once this time.
 							// - [ ] Update the parts that have changed
 							// - [ ] Assume that the changed parts is data, not code
