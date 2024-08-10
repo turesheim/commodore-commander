@@ -172,10 +172,10 @@ public class Checkpoint extends Breakpoint {
 		return hasCondition;
 	}
 
-	public boolean isEnabled() throws CoreException {
-		return super.isEnabled();
-		// return enabled;
-	}
+//	public boolean isEnabled() throws CoreException {
+//		return super.isEnabled();
+//		// return enabled;
+//	}
 
 	public boolean isExec() {
 		return exec;
@@ -197,15 +197,10 @@ public class Checkpoint extends Breakpoint {
 		this.condition = condition;
 	}
 
-	public void setEnabled(boolean enabled) throws CoreException {
-		if (this.isEnabled() != enabled) {
-			this.enabled = enabled;
-			super.setEnabled(enabled);
-			DebugPlugin.getDefault().getBreakpointManager().fireBreakpointChanged(this);
-		}
-		this.enabled = enabled;
-		super.setEnabled(enabled);
-	}
+//	public void setEnabled(boolean enabled) throws CoreException {
+//		super.setEnabled(enabled);
+//		this.enabled = enabled;
+//	}
 
 	public void setEndAddress(int endAddress) {
 		this.endAddress = endAddress;

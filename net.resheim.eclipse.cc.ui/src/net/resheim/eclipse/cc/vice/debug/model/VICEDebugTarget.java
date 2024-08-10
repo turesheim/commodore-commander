@@ -5,9 +5,12 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.core.resources.IMarkerDelta;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugEvent;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.DebugPlugin;
@@ -123,13 +126,22 @@ public class VICEDebugTarget extends VICEDebugElement
 		}
 
 		if (delta != null) {
-			Boolean enabled = (Boolean) delta.getAttribute(IBreakpoint.ENABLED);
-			if (enabled != null) {
-				if (enabled) {
+			if (delta.getAttribute(IBreakpoint.ENABLED)!=null){
+				Checkpoint cp = (Checkpoint) breakpoint;
+				ByteBuffer buffer = ByteBuffer.allocate(5);
+				buffer.order(ByteOrder.LITTLE_ENDIAN);
+				buffer.putInt(cp.getNumber());
+				try {
+				buffer.put(breakpoint.isEnabled() ? (byte) 0x01 : (byte) 0x00);
+				sendCommand(CommandID.CHECKPOINT_TOGGLE, buffer.array());
+				if (breakpoint.isEnabled()) {
 					System.out.println("Breakpoint enabled: " + breakpoint);
 				} else {
 					System.out.println("Breakpoint disabled: " + breakpoint);
 				}
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
 			}
 		}
 	}
