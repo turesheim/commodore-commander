@@ -108,7 +108,7 @@ public class VICEThread extends VICEDebugElement implements IThread {
 
 	@Override
 	public boolean hasStackFrames() throws DebugException {
-		return isSuspended();
+		return getDebugTarget().isSuspended();
 	}
 
 	@Override

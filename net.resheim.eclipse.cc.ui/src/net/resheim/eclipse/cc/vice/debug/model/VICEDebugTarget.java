@@ -53,7 +53,7 @@ public class VICEDebugTarget extends VICEDebugElement
 	private Socket socket;
 
 	/** We have only one thread */
-	private IThread thread;
+	private VICEThread thread;
 
 	/**
 	 * Listens to messages coming over the binary monitor port and reacts
@@ -272,7 +272,7 @@ public class VICEDebugTarget extends VICEDebugElement
 		try {
 			out = new DataOutputStream(socket.getOutputStream());
 			in = new DataInputStream(socket.getInputStream());
-			eventDispatcher = new MonitorEventDispatcher(this, in);
+			eventDispatcher = new MonitorEventDispatcher(this, thread, in);
 			eventDispatcher.schedule();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -286,7 +286,7 @@ public class VICEDebugTarget extends VICEDebugElement
 	@Override
 	public void handleDebugEvents(DebugEvent[] events) {
 		for (DebugEvent event : events) {
-			if (event.getSource().equals(this)) {
+//			if (event.getSource().equals(this)) {
 				System.out.println("VICEThread.handleDebugEvents(" + event + ")");
 				if (DebugEvent.SUSPEND == event.getKind()) {
 					setCurrentState(State.SUSPENDED);
@@ -341,10 +341,10 @@ public class VICEDebugTarget extends VICEDebugElement
 					DebugPlugin.getDefault().getBreakpointManager().removeBreakpointListener(this);
 				}
 			}
-		}
+//		}
 	}
 
-	private synchronized void sendCommand(CommandID command, byte[] body) {
+	private void sendCommand(CommandID command, byte[] body) {
 		int id = counter.incrementAndGet();
 		try {
 			Command msg = new Command(id, command, body);

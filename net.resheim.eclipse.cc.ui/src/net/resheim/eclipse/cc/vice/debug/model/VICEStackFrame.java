@@ -130,7 +130,11 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 	public String getName() throws DebugException {
 		// AFAIK we don't really have stack frames on a 6510, so we're using the
 		// PROGRAM COUNTER to name this frame
-		return registerGroup.getRegisterByName("PC").getValue().getValueString();
+		if (registerGroup.hasRegisters()) {
+			return registerGroup.getRegisterByName("PC").getValue().getValueString();
+		} else {
+			return "No registers available";
+		}
 	}
 
 	@Override

@@ -12,6 +12,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.debug.core.DebugEvent;
+import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.IBreakpointManager;
 import org.eclipse.debug.core.model.IBreakpoint;
@@ -43,7 +44,10 @@ import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.ResponseID;
 public class MonitorEventDispatcher extends Job {
 
 	private final InputStream inputStream;
+
 	private final VICEDebugTarget debugTarget;
+
+	private final VICEThread thread;
 
 	/**
 	 * Temporary array of register values. This is updated every time a command is
@@ -58,10 +62,11 @@ public class MonitorEventDispatcher extends Job {
 	 */
 	private final byte[] computerMemory = new byte[65_536];
 
-	public MonitorEventDispatcher(VICEDebugTarget debugTarget, InputStream inputStream) {
+	public MonitorEventDispatcher(VICEDebugTarget debugTarget, VICEThread thread, InputStream inputStream) {
 		super("Binary monitor dispach");
 		this.inputStream = inputStream;
 		this.debugTarget = debugTarget;
+		this.thread = thread;
 	}
 
 	private static String byteToHex(byte b) {
@@ -69,16 +74,18 @@ public class MonitorEventDispatcher extends Job {
 		return hex.length() == 1 ? "0" + hex : hex;
 	}
 
-	private synchronized void parseResponse(Response header, byte[] responseBody) {
+	private synchronized void parseResponse(Response header, byte[] responseBody) throws DebugException {
 
 		String type = debug(header, responseBody);
-
+		// XXX: Should event firing be done after responding?
+		// XXX: Firing on the target messes up the registers view since the target will
+		// be selected
 		if (header.responseType == ResponseID.STOPPED.getCode())
-			debugTarget.fireSuspendEvent(0);
+			thread.fireSuspendEvent(0);
 		else if (header.responseType == ResponseID.CHECKPOINT_INFO.getCode())
 			parseCheckpointInfo(responseBody);
 		else if (header.responseType == ResponseID.RESUMED.getCode())
-			debugTarget.fireResumeEvent(0);
+			thread.fireResumeEvent(0);
 		else if (header.responseType == CommandID.MEMORY_GET.getCode())
 			// TODO Handle that we may not be reading the entire 64k
 			parseMemoryGet(responseBody);
@@ -291,7 +298,7 @@ public class MonitorEventDispatcher extends Job {
 				} // if
 			} // while
 			return Status.OK_STATUS;
-		} catch (IOException e) {
+		} catch (IOException | DebugException e) {
 			return Status.error("Could not read from monitor", e);
 		}
 	}
