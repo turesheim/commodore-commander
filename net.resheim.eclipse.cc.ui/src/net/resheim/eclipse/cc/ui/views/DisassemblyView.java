@@ -1,5 +1,7 @@
 package net.resheim.eclipse.cc.ui.views;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.eclipse.debug.core.DebugEvent;
@@ -19,6 +21,7 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.Position;
+import org.eclipse.jface.text.source.AbstractRulerColumn;
 import org.eclipse.jface.text.source.Annotation;
 import org.eclipse.jface.text.source.AnnotationModel;
 import org.eclipse.jface.text.source.AnnotationRulerColumn;
@@ -29,7 +32,9 @@ import org.eclipse.jface.text.source.SourceViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.ui.IActionBars;
@@ -54,13 +59,40 @@ public class DisassemblyView extends ViewPart implements IDebugEventSetListener 
 	/**
 	 * Displays the start address of the disassembly that is shown on the line.
 	 */
-	class AddressAnnotationRulerColumn extends LineNumberRulerColumn {
-		protected String createDisplayString(int line) {
-			if (disassembly.size() > line) {
-				int address = disassembly.get(line).getAddress();
+	class AddressAnnotationRulerColumn extends AbstractRulerColumn {
+
+		public AddressAnnotationRulerColumn() {
+			super();
+			setWidth(100);
+		}
+
+		protected String computeText(int line) {
+			Disassembly dis = disassembler.getLine(line);
+			if (dis != null) {
+				int address = disassembler.getLine(line).getAddress();
 				return String.format("$%04X", address);
-			} else
-				return "-";
+			}
+			return ">>>" + line;
+		}
+
+	}
+
+	class LabelAnnotationRulerColumn extends AbstractRulerColumn {
+
+		public LabelAnnotationRulerColumn() {
+			super();
+			setWidth(100);
+		}
+
+		protected String computeText(int line) {
+			Disassembly dis = disassembler.getLine(line);
+			if (dis != null) {
+				if (dis.getLabel() != null)
+					return dis.getLabel();
+				else
+					return "NOLABEØ";
+			}
+			return "LABEL";
 		}
 	}
 
@@ -72,52 +104,64 @@ public class DisassemblyView extends ViewPart implements IDebugEventSetListener 
 	@Inject
 	IWorkbench workbench;
 
-	private SourceViewer viewer;
+	private SourceViewer sourceViewer;
 
 	private Action action1;
 	private Action action2;
 
-	private List<Disassembly> disassembly;
+	private Disassembler disassembler;
 
 	private AnnotationModel annotationModel = new AnnotationModel();
 
 	@Override
 	public void createPartControl(Composite parent) {
 
+		Font font = JFaceResources.getTextFont();
+
 		// TODO: Add extra ruler for the byte values so that the actual text is clean
 		// code?
 
-		CompositeRuler cr = new CompositeRuler();
+		CompositeRuler leftRuler = new CompositeRuler();
 
 		DefaultMarkerAnnotationAccess defaultMarkerAnnotationAccess = new DefaultMarkerAnnotationAccess();
 
 		// Add a column showing the address of the disassembled data
-		AddressAnnotationRulerColumn annotationRuler = new AddressAnnotationRulerColumn();
-		cr.addDecorator(1, annotationRuler);
+		AddressAnnotationRulerColumn addressRuler = new AddressAnnotationRulerColumn();
+		addressRuler.setFont(font);
+		leftRuler.addDecorator(1, addressRuler);
+
 		// Add another colum for showing breakpoints and various types of markers
-		AnnotationRulerColumn annotationRulerColumn = new AnnotationRulerColumn(annotationModel, 16,
+		BreakpointRulerColumn annotationRulerColumn = new BreakpointRulerColumn(annotationModel, 16,
 				defaultMarkerAnnotationAccess);
-		// Add the types of annotations the colum will deal with
-		annotationRulerColumn.addAnnotationType("net.resheim.eclipse.cc.pc");
-		annotationRulerColumn.addAnnotationType("org.eclipse.debug.core.breakpoint");
 
-		cr.addDecorator(0, annotationRulerColumn);
+		leftRuler.addDecorator(0, annotationRulerColumn);
 
-		ITheme currentTheme = PlatformUI.getWorkbench().getThemeManager().getCurrentTheme();
-		ColorRegistry colorRegistry = currentTheme.getColorRegistry();
-		annotationRuler.setBackground(colorRegistry.get("org.eclipse.ui.workbench.ACTIVE_TAB_BG_START"));
+		// ITheme currentTheme =
+		// PlatformUI.getWorkbench().getThemeManager().getCurrentTheme();
+		// ColorRegistry colorRegistry = currentTheme.getColorRegistry();
+		// annotationRuler.setBackground(colorRegistry.get("org.eclipse.ui.workbench.ACTIVE_TAB_BG_START"));
 
-		viewer = new SourceViewer(parent, cr, SWT.BORDER | SWT.V_SCROLL);
-		viewer.setEditable(false); // TODO: consider making it editable
-
-		Font font = JFaceResources.getTextFont();
-		StyledText styledText = viewer.getTextWidget();
-
+		sourceViewer = new SourceViewer(parent, leftRuler, SWT.BORDER | SWT.V_SCROLL);
+		sourceViewer.setEditable(false); // TODO: consider making it editable
+		StyledText styledText = sourceViewer.getTextWidget();
 		styledText.setFont(font);
-		annotationRuler.setFont(font);
+
+		CompositeRuler rightRuler = new CompositeRuler();
+		LabelAnnotationRulerColumn labelsColumn = new LabelAnnotationRulerColumn();
+		rightRuler.addDecorator(1, labelsColumn);
+
+		// Add the right ruler to the source viewer's control layout
+		// Control rightRulerControl = rightRuler.createControl(parent, sourceViewer);
+//		rightRuler.getControl().setLayoutData(new GridData(SWT.RIGHT, SWT.FILL, false, true));
+
+
+
 		DebugPlugin.getDefault().addDebugEventListener(this);
 
-		getSite().setSelectionProvider(viewer);
+		getSite().setSelectionProvider(sourceViewer);
+
+		annotationRulerColumn.initialize();
+		leftRuler.relayout();
 //		makeActions();
 //		hookContextMenu();
 //		contributeToActionBars();
@@ -132,9 +176,9 @@ public class DisassemblyView extends ViewPart implements IDebugEventSetListener 
 				DisassemblyView.this.fillContextMenu(manager);
 			}
 		});
-		Menu menu = menuMgr.createContextMenu(viewer.getControl());
-		viewer.getControl().setMenu(menu);
-		getSite().registerContextMenu(menuMgr, viewer);
+		Menu menu = menuMgr.createContextMenu(sourceViewer.getControl());
+		sourceViewer.getControl().setMenu(menu);
+		getSite().registerContextMenu(menuMgr, sourceViewer);
 	}
 
 	@SuppressWarnings("restriction")
@@ -188,12 +232,12 @@ public class DisassemblyView extends ViewPart implements IDebugEventSetListener 
 	}
 
 	private void showMessage(String message) {
-		MessageDialog.openInformation(viewer.getControl().getShell(), "Disassembly", message);
+		MessageDialog.openInformation(sourceViewer.getControl().getShell(), "Disassembly", message);
 	}
 
 	@Override
 	public void setFocus() {
-		viewer.getControl().setFocus();
+		sourceViewer.getControl().setFocus();
 	}
 
 	// TODO: Do not create a new Document for each DISASSEMBLE, do reuse
@@ -209,46 +253,47 @@ public class DisassemblyView extends ViewPart implements IDebugEventSetListener 
 						int pc = Short.toUnsignedInt(frame.getProgramCounter());
 						switch (event.getDetail()) {
 						case IBinaryMonitor.DISASSEMBLE:
-							Disassembler disassembler = ((VICEDebugTarget) event.getSource()).getDisassembler();
-							byte[] memory = ((VICEDebugTarget) event.getSource()).getComputerMemory();
+							disassembler = ((VICEDebugTarget) event.getSource()).getDisassembler();
 							// We only care about disassembling once this time.
 							// - [ ] Update the parts that have changed
 							// - [ ] Assume that the changed parts is data, not code
 //							if (disassembly == null || disassembly.isEmpty()) {
-								disassembly = disassembler.disassemble(memory);
-								StringBuilder sb = new StringBuilder();
-								int lineNumber = 0;
-								int startingLine = 0;
-								for (Disassembly dis : disassembly) {
-									sb.append(dis.getText());
-									sb.append("\n");
-									if (dis.getAddress() == pc) {
-										startingLine = lineNumber;
-									}
-									lineNumber++;
+							Disassembly current = null;
+							List<Disassembly> disassembly = disassembler.getDisassembly();
+							StringBuilder sb = new StringBuilder();
+							for (Disassembly dis : disassembly) {
+								if (dis.getLabel() != null)
+									sb.append(dis.getLabel() + "\n");
+								sb.append(String.format("%04X   ", dis.getAddress()));
+								sb.append(dis.getText());
+								sb.append("\n");
+								if (pc == dis.getAddress()) {
+									current = dis;
 								}
-								Document document = new Document();
-								document.set(sb.toString());
-								final int line = startingLine;
-								Display.getDefault().asyncExec(new Runnable() {
-									@Override
-									public void run() {
-										viewer.setDocument(document, annotationModel);
-										// Create a custom annotation
-										IDocument document = viewer.getDocument();
+							}
+							System.out.println(sb);
+							Document document = new Document();
+							document.set(sb.toString());
+							final int line = current.getLine();
+							Display.getDefault().asyncExec(new Runnable() {
+								@Override
+								public void run() {
+									sourceViewer.setDocument(document, annotationModel);
+									// Create a custom annotation
+									IDocument document = sourceViewer.getDocument();
 
-										try {
-											int startOffset;
-											startOffset = document.getLineOffset(line - 1);
-											int length = document.getLineLength(line - 1);
-											addProgramCounterMarker(startOffset, length);
-										} catch (BadLocationException e) {
-											e.printStackTrace();
-										}
-										scrollToLine(viewer, line);
+									try {
+										int startOffset;
+										startOffset = document.getLineOffset(line);
+										int length = document.getLineLength(line);
+										addProgramCounterMarker(startOffset, length);
+									} catch (BadLocationException e) {
+										e.printStackTrace();
 									}
+									scrollToLine(sourceViewer, line);
+								}
 
-								});
+							});
 //							}
 						}
 						break;
@@ -263,7 +308,7 @@ public class DisassemblyView extends ViewPart implements IDebugEventSetListener 
 		Annotation annotation = new Annotation("net.resheim.eclipse.cc.pc", false, "Highlighting description");
 		Position position = new Position(startOffset, length);
 		annotationModel.addAnnotation(annotation, position);
-		viewer.invalidateTextPresentation();
+		sourceViewer.invalidateTextPresentation();
 	}
 
 	public static void scrollToLine(SourceViewer sourceViewer, int lineNumber) {

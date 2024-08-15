@@ -44,7 +44,7 @@ public class Disassembler {
 		/**
 		 * @return the number of bytes required for the instruction
 		 */
-		public int getLength() {
+		public int getDataSize() {
 			switch (this.name()) {
 			case "IMMEDIATE":
 			case "ZERO_PAGE":
@@ -53,15 +53,15 @@ public class Disassembler {
 			case "INDIRECT_X":
 			case "INDIRECT_Y":
 			case "RELATIVE":
-				return 2;
+				return 1;
 			case "ABSOLUTE":
 			case "ABSOLUTE_X":
 			case "ABSOLUTE_Y":
 			case "INDIRECT":
-				return 3;
+				return 2;
 			case "ACCUMULATOR":
 			case "IMPLIED":
-				return 1;
+				return 0;
 			}
 			throw new RuntimeException("Unhandled AdressingMode length " + this.name());
 		}
@@ -87,6 +87,8 @@ public class Disassembler {
 
 	private static final Map<Integer, Opcode> opcodeTable = new HashMap<>();
 	private final HashMap<Integer, Label> labels;
+	private ArrayList<Disassembly> disassembly;
+	private HashMap<Integer, Disassembly> disassemblyLine;
 
 
 	static {
@@ -434,9 +436,11 @@ public class Disassembler {
 		this.labels = labels;
 	}
 
-	public List<Disassembly> disassemble(byte[] code) {
-		List<Disassembly> instructions = new ArrayList<>();
+	public synchronized void disassemble(byte[] code) {
+		disassembly = new ArrayList<Disassembly>();
+		disassemblyLine = new HashMap<>();
 		int address = 0;
+		int line = 0;
 		do {
 			if (address == code.length || address >= 65_535) {
 				break;
@@ -444,24 +448,25 @@ public class Disassembler {
 			int opCode = Byte.toUnsignedInt(code[address]);
 			Opcode op = opcodeTable.get(opCode);
 
+			if (op == null) {
+				throw new RuntimeException("Unknown opcode");
+			}
+
 			// get the length of the operation
-			int length = op.mode.getLength();
+			int instructionLength = op.mode.getDataSize() + 1;
 
 			StringBuilder sb = new StringBuilder();
-			// add the label if found
-			if (labels.containsKey(address)) {
-				instructions.add(new Disassembly(address, labels.get(address).name, 0, true));
-			}
+
 			sb.append(String.format("%02X", op.code));
 			sb.append(" ");
 
-			if (length > 1) {
+			if (instructionLength > 1) {
 				sb.append(String.format("%02X ", code[address + 1]));
 			} else {
 				sb.append("   ");
 			}
 
-			if (length > 2) {
+			if (instructionLength > 2) {
 				sb.append(String.format("%02X ", code[address + 2]));
 			} else {
 				sb.append("   ");
@@ -497,14 +502,14 @@ public class Disassembler {
 				if (op.mode == AddressingMode.ABSOLUTE_Y)
 					sb.append(",Y");
 				break;
-			case INDIRECT_X:
+			case INDIRECT:
 				sb.append(" ($" + String.format("%02X", code[address + 1]) + "),X");
 				break;
 			case INDIRECT_Y:
 				sb.append(" ($" + String.format("%02X", code[address + 1]) + "),Y");
 				break;
 			case RELATIVE:
-				int pointer_relative = (address + code[address + 1]) + length;
+				int pointer_relative = (address + code[address + 1]) + instructionLength;
 				if (labels.containsKey(pointer_relative)) {
 					sb.append(" ");
 					sb.append(labels.get(pointer_relative).name);
@@ -516,9 +521,27 @@ public class Disassembler {
 			default:
 				break;
 			}
-			instructions.add(new Disassembly(address, sb.toString(), length));
-			address += length;
+			Disassembly dis = new Disassembly(line, address, sb.toString(), instructionLength);
+			if (labels.containsKey(address)) {
+				dis.setLabel(labels.get(address).name);
+			}
+			disassembly.add(dis);
+			disassemblyLine.put(line, dis);
+			line = line + 1;
+			address = address + instructionLength;
 		} while (true);
-		return instructions;
+	}
+
+	/**
+	 * Returns a list of disassembled code where each key is the address.
+	 *
+	 * @return
+	 */
+	public List<Disassembly> getDisassembly() {
+		return disassembly;
+	}
+
+	public Disassembly getLine(int line) {
+		return disassemblyLine.get(line);
 	}
 }

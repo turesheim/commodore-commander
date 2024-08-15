@@ -23,39 +23,25 @@ public class Disassembly {
 
 	private String text;
 
-	private boolean label;
+	private String label;
+
+	private int line;
 
 	public int getAddress() {
 		return address;
 	}
 
-	public Disassembly(int address, String text, int length) {
+	public Disassembly(int line, int address, String text, int length) {
 		super();
 		presentation = Presentation.CODE;
 		this.address = address;
 		this.text = text;
 		this.length = length;
-	}
-
-	public Disassembly(int address, String text, int length, boolean label) {
-		super();
-		presentation = Presentation.CODE;
-		this.address = address;
-		this.text = text;
-		this.label = label;
-		this.length = length;
+		this.setLine(line);
 	}
 
 	public String getText() {
 		return text;
-	}
-
-	public boolean isLabel() {
-		return label;
-	}
-
-	public void setLabel(boolean label) {
-		this.label = label;
 	}
 
 	public Presentation getPresentation() {
@@ -72,6 +58,29 @@ public class Disassembly {
 
 	public void setLength(int length) {
 		this.length = length;
+	}
+
+	public String getLabel() {
+		return label;
+	}
+
+	public void setLabel(String label) {
+		this.label = label;
+	}
+
+	public int getLine() {
+		return line;
+	}
+
+	public void setLine(int line) {
+		this.line = line;
+	}
+
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(String.format("$%02X", address));
+
+		return sb.toString();
 	}
 
 }

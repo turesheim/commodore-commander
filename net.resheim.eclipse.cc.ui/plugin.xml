@@ -208,6 +208,7 @@
             id="net.resheim.eclipse.cc.ui.launchConfigurationTypeImage">
       </launchConfigurationTypeImage>
    </extension>
+   <!-- DISABLE THIS FOR NOW, IT CANNOT BE USED FOR READING FROM RAM
    <extension
          point="org.eclipse.ui.views">
       <category
@@ -223,6 +224,7 @@
             name="Disassembly">
       </view>
    </extension>
+   -->
    <extension
          point="org.eclipse.ui.perspectiveExtensions">
       <perspectiveExtension
@@ -279,11 +281,15 @@
          id="net.resheim.eclipse.cc.checkpointMarker"
          name="Checkpoint"
          point="org.eclipse.core.resources.markers">
-      <super type="org.eclipse.core.resources.marker"/>
-      <attribute name="location"/>
-      <attribute name="message"/>
+      <super type="org.eclipse.debug.core.breakpointMarker"/>
       <persistent value="true">
       </persistent>
+      <attribute
+            name="net.resheim.cc.debug.startAddress">
+      </attribute>
+      <attribute
+            name="net.resheim.cc.debug.hitCount">
+      </attribute>
   </extension>
    <extension point="org.eclipse.debug.ui.debugModelPresentations">
    <debugModelPresentation

@@ -253,6 +253,7 @@ public class MonitorEventDispatcher extends Job {
 			if (items == 0)
 				items = 65_535;
 			buffer.get(computerMemory, 0, items);
+			debugTarget.getDisassembler().disassemble(buffer.array());
 			debugTarget.fireEvent(new DebugEvent(debugTarget, DebugEvent.MODEL_SPECIFIC, IBinaryMonitor.DISASSEMBLE));
 		} catch (Exception e) {
 			e.printStackTrace();
