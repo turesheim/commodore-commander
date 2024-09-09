@@ -29,7 +29,9 @@ import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser;
 /**
  * Utilises the {@link KickAssemblerParser} to find import statements and
  * creates an ordered list of these while also parsing the imported files in
- * order to create a tree.
+ * order to create a tree. We use this to find the top file and automatically
+ * compile this, when there have been changes in it or one of it's imported
+ * files.
  */
 public class KickAssemblerProjectParser {
 
