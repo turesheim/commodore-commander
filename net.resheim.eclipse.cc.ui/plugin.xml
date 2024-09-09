@@ -50,6 +50,7 @@
           contentTypeId="net.resheim.eclipse.cc.kickassembler"
           editorId="net.resheim.eclipse.cc.ui.assembly.editor">
     </editorContentTypeBinding>
+    <!-- A bit of a cheat so that double clicking a PRG-file will run it -->
     <editor
           default="true"
           extensions="prg"
@@ -59,6 +60,25 @@
           name="Commodore Program">
     </editor>
   </extension>
+  <!-- BEGIN EDITOR ACTIONS ================================================ -->
+  <!--
+  Action for toggling a checkpoint when double clicking the ruler. This approach
+  is deprecated, but I cannot figure out how to do this using the COMMAND
+  extension points.
+  -->
+  <extension point="org.eclipse.ui.editorActions">
+    <editorContribution
+          targetID="net.resheim.eclipse.cc.ui.assembly.editor"
+          id="net.resheim.eclipse.cc.ui.assembly.editor.rulerActions">
+       <action
+             label="Not Used"
+             class="org.eclipse.debug.ui.actions.RulerToggleBreakpointActionDelegate"
+             style="push"
+             actionID="RulerDoubleClick"
+             id="net.resheim.eclipse.cc.ui.assembly.editor.doubleClickBreakpointAction"/>
+    </editorContribution>
+  </extension>
+  <!-- END EDITOR ACTIONS ================================================== -->
   <extension
         point="org.eclipse.tm4e.ui.snippets">
      <snippet
@@ -224,7 +244,6 @@
             name="Disassembly">
       </view>
    </extension>
-   -->
    <extension
          point="org.eclipse.ui.perspectiveExtensions">
       <perspectiveExtension
@@ -237,6 +256,7 @@
          </view>
       </perspectiveExtension>
    </extension>
+   -->
    <extension
          point="org.eclipse.help.contexts">
       <contexts
@@ -250,6 +270,8 @@
             name="net.resheim.eclipse.cc.pc">
       </type>
    </extension>
+
+   <!-- EDITOR -->
    <extension
          point="org.eclipse.ui.editors.markerAnnotationSpecification">
       <specification
@@ -268,6 +290,33 @@
             verticalRulerPreferenceValue="true">
       </specification>
    </extension>
+
+   <extension
+         point="org.eclipse.ui.editors.annotationTypes">
+      <type
+            markerSeverity="0"
+            name="net.resheim.eclipse.cc.checkpoint">
+      </type>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors.markerAnnotationSpecification">
+      <specification
+            annotationType="net.resheim.eclipse.cc.checkpoint"
+            colorPreferenceKey="checkpointIndicatorColor"
+            colorPreferenceValue="212,212,212"
+            highlightPreferenceKey="checkpointIndicatorHighlight"
+            highlightPreferenceValue="true"
+            icon="icons/inst_ptr_top.png"
+            includeOnPreferencePage="true"
+            label="Checkpoint"
+            overviewRulerPreferenceKey="checkpointIndicatorOverviewRuler"
+            overviewRulerPreferenceValue="true"
+            presentationLayer="4"
+            verticalRulerPreferenceKey="checkpointIndicatorVerticalRuler"
+            verticalRulerPreferenceValue="true">
+      </specification>
+   </extension>
+
    <extension
          point="org.eclipse.debug.core.breakpoints">
       <breakpoint
@@ -277,6 +326,7 @@
             name="Checkpoint">
       </breakpoint>
    </extension>
+
    <extension
          id="net.resheim.eclipse.cc.checkpointMarker"
          name="Checkpoint"
@@ -284,17 +334,25 @@
       <super type="org.eclipse.debug.core.breakpointMarker"/>
       <persistent value="true">
       </persistent>
-      <attribute
-            name="net.resheim.cc.debug.startAddress">
-      </attribute>
-      <attribute
-            name="net.resheim.cc.debug.hitCount">
-      </attribute>
   </extension>
-   <extension point="org.eclipse.debug.ui.debugModelPresentations">
-   <debugModelPresentation
+
+  <!-- WEE DONT NEED THIS ONE FOR NOW
+  <extension point="org.eclipse.debug.ui.debugModelPresentations">
+    <debugModelPresentation
       id="net.resheim.eclipse.cc.vice.debug"
       class="net.resheim.eclipse.cc.ui.CheckpointPresentation">
-   </debugModelPresentation>
+    </debugModelPresentation>
+ </extension>
+ -->
+
+ <extension
+       point="org.eclipse.core.runtime.adapters">
+    <factory
+          adaptableType="net.resheim.eclipse.cc.editor.AssemblyEditor"
+          class="net.resheim.eclipse.cc.ui.AssemblyEditorAdapterFactory">
+       <adapter
+             type="org.eclipse.debug.ui.actions.IToggleBreakpointsTarget">
+       </adapter>
+    </factory>
  </extension>
 </plugin>

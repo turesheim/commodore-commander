@@ -5,16 +5,15 @@ import java.util.EnumSet;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.debug.core.DebugPlugin;
-import org.eclipse.debug.core.model.Breakpoint;
 import org.eclipse.debug.core.model.IBreakpoint;
+import org.eclipse.debug.core.model.LineBreakpoint;
 
 /**
  *
  * @since 1.0
  * @author Torkild Ulvøy Resheim
  */
-public class Checkpoint extends Breakpoint {
+public class Checkpoint extends LineBreakpoint {
 
 	public enum Operation {
 		LOAD(0x01), STORE(0x02), EXEC(0x04);
@@ -130,15 +129,30 @@ public class Checkpoint extends Breakpoint {
 
 	private EnumSet<Operation> operation;
 
-	public Checkpoint(IResource resource, int adddress) throws CoreException {
+	public Checkpoint() {
+		super();
+	}
+
+	public Checkpoint(IResource resource, int lineNumber) throws CoreException {
 		super();
 		IMarker marker = resource.createMarker("net.resheim.eclipse.cc.checkpointMarker");
 		setMarker(marker);
 		setEnabled(true);
 		ensureMarker().setAttribute(IBreakpoint.ENABLED, true);
-		ensureMarker().setAttribute(IMarker.MESSAGE, "Breakpoint at address ");
+		ensureMarker().setAttribute(IMarker.MESSAGE, "Checkpoint");
 		ensureMarker().setAttribute(IBreakpoint.ID, getModelIdentifier());
+		ensureMarker().setAttribute(IMarker.LINE_NUMBER, lineNumber);
 	}
+
+//	public Checkpoint(IResource resource, int adddress) throws CoreException {
+//		super();
+//		IMarker marker = resource.createMarker("net.resheim.eclipse.cc.checkpointMarker");
+//		setMarker(marker);
+//		setEnabled(true);
+//		ensureMarker().setAttribute(IBreakpoint.ENABLED, true);
+//		ensureMarker().setAttribute(IMarker.MESSAGE, "Breakpoint at address ");
+//		ensureMarker().setAttribute(IBreakpoint.ID, getModelIdentifier());
+//	}
 
 	public String getCondition() {
 		return condition;

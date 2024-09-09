@@ -13,16 +13,22 @@ package net.resheim.eclipse.cc.editor;
 
 import org.eclipse.jface.text.ITextHover;
 import org.eclipse.ui.editors.text.TextEditor;
+
 /**
- * 
+ *
  * XXX: Switching to basic TextEditor breaks some features provided by the
  * TextMate language configuration
  */
 public class AssemblyEditor extends TextEditor {
 
-    ITextHover fTextHover;
+	ITextHover fTextHover;
 
 	public AssemblyEditor() {
+		super();
+	}
+
+	public void initializeEditor() {
+		super.initializeEditor();
 		setSourceViewerConfiguration(new AssemblyViewerConfiguration());
 	}
 
