@@ -25,6 +25,8 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.texteditor.ITextEditor;
 
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
+import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Source;
+import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
 
 public class CheckpointAdapter implements IToggleBreakpointsTargetExtension {
 
@@ -64,27 +66,25 @@ public class CheckpointAdapter implements IToggleBreakpointsTargetExtension {
 	public void toggleBreakpoints(IWorkbenchPart part, ISelection selection) throws CoreException {
 		System.out.println("CheckpointAdapter.toggleBreakpoints()");
 		ITextEditor textEditor = getEditor(part);
-	       if (textEditor != null) {
-	          IResource resource = (IResource) textEditor.getEditorInput()
-	                                              .getAdapter(IResource.class);
-	          ITextSelection textSelection = (ITextSelection) selection;
-	          int lineNumber = textSelection.getStartLine();
-	          IBreakpoint[] breakpoints = DebugPlugin.getDefault().getBreakpointManager()
-						.getBreakpoints("net.resheim.eclipse.cc.vice.debug");
-	          for (int i = 0; i < breakpoints.length; i++) {
-	             IBreakpoint breakpoint = breakpoints[i];
-	             if (resource.equals(breakpoint.getMarker().getResource())) {
-	                if (((ILineBreakpoint)breakpoint).getLineNumber() == (lineNumber + 1)) {
-	                breakpoint.delete();
-	                   return;
-	                }
-	             }
-	          }
-	    Checkpoint lineBreakpoint = new Checkpoint(resource, lineNumber + 1);
-		DebugPlugin.getDefault().getBreakpointManager().addBreakpoint(lineBreakpoint);
-	}
+		if (textEditor != null) {
+			IResource resource = (IResource) textEditor.getEditorInput().getAdapter(IResource.class);
+			ITextSelection textSelection = (ITextSelection) selection;
+			int lineNumber = textSelection.getStartLine();
+			IBreakpoint[] breakpoints = DebugPlugin.getDefault().getBreakpointManager()
+					.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
+			for (int i = 0; i < breakpoints.length; i++) {
+				IBreakpoint breakpoint = breakpoints[i];
+				if (resource.equals(breakpoint.getMarker().getResource())) {
+					if (((ILineBreakpoint) breakpoint).getLineNumber() == (lineNumber + 1)) {
+						breakpoint.delete();
+						return;
+					}
+				}
+			}
+			Checkpoint lineBreakpoint = new Checkpoint(resource, lineNumber + 1, Source.USER);
+			DebugPlugin.getDefault().getBreakpointManager().addBreakpoint(lineBreakpoint);
+		}
 }
-
 
 	private ITextEditor getEditor(IWorkbenchPart part) {
 		if (part instanceof ITextEditor) {

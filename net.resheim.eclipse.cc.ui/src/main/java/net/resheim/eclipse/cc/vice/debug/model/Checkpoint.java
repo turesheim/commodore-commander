@@ -28,6 +28,16 @@ import org.eclipse.debug.core.model.LineBreakpoint;
  */
 public class Checkpoint extends LineBreakpoint {
 
+	public enum Source {
+		/**
+		 * The Checkpoint has been created using the KickAssembler <code>.break</code>
+		 * or <code>.watch</code> commands.
+		 */
+		CODE,
+		USER
+
+	}
+
 	/**
 	 * The operation that will trigger the checkpoint.
 	 */
@@ -93,6 +103,8 @@ public class Checkpoint extends LineBreakpoint {
 	 */
 	private String condition;
 
+	private Source source;
+
 	/**
 	 * Wheter nor not the checkpoint is enabled – and whether or not to stop when
 	 * hit.
@@ -149,7 +161,7 @@ public class Checkpoint extends LineBreakpoint {
 		super();
 	}
 
-	public Checkpoint(IResource resource, int lineNumber) throws CoreException {
+	public Checkpoint(IResource resource, int lineNumber, Source source) throws CoreException {
 		super();
 		IMarker marker = resource.createMarker("net.resheim.eclipse.cc.checkpointMarker");
 		setMarker(marker);
@@ -158,6 +170,7 @@ public class Checkpoint extends LineBreakpoint {
 		ensureMarker().setAttribute(IMarker.MESSAGE, "Checkpoint");
 		ensureMarker().setAttribute(IBreakpoint.ID, getModelIdentifier());
 		ensureMarker().setAttribute(IMarker.LINE_NUMBER, lineNumber);
+		ensureMarker().setAttribute("source", source.name());
 	}
 
 //	public Checkpoint(IResource resource, int adddress) throws CoreException {
@@ -302,7 +315,15 @@ public class Checkpoint extends LineBreakpoint {
 
 	@Override
 	public String getModelIdentifier() {
-		return "net.resheim.eclipse.cc.vice.debug";
+		return VICEDebugElement.DEBUG_MODEL_ID;
+	}
+
+	public Source getSource() {
+		return source;
+	}
+
+	public void setSource(Source source) {
+		this.source = source;
 	}
 
 }

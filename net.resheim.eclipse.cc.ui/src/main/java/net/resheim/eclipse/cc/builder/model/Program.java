@@ -13,13 +13,13 @@
  */
 package net.resheim.eclipse.cc.builder.model;
 
+import java.util.List;
+
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
-import java.util.List;
 
 /**
  * This is the root element from parsing <code>*.dbg</code> files that

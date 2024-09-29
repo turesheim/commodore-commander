@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -28,15 +29,29 @@ import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.debug.core.DebugPlugin;
+import org.eclipse.debug.core.model.IBreakpoint;
 import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.console.MessageConsoleStream;
 
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 import kickass.common.diagnostics.DiagnosticType;
 import kickass.common.diagnostics.IDiagnostic;
+import net.resheim.eclipse.cc.builder.model.Breakpoint;
+import net.resheim.eclipse.cc.builder.model.LineMapping;
+import net.resheim.eclipse.cc.builder.model.Program;
+import net.resheim.eclipse.cc.builder.model.SourceFile;
 import net.resheim.eclipse.cc.kickassembler.KickAssemblerWrapper;
 import net.resheim.eclipse.cc.ui.ConsoleFactory;
+import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
+import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Source;
+import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
 
 public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
@@ -55,12 +70,12 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 				// just build all roots, we currently cannot determine the tree
 				// of those files that have been removed
 				for (AssemblyFile assemblyFile : roots) {
-					buildAssembly(assemblyFile);
+					assemble(assemblyFile);
 				}
 			} else {
 				for (AssemblyFile assemblyFile : roots) {
 					if (assemblyFile.containsResource(resource)) {
-						buildAssembly(assemblyFile);
+						assemble(assemblyFile);
 					}
 				}
 			}
@@ -104,9 +119,12 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
+	/**
+	 * Detmines the
+	 */
 	public class AssemblyFileManager {
 
-		// Contains all assembly files found
+		// a list of all assembly files found
 		private List<AssemblyFile> allFiles;
 
 		public AssemblyFileManager() {
@@ -137,6 +155,12 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			}
 		}
 
+		/**
+		 * Build a tree structure of all the assembly files found. The file not included
+		 * in any other files, will be the root.
+		 *
+		 * @return a tree structure of all assembly files in the program
+		 */
 		public List<AssemblyFile> consolidateTrees() {
 			List<AssemblyFile> allFilesCopy = new ArrayList<>(allFiles);
 			for (AssemblyFile assemblyFile : allFiles) {
@@ -155,12 +179,6 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		afm.clear();
 		getProject().accept(new TreeBuildingResourceVisitor());
 		List<AssemblyFile> roots = afm.consolidateTrees();
-		// for debugging only
-		roots.forEach(f -> {
-			System.out.println("rootfile = " + f.getResource());
-			f.printTree("  ");
-		});
-
 		if (kind == FULL_BUILD) {
 			fullBuild(monitor, roots);
 		} else {
@@ -177,12 +195,14 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 	protected void clean(IProgressMonitor monitor) throws CoreException {
 	}
 
-	void buildAssembly(AssemblyFile assemblyFile) {
+	private void assemble(AssemblyFile assemblyFile) throws CoreException {
 		clearMarkers(assemblyFile);
 		IFile file = (IFile) assemblyFile.getResource();
+		// use our KickAssembler wrapper
 		KickAssemblerWrapper wrapper = new KickAssemblerWrapper();
 		MessageConsole console = ConsoleFactory.findConsole();
 		MessageConsoleStream out = console.newMessageStream();
+		// which still needs program arguments and do the build
 		wrapper.execute(new String[] { "-libdir", file.getProject().getFolder("library").getLocation().toOSString(),
 				file.getLocation().toOSString(), "-odir", "out", "-showmem", "-vicesymbols", "-debugdump" }, out);
 
@@ -192,13 +212,81 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		for (IDiagnostic iDiagnostic : wrapper.getState().diagnosticMgr.getWarnings()) {
 			addDiagnosticMessage(iDiagnostic);
 		}
+		// add any breakpoints found
+		addCompiledCheckpoints(file);
+
 		// Make sure any changes in the file systems are reflected in the
 		// Eclipse viewers.
+		file.getProject().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
+	}
+
+	/**
+	 * Parses the debug file that is resulting from compiling the root assembly file
+	 * and generates {@link Checkpoint}s corresponding to the use of
+	 * <code>.break</code> and <code>.watch</code> commands. Any existing
+	 * checkpoints also origination from using these commands are first removed.
+	 *
+	 * @param file the root assembly file
+	 * @throws CoreException
+	 */
+	private void addCompiledCheckpoints(IFile file) throws CoreException {
 		try {
-			file.getProject().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
-		} catch (CoreException e) {
-			e.printStackTrace();
+			// determine the output folder
+			IFolder output = (IFolder) file.getParent().findMember("out");
+			// find the debug file created by KickAssembler
+			IPath newFilePath = file.getFullPath().removeFileExtension().addFileExtension("dbg");
+			IResource debugFile = output.findMember(newFilePath.lastSegment());
+			// parse the debug file
+			JAXBContext context = JAXBContext.newInstance(Program.class);
+			Unmarshaller unmarshaller = context.createUnmarshaller();
+			Program debug = (Program) unmarshaller.unmarshal(debugFile.getRawLocation().toFile());
+			clearOldCompiledCheckpoints(debug);
+			// create breakpoints and watchpoints
+			List<Breakpoint> breakpoints = debug.getBreakpoints();
+			for (Breakpoint breakpoint : breakpoints) {
+				int address = breakpoint.getAddress();
+				LineMapping lineMapping = debug.getLineMapping(address);
+				int fileIndex = lineMapping.getFileIndex();
+				IPath checkpointFile = getFile(debug, fileIndex);
+				IFile fileForLocation = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(checkpointFile);
+				Checkpoint lineBreakpoint = new Checkpoint(fileForLocation, lineMapping.getStartLine(), Source.CODE);
+				DebugPlugin.getDefault().getBreakpointManager().addBreakpoint(lineBreakpoint);
+			}
+		} catch (JAXBException e) {
+			throw new CoreException(Status.error("Could not parse debug file", e));
 		}
+	}
+
+	private void clearOldCompiledCheckpoints(Program debug) throws CoreException {
+		List<Breakpoint> breakpoints = debug.getBreakpoints();
+		for (Breakpoint breakpoint : breakpoints) {
+			int address = breakpoint.getAddress();
+			LineMapping lineMapping = debug.getLineMapping(address);
+			int fileIndex = lineMapping.getFileIndex();
+			IPath checkpointFile = getFile(debug, fileIndex);
+			IFile fileForLocation = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(checkpointFile);
+			IBreakpoint[] existing = DebugPlugin.getDefault().getBreakpointManager()
+					.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
+			for (int i = 0; i < existing.length; i++) {
+				IBreakpoint bp = existing[i];
+				if (bp.getMarker().getResource().equals(fileForLocation)) {
+					String attribute = (String) bp.getMarker().getAttribute("source");
+					if (attribute != null && attribute.equals("CODE")) {
+						DebugPlugin.getDefault().getBreakpointManager().removeBreakpoint(bp, true);
+					}
+				}
+			}
+		}
+	}
+
+	private IPath getFile(Program debug, int fileIndex) {
+		List<SourceFile> sourceFiles = debug.getSources().getSourceFiles();
+		for (SourceFile files : sourceFiles) {
+			if (files.getFileNumber() == fileIndex) {
+				return files.getPath();
+			}
+		}
+		return null;
 	}
 
 	private void addDiagnosticMessage(IDiagnostic iDiagnostic) {
@@ -218,6 +306,11 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
+	/**
+	 * Clear KickAssembler problem markers for the file and all it's included files.
+	 *
+	 * @param file the root file
+	 */
 	private void clearMarkers(AssemblyFile file) {
 		try {
 			IResource r = file.getResource();
@@ -234,7 +327,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 	private void fullBuild(final IProgressMonitor monitor, List<AssemblyFile> roots) throws CoreException {
 		// there is only a need to build the root files
 		for (AssemblyFile assemblyFile : roots) {
-			buildAssembly(assemblyFile);
+			assemble(assemblyFile);
 		}
 	}
 

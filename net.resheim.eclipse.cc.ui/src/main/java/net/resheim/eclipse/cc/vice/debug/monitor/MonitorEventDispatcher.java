@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -145,8 +144,10 @@ public class MonitorEventDispatcher extends Job {
 				}
 			}
 			if (cp == null) {
-				cp = new Checkpoint(ResourcesPlugin.getWorkspace().getRoot(), 0);
-				cp.setNumber(id);
+				// XXX: Unknown checkpoint
+				System.out.println("Unknown checkpoint");
+//				cp = new Checkpoint(ResourcesPlugin.getWorkspace().getRoot(), 0);
+//				cp.setNumber(id);
 			}
 			cp.setCurrentlyHit(buffer.get() == 0x01);
 			cp.setStartAddress(buffer.getShort());
