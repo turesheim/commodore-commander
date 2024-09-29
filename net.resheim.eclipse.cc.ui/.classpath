@@ -14,6 +14,12 @@
 	<classpathentry exported="true" kind="lib" path="reference" sourcepath="reference"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="output" path="bin"/>
+  <classpathentry kind="src" path="src/main/java"/>
+  <classpathentry kind="src" path="src/test/resources"/>
+  <classpathentry kind="src" output="bin/test" path="src/test/java">
+    <attributes>
+      <attribute name="test" value="true"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="output" path="bin/main"/>
 </classpath>
