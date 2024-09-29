@@ -1,3 +1,16 @@
+/**
+ * Copyright (c) 2024 Torkild Ulvøy Resheim
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *
+ *   Torkild Ulvøy Resheim <torkildr@gmail.com> - initial API and implementation
+ */
 package net.resheim.eclipse.cc.vice.debug.model;
 
 import java.io.DataInputStream;
@@ -80,14 +93,13 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	private Disassembler disassembler;
 
-	public VICEDebugTarget(IProcess process, ILaunch launch, Disassembler disassembler) {
+	public VICEDebugTarget(IProcess process, ILaunch launch) {
 		super(null);
 		this.process = process;
 		this.launch = launch;
 		this.socket = connect();
 		this.counter = new AtomicInteger();
 		this.thread = new VICEThread(this, socket);
-		this.disassembler = disassembler;
 		DebugPlugin.getDefault().getBreakpointManager().addBreakpointListener(this);
 		DebugPlugin.getDefault().addDebugEventListener(this);
 		connectEventdDispatcherStreams();
