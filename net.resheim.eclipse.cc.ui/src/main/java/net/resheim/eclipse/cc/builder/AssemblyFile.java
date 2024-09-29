@@ -7,7 +7,8 @@
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
- * Torkild Ulvøy Resheim <torkildr@gmail.com> - initial API and implementation
+ *
+ *   Torkild Ulvøy Resheim <torkildr@gmail.com> - initial API and implementation
  */
 package net.resheim.eclipse.cc.builder;
 

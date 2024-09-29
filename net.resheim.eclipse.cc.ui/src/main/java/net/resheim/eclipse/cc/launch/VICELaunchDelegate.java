@@ -42,9 +42,6 @@ import org.osgi.framework.Bundle;
 import com.pty4j.PtyProcess;
 import com.pty4j.PtyProcessBuilder;
 
-import net.resheim.eclipse.cc.disassembler.Disassembler;
-import net.resheim.eclipse.cc.disassembler.Label;
-import net.resheim.eclipse.cc.disassembler.LabelFileParser;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
 
 /**
@@ -98,7 +95,6 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 			File x64sc = new File(FileLocator.toFileURL(fileURL).getPath());
 			args.add(x64sc.toString());
 
-			HashMap<Integer, Label> labels = new HashMap<>();
 
 			// We only need to set the monitor commands file if we intend to do
 			// debugging – assuming that KickAssembler has created it.
@@ -107,7 +103,6 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 				if (mcommands.toFile().exists()) {
 					args.add("-moncommands");
 					args.add(mcommands.toOSString());
-					labels = LabelFileParser.parse(mcommands.toFile());
 				}
 				// In case one wants to telnet to the address and use the text
 				// mode monitor
@@ -147,8 +142,7 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 			Map<String, String> attributes = new HashMap<>();
 			IProcess newProcess = DebugPlugin.newProcess(launch, process, fileName, attributes);
 			if (debug) {
-				Disassembler disassembler = new Disassembler(labels);
-				VICEDebugTarget debugTarget = new VICEDebugTarget(newProcess, launch, disassembler);
+				VICEDebugTarget debugTarget = new VICEDebugTarget(newProcess, launch);
 				launch.addDebugTarget(debugTarget);
 			}
 		} catch (Exception e) {
