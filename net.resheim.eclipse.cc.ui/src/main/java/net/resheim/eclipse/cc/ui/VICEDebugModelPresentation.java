@@ -13,17 +13,18 @@
  */
 package net.resheim.eclipse.cc.ui;
 
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.ui.IDebugModelPresentation;
 import org.eclipse.debug.ui.IValueDetailListener;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IEditorInput;
-
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
+import org.eclipse.ui.part.FileEditorInput;
 
-// XXX: Currently not in use – we're keeping it for the future
-public class CheckpointPresentation implements IDebugModelPresentation {
+public class VICEDebugModelPresentation implements IDebugModelPresentation {
 
 	@Override
 	public void addListener(ILabelProviderListener listener) {
@@ -31,8 +32,6 @@ public class CheckpointPresentation implements IDebugModelPresentation {
 
 	@Override
 	public void dispose() {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -46,18 +45,26 @@ public class CheckpointPresentation implements IDebugModelPresentation {
 
 	@Override
 	public IEditorInput getEditorInput(Object element) {
+		// figure out an editor input for the checkpoint so that a double click or
+		// similar action will open an editor on the checkpoint
+		if (element instanceof Checkpoint) {
+			Checkpoint checkpoint = (Checkpoint) element;
+			IResource resource = checkpoint.getMarker().getResource();
+			if (resource instanceof IFile) {
+				IFile file = (IFile) resource;
+				return new FileEditorInput(file);
+			}
+		}
 		return null;
 	}
 
 	@Override
 	public String getEditorId(IEditorInput input, Object element) {
-		return null;
+		return "net.resheim.eclipse.cc.ui.assembly.editor";
 	}
 
 	@Override
 	public void setAttribute(String attribute, Object value) {
-		System.err.println(attribute + " > " + value);
-
 	}
 
 	@Override
@@ -67,13 +74,6 @@ public class CheckpointPresentation implements IDebugModelPresentation {
 
 	@Override
 	public String getText(Object element) {
-		if (element instanceof Checkpoint) {
-			Checkpoint cp = (Checkpoint) element;
-			StringBuilder sb = new StringBuilder();
-			sb.append("Checkpoint at ");
-			sb.append(String.format("$%04X", cp.getStartAddress()));
-			return sb.toString();
-		}
 		return null;
 	}
 

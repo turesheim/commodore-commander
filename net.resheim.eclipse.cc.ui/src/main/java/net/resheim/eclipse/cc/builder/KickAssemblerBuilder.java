@@ -242,6 +242,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			Program debug = (Program) unmarshaller.unmarshal(debugFile.getRawLocation().toFile());
 			clearOldCompiledCheckpoints(debug);
 			// create breakpoints and watchpoints
+			// TODO: Also add watchpoints
 			List<Breakpoint> breakpoints = debug.getBreakpoints();
 			for (Breakpoint breakpoint : breakpoints) {
 				int address = breakpoint.getAddress();
