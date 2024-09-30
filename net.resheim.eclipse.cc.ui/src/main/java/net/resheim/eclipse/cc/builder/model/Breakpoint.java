@@ -26,15 +26,16 @@ public class Breakpoint {
 		String[] split = inputString.split(",");
 		segment = split[0];
 		startAddress = Integer.parseInt(split[1].substring(1), 16);
-		if (split.length > 2)
+		if (split.length > 2) {
 			argument = split[2];
+		}
 	}
 
 	public String getSegment() {
 		return segment;
 	}
 
-	public int getAddress() {
+	public int getStartAddress() {
 		return startAddress;
 	}
 

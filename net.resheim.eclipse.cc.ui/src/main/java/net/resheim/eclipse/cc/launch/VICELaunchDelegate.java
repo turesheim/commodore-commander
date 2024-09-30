@@ -42,6 +42,8 @@ import org.osgi.framework.Bundle;
 import com.pty4j.PtyProcess;
 import com.pty4j.PtyProcessBuilder;
 
+import net.resheim.eclipse.cc.builder.Assemblies;
+import net.resheim.eclipse.cc.builder.model.Assembly;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
 
 /**
@@ -82,6 +84,8 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 			IProject project = root.getProject(projectName);
 			IFile file = project.getFile(fileName);
 
+			Assembly assembly = Assemblies.getDefault().getAssembly(file);
+
 			// We're looking for a viceconfig somewhere in the
 			// program file's folder or in one of the parent folders.
 			IPath viceconfig = findViceConfig(file.getRawLocation());
@@ -115,6 +119,7 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 				args.add("-binarymonitor");
 				args.add("-binarymonitoraddress");
 				args.add("127.0.0.1:6502");
+
 				// Break as soon as the kernal is ready, this should part of the
 				// launch configuration setting
 				args.add("-initbreak");
@@ -142,7 +147,7 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 			Map<String, String> attributes = new HashMap<>();
 			IProcess newProcess = DebugPlugin.newProcess(launch, process, fileName, attributes);
 			if (debug) {
-				VICEDebugTarget debugTarget = new VICEDebugTarget(newProcess, launch);
+				VICEDebugTarget debugTarget = new VICEDebugTarget(newProcess, launch, assembly);
 				launch.addDebugTarget(debugTarget);
 			}
 		} catch (Exception e) {

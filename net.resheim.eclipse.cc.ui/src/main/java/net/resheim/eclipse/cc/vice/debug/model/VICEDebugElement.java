@@ -13,6 +13,8 @@
  */
 package net.resheim.eclipse.cc.vice.debug.model;
 
+import org.eclipse.debug.core.DebugPlugin;
+import org.eclipse.debug.core.IBreakpointManager;
 import org.eclipse.debug.core.model.DebugElement;
 import org.eclipse.debug.core.model.IDebugTarget;
 
@@ -37,6 +39,10 @@ public class VICEDebugElement extends DebugElement {
 	@Override
 	public String getModelIdentifier() {
 		return DEBUG_MODEL_ID;
+	}
+
+	protected IBreakpointManager getBreakpointManager() {
+		return DebugPlugin.getDefault().getBreakpointManager();
 	}
 
 }

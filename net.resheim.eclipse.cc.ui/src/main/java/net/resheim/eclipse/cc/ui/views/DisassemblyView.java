@@ -253,7 +253,7 @@ public class DisassemblyView extends ViewPart implements IDebugEventSetListener 
 						int pc = Short.toUnsignedInt(frame.getProgramCounter());
 						switch (event.getDetail()) {
 						case IBinaryMonitor.DISASSEMBLE:
-							disassembler = ((VICEDebugTarget) event.getSource()).getDisassembler();
+//							disassembler = ((VICEDebugTarget) event.getSource()).getDisassembler();
 							// We only care about disassembling once this time.
 							// - [ ] Update the parts that have changed
 							// - [ ] Assume that the changed parts is data, not code

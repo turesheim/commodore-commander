@@ -45,7 +45,7 @@ import kickass.common.diagnostics.DiagnosticType;
 import kickass.common.diagnostics.IDiagnostic;
 import net.resheim.eclipse.cc.builder.model.Breakpoint;
 import net.resheim.eclipse.cc.builder.model.LineMapping;
-import net.resheim.eclipse.cc.builder.model.Program;
+import net.resheim.eclipse.cc.builder.model.Assembly;
 import net.resheim.eclipse.cc.builder.model.SourceFile;
 import net.resheim.eclipse.cc.kickassembler.KickAssemblerWrapper;
 import net.resheim.eclipse.cc.ui.ConsoleFactory;
@@ -53,6 +53,15 @@ import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Source;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
 
+/**
+ * A project builder that uses the embedded Kick Assembler to compile a
+ * Commodore program file.
+ *
+ * <ul>
+ * <li>Output is hard coded to <code>./out</code></li>
+ * <li>Assembly source code files must end with <code>.asm</code></li>
+ * </ul>
+ */
 public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
 	private class ResourceDeltaVisitor implements IResourceDeltaVisitor {
@@ -119,9 +128,6 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
-	/**
-	 * Detmines the
-	 */
 	public class AssemblyFileManager {
 
 		// a list of all assembly files found
@@ -198,10 +204,12 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 	private void assemble(AssemblyFile assemblyFile) throws CoreException {
 		clearMarkers(assemblyFile);
 		IFile file = (IFile) assemblyFile.getResource();
+
 		// use our KickAssembler wrapper
 		KickAssemblerWrapper wrapper = new KickAssemblerWrapper();
 		MessageConsole console = ConsoleFactory.findConsole();
 		MessageConsoleStream out = console.newMessageStream();
+
 		// which still needs program arguments and do the build
 		wrapper.execute(new String[] { "-libdir", file.getProject().getFolder("library").getLocation().toOSString(),
 				file.getLocation().toOSString(), "-odir", "out", "-showmem", "-vicesymbols", "-debugdump" }, out);
@@ -233,24 +241,39 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		try {
 			// determine the output folder
 			IFolder output = (IFolder) file.getParent().findMember("out");
+
 			// find the debug file created by KickAssembler
 			IPath newFilePath = file.getFullPath().removeFileExtension().addFileExtension("dbg");
 			IResource debugFile = output.findMember(newFilePath.lastSegment());
+
 			// parse the debug file
-			JAXBContext context = JAXBContext.newInstance(Program.class);
+			JAXBContext context = JAXBContext.newInstance(Assembly.class);
 			Unmarshaller unmarshaller = context.createUnmarshaller();
-			Program debug = (Program) unmarshaller.unmarshal(debugFile.getRawLocation().toFile());
-			clearOldCompiledCheckpoints(debug);
-			// create breakpoints and watchpoints
+			Assembly assembly = (Assembly) unmarshaller.unmarshal(debugFile.getRawLocation().toFile());
+
+			// Save the model for later
+			IPath prgPath = file.getFullPath().removeFileExtension().addFileExtension("prg");
+			IResource programFile = output.findMember(prgPath.lastSegment());
+			Assemblies.getDefault().setAssembly((IFile) programFile, assembly);
+
+			clearOldCompiledCheckpoints(assembly);
+
 			// TODO: Also add watchpoints
-			List<Breakpoint> breakpoints = debug.getBreakpoints();
+			List<Breakpoint> breakpoints = assembly.getBreakpoints();
+
+			// iterate over the parsed breakpoints, which only have a segment
+			// and an address, use this to determine the actual location in the
+			// file and create a debug model version of each breakpoint – this will be shown
+			// in the user interface once the build has completed.
 			for (Breakpoint breakpoint : breakpoints) {
-				int address = breakpoint.getAddress();
-				LineMapping lineMapping = debug.getLineMapping(address);
+				int address = breakpoint.getStartAddress();
+				// determine the position in the file for the given address.
+				LineMapping lineMapping = assembly.getLineMapping(address);
 				int fileIndex = lineMapping.getFileIndex();
-				IPath checkpointFile = getFile(debug, fileIndex);
+				IPath checkpointFile = getFile(assembly, fileIndex);
 				IFile fileForLocation = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(checkpointFile);
 				Checkpoint lineBreakpoint = new Checkpoint(fileForLocation, lineMapping.getStartLine(), Source.CODE);
+				lineBreakpoint.setStartAddress(address);
 				DebugPlugin.getDefault().getBreakpointManager().addBreakpoint(lineBreakpoint);
 			}
 		} catch (JAXBException e) {
@@ -258,10 +281,10 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
-	private void clearOldCompiledCheckpoints(Program debug) throws CoreException {
+	private void clearOldCompiledCheckpoints(Assembly debug) throws CoreException {
 		List<Breakpoint> breakpoints = debug.getBreakpoints();
 		for (Breakpoint breakpoint : breakpoints) {
-			int address = breakpoint.getAddress();
+			int address = breakpoint.getStartAddress();
 			LineMapping lineMapping = debug.getLineMapping(address);
 			int fileIndex = lineMapping.getFileIndex();
 			IPath checkpointFile = getFile(debug, fileIndex);
@@ -280,7 +303,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
-	private IPath getFile(Program debug, int fileIndex) {
+	private IPath getFile(Assembly debug, int fileIndex) {
 		List<SourceFile> sourceFiles = debug.getSources().getSourceFiles();
 		for (SourceFile files : sourceFiles) {
 			if (files.getFileNumber() == fileIndex) {

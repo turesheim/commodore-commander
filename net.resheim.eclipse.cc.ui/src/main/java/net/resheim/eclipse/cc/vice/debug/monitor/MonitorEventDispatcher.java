@@ -16,6 +16,7 @@ import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.IBreakpointManager;
 import org.eclipse.debug.core.model.IBreakpoint;
 
+import net.resheim.eclipse.cc.vice.debug.ANSIColors;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Operation;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
@@ -41,6 +42,7 @@ import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.ResponseID;
  *
  */
 public class MonitorEventDispatcher extends Job {
+
 
 	private final InputStream inputStream;
 
@@ -75,14 +77,14 @@ public class MonitorEventDispatcher extends Job {
 
 	private synchronized void parseResponse(Response header, byte[] responseBody) throws DebugException {
 
-		String type = debug(header, responseBody);
+		debug(header, responseBody);
 		// XXX: Should event firing be done after responding?
 		// XXX: Firing on the target messes up the registers view since the target will
 		// be selected
 		if (header.responseType == ResponseID.STOPPED.getCode())
 			thread.fireSuspendEvent(0);
 		else if (header.responseType == ResponseID.CHECKPOINT_INFO.getCode())
-			parseCheckpointInfo(responseBody);
+			parseCheckpointInfo(header, responseBody);
 		else if (header.responseType == ResponseID.RESUMED.getCode())
 			thread.fireResumeEvent(0);
 		else if (header.responseType == CommandID.MEMORY_GET.getCode())
@@ -94,13 +96,13 @@ public class MonitorEventDispatcher extends Job {
 			parseRegistersGet(responseBody);
 		else if (header.responseType == CommandID.REGISTERS_AVAILABLE.getCode())
 			parseRegistersAvailable(responseBody);
-		else
-			// we may care
-			System.err.println("Unhandled command " + String.format("$%02X", header.responseType) + " (" + type + ")");
+//		else
+//			// we may care
+//			System.err.println("Unhandled command " + String.format("$%02X", header.responseType) + " (" + type + ")");
 
 	}
 
-	private String debug(Response header, byte[] responseBody) {
+	private void debug(Response header, byte[] responseBody) {
 		// ----------------------------------------------------------------------
 		// Use this for debugging, clean up and reimplement later
 		byte code = header.responseType;
@@ -108,7 +110,15 @@ public class MonitorEventDispatcher extends Job {
 		// the most accurate in this context.
 		String type = ResponseID.hasCode(code) ? ResponseID.getNameFromCode(code) : CommandID.getNameFromCode(code);
 		StringBuilder sb = new StringBuilder();
-		sb.append(">>> Response: ID " + String.format("$%08X", header.requestId));
+		if (header.errorCode > 0) {
+			sb.append(ANSIColors.RED_BACKGROUND);
+			sb.append(ANSIColors.WHITE);
+		} else {
+			sb.append(ANSIColors.YELLOW_BACKGROUND);
+			sb.append(ANSIColors.BLACK);
+		}
+		sb.append(">>> ");
+		sb.append("Response: ID " + String.format("$%08X", header.requestId));
 		sb.append(", type " + String.format("$%02X", header.responseType) + " ("
 				+ type + ")");
 		sb.append(", error " + String.format("$%02X", header.errorCode));
@@ -123,13 +133,13 @@ public class MonitorEventDispatcher extends Job {
 				break;
 			}
 		}
+		sb.append(ANSIColors.RESET);
 		// print some debug info
 		System.out.println(sb);
-		return type;
 	}
 
 
-	private void parseCheckpointInfo(byte[] responseBody) {
+	private void parseCheckpointInfo(Response header, byte[] responseBody) {
 		try {
 			IBreakpointManager breakpointManager = DebugPlugin.getDefault().getBreakpointManager();
 			IBreakpoint[] breakpoints = breakpointManager.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
@@ -139,21 +149,33 @@ public class MonitorEventDispatcher extends Job {
 			// see if we have the breakpoint already
 			int id = buffer.getInt();
 			for (IBreakpoint iBreakpoint : breakpoints) {
-				if (iBreakpoint instanceof Checkpoint && ((Checkpoint) iBreakpoint).getNumber() == id) {
-					cp = (Checkpoint) iBreakpoint;
+				if (iBreakpoint instanceof Checkpoint) {
+					Checkpoint testing = cp = (Checkpoint) iBreakpoint;
+					// hitherto unnumbered checkpoint
+					if (testing.getNumber() == 0) {
+						if (header.requestId == testing.getRequestId()) {
+							testing.setNumber(id);
+							testing.setRequestId(-1);
+						}
+					}
+					if (testing.getNumber() == id) {
+						cp = testing;
+					}
 				}
 			}
 			if (cp == null) {
 				// XXX: Unknown checkpoint
-				System.out.println("Unknown checkpoint");
+				System.out.println("Unknown checkpoint " + id);
+				return;
 //				cp = new Checkpoint(ResourcesPlugin.getWorkspace().getRoot(), 0);
 //				cp.setNumber(id);
 			}
+			// Update the checkpoint with values from the emulator
 			cp.setCurrentlyHit(buffer.get() == 0x01);
 			cp.setStartAddress(buffer.getShort());
 			cp.setEndAddress(buffer.getShort());
 			cp.setStopWhenHit(buffer.get() == 0x01);
-			buffer.get();
+			buffer.get(); // skip one byte
 			// cp.setEnabledRemotely(buffer.get() == 0x01);
 			cp.setOperation(Operation.parseByte(buffer.get()));
 			cp.setTemporary(buffer.get() == 0x01);
@@ -167,7 +189,6 @@ public class MonitorEventDispatcher extends Job {
 //			thread.fireEvent(new DebugEvent(thread, DebugEvent.SUSPEND, DebugEvent.BREAKPOINT));
 			}
 			breakpointManager.addBreakpoint(cp);
-			System.out.println(DebugPlugin.getDefault().getBreakpointManager().isRegistered(cp));
 
 		} catch (CoreException e) {
 			e.printStackTrace();
@@ -254,8 +275,9 @@ public class MonitorEventDispatcher extends Job {
 			if (items == 0)
 				items = 65_535;
 			buffer.get(computerMemory, 0, items);
-			debugTarget.getDisassembler().disassemble(buffer.array());
-			debugTarget.fireEvent(new DebugEvent(debugTarget, DebugEvent.MODEL_SPECIFIC, IBinaryMonitor.DISASSEMBLE));
+			// XXX: No disassemble here, rather update memory views
+//			debugTarget.getDisassembler().disassemble(buffer.array());
+//			debugTarget.fireEvent(new DebugEvent(debugTarget, DebugEvent.MODEL_SPECIFIC, IBinaryMonitor.DISASSEMBLE));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

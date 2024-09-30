@@ -21,6 +21,8 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.model.IBreakpoint;
 import org.eclipse.debug.core.model.LineBreakpoint;
 
+import net.resheim.eclipse.cc.launch.VICELaunchDelegate;
+
 /**
  *
  * @since 1.0
@@ -34,15 +36,22 @@ public class Checkpoint extends LineBreakpoint {
 		 * or <code>.watch</code> commands.
 		 */
 		CODE,
+		/**
+		 * The checkpoint has been created using the Commodore Commander user interface.
+		 */
 		USER
-
 	}
 
 	/**
 	 * The operation that will trigger the checkpoint.
 	 */
 	public enum Operation {
-		LOAD(0x01), STORE(0x02), EXEC(0x04);
+		/** Read value from address */
+		LOAD(0x01),
+		/** Store value to address */
+		STORE(0x02),
+		/** Execute address */
+		EXEC(0x04);
 
 		private final byte value;
 
@@ -103,14 +112,14 @@ public class Checkpoint extends LineBreakpoint {
 	 */
 	private String condition;
 
+	/** The source of the breakpoint, how it was created */
 	private Source source;
 
 	/**
-	 * Wheter nor not the checkpoint is enabled – and whether or not to stop when
-	 * hit.
+	 * The end address of the breakpoint. Will be set/updated when the
+	 * {@link VICELaunchDelegate} updates from the metadata created from assembling
+	 * the program. It is only valid within that context.
 	 */
-	private boolean enabled = false;
-
 	private int endAddress;
 
 	/** Break when the address is executed */
@@ -141,9 +150,18 @@ public class Checkpoint extends LineBreakpoint {
 	 */
 	private int memspace;
 
-	/** The checkpoint number */
+	/**
+	 * The checkpoint number. Will be set when the
+	 * {@link VICEDebugTarget#installDeferredBreakpoints()} has submitted all
+	 * checkpoints that are created by the user and an ID has been assigned.
+	 */
 	private int number;
 
+	/**
+	 * The start address of the breakpoint. Will be set/updated when the
+	 * {@link VICELaunchDelegate} updates from the metadata created from assembling
+	 * the program. It is only valid within that context.
+	 */
 	private int startAddress;
 
 	/** Break when the address is written */
@@ -156,6 +174,13 @@ public class Checkpoint extends LineBreakpoint {
 	private boolean temporary = false;
 
 	private EnumSet<Operation> operation;
+
+	/**
+	 * The ID of the monitor command that was sent to create the checkpoint. The
+	 * response will use the same ID and some extra details that must be used to
+	 * update the checkpoint.
+	 */
+	private int requestId;
 
 	public Checkpoint() {
 		super();
@@ -215,11 +240,6 @@ public class Checkpoint extends LineBreakpoint {
 		return hasCondition;
 	}
 
-//	public boolean isEnabled() throws CoreException {
-//		return super.isEnabled();
-//		// return enabled;
-//	}
-
 	public boolean isExec() {
 		return exec;
 	}
@@ -239,11 +259,6 @@ public class Checkpoint extends LineBreakpoint {
 	public void setCondition(String condition) {
 		this.condition = condition;
 	}
-
-//	public void setEnabled(boolean enabled) throws CoreException {
-//		super.setEnabled(enabled);
-//		this.enabled = enabled;
-//	}
 
 	public void setEndAddress(int endAddress) {
 		this.endAddress = endAddress;
@@ -324,6 +339,14 @@ public class Checkpoint extends LineBreakpoint {
 
 	public void setSource(Source source) {
 		this.source = source;
+	}
+
+	public int getRequestId() {
+		return requestId;
+	}
+
+	public void setRequestId(int requestId) {
+		this.requestId = requestId;
 	}
 
 }

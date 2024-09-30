@@ -64,7 +64,6 @@ public class CheckpointAdapter implements IToggleBreakpointsTargetExtension {
 
 	@Override
 	public void toggleBreakpoints(IWorkbenchPart part, ISelection selection) throws CoreException {
-		System.out.println("CheckpointAdapter.toggleBreakpoints()");
 		ITextEditor textEditor = getEditor(part);
 		if (textEditor != null) {
 			IResource resource = (IResource) textEditor.getEditorInput().getAdapter(IResource.class);
@@ -72,15 +71,18 @@ public class CheckpointAdapter implements IToggleBreakpointsTargetExtension {
 			int lineNumber = textSelection.getStartLine();
 			IBreakpoint[] breakpoints = DebugPlugin.getDefault().getBreakpointManager()
 					.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
+
+			// if the breakpoint already exist, we'll delete it
 			for (int i = 0; i < breakpoints.length; i++) {
 				IBreakpoint breakpoint = breakpoints[i];
 				if (resource.equals(breakpoint.getMarker().getResource())) {
 					if (((ILineBreakpoint) breakpoint).getLineNumber() == (lineNumber + 1)) {
-						breakpoint.delete();
+						DebugPlugin.getDefault().getBreakpointManager().removeBreakpoint(breakpoint, true);
 						return;
 					}
 				}
 			}
+			// otherwise we create one
 			Checkpoint lineBreakpoint = new Checkpoint(resource, lineNumber + 1, Source.USER);
 			DebugPlugin.getDefault().getBreakpointManager().addBreakpoint(lineBreakpoint);
 		}

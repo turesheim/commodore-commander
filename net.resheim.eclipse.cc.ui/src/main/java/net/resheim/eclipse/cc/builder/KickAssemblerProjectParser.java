@@ -63,7 +63,8 @@ public class KickAssemblerProjectParser {
 		KickAssemblerLexer lexer = new KickAssemblerLexer(charStream);
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 		KickAssemblerParser parser = new KickAssemblerParser(tokens);
-		parser.setErrorHandler(new DefaultErrorStrategy());
+		// parser.setErrorHandler(new DefaultErrorStrategy());
+		parser.removeErrorListeners(); // less noise
 		parser.addParseListener(new ImportParser());
 		parser.setTrace(false);
 

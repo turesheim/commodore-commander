@@ -2,6 +2,7 @@ package net.resheim.eclipse.cc.vice.debug.monitor;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import net.resheim.eclipse.cc.vice.debug.ANSIColors;
 import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.CommandID;
 
 /**
@@ -43,7 +44,11 @@ public class Command {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-		sb.append("<<< Request : ID " + String.format("$%08X", requestId));
+		sb.append(ANSIColors.CYAN_BACKGROUND);
+		sb.append(ANSIColors.BLACK);
+		sb.append("<<< ");
+
+		sb.append("Request : ID " + String.format("$%08X", requestId));
 		sb.append(", type " + String.format("$%02X", commandType.getCode()) + " (" + commandType.name() + ")");
 		sb.append(", length " + commandBody.length);
 		sb.append(", body ");
@@ -51,6 +56,7 @@ public class Command {
 			sb.append(byteToHex(b));
 			sb.append(" ");
 		}
+		sb.append(ANSIColors.RESET);
         return sb.toString();
     }
 

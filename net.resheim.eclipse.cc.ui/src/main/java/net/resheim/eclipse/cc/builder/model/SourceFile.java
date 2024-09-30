@@ -17,7 +17,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 
 /**
- * A numbered source file in a {@link Program}.
+ * A numbered source file in an {@link Assembly}.
  *
  * @since 1.0
  */

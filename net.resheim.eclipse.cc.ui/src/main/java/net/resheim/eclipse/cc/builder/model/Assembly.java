@@ -15,6 +15,9 @@ package net.resheim.eclipse.cc.builder.model;
 
 import java.util.List;
 
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.ResourcesPlugin;
+
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
@@ -38,7 +41,7 @@ import jakarta.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement(name = "C64debugger")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class Program {
+public class Assembly {
 
 	/** Format version */
     @XmlAttribute(name = "version")
@@ -97,6 +100,35 @@ public class Program {
 
 		}
 		return null;
+	}
+
+	public LineMapping getLineMapping(IFile file, int line) {
+		int fileNumber = findFilenumber(file);
+		if (fileNumber > -1) {
+			for (Segment segment : segments) {
+				List<Block> blocks = segment.getBlocks();
+				for (Block block : blocks) {
+					for (LineMapping lineMapping : block.getLineMappings()) {
+						if (lineMapping.fileIndex == fileNumber) {
+							if (lineMapping.getStartLine() == line) {
+								return lineMapping;
+							}
+						}
+					}
+				}
+			}
+		} // if
+		return null;
+	}
+
+	private int findFilenumber(IFile file) {
+		for (SourceFile sourceFile : sources.getSourceFiles()) {
+			IFile sf = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(sourceFile.getPath());
+			if (sf != null && sf.equals(file)) {
+				return sourceFile.getFileNumber();
+			}
+		}
+		return -1;
 	}
 
 	public List<Breakpoint> getBreakpoints() {
