@@ -29,7 +29,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
@@ -37,11 +36,8 @@ import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchManager;
-import org.eclipse.debug.core.model.ILaunchConfigurationDelegate;
-import org.eclipse.debug.core.model.ILaunchConfigurationDelegate2;
 import org.eclipse.debug.core.model.IProcess;
 import org.eclipse.debug.core.model.LaunchConfigurationDelegate;
-import org.eclipse.debug.ui.DebugUITools;
 import org.osgi.framework.Bundle;
 
 import com.pty4j.PtyProcess;
@@ -93,7 +89,9 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 			IFile file = project.getFile(fileName);
 
 			Assembly assembly = Assemblies.getDefault().getAssembly(file);
-			// We may have to do an analysis of the DBG-file
+			// Fail if we don't have an assembly, we need it for breakpoints
+			// and mapping addresses to files and locations in the files.
+			// A full build should be executed in order to obtain this.
 			if (assembly == null) {
 				throw new CoreException(Status.error("Program must be compiled"));
 			}
@@ -132,9 +130,9 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 				args.add("-binarymonitoraddress");
 				args.add("127.0.0.1:6502");
 
-				// Break as soon as the kernal is ready. We need this so that the deferred
-				// breakpoints are installed. If not we need a different way of installing these
-				// breakpoints.
+				// Break as soon as the kernal is ready. We need this so that
+				// breakpoints without address mapping is handled properly by
+				// the VICEDebugTarget.
 				args.add("-initbreak");
 				args.add("ready");
 			}
