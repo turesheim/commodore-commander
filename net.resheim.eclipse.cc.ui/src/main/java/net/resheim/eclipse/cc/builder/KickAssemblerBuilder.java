@@ -89,7 +89,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 				}
 			}
 			// return true to continue visiting children.
-			return true;
+			return false;
 		}
 	}
 
@@ -199,6 +199,8 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 	}
 
 	protected void clean(IProgressMonitor monitor) throws CoreException {
+		System.out.println("KickAssemblerBuilder.clean()");
+		// TODO: IMplement this
 	}
 
 	private void assemble(AssemblyFile assemblyFile) throws CoreException {
@@ -221,7 +223,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			addDiagnosticMessage(iDiagnostic);
 		}
 		// add any breakpoints found
-		addCompiledCheckpoints(file);
+		parseMetadataFile(file);
 
 		// Make sure any changes in the file systems are reflected in the
 		// Eclipse viewers.
@@ -237,7 +239,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 	 * @param file the root assembly file
 	 * @throws CoreException
 	 */
-	private void addCompiledCheckpoints(IFile file) throws CoreException {
+	private void parseMetadataFile(IFile file) throws CoreException {
 		try {
 			// determine the output folder
 			IFolder output = (IFolder) file.getParent().findMember("out");
@@ -357,7 +359,12 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
 	private void incrementalBuild(IResourceDelta delta, IProgressMonitor monitor, List<AssemblyFile> roots)
 			throws CoreException {
-		delta.accept(new ResourceDeltaVisitor(roots));
+		// XXX: This does not work when doing a partial build
+		// delta.accept(new ResourceDeltaVisitor(roots));
+		// So we do a full build instead
+		for (AssemblyFile assemblyFile : roots) {
+			assemble(assemblyFile);
+		}
 	}
 
 }

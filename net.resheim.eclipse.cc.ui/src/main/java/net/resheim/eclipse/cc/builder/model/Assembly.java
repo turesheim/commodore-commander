@@ -17,6 +17,8 @@ import java.util.List;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.debug.core.model.ISourceLocator;
+import org.eclipse.debug.core.model.IStackFrame;
 
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
@@ -121,7 +123,7 @@ public class Assembly {
 		return null;
 	}
 
-	private int findFilenumber(IFile file) {
+	public int findFilenumber(IFile file) {
 		for (SourceFile sourceFile : sources.getSourceFiles()) {
 			IFile sf = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(sourceFile.getPath());
 			if (sf != null && sf.equals(file)) {
@@ -129,6 +131,15 @@ public class Assembly {
 			}
 		}
 		return -1;
+	}
+
+	public IFile findFile(int fileNumber) {
+		for (SourceFile sourceFile : sources.getSourceFiles()) {
+			if (sourceFile.getFileNumber() == fileNumber) {
+				return ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(sourceFile.getPath());
+			}
+		}
+		return null;
 	}
 
 	public List<Breakpoint> getBreakpoints() {

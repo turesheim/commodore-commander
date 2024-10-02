@@ -93,6 +93,7 @@
          name="Kick Assembler Project Builder"
          point="org.eclipse.core.resources.builders">
       <builder
+            callOnEmptyDelta="true"
             hasNature="true">
          <run
                class="net.resheim.eclipse.cc.builder.KickAssemblerBuilder">
@@ -208,7 +209,9 @@
             id="net.resheim.eclipse.cc.ui.launchConfigurationType_VICE"
             modes="run,debug"
             name="Commodore Program"
-            public="true">
+            public="true"
+            sourceLocatorId="net.resheim.eclipse.cc.sourceLocator"
+            sourcePathComputerId="net.resheim.eclipse.cc.sourcePathComputer">
       </launchConfigurationType>
    </extension>
    <extension
@@ -334,16 +337,17 @@
       <super type="org.eclipse.debug.core.breakpointMarker"/>
       <persistent value="true">
       </persistent>
+      <attribute
+            name="source">
+      </attribute>
   </extension>
 
-  <!-- WEE DONT NEED THIS ONE FOR NOW
   <extension point="org.eclipse.debug.ui.debugModelPresentations">
     <debugModelPresentation
       id="net.resheim.eclipse.cc.vice.debug"
-      class="net.resheim.eclipse.cc.ui.CheckpointPresentation">
+      class="net.resheim.eclipse.cc.ui.VICEDebugModelPresentation">
     </debugModelPresentation>
  </extension>
- -->
 
  <extension
        point="org.eclipse.core.runtime.adapters">
@@ -354,5 +358,20 @@
              type="org.eclipse.debug.ui.actions.IToggleBreakpointsTarget">
        </adapter>
     </factory>
+ </extension>
+ <extension
+       point="org.eclipse.debug.core.sourceLocators">
+    <sourceLocator
+          class="net.resheim.eclipse.cc.launch.AssemblySourceLookupDirector"
+          id="net.resheim.eclipse.cc.sourceLocator"
+          name="Assembly Source Locator">
+    </sourceLocator>
+ </extension>
+ <extension
+       point="org.eclipse.debug.core.sourcePathComputers">
+    <sourcePathComputer
+          class="net.resheim.eclipse.cc.launch.SourcePathComputerDelegate"
+          id="net.resheim.eclipse.cc.sourcePathComputer">
+    </sourcePathComputer>
  </extension>
 </plugin>

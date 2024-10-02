@@ -55,6 +55,9 @@ public class VICEDebugModelPresentation implements IDebugModelPresentation {
 				return new FileEditorInput(file);
 			}
 		}
+		if (element instanceof IFile) {
+			return new FileEditorInput((IFile) element);
+		}
 		return null;
 	}
 

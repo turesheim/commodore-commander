@@ -102,6 +102,8 @@ public class VICEDebugTarget extends VICEDebugElement
 	 */
 	private Assembly assembly;
 
+	private boolean deferredBreakpointsInstalled = false;
+
 	public VICEDebugTarget(IProcess process, ILaunch launch, Assembly assembly) {
 		super(null);
 		this.process = process;
@@ -113,7 +115,6 @@ public class VICEDebugTarget extends VICEDebugElement
 		DebugPlugin.getDefault().getBreakpointManager().addBreakpointListener(this);
 		DebugPlugin.getDefault().addDebugEventListener(this);
 		connectEventdDispatcherStreams();
-		installDeferredBreakpoints();
 		fireCreationEvent();
 	}
 
@@ -140,7 +141,6 @@ public class VICEDebugTarget extends VICEDebugElement
 		// when responding to a new breakpoint added using the UI. As the program
 		// is already running we must first determine the breakpoint address
 		// since we typically only know the file and the line number.
-
 		updateAdresses(breakpoint);
 		// XXX: Watchpoints are currently not supported
 		if (supportsBreakpoint(breakpoint)) {
@@ -357,6 +357,11 @@ public class VICEDebugTarget extends VICEDebugElement
 						if (!iRegisterGroup.hasRegisters()) {
 							sendCommand(CommandID.REGISTERS_AVAILABLE, new byte[] { 0x00 });
 						}
+						// if this is the first time we have suspended, typically
+						// with a ready kernel
+						if (!deferredBreakpointsInstalled) {
+							installDeferredBreakpoints();
+						}
 						// the result from the command does NOT include the
 						// start address of the data included, so it's hard to
 						// figure it out unless we somehow pass that value. We
@@ -405,15 +410,14 @@ public class VICEDebugTarget extends VICEDebugElement
 //		}
 	}
 
-	private int sendCommand(CommandID command, byte[] body) {
+	int sendCommand(CommandID command, byte[] body) {
 		int id = counter.incrementAndGet();
 		try {
 			Command msg = new Command(id, command, body);
 			byte[] messageToSend = msg.build();
+			System.out.println(msg);
 			out.write(messageToSend);
 			out.flush();
-			// for debugging
-			System.out.println(msg);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -446,14 +450,15 @@ public class VICEDebugTarget extends VICEDebugElement
 	 * Each updated checkpoint will be installed in the emulator.
 	 * </p>
 	 */
-	public void installDeferredBreakpoints() {
+	public synchronized void installDeferredBreakpoints() {
 		IBreakpoint[] breakpoints = getBreakpointManager().getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
 		for (IBreakpoint iBreakpoint : breakpoints) {
 			breakpointAdded(iBreakpoint);
 		}
+		deferredBreakpointsInstalled = true;
 		// the emulator will have stopped when we started sending checkpoints to
 		// it, so we will resume now.
-		sendCommand(CommandID.EXIT, IBinaryMonitor.EMPTY_COMMAND_BODY);
+		// sendCommand(CommandID.EXIT, IBinaryMonitor.EMPTY_COMMAND_BODY);
 	}
 
 	private void updateAdresses(IBreakpoint iBreakpoint) {
@@ -472,6 +477,10 @@ public class VICEDebugTarget extends VICEDebugElement
 				System.err.println("COULD NOT DETERMINE ADDRESS");
 			}
 		}
+	}
+
+	public Assembly getAssembly() {
+		return assembly;
 	}
 
 }

@@ -29,14 +29,19 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.core.model.ILaunchConfigurationDelegate;
+import org.eclipse.debug.core.model.ILaunchConfigurationDelegate2;
 import org.eclipse.debug.core.model.IProcess;
+import org.eclipse.debug.core.model.LaunchConfigurationDelegate;
+import org.eclipse.debug.ui.DebugUITools;
 import org.osgi.framework.Bundle;
 
 import com.pty4j.PtyProcess;
@@ -50,10 +55,13 @@ import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
  * Launch delegate for the VICE emulator supporting both <i>run</i> and
  * <i>debug</i> modes.
  *
+ *
  * @since 1.0
  * @author Torkild Ulvøy Resheim
+ * @implNote an {@link Assembly} must exist for the program, or debugging will
+ *           fail.
  */
-public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
+public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 
 
 	private IPath findViceConfig(IPath file) {
@@ -85,6 +93,10 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 			IFile file = project.getFile(fileName);
 
 			Assembly assembly = Assemblies.getDefault().getAssembly(file);
+			// We may have to do an analysis of the DBG-file
+			if (assembly == null) {
+				throw new CoreException(Status.error("Program must be compiled"));
+			}
 
 			// We're looking for a viceconfig somewhere in the
 			// program file's folder or in one of the parent folders.
@@ -120,8 +132,9 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 				args.add("-binarymonitoraddress");
 				args.add("127.0.0.1:6502");
 
-				// Break as soon as the kernal is ready, this should part of the
-				// launch configuration setting
+				// Break as soon as the kernal is ready. We need this so that the deferred
+				// breakpoints are installed. If not we need a different way of installing these
+				// breakpoints.
 				args.add("-initbreak");
 				args.add("ready");
 			}
@@ -153,6 +166,14 @@ public class VICELaunchDelegate implements ILaunchConfigurationDelegate {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	protected IProject[] getBuildOrder(ILaunchConfiguration configuration, String mode) throws CoreException {
+		final String projectName = configuration.getAttribute(ICCLaunchConfigurationConstants.ATTR_PROJECT_NAME, "");
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IWorkspaceRoot root = workspace.getRoot();
+		IProject project = root.getProject(projectName);
+		return new IProject[] { project };
 	}
 
 }

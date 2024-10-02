@@ -14,6 +14,8 @@
 package net.resheim.eclipse.cc.vice.debug.model;
 
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.DebugPlugin;
@@ -22,6 +24,8 @@ import org.eclipse.debug.core.model.IBreakpoint;
 import org.eclipse.debug.core.model.IDebugTarget;
 import org.eclipse.debug.core.model.IStackFrame;
 import org.eclipse.debug.core.model.IThread;
+
+import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.CommandID;
 
 /**
  * The one and only thread in this debug model. It delegates most work to the
@@ -35,6 +39,7 @@ public class VICEThread extends VICEDebugElement implements IThread {
 	/** A re-usable stack frame */
 	private final VICEStackFrame stackFrame;
 
+	private boolean stepping;
 
 	public VICEThread(IDebugTarget target, Socket socket) {
 		super(target);
@@ -58,22 +63,24 @@ public class VICEThread extends VICEDebugElement implements IThread {
 
 	@Override
 	public void resume() throws DebugException {
+		stepping = false;
 		getDebugTarget().resume();
 	}
 
 	@Override
 	public void suspend() throws DebugException {
+		stepping = false;
 		getDebugTarget().suspend();
 	}
 
 	@Override
 	public boolean canStepInto() {
-		return false;
+		return getDebugTarget().isSuspended();
 	}
 
 	@Override
 	public boolean canStepOver() {
-		return false;
+		return getDebugTarget().isSuspended();
 	}
 
 	@Override
@@ -83,15 +90,27 @@ public class VICEThread extends VICEDebugElement implements IThread {
 
 	@Override
 	public boolean isStepping() {
-		return false;
+		return stepping;
 	}
 
 	@Override
 	public void stepInto() throws DebugException {
+		ByteBuffer buffer = ByteBuffer.allocate(3);
+		buffer.order(ByteOrder.LITTLE_ENDIAN);
+		buffer.put((byte) 0x00);
+		buffer.putShort((short)0x01);
+		((VICEDebugTarget) getDebugTarget()).sendCommand(CommandID.ADVANCE_INSTRUCTIONS, buffer.array());
+		stepping = true;
 	}
 
 	@Override
 	public void stepOver() throws DebugException {
+		ByteBuffer buffer = ByteBuffer.allocate(3);
+		buffer.order(ByteOrder.LITTLE_ENDIAN);
+		buffer.put((byte) 0x01);
+		buffer.putShort((short) 0x01);
+		((VICEDebugTarget) getDebugTarget()).sendCommand(CommandID.ADVANCE_INSTRUCTIONS, buffer.array());
+		stepping = true;
 	}
 
 	@Override
@@ -101,7 +120,6 @@ public class VICEThread extends VICEDebugElement implements IThread {
 	@Override
 	public boolean canTerminate() {
 		return getDebugTarget().canTerminate();
-
 	}
 
 	@Override

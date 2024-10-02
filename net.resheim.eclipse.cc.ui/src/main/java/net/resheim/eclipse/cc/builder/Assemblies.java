@@ -16,18 +16,18 @@ public class Assemblies {
 		assembly = new HashMap<>();
 	}
 
-	public static Assemblies getDefault() {
+	public synchronized static Assemblies getDefault() {
 		if (model == null) {
 			model = new Assemblies();
 		}
 		return model;
 	}
 
-	public Assembly getAssembly(IFile file) {
+	public synchronized Assembly getAssembly(IFile file) {
 		return assembly.get(file);
 	}
 
-	public void setAssembly(IFile file, Assembly program) {
+	public synchronized void setAssembly(IFile file, Assembly program) {
 		assembly.put(file, program);
 	}
 }

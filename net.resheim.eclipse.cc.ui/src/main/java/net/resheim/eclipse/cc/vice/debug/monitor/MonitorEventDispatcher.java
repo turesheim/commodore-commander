@@ -243,10 +243,13 @@ public class MonitorEventDispatcher extends Job {
 			VICERegisterGroup registerGroup = (VICERegisterGroup) stackFrame.getRegisterGroups()[0];
 			ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
 			buffer.order(ByteOrder.LITTLE_ENDIAN); // Set buffer to little endian
-			int items = buffer.getShort() & 0xFF;
+			int items = Short.toUnsignedInt(buffer.getShort());
 			for (int i = 0; i < items; i++) {
 				int size = buffer.get(); // Size of the item, excluding this byte
 				byte id = buffer.get(); // ID of the register
+				if (size == 2) {
+					System.out.println("MonitorEventDispatcher.parseRegistersGet()");
+				}
 				// get the value // length is three or more!
 				if (size == 3) {
 					short value = buffer.getShort();
