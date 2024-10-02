@@ -13,7 +13,6 @@
  */
 package net.resheim.eclipse.cc.vice.debug.model;
 
-import org.eclipse.core.resources.IFile;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IRegisterGroup;
 import org.eclipse.debug.core.model.IStackFrame;

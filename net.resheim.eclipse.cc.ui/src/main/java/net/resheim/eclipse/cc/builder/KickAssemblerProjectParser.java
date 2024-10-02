@@ -17,7 +17,6 @@ import java.io.FileReader;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.DefaultErrorStrategy;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IPath;
