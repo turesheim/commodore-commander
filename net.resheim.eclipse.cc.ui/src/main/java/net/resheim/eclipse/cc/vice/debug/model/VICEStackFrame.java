@@ -13,6 +13,8 @@
  */
 package net.resheim.eclipse.cc.vice.debug.model;
 
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IRegisterGroup;
 import org.eclipse.debug.core.model.IStackFrame;
@@ -144,6 +146,29 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 		return -1;
 	}
 
+	/**
+	 * Calculates and returns the name of the assembly file that contains the code
+	 * for the current program counter.
+	 *
+	 * @return the file name or <code>null</code>
+	 * @throws CoreException
+	 */
+	public String getFileName() throws CoreException {
+		int pc = Short.toUnsignedInt(getProgramCounter());
+		Assembly assembly = getAssembly();
+		// attempt to determine a line mapping for the program counter
+		LineMapping lineMapping = assembly.getLineMapping(pc);
+		// this may not match anything in the program as it could be in the
+		// kernal somewhere
+		if (lineMapping != null) {
+			IFile file = assembly.findFile(lineMapping.getFileIndex());
+			// remove the project part as we currently do not support dealing
+			// with source files in multiple projects
+			return file.getFullPath().removeFirstSegments(1).toPortableString();
+		}
+		return null;
+	}
+
 	@Override
 	public int getCharStart() throws DebugException {
 		return -1;
@@ -158,8 +183,18 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 	public String getName() throws DebugException {
 		// AFAIK we don't really have stack frames on a 6510, so we're using the
 		// PROGRAM COUNTER to name this frame
+		StringBuilder sb = new StringBuilder();
 		if (registerGroup.hasRegisters()) {
-			return registerGroup.getRegisterByName("PC").getValue().getValueString();
+			try {
+				sb.append(getFileName());
+				sb.append(" [line: ");
+				sb.append(getLineNumber());
+				sb.append("] ");
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
+			sb.append(registerGroup.getRegisterByName("PC").getValue().getValueString());
+			return sb.toString();
 		} else {
 			return "No registers available";
 		}

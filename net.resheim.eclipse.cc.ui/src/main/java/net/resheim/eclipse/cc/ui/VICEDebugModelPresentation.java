@@ -21,10 +21,13 @@ import org.eclipse.debug.ui.IValueDetailListener;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IEditorInput;
-import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
 import org.eclipse.ui.part.FileEditorInput;
 
+import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
+
 public class VICEDebugModelPresentation implements IDebugModelPresentation {
+
+	private static final String ASSEMBLY_EDITOR = "net.resheim.eclipse.cc.ui.assembly.editor";
 
 	@Override
 	public void addListener(ILabelProviderListener listener) {
@@ -36,6 +39,7 @@ public class VICEDebugModelPresentation implements IDebugModelPresentation {
 
 	@Override
 	public boolean isLabelProperty(Object element, String property) {
+
 		return false;
 	}
 
@@ -63,7 +67,13 @@ public class VICEDebugModelPresentation implements IDebugModelPresentation {
 
 	@Override
 	public String getEditorId(IEditorInput input, Object element) {
-		return "net.resheim.eclipse.cc.ui.assembly.editor";
+		if (element instanceof Checkpoint) {
+			return ASSEMBLY_EDITOR;
+		}
+		if (element instanceof IFile) {
+			return ASSEMBLY_EDITOR;
+		}
+		return null;
 	}
 
 	@Override
