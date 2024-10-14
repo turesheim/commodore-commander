@@ -19,6 +19,8 @@ import org.eclipse.ui.console.IConsoleFactory;
 import org.eclipse.ui.console.IConsoleManager;
 import org.eclipse.ui.console.MessageConsole;
 
+import net.resheim.eclipse.cc.editor.CommodoreCommanderPlugin;
+
 /**
  * Factory for producing an instance of the "Commodore Commander" console view.
  * This is used both for outputting log messages from the (KickAssembler)
@@ -36,7 +38,8 @@ public class ConsoleFactory implements IConsoleFactory {
 			if (CONSOLE_NAME.equals(existing[i].getName()))
 				return (MessageConsole) existing[i];
 		// no console found, so create a new one
-		MessageConsole myConsole = new MessageConsole(CONSOLE_NAME, null);
+		MessageConsole myConsole = new MessageConsole(CONSOLE_NAME,
+				CommodoreCommanderPlugin.getImageDescriptor("console_view.png"));
 		conMan.addConsoles(new IConsole[] { myConsole });
 		return myConsole;
 	}

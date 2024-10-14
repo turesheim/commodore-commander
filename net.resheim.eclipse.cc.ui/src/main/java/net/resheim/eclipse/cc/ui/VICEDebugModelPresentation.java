@@ -39,7 +39,6 @@ public class VICEDebugModelPresentation implements IDebugModelPresentation {
 
 	@Override
 	public boolean isLabelProperty(Object element, String property) {
-
 		return false;
 	}
 

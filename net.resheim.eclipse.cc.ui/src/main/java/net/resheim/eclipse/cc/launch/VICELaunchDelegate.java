@@ -14,6 +14,7 @@
 package net.resheim.eclipse.cc.launch;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import java.util.Map;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -36,6 +38,7 @@ import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchManager;
+import org.eclipse.debug.core.model.IBreakpoint;
 import org.eclipse.debug.core.model.IProcess;
 import org.eclipse.debug.core.model.LaunchConfigurationDelegate;
 import org.osgi.framework.Bundle;
@@ -45,6 +48,10 @@ import com.pty4j.PtyProcessBuilder;
 
 import net.resheim.eclipse.cc.builder.Assemblies;
 import net.resheim.eclipse.cc.builder.model.Assembly;
+import net.resheim.eclipse.cc.builder.model.LineMapping;
+import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
+import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Source;
+import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
 
 /**
@@ -118,6 +125,20 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 					args.add("-moncommands");
 					args.add(mcommands.toOSString());
 				}
+				// Update the monitor commands file with a list of checkpoints.
+				// this way we do not have to break just after starting the
+				// emulator for doing this.
+				IBreakpoint[] breakpoints = DebugPlugin.getDefault().getBreakpointManager()
+						.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
+				try (FileWriter fw = new FileWriter(mcommands.toFile(), true)) {
+					for (IBreakpoint iBreakpoint : breakpoints) {
+						Checkpoint cp = (Checkpoint) iBreakpoint;
+						updateAdresses(assembly, iBreakpoint);
+						fw.append("break ");
+						fw.append(Integer.toHexString(cp.getStartAddress()));
+						fw.append(" \n");
+					}
+				}
 				// In case one wants to telnet to the address and use the text
 				// mode monitor
 				args.add("-remotemonitor");
@@ -133,8 +154,9 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 				// Break as soon as the kernal is ready. We need this so that
 				// breakpoints without address mapping is handled properly by
 				// the VICEDebugTarget.
-				args.add("-initbreak");
-				args.add("ready");
+//				args.add("-initbreak");
+//				args.add("ready");
+
 			}
 
 			// Point to the VICE configuration file if it exists
@@ -163,6 +185,24 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+
+	private void updateAdresses(Assembly assembly, IBreakpoint iBreakpoint) {
+		Checkpoint cp = (Checkpoint) iBreakpoint;
+		if (cp.getSource() != Source.CODE) {
+			IResource br = iBreakpoint.getMarker().getResource();
+			// see if the checkpoint is in one of the assembled files
+			LineMapping lineMapping;
+			try {
+				lineMapping = assembly.getLineMapping((IFile) br, cp.getLineNumber());
+				if (lineMapping != null) {
+					cp.setStartAddress(lineMapping.getStartAddress());
+					cp.setEndAddress(lineMapping.getEndAddress());
+				}
+			} catch (CoreException e) {
+				System.err.println("COULD NOT DETERMINE ADDRESS");
+			}
 		}
 	}
 

@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarkerDelta;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugEvent;
 import org.eclipse.debug.core.DebugException;
@@ -43,6 +44,7 @@ import org.eclipse.debug.core.model.IThread;
 import net.resheim.eclipse.cc.builder.KickAssemblerBuilder;
 import net.resheim.eclipse.cc.builder.model.Assembly;
 import net.resheim.eclipse.cc.builder.model.LineMapping;
+import net.resheim.eclipse.cc.vice.debug.MonitorLogger;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Source;
 import net.resheim.eclipse.cc.vice.debug.monitor.Command;
 import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor;
@@ -102,8 +104,6 @@ public class VICEDebugTarget extends VICEDebugElement
 	 */
 	private Assembly assembly;
 
-	private boolean deferredBreakpointsInstalled = false;
-
 	public VICEDebugTarget(IProcess process, ILaunch launch, Assembly assembly) {
 		super(null);
 		this.process = process;
@@ -137,6 +137,7 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public void breakpointAdded(IBreakpoint breakpoint) {
+		MonitorLogger.info(MonitorLogger.USER, "Breakpoint added " + breakpoint);
 		// This method will be called when installing deferred breakpoints and
 		// when responding to a new breakpoint added using the UI. As the program
 		// is already running we must first determine the breakpoint address
@@ -169,10 +170,13 @@ public class VICEDebugTarget extends VICEDebugElement
 	public void breakpointChanged(IBreakpoint breakpoint, IMarkerDelta delta) {
 		boolean skipBreakpoints = DebugPlugin.getDefault().getBreakpointManager().isEnabled();
 		if (!skipBreakpoints) {
-			System.err.println("TODO: Implement 'Skip All Breakpoints'");
+			MonitorLogger.error(MonitorLogger.USER, "Unhandled skip all breakpoint");
 			return;
 		}
-		if (delta != null) {
+		// We only deal with the breakpoint if the delta has actually changed.
+		// Otherwise breakpointAdded and breakpointRemoved should be sufficient.
+		if (delta != null && delta.getKind() == IResourceDelta.CHANGED) {
+			MonitorLogger.info(MonitorLogger.USER, "Breakpoint changed " + breakpoint);
 			// Toggle the checkpoint if this is the attribute that has changed
 			if (delta.getAttribute(IBreakpoint.ENABLED) != null) {
 				Checkpoint cp = (Checkpoint) breakpoint;
@@ -186,7 +190,7 @@ public class VICEDebugTarget extends VICEDebugElement
 					e.printStackTrace();
 				}
 			} else {
-				System.err.println("TODO: Handle breakpoint delta change " + delta);
+				MonitorLogger.error(MonitorLogger.USER, "Unhandled breakpoint delta change " + delta);
 			}
 		}
 	}
@@ -235,6 +239,7 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public void disconnect() throws DebugException {
+		MonitorLogger.info(MonitorLogger.USER, "Disconnect");
 		// XXX: Should probably just call terminate()?
 		fireTerminateEvent();
 	}
@@ -251,7 +256,7 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public IMemoryBlock getMemoryBlock(long startAddress, long length) throws DebugException {
-		System.err.println("VICEDebugTarget.getMemoryBlock() " + startAddress);
+		MonitorLogger.info(MonitorLogger.USER, "Get memory block");
 		return null;
 	}
 
@@ -293,6 +298,7 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public void resume() throws DebugException {
+		MonitorLogger.info(MonitorLogger.USER, "Resume");
 		sendCommand(CommandID.EXIT, IBinaryMonitor.EMPTY_COMMAND_BODY);
 	}
 
@@ -310,20 +316,22 @@ public class VICEDebugTarget extends VICEDebugElement
 	@Override
 	public void suspend() throws DebugException {
 		// any command will suspend
+		MonitorLogger.info(MonitorLogger.USER, "Suspend");
 		sendCommand(CommandID.PING, new byte[] { 0x00 });
 	}
 
 	@Override
 	public void terminate() throws DebugException {
+		MonitorLogger.info(MonitorLogger.USER, "Terminate");
 		sendCommand(CommandID.QUIT, IBinaryMonitor.EMPTY_COMMAND_BODY);
 	}
 
 	@Override
 	public synchronized void breakpointManagerEnablementChanged(boolean enabled) {
 		if (enabled) {
-			System.out.println("Breakpoints are enabled.");
+			MonitorLogger.info(MonitorLogger.USER, "Breakpoints enabled");
 		} else {
-			System.out.println("Breakpoints are disabled (Skip All Breakpoints is enabled).");
+			MonitorLogger.info(MonitorLogger.USER, "Breakpoints disabled");
 		}
 	}
 
@@ -346,7 +354,6 @@ public class VICEDebugTarget extends VICEDebugElement
 	public void handleDebugEvents(DebugEvent[] events) {
 		for (DebugEvent event : events) {
 //			if (event.getSource().equals(this)) {
-				System.out.println("VICEThread.handleDebugEvents(" + event + ")");
 				if (DebugEvent.SUSPEND == event.getKind()) {
 					setCurrentState(State.SUSPENDED);
 					try {
@@ -356,11 +363,6 @@ public class VICEDebugTarget extends VICEDebugElement
 						// get all the register names, if we don't have them
 						if (!iRegisterGroup.hasRegisters()) {
 							sendCommand(CommandID.REGISTERS_AVAILABLE, new byte[] { 0x00 });
-						}
-						// if this is the first time we have suspended, typically
-						// with a ready kernel
-						if (!deferredBreakpointsInstalled) {
-							installDeferredBreakpoints();
 						}
 						// the result from the command does NOT include the
 						// start address of the data included, so it's hard to
@@ -379,7 +381,6 @@ public class VICEDebugTarget extends VICEDebugElement
 						// update the list of breakpoints, some may have been
 						// set by code or even another manually connected
 						// monitor
-						// XXX: Do not update the checkpoint list (for now)
 						// sendCommand(CommandID.CHECKPOINT_LIST, new byte[] {});
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -415,7 +416,7 @@ public class VICEDebugTarget extends VICEDebugElement
 		try {
 			Command msg = new Command(id, command, body);
 			byte[] messageToSend = msg.build();
-			System.out.println(msg);
+			MonitorLogger.info(MonitorLogger.INPUT, msg.toString());
 			out.write(messageToSend);
 			out.flush();
 		} catch (IOException e) {
@@ -434,31 +435,6 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	public void setCurrentState(State currentState) {
 		this.currentState = currentState;
-	}
-
-	/**
-	 * Update all checkpoints with the address determined by examining the
-	 * <code>.dbg</code> file created by the compiler and locating the address by
-	 * file name and line number.
-	 * <p>
-	 * Doing it at this stage should avoid the issue of a breakpoint having
-	 * different addresses if it is set on an included file which is used in
-	 * different programs. The assembly should have been created the last time the
-	 * program was compiled.
-	 * </p>
-	 * <p>
-	 * Each updated checkpoint will be installed in the emulator.
-	 * </p>
-	 */
-	public synchronized void installDeferredBreakpoints() {
-		IBreakpoint[] breakpoints = getBreakpointManager().getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
-		for (IBreakpoint iBreakpoint : breakpoints) {
-			breakpointAdded(iBreakpoint);
-		}
-		deferredBreakpointsInstalled = true;
-		// the emulator will have stopped when we started sending checkpoints to
-		// it, so we will resume now.
-		// sendCommand(CommandID.EXIT, IBinaryMonitor.EMPTY_COMMAND_BODY);
 	}
 
 	private void updateAdresses(IBreakpoint iBreakpoint) {

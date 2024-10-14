@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -16,7 +15,7 @@ import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.IBreakpointManager;
 import org.eclipse.debug.core.model.IBreakpoint;
 
-import net.resheim.eclipse.cc.vice.debug.ANSIColors;
+import net.resheim.eclipse.cc.vice.debug.MonitorLogger;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Operation;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
@@ -110,14 +109,6 @@ public class MonitorEventDispatcher extends Job {
 		// the most accurate in this context.
 		String type = ResponseID.hasCode(code) ? ResponseID.getNameFromCode(code) : CommandID.getNameFromCode(code);
 		StringBuilder sb = new StringBuilder();
-		if (header.errorCode > 0) {
-			sb.append(ANSIColors.RED_BACKGROUND);
-			sb.append(ANSIColors.WHITE);
-		} else {
-			sb.append(ANSIColors.YELLOW_BACKGROUND);
-			sb.append(ANSIColors.BLACK);
-		}
-		sb.append(">>> ");
 		sb.append("Response: ID " + String.format("$%08X", header.requestId));
 		sb.append(", type " + String.format("$%02X", header.responseType) + " ("
 				+ type + ")");
@@ -133,43 +124,21 @@ public class MonitorEventDispatcher extends Job {
 				break;
 			}
 		}
-		sb.append(ANSIColors.RESET);
-		// print some debug info
-		System.out.println(sb);
+		if (header.errorCode > 0) {
+			MonitorLogger.error(MonitorLogger.OUTPUT, sb.toString());
+		} else {
+			MonitorLogger.info(MonitorLogger.OUTPUT, sb.toString());
+		}
 	}
 
 
 	private void parseCheckpointInfo(Response header, byte[] responseBody) {
-		try {
-			IBreakpointManager breakpointManager = DebugPlugin.getDefault().getBreakpointManager();
-			IBreakpoint[] breakpoints = breakpointManager.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
+//		try {
 			ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
 			buffer.order(ByteOrder.LITTLE_ENDIAN);
-			Checkpoint cp = null;
-			// see if we have the breakpoint already
-			int id = buffer.getInt();
-			for (IBreakpoint iBreakpoint : breakpoints) {
-				if (iBreakpoint instanceof Checkpoint) {
-					Checkpoint testing = cp = (Checkpoint) iBreakpoint;
-					// hitherto unnumbered checkpoint
-					if (testing.getNumber() == 0) {
-						if (header.requestId == testing.getRequestId()) {
-							testing.setNumber(id);
-							testing.setRequestId(-1);
-						}
-					}
-					if (testing.getNumber() == id) {
-						cp = testing;
-					}
-				}
-			}
-			if (cp == null) {
-				// XXX: Unknown checkpoint
-				System.out.println("Unknown checkpoint " + id);
-				return;
-//				cp = new Checkpoint(ResourcesPlugin.getWorkspace().getRoot(), 0);
-//				cp.setNumber(id);
-			}
+			// Create a checkpoint representation from the emulator
+			Checkpoint cp = new Checkpoint();
+			cp.setNumber(buffer.getInt());
 			// Update the checkpoint with values from the emulator
 			cp.setCurrentlyHit(buffer.get() == 0x01);
 			cp.setStartAddress(buffer.getShort());
@@ -179,20 +148,43 @@ public class MonitorEventDispatcher extends Job {
 			// cp.setEnabledRemotely(buffer.get() == 0x01);
 			cp.setOperation(Operation.parseByte(buffer.get()));
 			cp.setTemporary(buffer.get() == 0x01);
-			cp.setHitCount(id);
-			cp.setIgnoreCount(id);
-			cp.setHasCondition(buffer.get() == 0x01);
-			cp.setMemspace(buffer.get());
-			// we have hit a breakpoint, however a Response.STOPPED will always
-			// follow, so we're doing nothing for now
-			if (cp.isStopWhenHit() && cp.isCurrentlyHit()) {
-//			thread.fireEvent(new DebugEvent(thread, DebugEvent.SUSPEND, DebugEvent.BREAKPOINT));
-			}
-			breakpointManager.addBreakpoint(cp);
+//			cp.setHitCount(id);
+//			cp.setIgnoreCount(id);
+//			cp.setHasCondition(buffer.get() == 0x01);
+//			cp.setMemspace(buffer.get());
 
-		} catch (CoreException e) {
-			e.printStackTrace();
-		}
+			// see if we have the breakpoint already
+			IBreakpointManager breakpointManager = DebugPlugin.getDefault().getBreakpointManager();
+			IBreakpoint[] breakpoints = breakpointManager.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
+			// XXX: Rewrite to make sure the correct breakpoint is the correct
+			for (IBreakpoint iBreakpoint : breakpoints) {
+				if (iBreakpoint instanceof Checkpoint) {
+					Checkpoint testing = (Checkpoint) iBreakpoint;
+					// hitherto unnumbered checkpoint
+					if (testing.getNumber() == 0) {
+						// If the command request identifier matches the one
+						// used when creating the checkpoint we can use the ID
+						if (header.requestId == testing.getRequestId()) {
+							testing.setNumber(cp.getNumber());
+							testing.setRequestId(0);
+							// Assuming that there never will be two breakpoints on
+							// the same address
+						} else if (cp.getStartAddress() == testing.getStartAddress()) {
+							testing.setNumber(cp.getNumber());
+						}
+					}
+					if (testing.getNumber() == 0) {
+						MonitorLogger.error(MonitorLogger.USER, "Unknown breakpoint " + cp.getNumber());
+						return;
+					}
+				}
+			}
+			// Use this for breakpoints added in code
+//			breakpointManager.addBreakpoint(cp);
+
+//		} catch (CoreException e) {
+//			e.printStackTrace();
+//		}
 	}
 
 	private void parseRegistersAvailable(byte[] responseBody) {
