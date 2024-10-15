@@ -353,22 +353,21 @@ public class VICEDebugTarget extends VICEDebugElement
 	@Override
 	public void handleDebugEvents(DebugEvent[] events) {
 		for (DebugEvent event : events) {
-//			if (event.getSource().equals(this)) {
-				if (DebugEvent.SUSPEND == event.getKind()) {
-					setCurrentState(State.SUSPENDED);
-					try {
-						// we assume the first register is the main CPU
-						IStackFrame stackFrame = getThreads()[0].getTopStackFrame();
-						IRegisterGroup iRegisterGroup = stackFrame.getRegisterGroups()[0];
-						// get all the register names, if we don't have them
-						if (!iRegisterGroup.hasRegisters()) {
-							sendCommand(CommandID.REGISTERS_AVAILABLE, new byte[] { 0x00 });
-						}
-						// the result from the command does NOT include the
-						// start address of the data included, so it's hard to
-						// figure it out unless we somehow pass that value. We
-						// just read out the entire 64kiB for now.
-						// XXX: We do not care about the memory (for now)
+			if (DebugEvent.SUSPEND == event.getKind()) {
+				setCurrentState(State.SUSPENDED);
+				try {
+					// we assume the first register is the main CPU
+					IStackFrame stackFrame = getThreads()[0].getTopStackFrame();
+					IRegisterGroup iRegisterGroup = stackFrame.getRegisterGroups()[0];
+					// get all the register names, if we don't have them
+					if (!iRegisterGroup.hasRegisters()) {
+						sendCommand(CommandID.REGISTERS_AVAILABLE, new byte[] { 0x00 });
+					}
+					// the result from the command does NOT include the
+					// start address of the data included, so it's hard to
+					// figure it out unless we somehow pass that value. We
+					// just read out the entire 64kiB for now.
+					// XXX: We do not care about the memory (for now)
 //						sendCommand(CommandID.MEMORY_GET, new byte[] { 0x00, // side effects
 //								0x00, // start address LSB
 //								0x00, // start address MSB
@@ -378,40 +377,39 @@ public class VICEDebugTarget extends VICEDebugElement
 //								0x00, // bank ID LSB
 //								0x00 // bank ID MSB
 //						});
-						// update the list of breakpoints, some may have been
-						// set by code or even another manually connected
-						// monitor
-						// sendCommand(CommandID.CHECKPOINT_LIST, new byte[] {});
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-				if (DebugEvent.RESUME == event.getKind()) {
-					setCurrentState(State.RUNNING);
-				}
-				if (DebugEvent.TERMINATE == event.getKind()) {
-					setCurrentState(State.TERMINATED);
-					try {
-						// Close down socket
-						if (!socket.isClosed()) {
-							socket.shutdownOutput();
-							socket.shutdownInput();
-							socket.close();
-						}
-						// and our IO-streams
-						out.close();
-						in.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					DebugPlugin.getDefault().removeDebugEventListener(this);
-					DebugPlugin.getDefault().getBreakpointManager().removeBreakpointListener(this);
+					// update the list of breakpoints, some may have been
+					// set by code or even another manually connected
+					// monitor
+					// sendCommand(CommandID.CHECKPOINT_LIST, new byte[] {});
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
-//		}
+			if (DebugEvent.RESUME == event.getKind()) {
+				setCurrentState(State.RUNNING);
+			}
+			if (DebugEvent.TERMINATE == event.getKind()) {
+				setCurrentState(State.TERMINATED);
+				try {
+					// Close down socket
+					if (!socket.isClosed()) {
+						socket.shutdownOutput();
+						socket.shutdownInput();
+						socket.close();
+					}
+					// and our IO-streams
+					out.close();
+					in.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				DebugPlugin.getDefault().removeDebugEventListener(this);
+				DebugPlugin.getDefault().getBreakpointManager().removeBreakpointListener(this);
+			}
+		}
 	}
 
-	int sendCommand(CommandID command, byte[] body) {
+	synchronized int sendCommand(CommandID command, byte[] body) {
 		int id = counter.incrementAndGet();
 		try {
 			Command msg = new Command(id, command, body);

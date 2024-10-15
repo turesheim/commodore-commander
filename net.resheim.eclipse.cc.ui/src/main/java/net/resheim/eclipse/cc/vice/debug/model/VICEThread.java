@@ -97,7 +97,7 @@ public class VICEThread extends VICEDebugElement implements IThread {
 	public void stepInto() throws DebugException {
 		ByteBuffer buffer = ByteBuffer.allocate(3);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
-		buffer.put((byte) 0x00);
+		buffer.put((byte) 0x00); // Should subroutines count as a single instruction?
 		buffer.putShort((short)0x01);
 		((VICEDebugTarget) getDebugTarget()).sendCommand(CommandID.ADVANCE_INSTRUCTIONS, buffer.array());
 		stepping = true;
@@ -107,7 +107,7 @@ public class VICEThread extends VICEDebugElement implements IThread {
 	public void stepOver() throws DebugException {
 		ByteBuffer buffer = ByteBuffer.allocate(3);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
-		buffer.put((byte) 0x01);
+		buffer.put((byte) 0x01); // Should subroutines count as a single instruction?
 		buffer.putShort((short) 0x01);
 		((VICEDebugTarget) getDebugTarget()).sendCommand(CommandID.ADVANCE_INSTRUCTIONS, buffer.array());
 		stepping = true;
