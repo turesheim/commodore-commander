@@ -171,11 +171,27 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 
 	@Override
 	public int getCharStart() throws DebugException {
+		// XXX: Ned to calculate the character position in the file, not line
+//		int pc = Short.toUnsignedInt(getProgramCounter());
+//		Assembly assembly = getAssembly();
+//		// attempt to determine a line mapping for the program counter
+//		LineMapping lineMapping = assembly.getLineMapping(pc);
+//		if (lineMapping != null) {
+//			return lineMapping.getStartColumn();
+//		}
 		return -1;
 	}
 
 	@Override
 	public int getCharEnd() throws DebugException {
+		// XXX: Ned to calculate the character position in the file, not line
+//		int pc = Short.toUnsignedInt(getProgramCounter());
+//		Assembly assembly = getAssembly();
+//		// attempt to determine a line mapping for the program counter
+//		LineMapping lineMapping = assembly.getLineMapping(pc);
+//		if (lineMapping != null) {
+//			return lineMapping.getEndColumn();
+//		}
 		return -1;
 	}
 
@@ -217,4 +233,18 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 	public Assembly getAssembly() {
 		return ((VICEDebugTarget) getDebugTarget()).getAssembly();
 	}
+
+	@Override
+	public int hashCode() {
+		// Make sure we get a different value when the file name has changed
+		// so that the UI will update properly and load the correct file. This
+		// is required since we are reusing the same IStackFrame instance.
+		try {
+			return getFileName().hashCode() + getProgramCounter();
+		} catch (CoreException e) {
+			e.printStackTrace();
+		}
+		return super.hashCode();
+	}
+
 }
