@@ -64,34 +64,36 @@ import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
  */
 public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
-	private class ResourceDeltaVisitor implements IResourceDeltaVisitor {
-
-		List<AssemblyFile> roots = null;
-
-		public ResourceDeltaVisitor(List<AssemblyFile> roots) {
-			this.roots = roots;
-		}
-
-		@Override
-		public boolean visit(IResourceDelta delta) throws CoreException {
-			IResource resource = delta.getResource();
-			if (delta.getKind() == IResourceDelta.REMOVED) {
-				// just build all roots, we currently cannot determine the tree
-				// of those files that have been removed
-				for (AssemblyFile assemblyFile : roots) {
-					assemble(assemblyFile);
-				}
-			} else {
-				for (AssemblyFile assemblyFile : roots) {
-					if (assemblyFile.containsResource(resource)) {
-						assemble(assemblyFile);
-					}
-				}
-			}
-			// return true to continue visiting children.
-			return false;
-		}
-	}
+// Make use of this when figured out how to do partial builds.
+//
+//	private class ResourceDeltaVisitor implements IResourceDeltaVisitor {
+//
+//		List<AssemblyFile> roots = null;
+//
+//		public ResourceDeltaVisitor(List<AssemblyFile> roots) {
+//			this.roots = roots;
+//		}
+//
+//		@Override
+//		public boolean visit(IResourceDelta delta) throws CoreException {
+//			IResource resource = delta.getResource();
+//			if (delta.getKind() == IResourceDelta.REMOVED) {
+//				// just build all roots, we currently cannot determine the tree
+//				// of those files that have been removed
+//				for (AssemblyFile assemblyFile : roots) {
+//					assemble(assemblyFile);
+//				}
+//			} else {
+//				for (AssemblyFile assemblyFile : roots) {
+//					if (assemblyFile.containsResource(resource)) {
+//						assemble(assemblyFile);
+//					}
+//				}
+//			}
+//			// return true to continue visiting children.
+//			return false;
+//		}
+//	}
 
 	private class TreeBuildingResourceVisitor implements IResourceVisitor {
 
