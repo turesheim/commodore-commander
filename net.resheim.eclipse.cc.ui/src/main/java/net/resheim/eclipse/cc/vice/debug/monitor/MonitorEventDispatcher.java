@@ -14,6 +14,7 @@ import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.IBreakpointManager;
 import org.eclipse.debug.core.model.IBreakpoint;
+import org.eclipse.ui.console.MessageConsoleStream;
 
 import net.resheim.eclipse.cc.vice.debug.MonitorLogger;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
@@ -62,11 +63,15 @@ public class MonitorEventDispatcher extends Job {
 	 */
 	private final byte[] computerMemory = new byte[65_536];
 
-	public MonitorEventDispatcher(VICEDebugTarget debugTarget, VICEThread thread, InputStream inputStream) {
+	private MessageConsoleStream consoleStream;
+
+	public MonitorEventDispatcher(VICEDebugTarget debugTarget, VICEThread thread, InputStream inputStream,
+			MessageConsoleStream consoleStream) {
 		super("Binary monitor dispach");
 		this.inputStream = inputStream;
 		this.debugTarget = debugTarget;
 		this.thread = thread;
+		this.consoleStream = consoleStream;
 	}
 
 	private static String byteToHex(byte b) {
@@ -125,9 +130,9 @@ public class MonitorEventDispatcher extends Job {
 			}
 		}
 		if (header.errorCode > 0) {
-			MonitorLogger.error(MonitorLogger.OUTPUT, sb.toString());
+			MonitorLogger.error(consoleStream, MonitorLogger.OUTPUT, sb.toString());
 		} else {
-			MonitorLogger.info(MonitorLogger.OUTPUT, sb.toString());
+			MonitorLogger.info(consoleStream, MonitorLogger.OUTPUT, sb.toString());
 		}
 	}
 
@@ -174,7 +179,7 @@ public class MonitorEventDispatcher extends Job {
 						}
 					}
 					if (testing.getNumber() == 0) {
-						MonitorLogger.error(MonitorLogger.USER, "Unknown breakpoint " + cp.getNumber());
+						MonitorLogger.error(consoleStream, MonitorLogger.USER, "Unknown breakpoint " + cp.getNumber());
 						return;
 					}
 				}

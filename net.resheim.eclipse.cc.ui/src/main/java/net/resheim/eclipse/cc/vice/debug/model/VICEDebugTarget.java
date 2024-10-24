@@ -40,10 +40,14 @@ import org.eclipse.debug.core.model.IProcess;
 import org.eclipse.debug.core.model.IRegisterGroup;
 import org.eclipse.debug.core.model.IStackFrame;
 import org.eclipse.debug.core.model.IThread;
+import org.eclipse.ui.console.IConsole;
+import org.eclipse.ui.console.MessageConsole;
+import org.eclipse.ui.console.MessageConsoleStream;
 
 import net.resheim.eclipse.cc.builder.KickAssemblerBuilder;
 import net.resheim.eclipse.cc.builder.model.Assembly;
 import net.resheim.eclipse.cc.builder.model.LineMapping;
+import net.resheim.eclipse.cc.ui.ConsoleFactory;
 import net.resheim.eclipse.cc.vice.debug.MonitorLogger;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Source;
 import net.resheim.eclipse.cc.vice.debug.monitor.Command;
@@ -104,6 +108,10 @@ public class VICEDebugTarget extends VICEDebugElement
 	 */
 	private Assembly assembly;
 
+	private MessageConsole console;
+
+	private MessageConsoleStream consoleStream;
+
 	public VICEDebugTarget(IProcess process, ILaunch launch, Assembly assembly) {
 		super(null);
 		this.process = process;
@@ -112,6 +120,10 @@ public class VICEDebugTarget extends VICEDebugElement
 		this.assembly = assembly;
 		this.counter = new AtomicInteger();
 		this.thread = new VICEThread(this, socket);
+
+		this.console = ConsoleFactory.findConsole();
+		this.consoleStream = console.newMessageStream();
+
 		DebugPlugin.getDefault().getBreakpointManager().addBreakpointListener(this);
 		DebugPlugin.getDefault().addDebugEventListener(this);
 		connectEventdDispatcherStreams();
@@ -137,7 +149,7 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public void breakpointAdded(IBreakpoint breakpoint) {
-		MonitorLogger.info(MonitorLogger.USER, "Breakpoint added " + breakpoint);
+		MonitorLogger.info(consoleStream, MonitorLogger.USER, "Breakpoint added " + breakpoint);
 		// This method will be called when installing deferred breakpoints and
 		// when responding to a new breakpoint added using the UI. As the program
 		// is already running we must first determine the breakpoint address
@@ -170,13 +182,13 @@ public class VICEDebugTarget extends VICEDebugElement
 	public void breakpointChanged(IBreakpoint breakpoint, IMarkerDelta delta) {
 		boolean skipBreakpoints = DebugPlugin.getDefault().getBreakpointManager().isEnabled();
 		if (!skipBreakpoints) {
-			MonitorLogger.error(MonitorLogger.USER, "Unhandled skip all breakpoint");
+			MonitorLogger.error(consoleStream, MonitorLogger.USER, "Unhandled skip all breakpoint");
 			return;
 		}
 		// We only deal with the breakpoint if the delta has actually changed.
 		// Otherwise breakpointAdded and breakpointRemoved should be sufficient.
 		if (delta != null && delta.getKind() == IResourceDelta.CHANGED) {
-			MonitorLogger.info(MonitorLogger.USER, "Breakpoint changed " + breakpoint);
+			MonitorLogger.info(consoleStream, MonitorLogger.USER, "Breakpoint changed " + breakpoint);
 			// Toggle the checkpoint if this is the attribute that has changed
 			if (delta.getAttribute(IBreakpoint.ENABLED) != null) {
 				Checkpoint cp = (Checkpoint) breakpoint;
@@ -190,7 +202,7 @@ public class VICEDebugTarget extends VICEDebugElement
 					e.printStackTrace();
 				}
 			} else {
-				MonitorLogger.error(MonitorLogger.USER, "Unhandled breakpoint delta change " + delta);
+				MonitorLogger.error(consoleStream, MonitorLogger.USER, "Unhandled breakpoint delta change " + delta);
 			}
 		}
 	}
@@ -239,7 +251,7 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public void disconnect() throws DebugException {
-		MonitorLogger.info(MonitorLogger.USER, "Disconnect");
+		MonitorLogger.info(consoleStream, MonitorLogger.USER, "Disconnect");
 		// XXX: Should probably just call terminate()?
 		fireTerminateEvent();
 	}
@@ -256,7 +268,7 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public IMemoryBlock getMemoryBlock(long startAddress, long length) throws DebugException {
-		MonitorLogger.info(MonitorLogger.USER, "Get memory block");
+		MonitorLogger.info(consoleStream, MonitorLogger.USER, "Get memory block");
 		return null;
 	}
 
@@ -298,7 +310,7 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public void resume() throws DebugException {
-		MonitorLogger.info(MonitorLogger.USER, "Resume");
+		MonitorLogger.info(consoleStream, MonitorLogger.USER, "Resume");
 		sendCommand(CommandID.EXIT, IBinaryMonitor.EMPTY_COMMAND_BODY);
 	}
 
@@ -309,29 +321,28 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public boolean supportsStorageRetrieval() {
-		// TODO: Implement this
-		return true;
+		return false;
 	}
 
 	@Override
 	public void suspend() throws DebugException {
 		// any command will suspend
-		MonitorLogger.info(MonitorLogger.USER, "Suspend");
+		MonitorLogger.info(consoleStream, MonitorLogger.USER, "Suspend");
 		sendCommand(CommandID.PING, new byte[] { 0x00 });
 	}
 
 	@Override
 	public void terminate() throws DebugException {
-		MonitorLogger.info(MonitorLogger.USER, "Terminate");
+		MonitorLogger.info(consoleStream, MonitorLogger.USER, "Terminate");
 		sendCommand(CommandID.QUIT, IBinaryMonitor.EMPTY_COMMAND_BODY);
 	}
 
 	@Override
 	public synchronized void breakpointManagerEnablementChanged(boolean enabled) {
 		if (enabled) {
-			MonitorLogger.info(MonitorLogger.USER, "Breakpoints enabled");
+			MonitorLogger.info(consoleStream, MonitorLogger.USER, "Breakpoints enabled");
 		} else {
-			MonitorLogger.info(MonitorLogger.USER, "Breakpoints disabled");
+			MonitorLogger.info(consoleStream, MonitorLogger.USER, "Breakpoints disabled");
 		}
 	}
 
@@ -339,7 +350,7 @@ public class VICEDebugTarget extends VICEDebugElement
 		try {
 			out = new DataOutputStream(socket.getOutputStream());
 			in = new DataInputStream(socket.getInputStream());
-			eventDispatcher = new MonitorEventDispatcher(this, thread, in);
+			eventDispatcher = new MonitorEventDispatcher(this, thread, in, consoleStream);
 			eventDispatcher.schedule();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -367,16 +378,15 @@ public class VICEDebugTarget extends VICEDebugElement
 					// start address of the data included, so it's hard to
 					// figure it out unless we somehow pass that value. We
 					// just read out the entire 64kiB for now.
-					// XXX: We do not care about the memory (for now)
-//						sendCommand(CommandID.MEMORY_GET, new byte[] { 0x00, // side effects
-//								0x00, // start address LSB
-//								0x00, // start address MSB
-//								(byte) 0xff, // end address LSB
-//								(byte) 0xff, // end address MSB
-//								0x00, // memspace
-//								0x00, // bank ID LSB
-//								0x00 // bank ID MSB
-//						});
+					sendCommand(CommandID.MEMORY_GET, new byte[] { 0x00, // side effects
+							0x00, // start address LSB
+							0x00, // start address MSB
+							(byte) 0xff, // end address LSB
+							(byte) 0xff, // end address MSB
+							0x00, // memspace
+							0x00, // bank ID LSB
+							0x00 // bank ID MSB
+					});
 					// update the list of breakpoints, some may have been
 					// set by code or even another manually connected
 					// monitor
@@ -414,7 +424,7 @@ public class VICEDebugTarget extends VICEDebugElement
 		try {
 			Command msg = new Command(id, command, body);
 			byte[] messageToSend = msg.build();
-			MonitorLogger.info(MonitorLogger.INPUT, msg.toString());
+			MonitorLogger.info(consoleStream, MonitorLogger.INPUT, msg.toString());
 			out.write(messageToSend);
 			out.flush();
 		} catch (IOException e) {
@@ -455,6 +465,10 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	public Assembly getAssembly() {
 		return assembly;
+	}
+
+	public IConsole getConsole() {
+		return console;
 	}
 
 }
