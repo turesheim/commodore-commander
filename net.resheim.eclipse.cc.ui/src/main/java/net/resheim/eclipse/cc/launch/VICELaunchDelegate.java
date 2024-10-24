@@ -132,11 +132,13 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 						.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
 				try (FileWriter fw = new FileWriter(mcommands.toFile(), true)) {
 					for (IBreakpoint iBreakpoint : breakpoints) {
-						Checkpoint cp = (Checkpoint) iBreakpoint;
-						updateAdresses(assembly, iBreakpoint);
-						fw.append("break ");
-						fw.append(Integer.toHexString(cp.getStartAddress()));
-						fw.append(" \n");
+						if (iBreakpoint.isEnabled()) {
+							Checkpoint cp = (Checkpoint) iBreakpoint;
+							updateAdresses(assembly, iBreakpoint);
+							fw.append("break ");
+							fw.append(Integer.toHexString(cp.getStartAddress()));
+							fw.append(" \n");
+						}
 					}
 				}
 				// In case one wants to telnet to the address and use the text
