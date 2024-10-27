@@ -1,0 +1,4 @@
+#!/bin/bash
+export VICE_INITIAL_CWD="$(pwd)"
+export PROGRAM="$(basename "$0")"
+"$(dirname "$0")/../VICE.app/Contents/Resources/script" "$@"

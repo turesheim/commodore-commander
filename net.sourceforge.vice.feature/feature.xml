@@ -7,7 +7,7 @@
       plugin="net.sourceforge.vice"
       os="macosx"
       ws="cocoa"
-      arch="aarch64">
+      arch="aarch64,x86_64">
 
    <description url="https://vice-emu.sourceforge.io/index.html">
       VICE is an emulator for Commodore 8-bit computers.
@@ -28,10 +28,10 @@ VICE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY
          version="0.0.0"/>
 
    <plugin
-         id="net.sourceforge.vice.cocoa.macosx.aarch64"
+         id="net.sourceforge.vice.cocoa.macosx.x86_64"
          os="macosx"
          ws="cocoa"
-         arch="aarch64"
+         arch="aarch64,x86_64"
          version="0.0.0"/>
 
 </feature>
