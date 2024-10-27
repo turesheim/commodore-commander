@@ -160,22 +160,26 @@ public class VICEDebugTarget extends VICEDebugElement
 			try {
 				if ((breakpoint.isEnabled()
 						&& getBreakpointManager().isEnabled()) /* || !breakpoint.isRegistered() */) {
-					Checkpoint cp = (Checkpoint) breakpoint;
-					ByteBuffer buffer = ByteBuffer.allocate(8);
-					buffer.order(ByteOrder.LITTLE_ENDIAN);
-					buffer.putShort((short) cp.getStartAddress());
-					buffer.putShort((short) cp.getEndAddress());
-					buffer.put((byte) 0x01); // stop when hit
-					buffer.put(breakpoint.isEnabled() ? (byte) 0x01 : (byte) 0x00);
-					buffer.put((byte) 0x04); // on execute
-					buffer.put((byte) 0x00); // is not temporary
-					int id = sendCommand(CommandID.CHECKPOINT_SET, buffer.array());
-					// update the checkpoint with the ID of the request that created it
-					cp.setRequestId(id);
+					registerBreakpoint(breakpoint);
 				}
 			} catch (CoreException e) {
 			}
 		}
+	}
+
+	private void registerBreakpoint(IBreakpoint breakpoint) throws CoreException {
+		Checkpoint cp = (Checkpoint) breakpoint;
+		ByteBuffer buffer = ByteBuffer.allocate(8);
+		buffer.order(ByteOrder.LITTLE_ENDIAN);
+		buffer.putShort((short) cp.getStartAddress());
+		buffer.putShort((short) cp.getEndAddress());
+		buffer.put((byte) 0x01); // stop when hit
+		buffer.put(breakpoint.isEnabled() ? (byte) 0x01 : (byte) 0x00);
+		buffer.put((byte) 0x04); // on execute
+		buffer.put((byte) 0x00); // is not temporary
+		int id = sendCommand(CommandID.CHECKPOINT_SET, buffer.array());
+		// update the checkpoint with the ID of the request that created it
+		cp.setRequestId(id);
 	}
 
 	@Override
@@ -192,12 +196,20 @@ public class VICEDebugTarget extends VICEDebugElement
 			// Toggle the checkpoint if this is the attribute that has changed
 			if (delta.getAttribute(IBreakpoint.ENABLED) != null) {
 				Checkpoint cp = (Checkpoint) breakpoint;
-				ByteBuffer buffer = ByteBuffer.allocate(5);
-				buffer.order(ByteOrder.LITTLE_ENDIAN);
-				buffer.putInt(cp.getNumber());
 				try {
-					buffer.put(breakpoint.isEnabled() ? (byte) 0x01 : (byte) 0x00);
-					sendCommand(CommandID.CHECKPOINT_TOGGLE, buffer.array());
+					// If the number is not set, this checkpoint was disabled
+					// when the emulator started. So we will have to add it now.
+					// The *.vs file format / text based monitor does not have
+					// support for adding an initially disabled breakpoint.
+					if (cp.getNumber() > 0) {
+						ByteBuffer buffer = ByteBuffer.allocate(5);
+						buffer.order(ByteOrder.LITTLE_ENDIAN);
+						buffer.putInt(cp.getNumber());
+						buffer.put(breakpoint.isEnabled() ? (byte) 0x01 : (byte) 0x00);
+						sendCommand(CommandID.CHECKPOINT_TOGGLE, buffer.array());
+					} else {
+						registerBreakpoint(breakpoint);
+					}
 				} catch (CoreException e) {
 					e.printStackTrace();
 				}
