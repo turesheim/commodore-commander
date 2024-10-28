@@ -8,6 +8,7 @@ import java.nio.ByteOrder;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.ILock;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.debug.core.DebugEvent;
 import org.eclipse.debug.core.DebugException;
@@ -20,7 +21,7 @@ import net.resheim.eclipse.cc.vice.debug.MonitorLogger;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Operation;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
-import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
+import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement.State;
 import net.resheim.eclipse.cc.vice.debug.model.VICERegisterGroup;
 import net.resheim.eclipse.cc.vice.debug.model.VICEStackFrame;
 import net.resheim.eclipse.cc.vice.debug.model.VICEThread;
@@ -46,8 +47,6 @@ public class MonitorEventDispatcher extends Job {
 
 	private final InputStream inputStream;
 
-	private final VICEDebugTarget debugTarget;
-
 	private final VICEThread thread;
 
 	/**
@@ -65,11 +64,10 @@ public class MonitorEventDispatcher extends Job {
 
 	private MessageConsoleStream consoleStream;
 
-	public MonitorEventDispatcher(VICEDebugTarget debugTarget, VICEThread thread, InputStream inputStream,
+	public MonitorEventDispatcher(VICEThread thread, InputStream inputStream,
 			MessageConsoleStream consoleStream) {
 		super("Binary monitor dispach");
 		this.inputStream = inputStream;
-		this.debugTarget = debugTarget;
 		this.thread = thread;
 		this.consoleStream = consoleStream;
 	}
@@ -79,31 +77,36 @@ public class MonitorEventDispatcher extends Job {
 		return hex.length() == 1 ? "0" + hex : hex;
 	}
 
-	private synchronized void parseResponse(Response header, byte[] responseBody) throws DebugException {
+	private void parseResponse(Response header, byte[] responseBody) throws DebugException {
 
 		debug(header, responseBody);
-		// XXX: Should event firing be done after responding?
-		// XXX: Firing on the target messes up the registers view since the target will
-		// be selected
-		if (header.responseType == ResponseID.STOPPED.getCode())
-			thread.fireSuspendEvent(0);
+		if (header.responseType == ResponseID.STOPPED.getCode()) {
+			thread.setState(State.SUSPENDED);
+			if (thread.isStepping()) {
+				thread.fireSuspendEvent(DebugEvent.STEP_END);
+			} else {
+				thread.fireSuspendEvent(DebugEvent.UNSPECIFIED);
+			}
+		}
 		else if (header.responseType == ResponseID.CHECKPOINT_INFO.getCode())
 			parseCheckpointInfo(header, responseBody);
-		else if (header.responseType == ResponseID.RESUMED.getCode())
-			thread.fireResumeEvent(0);
+		else if (header.responseType == ResponseID.RESUMED.getCode()) {
+			thread.setState(State.RUNNING);
+			thread.fireResumeEvent(DebugEvent.UNSPECIFIED);
+		}
 		else if (header.responseType == CommandID.MEMORY_GET.getCode())
-			// TODO Handle that we may not be reading the entire 64k
 			parseMemoryGet(responseBody);
-		else if (header.responseType == CommandID.QUIT.getCode())
-			debugTarget.fireTerminateEvent();
+		else if (header.responseType == CommandID.QUIT.getCode()) {
+			thread.setState(State.TERMINATED);
+			thread.fireTerminateEvent();
+		}
 		else if (header.responseType == ResponseID.REGISTER_INFO.getCode())
 			parseRegistersGet(responseBody);
 		else if (header.responseType == CommandID.REGISTERS_AVAILABLE.getCode())
 			parseRegistersAvailable(responseBody);
-//		else
-//			// we may care
-//			System.err.println("Unhandled command " + String.format("$%02X", header.responseType) + " (" + type + ")");
-
+		else
+			MonitorLogger.error(consoleStream, MonitorLogger.OUTPUT,
+					"Unhandled response " + String.format("$%02X", header.responseType));
 	}
 
 	private void debug(Response header, byte[] responseBody) {
@@ -194,7 +197,7 @@ public class MonitorEventDispatcher extends Job {
 
 	private void parseRegistersAvailable(byte[] responseBody) {
 		try {
-			VICEStackFrame stackFrame = (VICEStackFrame) debugTarget.getThreads()[0].getTopStackFrame();
+			VICEStackFrame stackFrame = (VICEStackFrame) thread.getTopStackFrame();
 			VICERegisterGroup registerGroup = (VICERegisterGroup) stackFrame.getRegisterGroups()[0];
 
 			ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
@@ -236,7 +239,7 @@ public class MonitorEventDispatcher extends Job {
 	 */
 	private void parseRegistersGet(byte[] responseBody) {
 		try {
-			VICEStackFrame stackFrame = (VICEStackFrame) debugTarget.getThreads()[0].getTopStackFrame();
+			VICEStackFrame stackFrame = (VICEStackFrame) thread.getTopStackFrame();
 			VICERegisterGroup registerGroup = (VICERegisterGroup) stackFrame.getRegisterGroups()[0];
 			ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
 			buffer.order(ByteOrder.LITTLE_ENDIAN); // Set buffer to little endian
@@ -290,7 +293,7 @@ public class MonitorEventDispatcher extends Job {
 	@Override
 	protected IStatus run(IProgressMonitor monitor) {
 		try {
-			while (!debugTarget.isTerminated()) {
+			while (!thread.isTerminated()) {
 				if (inputStream.available() > 0) {
 
 					// read the header which is 12 bytes long
@@ -317,7 +320,13 @@ public class MonitorEventDispatcher extends Job {
 					inputStream.readNBytes(bodyBytes, 0, bodyLength);
 					assert (bodyLength == bodyBytes.length);
 
-					parseResponse(header, bodyBytes);
+					ILock lock = Job.getJobManager().newLock();
+					lock.acquire();
+					try {
+						parseResponse(header, bodyBytes);
+					} finally {
+						lock.release();
+					}
 
 				} // if
 			} // while

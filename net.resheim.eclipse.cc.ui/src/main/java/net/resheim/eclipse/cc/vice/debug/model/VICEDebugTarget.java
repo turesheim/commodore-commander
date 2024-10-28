@@ -67,8 +67,6 @@ import net.resheim.eclipse.cc.vice.debug.monitor.MonitorEventDispatcher;
 public class VICEDebugTarget extends VICEDebugElement
 		implements IDebugTarget, IBreakpointManagerListener, IDebugEventSetListener {
 
-	private State currentState;
-
 	private static final int MAX_CONNECTION_ATTEMPTS = 30;
 
 	private ILaunch launch;
@@ -237,17 +235,17 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public boolean canResume() {
-		return isSuspended();
+		return thread.isSuspended();
 	}
 
 	@Override
 	public boolean canSuspend() {
-		return State.RUNNING.equals(currentState);
+		return thread.canSuspend();
 	}
 
 	@Override
 	public boolean canTerminate() {
-		return !State.TERMINATED.equals(currentState);
+		return thread.canTerminate();
 	}
 
 	private Socket connect() {
@@ -312,12 +310,12 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public boolean isSuspended() {
-		return State.SUSPENDED.equals(currentState);
+		return thread.isSuspended();
 	}
 
 	@Override
 	public boolean isTerminated() {
-		return State.TERMINATED.equals(currentState);
+		return thread.isTerminated();
 	}
 
 	@Override
@@ -350,7 +348,7 @@ public class VICEDebugTarget extends VICEDebugElement
 	}
 
 	@Override
-	public synchronized void breakpointManagerEnablementChanged(boolean enabled) {
+	public void breakpointManagerEnablementChanged(boolean enabled) {
 		if (enabled) {
 			MonitorLogger.info(consoleStream, MonitorLogger.USER, "Breakpoints enabled");
 		} else {
@@ -362,7 +360,7 @@ public class VICEDebugTarget extends VICEDebugElement
 		try {
 			out = new DataOutputStream(socket.getOutputStream());
 			in = new DataInputStream(socket.getInputStream());
-			eventDispatcher = new MonitorEventDispatcher(this, thread, in, consoleStream);
+			eventDispatcher = new MonitorEventDispatcher(thread, in, consoleStream);
 			eventDispatcher.schedule();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -376,8 +374,8 @@ public class VICEDebugTarget extends VICEDebugElement
 	@Override
 	public void handleDebugEvents(DebugEvent[] events) {
 		for (DebugEvent event : events) {
+			MonitorLogger.info(consoleStream, MonitorLogger.USER, "DebugEvent " + event);
 			if (DebugEvent.SUSPEND == event.getKind()) {
-				setCurrentState(State.SUSPENDED);
 				try {
 					// we assume the first register is the main CPU
 					IStackFrame stackFrame = getThreads()[0].getTopStackFrame();
@@ -390,15 +388,15 @@ public class VICEDebugTarget extends VICEDebugElement
 					// start address of the data included, so it's hard to
 					// figure it out unless we somehow pass that value. We
 					// just read out the entire 64kiB for now.
-					sendCommand(CommandID.MEMORY_GET, new byte[] { 0x00, // side effects
-							0x00, // start address LSB
-							0x00, // start address MSB
-							(byte) 0xff, // end address LSB
-							(byte) 0xff, // end address MSB
-							0x00, // memspace
-							0x00, // bank ID LSB
-							0x00 // bank ID MSB
-					});
+//					sendCommand(CommandID.MEMORY_GET, new byte[] { 0x00, // side effects
+//							0x00, // start address LSB
+//							0x00, // start address MSB
+//							(byte) 0xff, // end address LSB
+//							(byte) 0xff, // end address MSB
+//							0x00, // memspace
+//							0x00, // bank ID LSB
+//							0x00 // bank ID MSB
+//					});
 					// update the list of breakpoints, some may have been
 					// set by code or even another manually connected
 					// monitor
@@ -407,11 +405,7 @@ public class VICEDebugTarget extends VICEDebugElement
 					e.printStackTrace();
 				}
 			}
-			if (DebugEvent.RESUME == event.getKind()) {
-				setCurrentState(State.RUNNING);
-			}
 			if (DebugEvent.TERMINATE == event.getKind()) {
-				setCurrentState(State.TERMINATED);
 				try {
 					// Close down socket
 					if (!socket.isClosed()) {
@@ -427,11 +421,17 @@ public class VICEDebugTarget extends VICEDebugElement
 				}
 				DebugPlugin.getDefault().removeDebugEventListener(this);
 				DebugPlugin.getDefault().getBreakpointManager().removeBreakpointListener(this);
+				IBreakpoint[] breakpoints = getBreakpointManager().getBreakpoints(DEBUG_MODEL_ID);
+				for (IBreakpoint b : breakpoints) {
+					if (b instanceof Checkpoint) {
+						((Checkpoint) b).setNumber(0);
+					}
+				}
 			}
 		}
 	}
 
-	synchronized int sendCommand(CommandID command, byte[] body) {
+	int sendCommand(CommandID command, byte[] body) {
 		int id = counter.incrementAndGet();
 		try {
 			Command msg = new Command(id, command, body);
@@ -447,14 +447,6 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	public byte[] getComputerMemory() {
 		return eventDispatcher.getComputerMemory();
-	}
-
-	public State getCurrentState() {
-		return currentState;
-	}
-
-	public void setCurrentState(State currentState) {
-		this.currentState = currentState;
 	}
 
 	private void updateAdresses(IBreakpoint iBreakpoint) {

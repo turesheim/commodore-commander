@@ -141,23 +141,17 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 						}
 					}
 				}
-				// In case one wants to telnet to the address and use the text
-				// mode monitor
-				args.add("-remotemonitor");
-				args.add("-remotemonitoraddress");
-				args.add("127.0.0.1:6510");
-
 				// Open port for the binary monitor that is implemented in the
 				// net.resheim.eclipse.cc.vice.debug package
 				args.add("-binarymonitor");
 				args.add("-binarymonitoraddress");
 				args.add("127.0.0.1:6502");
 
-				// Break as soon as the kernal is ready. We need this so that
-				// breakpoints without address mapping is handled properly by
-				// the VICEDebugTarget.
-//				args.add("-initbreak");
-//				args.add("ready");
+				// Break as soon as the kernal is ready. If we omit this, VICE
+				// will crash immediately when stepping through code. See
+				// https://sourceforge.net/p/vice-emu/bugs/2083/
+				args.add("-initbreak");
+				args.add("ready");
 
 			}
 

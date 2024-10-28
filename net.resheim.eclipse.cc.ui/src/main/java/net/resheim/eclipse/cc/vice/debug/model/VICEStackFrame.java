@@ -153,7 +153,7 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 	 * @return the file name or <code>null</code>
 	 * @throws CoreException
 	 */
-	public String getFileName() throws CoreException {
+	public String getFileName() {
 		int pc = Short.toUnsignedInt(getProgramCounter());
 		Assembly assembly = getAssembly();
 		// attempt to determine a line mapping for the program counter
@@ -166,7 +166,8 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 			// with source files in multiple projects
 			return file.getFullPath().removeFirstSegments(1).toPortableString();
 		}
-		return null;
+		// TODO: Create custom handling of program stopping on unknown location
+		return "";
 	}
 
 	@Override
@@ -200,20 +201,23 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 		// AFAIK we don't really have stack frames on a 6510, so we're using the
 		// PROGRAM COUNTER to name this frame
 		StringBuilder sb = new StringBuilder();
-		if (registerGroup.hasRegisters()) {
-			try {
-				sb.append(getFileName());
-				sb.append(" [line: ");
-				sb.append(getLineNumber());
-				sb.append("] ");
-			} catch (CoreException e) {
-				e.printStackTrace();
+		try {
+			if (registerGroup.hasRegisters()) {
+				if (getFileName() != null) {
+					sb.append(getFileName());
+					sb.append(" [line: ");
+					sb.append(getLineNumber());
+					sb.append("] ");
+					} // filename
+				sb.append(registerGroup.getRegisterByName("PC").getValue().getValueString());
+				return sb.toString();
+			} else {
+				return "No registers available";
 			}
-			sb.append(registerGroup.getRegisterByName("PC").getValue().getValueString());
-			return sb.toString();
-		} else {
-			return "No registers available";
+		} catch (CoreException e) {
+			e.printStackTrace();
 		}
+		return null;
 	}
 
 	@Override
@@ -226,8 +230,12 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 		return true;
 	}
 
-	public short getProgramCounter() throws NumberFormatException, DebugException {
-		return registerGroup.getProgramCounter();
+	public short getProgramCounter() {
+		try {
+			return registerGroup.getProgramCounter();
+		} catch (CoreException e) {
+			return 0;
+		}
 	}
 
 	public Assembly getAssembly() {
@@ -237,14 +245,16 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 	@Override
 	public int hashCode() {
 		// Make sure we get a different value when the file name has changed
-		// so that the UI will update properly and load the correct file. This
-		// is required since we are reusing the same IStackFrame instance.
-		try {
-			return getFileName().hashCode() + getProgramCounter();
-		} catch (CoreException e) {
-			e.printStackTrace();
+		// so that the UI will update properly and load the correct file.
+		return getFileName().hashCode();
+	}
+
+	public boolean equals(Object obj) {
+		if (obj instanceof VICEStackFrame) {
+			VICEStackFrame vs = (VICEStackFrame) obj;
+			return vs.getThread().equals(getThread()) && vs.getFileName().equals(getFileName());
 		}
-		return super.hashCode();
+		return false;
 	}
 
 }

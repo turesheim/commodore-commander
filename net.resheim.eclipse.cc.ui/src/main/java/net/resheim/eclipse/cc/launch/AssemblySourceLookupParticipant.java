@@ -26,7 +26,8 @@ public class AssemblySourceLookupParticipant extends AbstractSourceLookupPartici
 			VICEStackFrame stackFrame = (VICEStackFrame)object;
 
 			String fileName = stackFrame.getFileName();
-			if (fileName != null) {
+			// XXX: if the file name is blank, then we may run a disassembly instead
+			if (fileName != null && !fileName.isBlank()) {
 				return fileName;
 			}
 		}

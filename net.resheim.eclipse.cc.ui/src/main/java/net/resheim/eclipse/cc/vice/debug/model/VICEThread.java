@@ -28,8 +28,7 @@ import org.eclipse.debug.core.model.IThread;
 import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.CommandID;
 
 /**
- * The one and only thread in this debug model. It delegates most work to the
- * {@link VICEDebugTarget} since we only have one "thread"
+ * The one and only thread in this debug model.
  *
  * @since 1.0
  * @author Torkild Ulvøy Resheim
@@ -41,24 +40,27 @@ public class VICEThread extends VICEDebugElement implements IThread {
 
 	private boolean stepping;
 
+	private State state;
+
 	public VICEThread(IDebugTarget target, Socket socket) {
 		super(target);
 		this.stackFrame = new VICEStackFrame(this);
+		fireCreationEvent();
 	}
 
 	@Override
 	public boolean canResume() {
-		return getDebugTarget().canResume();
+		return isSuspended();
 	}
 
 	@Override
 	public boolean canSuspend() {
-		return getDebugTarget().canSuspend();
+		return State.RUNNING.equals(getState());
 	}
 
 	@Override
 	public boolean isSuspended() {
-		return getDebugTarget().isSuspended();
+		return State.SUSPENDED.equals(getState());
 	}
 
 	@Override
@@ -119,12 +121,12 @@ public class VICEThread extends VICEDebugElement implements IThread {
 
 	@Override
 	public boolean canTerminate() {
-		return getDebugTarget().canTerminate();
+		return !State.TERMINATED.equals(getState());
 	}
 
 	@Override
 	public boolean isTerminated() {
-		return getDebugTarget().isTerminated();
+		return State.TERMINATED.equals(getState());
 	}
 
 	@Override
@@ -139,7 +141,9 @@ public class VICEThread extends VICEDebugElement implements IThread {
 
 	@Override
 	public boolean hasStackFrames() throws DebugException {
-		return getDebugTarget().isSuspended();
+		// It only makes sens to return a stack frame if the CPU is suspended
+		// as we otherwise have no access to the registers
+		return isSuspended();
 	}
 
 	@Override
@@ -163,6 +167,14 @@ public class VICEThread extends VICEDebugElement implements IThread {
 		IBreakpointManager breakpointManager = DebugPlugin.getDefault().getBreakpointManager();
 		IBreakpoint[] breakpoints = breakpointManager.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
 		return breakpoints;
+	}
+
+	public synchronized State getState() {
+		return state;
+	}
+
+	public synchronized void setState(State state) {
+		this.state = state;
 	}
 
 }
