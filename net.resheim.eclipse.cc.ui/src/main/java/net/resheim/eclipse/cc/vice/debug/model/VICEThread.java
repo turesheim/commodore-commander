@@ -87,7 +87,7 @@ public class VICEThread extends VICEDebugElement implements IThread {
 
 	@Override
 	public boolean canStepReturn() {
-		return false;
+		return getDebugTarget().isSuspended();
 	}
 
 	@Override
@@ -117,6 +117,10 @@ public class VICEThread extends VICEDebugElement implements IThread {
 
 	@Override
 	public void stepReturn() throws DebugException {
+		ByteBuffer buffer = ByteBuffer.allocate(0);
+		buffer.order(ByteOrder.LITTLE_ENDIAN);
+		((VICEDebugTarget) getDebugTarget()).sendCommand(CommandID.EXECUTE_UNTIL_RETURN, buffer.array());
+		stepping = true;
 	}
 
 	@Override
