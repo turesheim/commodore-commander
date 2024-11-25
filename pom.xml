@@ -108,12 +108,14 @@
   </build>
 
   <modules>
+    <module>net.resheim.eclipse.cc</module>
     <module>net.resheim.eclipse.cc.ui</module>
     <module>net.resheim.eclipse.cc.kickassembler.parser</module>
     <module>net.resheim.eclipse.cc.feature</module>
     <module>net.resheim.eclipse.cc.site</module>
     <module>net.sourceforge.vice</module>
     <module>net.sourceforge.vice.cocoa.macosx.aarch64</module>
+    <module>net.sourceforge.vice.cocoa.macosx.x86_64</module>
     <module>net.sourceforge.vice.feature</module>
     <module>kickassembler</module>
     <module>kickassembler.feature</module>
