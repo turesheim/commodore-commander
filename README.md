@@ -8,46 +8,56 @@ It is still in a very early stage, but it is usable and currently have the follo
 
 ![](docs/editor.png)
 
-* Editor based on the 6502 TextMate grammar
+* Editor with 6502 opcode syntax coloring
 * As with most Eclipse based editors:
   * "Quick diff" and revision information
   * Task and bookmarks
   * Search and navigation
   * Block selection
   * `TODO` and `FIXME` markers
+  * Bookmarks, and much more
 * Tooltips for 6510 mnemonics
 * Tooltips for the Commodore 64 memory map
 
-> [!NOTE]
-> The editor is being rewritten in order to ease reuse and provide better than basic editing features and tooltips.
-
-
 ## Compiling
 
-* Built in [Kick Assembler](http://theweb.dk/KickAssembler/Main.html#frontpage) compiler
-* Built in [VICE](https://vice-emu.sourceforge.io) emulator
-  * Currently only macOS on ARM
-  * 64bit Windows GTK version (planned)
-  * 64bit macoS Intel GTK version (planned)
-* Automatic compilation when a file has changed
-  * The source hierarchy is automatically calculated, so no need to specify main files.
-* Problem markers when a compilation produces errors
-* Compilation output to the Commodore Commander console
-* Launch the VICE emulator when double clicking a `*.prg` file
+Compilation is done automatically with the built-in [Kick Assembler](http://theweb.dk/KickAssembler/Main.html#frontpage) compiler whenever a source file has been changed.
+
+* Problem markers when a compilation produces errors.
+* Compilation output to the _Commodore Commander_ console view.
+
+## Running
+
+* Launches the VICE emulator when double clicking a `*.prg` file.
 * Launches will automatically pick up VICE configuration files found either in the same folder as the program, or in any of it's parent folders.
 
 ## Debugging
 
-The debugger implements a [VICE Binary Monitor](https://vice-emu.sourceforge.io/vice_12.html) interface and is currently fairly basic. The plan is to implement a **fully featured** debugger.
+The debugger implements a [VICE Binary Monitor](https://vice-emu.sourceforge.io/vice_12.html) interface and is currently fairly basic. It currently supports the following features:
 
+* Built in [VICE](https://vice-emu.sourceforge.io) emulator
+  * macOS GTK version on aarch64 and x86
+  * Windows GTK x86 version (planned)
+  * Linux GTK x86 version (planned)
 * Support for Eclipse run and debug launch shortcuts.
-* Debug launches will in addition automatically pick up `*.vs` files created by Kick Assembler passes these to VICE.
-  * Symbol declarations
-  * `.break` and `.trace`
-* Support for _suspend_, _resume_ and _terminate_
+* Debug launches pick up `*.vs` files created by Kick Assembler and passes these to VICE.
+* Support for _step over_, _step into_, _step return_, _suspend_, _resume_ and _terminate_
 
-![](docs/disassembly-registers.png)
+### Breakpoints
 
-* _Registers_ view show changed values since last break in yellow
-* _Disassembly_ view show the current disassambly along with the PC
+![](docs/breakpoints.png)
 
+The only type of _checkpoints_ currently supported are _breakpoints_. These are triggered whenever the _program counter_ enteres an address where a breakpoint has been added and will halt the emulator. Breakpoints can be individually disabled and enabled, and as usual be grouped, placed in working sets etc.
+
+## Related resources
+
+### Links
+
+- The Kick Assembler: http://theweb.dk/KickAssembler
+- VICE, the Versatile Commodore Emulator: http://vice-emu.sourceforge.net
+- Cycle-accurate 6502 emulator in Javascript: https://github.com/Torlus/6502.js
+- Tuned Simon's BASIC: https://github.com/godot64/TSB
+- SpritePad C64 Pro: https://subchristsoftware.itch.io/spritepad-c64-pro
+- CharPad C64 Pro: https://subchristsoftware.itch.io/charpad-c64-pro
+- SpriteMate: https://www.spritemate.com
+- GoatTracker2: https://sourceforge.net/projects/goattracker2
