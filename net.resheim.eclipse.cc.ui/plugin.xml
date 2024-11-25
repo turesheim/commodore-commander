@@ -50,6 +50,7 @@
           contentTypeId="net.resheim.eclipse.cc.kickassembler"
           editorId="net.resheim.eclipse.cc.ui.assembly.editor">
     </editorContentTypeBinding>
+    <!-- A bit of a cheat so that double clicking a PRG-file will run it -->
     <editor
           default="true"
           extensions="prg"
@@ -59,6 +60,25 @@
           name="Commodore Program">
     </editor>
   </extension>
+  <!-- BEGIN EDITOR ACTIONS ================================================ -->
+  <!--
+  Action for toggling a checkpoint when double clicking the ruler. This approach
+  is deprecated, but I cannot figure out how to do this using the COMMAND
+  extension points.
+  -->
+  <extension point="org.eclipse.ui.editorActions">
+    <editorContribution
+          targetID="net.resheim.eclipse.cc.ui.assembly.editor"
+          id="net.resheim.eclipse.cc.ui.assembly.editor.rulerActions">
+       <action
+             label="Not Used"
+             class="org.eclipse.debug.ui.actions.RulerToggleBreakpointActionDelegate"
+             style="push"
+             actionID="RulerDoubleClick"
+             id="net.resheim.eclipse.cc.ui.assembly.editor.doubleClickBreakpointAction"/>
+    </editorContribution>
+  </extension>
+  <!-- END EDITOR ACTIONS ================================================== -->
   <extension
         point="org.eclipse.tm4e.ui.snippets">
      <snippet
@@ -73,6 +93,7 @@
          name="Kick Assembler Project Builder"
          point="org.eclipse.core.resources.builders">
       <builder
+            callOnEmptyDelta="true"
             hasNature="true">
          <run
                class="net.resheim.eclipse.cc.builder.KickAssemblerBuilder">
@@ -188,7 +209,9 @@
             id="net.resheim.eclipse.cc.ui.launchConfigurationType_VICE"
             modes="run,debug"
             name="Commodore Program"
-            public="true">
+            public="true"
+            sourceLocatorId="net.resheim.eclipse.cc.sourceLocator"
+            sourcePathComputerId="net.resheim.eclipse.cc.sourcePathComputer">
       </launchConfigurationType>
    </extension>
    <extension
@@ -208,6 +231,7 @@
             id="net.resheim.eclipse.cc.ui.launchConfigurationTypeImage">
       </launchConfigurationTypeImage>
    </extension>
+   <!-- DISABLE THIS FOR NOW, IT CANNOT BE USED FOR READING FROM RAM
    <extension
          point="org.eclipse.ui.views">
       <category
@@ -235,6 +259,7 @@
          </view>
       </perspectiveExtension>
    </extension>
+   -->
    <extension
          point="org.eclipse.help.contexts">
       <contexts
@@ -248,6 +273,8 @@
             name="net.resheim.eclipse.cc.pc">
       </type>
    </extension>
+
+   <!-- EDITOR -->
    <extension
          point="org.eclipse.ui.editors.markerAnnotationSpecification">
       <specification
@@ -267,4 +294,84 @@
       </specification>
    </extension>
 
+   <extension
+         point="org.eclipse.ui.editors.annotationTypes">
+      <type
+            markerSeverity="0"
+            name="net.resheim.eclipse.cc.checkpoint">
+      </type>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors.markerAnnotationSpecification">
+      <specification
+            annotationType="net.resheim.eclipse.cc.checkpoint"
+            colorPreferenceKey="checkpointIndicatorColor"
+            colorPreferenceValue="212,212,212"
+            highlightPreferenceKey="checkpointIndicatorHighlight"
+            highlightPreferenceValue="true"
+            icon="icons/inst_ptr_top.png"
+            includeOnPreferencePage="true"
+            label="Checkpoint"
+            overviewRulerPreferenceKey="checkpointIndicatorOverviewRuler"
+            overviewRulerPreferenceValue="true"
+            presentationLayer="4"
+            verticalRulerPreferenceKey="checkpointIndicatorVerticalRuler"
+            verticalRulerPreferenceValue="true">
+      </specification>
+   </extension>
+
+   <extension
+         point="org.eclipse.debug.core.breakpoints">
+      <breakpoint
+            class="net.resheim.eclipse.cc.vice.debug.model.Checkpoint"
+            id="net.resheim.eclipse.cc.checkpoint"
+            markerType="net.resheim.eclipse.cc.checkpointMarker"
+            name="Checkpoint">
+      </breakpoint>
+   </extension>
+
+   <extension
+         id="net.resheim.eclipse.cc.checkpointMarker"
+         name="Checkpoint"
+         point="org.eclipse.core.resources.markers">
+      <super type="org.eclipse.debug.core.breakpointMarker"/>
+      <persistent value="true">
+      </persistent>
+      <attribute
+            name="source">
+      </attribute>
+  </extension>
+
+  <extension point="org.eclipse.debug.ui.debugModelPresentations">
+    <debugModelPresentation
+      id="net.resheim.eclipse.cc.vice.debug"
+      class="net.resheim.eclipse.cc.ui.VICEDebugModelPresentation">
+    </debugModelPresentation>
+ </extension>
+
+ <extension
+       point="org.eclipse.core.runtime.adapters">
+    <factory
+          adaptableType="net.resheim.eclipse.cc.editor.AssemblyEditor"
+          class="net.resheim.eclipse.cc.ui.AssemblyEditorAdapterFactory">
+       <adapter
+             type="org.eclipse.debug.ui.actions.IToggleBreakpointsTarget">
+       </adapter>
+    </factory>
+ </extension>
+ <extension
+       point="org.eclipse.debug.core.sourceLocators">
+    <sourceLocator
+          class="net.resheim.eclipse.cc.launch.AssemblySourceLookupDirector"
+          id="net.resheim.eclipse.cc.sourceLocator"
+          name="Assembly Source Locator">
+    </sourceLocator>
+ </extension>
+ <extension
+       point="org.eclipse.debug.core.sourcePathComputers">
+    <sourcePathComputer
+          class="net.resheim.eclipse.cc.launch.SourcePathComputerDelegate"
+          id="net.resheim.eclipse.cc.sourcePathComputer">
+    </sourcePathComputer>
+ </extension>
 </plugin>
