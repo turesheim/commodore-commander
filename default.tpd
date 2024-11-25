@@ -2,6 +2,7 @@ target "Commodore Commander Target Platform" with source requirements
 
 // Base dependencies
 location "https://download.eclipse.org/releases/2024-09/" {
+    org.eclipse.equinox.executable.feature.group
     org.eclipse.epp.package.committers
     org.eclipse.equinox.p2.sdk.feature.group
     org.eclipse.sdk.feature.group

@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?pde?>
 <!-- generated with https://github.com/eclipse-cbi/targetplatform-dsl -->
-<target name="Commodore Commander Target Platform" sequenceNumber="1732563840">
+<target name="Commodore Commander Target Platform" sequenceNumber="1732565748">
   <locations>
     <location includeMode="planner" includeAllPlatforms="false" includeSource="true" includeConfigurePhase="false" type="InstallableUnit">
+      <unit id="org.eclipse.equinox.executable.feature.group" version="3.8.2600.v20240722-2106"/>
       <unit id="org.eclipse.epp.package.committers" version="4.33.0.20240905-0613"/>
       <unit id="org.eclipse.equinox.p2.sdk.feature.group" version="3.11.2500.v20240812-2151"/>
       <unit id="org.eclipse.sdk.feature.group" version="4.33.0.v20240903-0618"/>
