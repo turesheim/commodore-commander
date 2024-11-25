@@ -77,17 +77,17 @@ public class VICEThread extends VICEDebugElement implements IThread {
 
 	@Override
 	public boolean canStepInto() {
-		return getDebugTarget().isSuspended();
+		return isSuspended();
 	}
 
 	@Override
 	public boolean canStepOver() {
-		return getDebugTarget().isSuspended();
+		return isSuspended();
 	}
 
 	@Override
 	public boolean canStepReturn() {
-		return getDebugTarget().isSuspended();
+		return isSuspended();
 	}
 
 	@Override
@@ -97,30 +97,30 @@ public class VICEThread extends VICEDebugElement implements IThread {
 
 	@Override
 	public void stepInto() throws DebugException {
+		stepping = true;
 		ByteBuffer buffer = ByteBuffer.allocate(3);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
 		buffer.put((byte) 0x00); // Should subroutines count as a single instruction?
 		buffer.putShort((short)0x01);
 		((VICEDebugTarget) getDebugTarget()).sendCommand(CommandID.ADVANCE_INSTRUCTIONS, buffer.array());
-		stepping = true;
 	}
 
 	@Override
 	public void stepOver() throws DebugException {
+		stepping = true;
 		ByteBuffer buffer = ByteBuffer.allocate(3);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
 		buffer.put((byte) 0x01); // Should subroutines count as a single instruction?
 		buffer.putShort((short) 0x01);
 		((VICEDebugTarget) getDebugTarget()).sendCommand(CommandID.ADVANCE_INSTRUCTIONS, buffer.array());
-		stepping = true;
 	}
 
 	@Override
 	public void stepReturn() throws DebugException {
+		stepping = true;
 		ByteBuffer buffer = ByteBuffer.allocate(0);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
 		((VICEDebugTarget) getDebugTarget()).sendCommand(CommandID.EXECUTE_UNTIL_RETURN, buffer.array());
-		stepping = true;
 	}
 
 	@Override

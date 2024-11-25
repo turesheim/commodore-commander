@@ -319,7 +319,7 @@ public class VICEDebugTarget extends VICEDebugElement
 	}
 
 	@Override
-	public void resume() throws DebugException {
+	public synchronized void resume() throws DebugException {
 		MonitorLogger.info(consoleStream, MonitorLogger.USER, "Resume");
 		sendCommand(CommandID.EXIT, IBinaryMonitor.EMPTY_COMMAND_BODY);
 	}
@@ -335,14 +335,14 @@ public class VICEDebugTarget extends VICEDebugElement
 	}
 
 	@Override
-	public void suspend() throws DebugException {
+	public synchronized void suspend() throws DebugException {
 		// any command will suspend
 		MonitorLogger.info(consoleStream, MonitorLogger.USER, "Suspend");
 		sendCommand(CommandID.PING, new byte[] { 0x00 });
 	}
 
 	@Override
-	public void terminate() throws DebugException {
+	public synchronized void terminate() throws DebugException {
 		MonitorLogger.info(consoleStream, MonitorLogger.USER, "Terminate");
 		sendCommand(CommandID.QUIT, IBinaryMonitor.EMPTY_COMMAND_BODY);
 	}
@@ -431,7 +431,7 @@ public class VICEDebugTarget extends VICEDebugElement
 		}
 	}
 
-	int sendCommand(CommandID command, byte[] body) {
+	synchronized int sendCommand(CommandID command, byte[] body) {
 		int id = counter.incrementAndGet();
 		try {
 			Command msg = new Command(id, command, body);
