@@ -20,7 +20,7 @@
       </vmArgsMac>
    </launcherArgs>
 
-   <windowImages i16="eclipse16.png" i32="eclipse32.png" i48="eclipse48.png"/>
+   <windowImages i128="/net.resheim.eclipse.cc/cc_128.png" i256="/net.resheim.eclipse.cc/cc_256.png"/>
 
    <splash
       startupProgressRect="2,290,450,10"
