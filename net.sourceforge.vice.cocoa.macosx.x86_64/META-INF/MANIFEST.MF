@@ -6,6 +6,5 @@ Bundle-SymbolicName: net.sourceforge.vice.cocoa.macosx.x86_64
 Bundle-Vendor: blackystardust, gpz
 Bundle-Version: 3.8.0.qualifier
 Automatic-Module-Name: net.sourceforge.vice.cocoa.macosx.x86_64
-Bundle-RequiredExecutionEnvironment: JavaSE-11
 Eclipse-PlatformFilter: (& (osgi.ws=cocoa) (osgi.os=macosx) (osgi.arch=x86_64) )
 Eclipse-BundleShape: dir
