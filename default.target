@@ -1,24 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?pde?>
-<!-- generated with https://github.com/eclipse-cbi/targetplatform-dsl -->
-<target name="Commodore Commander Target Platform" sequenceNumber="1732565748">
+<!-- generated with https://github.com/eclipse-cbi/targetplatform-dsl --><target name="Commodore Commander Target Platform" sequenceNumber="1732565748">
   <locations>
-    <location includeMode="planner" includeAllPlatforms="false" includeSource="true" includeConfigurePhase="false" type="InstallableUnit">
+    <location includeAllPlatforms="true" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
       <unit id="org.eclipse.equinox.executable.feature.group" version="3.8.2600.v20240722-2106"/>
-      <unit id="org.eclipse.epp.package.committers" version="4.33.0.20240905-0613"/>
       <unit id="org.eclipse.equinox.p2.sdk.feature.group" version="3.11.2500.v20240812-2151"/>
       <unit id="org.eclipse.sdk.feature.group" version="4.33.0.v20240903-0618"/>
-      <unit id="org.eclipse.pde.core" version="3.19.0.v20240815-2201"/>
       <unit id="org.eclipse.emf.feature.group" version="2.39.0.v20240731-0952"/>
-      <unit id="org.apache.log4j" version="1.2.25"/>
-      <unit id="org.apache.commons.collections" version="3.2.2.v201511171945"/>
       <unit id="org.eclipse.tm4e.feature.feature.group" version="0.13.0.202408262111"/>
-      <unit id="slf4j.api" version="2.0.16"/>
+      <unit id="org.eclipse.e4.rcp.feature.group" version="4.33.0.v20240903-0618"/>
+      <unit id="org.eclipse.core.resources" version="3.21.0.v20240805-1607"/>
       <unit id="com.sun.jna" version="5.14.0.v20231211-1200"/>
       <unit id="com.sun.jna.platform" version="5.14.0"/>
+      <unit id="slf4j.api" version="2.0.16"/>
       <repository location="https://download.eclipse.org/releases/2024-09/"/>
     </location>
-    <location includeMode="planner" includeAllPlatforms="false" includeSource="true" includeConfigurePhase="false" type="InstallableUnit">
+    <location includeAllPlatforms="true" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
       <unit id="org.eclipse.swtbot.forms.source.feature.group" version="4.0.0.202206011610"/>
       <unit id="org.eclipse.swtbot.eclipse.source.feature.group" version="4.0.0.202206011610"/>
       <unit id="org.eclipse.swtbot.source.feature.group" version="4.0.0.202206011610"/>
