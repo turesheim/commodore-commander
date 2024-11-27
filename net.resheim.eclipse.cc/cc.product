@@ -23,9 +23,18 @@
    <windowImages i128="/net.resheim.eclipse.cc/cc_128.png" i256="/net.resheim.eclipse.cc/cc_256.png"/>
 
    <splash
+      location="net.resheim.eclipse.cc"
       startupProgressRect="2,290,450,10"
       startupMessageRect="7,265,320,25"
       startupForegroundColor="ffffff" />
+
+   <launcher name="Commodore Commander">
+      <macosx icon="/net.resheim.eclipse.cc/cc.icns"/>
+      <win useIco="false">
+         <bmp/>
+      </win>
+   </launcher>
+
    <intro introId="org.eclipse.ui.intro.universal"/>
 
    <vm>
