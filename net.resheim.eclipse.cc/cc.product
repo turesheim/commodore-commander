@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Commodore Commander" uid="commodore-commander" id="net.resheim.eclipse.cc.product" application="org.eclipse.ui.ide.workbench" version="1.0.0.qualifier" type="features" includeLaunchers="true" includeJRE="true" autoIncludeRequirements="true">
+<product name="Commodore Commander" uid="commodore-commander" id="net.resheim.eclipse.cc.product" application="org.eclipse.ui.ide.workbench" version="1.0.0.qualifier" type="features" includeLaunchers="true" autoIncludeRequirements="true">
 
    <aboutInfo>
       <image path="eclipse_lg.png"/>
@@ -27,7 +27,6 @@
       startupProgressRect="2,290,450,10"
       startupMessageRect="7,265,320,25"
       startupForegroundColor="ffffff" />
-
    <launcher name="Commodore Commander">
       <macosx icon="/net.resheim.eclipse.cc/cc.icns"/>
       <win useIco="false">
@@ -39,6 +38,7 @@
 
    <vm>
    </vm>
+
 
    <plugins>
       <plugin id="bcpg"/>

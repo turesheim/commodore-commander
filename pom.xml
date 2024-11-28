@@ -41,12 +41,25 @@
     <tycho.version>4.0.4</tycho.version>
     <maven.compiler.source>20</maven.compiler.source>
     <maven.compiler.target>20</maven.compiler.target>
+    <org.eclipse.justj.jre.repository>https://download.eclipse.org/justj/jres/21/updates/nightly/latest</org.eclipse.justj.jre.repository>
   </properties>
 
   <organization>
     <name>Torkild U. Resheim</name>
     <url>http://resheim.net/</url>
   </organization>
+  <repositories>
+    <repository>
+      <id>jre-updates</id>
+      <url>${org.eclipse.justj.jre.repository}</url>
+      <layout>p2</layout>
+    </repository>
+    <repository>
+      <id>2024-09</id>
+      <url>https://download.eclipse.org/releases/2024-09/</url>
+      <layout>p2</layout>
+    </repository>
+  </repositories>
 
   <build>
     <pluginManagement>
@@ -86,6 +99,7 @@
         <groupId>org.eclipse.tycho</groupId>
         <artifactId>target-platform-configuration</artifactId>
         <configuration>
+        <!--
           <target>
             <artifact>
               <groupId>net.resheim.eclipse.cc</groupId>
@@ -94,6 +108,7 @@
               <classifier>default</classifier>
             </artifact>
           </target>
+          -->
           <pomDependencies>consider</pomDependencies>
           <environments>
             <environment>
