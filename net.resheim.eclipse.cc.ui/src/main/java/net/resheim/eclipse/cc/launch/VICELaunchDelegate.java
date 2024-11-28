@@ -15,6 +15,7 @@ package net.resheim.eclipse.cc.launch;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
@@ -95,10 +97,10 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 			IProject project = root.getProject(projectName);
 			IFile file = project.getFile(fileName);
 
-			Assembly assembly = Assemblies.getDefault().getAssembly(file);
 			// Fail if we don't have an assembly, we need it for breakpoints
 			// and mapping addresses to files and locations in the files.
 			// A full build should be executed in order to obtain this.
+			Assembly assembly = Assemblies.getDefault().getAssembly(file);
 			if (assembly == null) {
 				throw new CoreException(Status.error("Program must be compiled"));
 			}
@@ -125,6 +127,7 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 					args.add("-moncommands");
 					args.add(mcommands.toOSString());
 				}
+
 				// Update the monitor commands file with a list of checkpoints.
 				// this way we do not have to break just after starting the
 				// emulator for doing this.
@@ -141,6 +144,7 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 						}
 					}
 				}
+
 				// Open port for the binary monitor that is implemented in the
 				// net.resheim.eclipse.cc.vice.debug package
 				args.add("-binarymonitor");
@@ -152,7 +156,6 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 				// https://sourceforge.net/p/vice-emu/bugs/2083/
 				args.add("-initbreak");
 				args.add("ready");
-
 			}
 
 			// Point to the VICE configuration file if it exists
@@ -179,25 +182,25 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 				VICEDebugTarget debugTarget = new VICEDebugTarget(newProcess, launch, assembly);
 				launch.addDebugTarget(debugTarget);
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
+
+		} catch (IOException e) {
+			throw new CoreException(new Status(IStatus.ERROR,
+					DebugPlugin.getUniqueIdentifier(),
+					DebugPlugin.ERROR,
+					"Could not launch " + fileName, e));
 		}
 	}
 
-	private void updateAdresses(Assembly assembly, IBreakpoint iBreakpoint) {
+	private void updateAdresses(Assembly assembly, IBreakpoint iBreakpoint) throws CoreException {
 		Checkpoint cp = (Checkpoint) iBreakpoint;
 		if (cp.getSource() != Source.CODE) {
 			IResource br = iBreakpoint.getMarker().getResource();
 			// see if the checkpoint is in one of the assembled files
 			LineMapping lineMapping;
-			try {
-				lineMapping = assembly.getLineMapping((IFile) br, cp.getLineNumber());
-				if (lineMapping != null) {
-					cp.setStartAddress(lineMapping.getStartAddress());
-					cp.setEndAddress(lineMapping.getEndAddress());
-				}
-			} catch (CoreException e) {
-				System.err.println("COULD NOT DETERMINE ADDRESS");
+			lineMapping = assembly.getLineMapping((IFile) br, cp.getLineNumber());
+			if (lineMapping != null) {
+				cp.setStartAddress(lineMapping.getStartAddress());
+				cp.setEndAddress(lineMapping.getEndAddress());
 			}
 		}
 	}
