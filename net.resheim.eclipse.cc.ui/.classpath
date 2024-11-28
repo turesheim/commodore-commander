@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry exported="true" kind="lib" path="lib/kotlin-stdlib-2.0.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/annotations-24.0.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/purejavacomm-0.0.11.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/pty4j-0.12.29.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/angus-activation.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jakarta.activation-api.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jakarta.xml.bind-api.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/purejavacomm-0.0.11.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jaxb-core.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jaxb-impl.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jaxb-jxc.jar"/>
@@ -14,12 +11,12 @@
 	<classpathentry exported="true" kind="lib" path="reference" sourcepath="reference"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
-  <classpathentry kind="src" path="src/main/java"/>
-  <classpathentry kind="src" path="src/test/resources"/>
-  <classpathentry kind="src" output="bin/test" path="src/test/java">
-    <attributes>
-      <attribute name="test" value="true"/>
-    </attributes>
-  </classpathentry>
-  <classpathentry kind="output" path="bin/main"/>
+	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry kind="src" path="src/test/resources"/>
+	<classpathentry kind="src" output="bin/test" path="src/test/java">
+		<attributes>
+			<attribute name="test" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="bin/main"/>
 </classpath>

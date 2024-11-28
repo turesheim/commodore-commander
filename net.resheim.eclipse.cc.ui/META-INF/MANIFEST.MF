@@ -10,17 +10,14 @@ Bundle-ActivationPolicy: lazy
 Bundle-Activator: net.resheim.eclipse.cc.editor.CommodoreCommanderPlugin
 Bundle-ClassPath: .,
  reference/,
- lib/angus-activation.jar,
- lib/jakarta.activation-api.jar,
- lib/jakarta.xml.bind-api.jar,
  lib/jaxb-core.jar,
  lib/jaxb-impl.jar,
  lib/jaxb-jxc.jar,
  lib/jaxb-xjc.jar,
- lib/pty4j-0.12.29.jar,
- lib/annotations-24.0.1.jar,
- lib/purejavacomm-0.0.11.1.jar,
- lib/kotlin-stdlib-2.0.0.jar
+ lib/angus-activation.jar,
+ lib/jakarta.activation-api.jar,
+ lib/jakarta.xml.bind-api.jar,
+ lib/purejavacomm-0.0.11.1.jar
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Require-Bundle: org.eclipse.jface.text,
  org.eclipse.core.runtime,
