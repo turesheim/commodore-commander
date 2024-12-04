@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <prerequisites>
-    <maven>3.0</maven>
+    <maven>3.9</maven>
   </prerequisites>
 
   <groupId>net.resheim.eclipse.cc</groupId>
@@ -41,14 +41,46 @@
     <tycho.version>4.0.4</tycho.version>
     <maven.compiler.source>20</maven.compiler.source>
     <maven.compiler.target>20</maven.compiler.target>
+    <org.eclipse.justj.jre.repository>https://download.eclipse.org/justj/jres/21/updates/nightly/latest</org.eclipse.justj.jre.repository>
   </properties>
 
   <organization>
     <name>Torkild U. Resheim</name>
     <url>http://resheim.net/</url>
   </organization>
+  <repositories>
+    <repository>
+      <id>jre-updates</id>
+      <url>${org.eclipse.justj.jre.repository}</url>
+      <layout>p2</layout>
+    </repository>
+    <repository>
+      <id>2024-09</id>
+      <url>https://download.eclipse.org/releases/2024-09/</url>
+      <layout>p2</layout>
+    </repository>
+  </repositories>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.13.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.eclipse.tycho</groupId>
+          <artifactId>target-platform-configuration</artifactId>
+          <version>${tycho.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.eclipse.tycho</groupId>
+          <artifactId>tycho-maven-plugin</artifactId>
+          <version>${tycho.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>org.eclipse.tycho</groupId>
@@ -61,14 +93,13 @@
       <plugin>
         <groupId>org.eclipse.tycho</groupId>
         <artifactId>tycho-maven-plugin</artifactId>
-        <version>${tycho.version}</version>
         <extensions>true</extensions>
       </plugin>
       <plugin>
         <groupId>org.eclipse.tycho</groupId>
         <artifactId>target-platform-configuration</artifactId>
-        <version>${tycho.version}</version>
         <configuration>
+        <!--
           <target>
             <artifact>
               <groupId>net.resheim.eclipse.cc</groupId>
@@ -77,8 +108,20 @@
               <classifier>default</classifier>
             </artifact>
           </target>
-          <resolver>p2</resolver>
+          -->
           <pomDependencies>consider</pomDependencies>
+          <environments>
+            <environment>
+              <os>macosx</os>
+              <ws>cocoa</ws>
+              <arch>x86_64</arch>
+            </environment>
+            <environment>
+              <os>macosx</os>
+              <ws>cocoa</ws>
+              <arch>aarch64</arch>
+            </environment>
+          </environments>
         </configuration>
       </plugin>
       <plugin>
@@ -108,12 +151,14 @@
   </build>
 
   <modules>
+    <module>net.resheim.eclipse.cc</module>
     <module>net.resheim.eclipse.cc.ui</module>
     <module>net.resheim.eclipse.cc.kickassembler.parser</module>
     <module>net.resheim.eclipse.cc.feature</module>
     <module>net.resheim.eclipse.cc.site</module>
     <module>net.sourceforge.vice</module>
     <module>net.sourceforge.vice.cocoa.macosx.aarch64</module>
+    <module>net.sourceforge.vice.cocoa.macosx.x86_64</module>
     <module>net.sourceforge.vice.feature</module>
     <module>kickassembler</module>
     <module>kickassembler.feature</module>

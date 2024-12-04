@@ -26,6 +26,7 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.IResourceVisitor;
+import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
@@ -214,9 +215,18 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		MessageConsole console = ConsoleFactory.findConsole();
 		MessageConsoleStream out = console.newMessageStream();
 
+
+		// make sure the output folder exists
+		IFolder folder = file.getProject().getFolder("out");
+		if (!folder.exists()) {
+			folder.create(true, true, null);
+		}
+
 		// which still needs program arguments and do the build
 		wrapper.execute(new String[] { "-libdir", file.getProject().getFolder("library").getLocation().toOSString(),
 				file.getLocation().toOSString(), "-odir", "out", "-showmem", "-vicesymbols", "-debugdump" }, out);
+		// update all views (and workspace model)
+		folder.refreshLocal(IResource.DEPTH_INFINITE, null);
 
 		for (IDiagnostic iDiagnostic : wrapper.getState().diagnosticMgr.getErrors()) {
 			addDiagnosticMessage(iDiagnostic);
@@ -227,9 +237,6 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		// add any breakpoints found
 		parseMetadataFile(file);
 
-		// Make sure any changes in the file systems are reflected in the
-		// Eclipse viewers.
-		file.getProject().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
 	}
 
 	/**

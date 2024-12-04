@@ -1,5 +1,9 @@
 instructions.install = \
-  chmod(targetDir:@artifact,targetFile:vice/bin/,options:-R,permissions:755);
+  chmod(targetDir:@artifact,targetFile:vice/bin/,permissions:755,options:-R); \
+  chmod(targetDir:@artifact,targetFile:vice/VICE.app/Contents/Resources/bin/,permissions:755,options:-R); \
+  chmod(targetDir:@artifact,targetFile:vice/VICE.app/Contents/Resources/script,permissions:755); \
+  ln(targetDir:@artifact,linkTarget:vice/VICE.app/Contents/Resources/lib/libmp3lame.0.dylib,linkName:vice/VICE.app/Contents/Resources/lib/libmp3lame.dylib,force:true);
 
-instructions.install.import= \
-  org.eclipse.equinox.p2.touchpoint.eclipse.chmod
+instructions.install.import = \
+  org.eclipse.equinox.p2.touchpoint.eclipse.chmod, \
+  org.eclipse.equinox.p2.touchpoint.eclipse.ln

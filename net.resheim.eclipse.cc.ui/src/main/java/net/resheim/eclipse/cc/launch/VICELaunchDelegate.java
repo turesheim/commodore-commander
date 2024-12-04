@@ -15,6 +15,7 @@ package net.resheim.eclipse.cc.launch;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
@@ -42,9 +44,6 @@ import org.eclipse.debug.core.model.IBreakpoint;
 import org.eclipse.debug.core.model.IProcess;
 import org.eclipse.debug.core.model.LaunchConfigurationDelegate;
 import org.osgi.framework.Bundle;
-
-import com.pty4j.PtyProcess;
-import com.pty4j.PtyProcessBuilder;
 
 import net.resheim.eclipse.cc.builder.Assemblies;
 import net.resheim.eclipse.cc.builder.model.Assembly;
@@ -95,17 +94,13 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 			IProject project = root.getProject(projectName);
 			IFile file = project.getFile(fileName);
 
-			Assembly assembly = Assemblies.getDefault().getAssembly(file);
 			// Fail if we don't have an assembly, we need it for breakpoints
 			// and mapping addresses to files and locations in the files.
 			// A full build should be executed in order to obtain this.
+			Assembly assembly = Assemblies.getDefault().getAssembly(file);
 			if (assembly == null) {
 				throw new CoreException(Status.error("Program must be compiled"));
 			}
-
-			// We're looking for a viceconfig somewhere in the
-			// program file's folder or in one of the parent folders.
-			IPath viceconfig = findViceConfig(file.getRawLocation());
 
 			// The VICE startup routine (in bin) is basically a script that
 			// detects the current folder and derives what machine to emulate
@@ -113,9 +108,8 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 			// behaviour.
 			Bundle vice = Platform.getBundle("net.sourceforge.vice");
 			URL fileURL = FileLocator.find(vice, new Path("vice/VICE.app/Contents/Resources/script"), null);
-			File x64sc = new File(FileLocator.toFileURL(fileURL).getPath());
-			args.add(x64sc.toString());
-
+			File script = new File(FileLocator.toFileURL(fileURL).getPath());
+			args.add(script.toString());
 
 			// We only need to set the monitor commands file if we intend to do
 			// debugging – assuming that KickAssembler has created it.
@@ -125,6 +119,7 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 					args.add("-moncommands");
 					args.add(mcommands.toOSString());
 				}
+
 				// Update the monitor commands file with a list of checkpoints.
 				// this way we do not have to break just after starting the
 				// emulator for doing this.
@@ -141,6 +136,7 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 						}
 					}
 				}
+
 				// Open port for the binary monitor that is implemented in the
 				// net.resheim.eclipse.cc.vice.debug package
 				args.add("-binarymonitor");
@@ -152,9 +148,11 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 				// https://sourceforge.net/p/vice-emu/bugs/2083/
 				args.add("-initbreak");
 				args.add("ready");
-
 			}
 
+			// We're looking for a viceconfig somewhere in the
+			// program file's folder or in one of the parent folders.
+			IPath viceconfig = findViceConfig(file.getRawLocation());
 			// Point to the VICE configuration file if it exists
 			if (viceconfig != null) {
 				args.add("-config");
@@ -162,16 +160,20 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 			}
 
 			// Add the path to the program file
-			args.add(file.getRawLocation().toPath().toString()); // $NON-NLS-1$
+			args.add(file.getRawLocation().toPath().toString());
 
 			Map<String, String> env = new HashMap<>(System.getenv());
+			// The VICE script can use the PROGRAM environment variable to
+			// determine which emulator to launch. If not specified a dialog
+			// will ask you to select.
 			env.put("PROGRAM", target);
 			env.put("TERM", "dumb");
-			PtyProcess process = new PtyProcessBuilder()
-					.setCommand(args.toArray(new String[0]))
-					.setEnvironment(env)
-					.setConsole(true)
-					.start();
+			String workdir = file.getParent().getRawLocation().toOSString();
+			ProcessBuilder pb = new ProcessBuilder()
+					.directory(new File(workdir))
+					.command(args);
+			pb.environment().put("PROGRAM", target);
+			Process process = pb.start();
 
 			Map<String, String> attributes = new HashMap<>();
 			IProcess newProcess = DebugPlugin.newProcess(launch, process, fileName, attributes);
@@ -179,25 +181,26 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 				VICEDebugTarget debugTarget = new VICEDebugTarget(newProcess, launch, assembly);
 				launch.addDebugTarget(debugTarget);
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
+			monitor.done();
+
+		} catch (IOException e) {
+			throw new CoreException(new Status(IStatus.ERROR,
+					DebugPlugin.getUniqueIdentifier(),
+					DebugPlugin.ERROR,
+					"Could not launch " + fileName, e));
 		}
 	}
 
-	private void updateAdresses(Assembly assembly, IBreakpoint iBreakpoint) {
+	private void updateAdresses(Assembly assembly, IBreakpoint iBreakpoint) throws CoreException {
 		Checkpoint cp = (Checkpoint) iBreakpoint;
 		if (cp.getSource() != Source.CODE) {
 			IResource br = iBreakpoint.getMarker().getResource();
 			// see if the checkpoint is in one of the assembled files
 			LineMapping lineMapping;
-			try {
-				lineMapping = assembly.getLineMapping((IFile) br, cp.getLineNumber());
-				if (lineMapping != null) {
-					cp.setStartAddress(lineMapping.getStartAddress());
-					cp.setEndAddress(lineMapping.getEndAddress());
-				}
-			} catch (CoreException e) {
-				System.err.println("COULD NOT DETERMINE ADDRESS");
+			lineMapping = assembly.getLineMapping((IFile) br, cp.getLineNumber());
+			if (lineMapping != null) {
+				cp.setStartAddress(lineMapping.getStartAddress());
+				cp.setEndAddress(lineMapping.getEndAddress());
 			}
 		}
 	}

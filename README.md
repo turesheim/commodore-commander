@@ -53,11 +53,17 @@ The only type of _checkpoints_ currently supported are _breakpoints_. These are 
 
 ### Links
 
+#### Embedded
 - The Kick Assembler: http://theweb.dk/KickAssembler
 - VICE, the Versatile Commodore Emulator: http://vice-emu.sourceforge.net
+
+#### Commodore 64
 - Cycle-accurate 6502 emulator in Javascript: https://github.com/Torlus/6502.js
 - Tuned Simon's BASIC: https://github.com/godot64/TSB
 - SpritePad C64 Pro: https://subchristsoftware.itch.io/spritepad-c64-pro
 - CharPad C64 Pro: https://subchristsoftware.itch.io/charpad-c64-pro
 - SpriteMate: https://www.spritemate.com
 - GoatTracker2: https://sourceforge.net/projects/goattracker2
+
+#### Eclipse
+- https://eclipse.dev/justj/?page=documentation

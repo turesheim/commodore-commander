@@ -31,7 +31,14 @@ VICE is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY
          id="net.sourceforge.vice.cocoa.macosx.x86_64"
          os="macosx"
          ws="cocoa"
-         arch="aarch64,x86_64"
+         arch="x86_64"
+         version="0.0.0"/>
+
+   <plugin
+         id="net.sourceforge.vice.cocoa.macosx.aarch64"
+         os="macosx"
+         ws="cocoa"
+         arch="aarch64"
          version="0.0.0"/>
 
 </feature>
