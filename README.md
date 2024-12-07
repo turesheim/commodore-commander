@@ -64,6 +64,9 @@ The only type of _checkpoints_ currently supported are _breakpoints_. These are 
 - CharPad C64 Pro: https://subchristsoftware.itch.io/charpad-c64-pro
 - SpriteMate: https://www.spritemate.com
 - GoatTracker2: https://sourceforge.net/projects/goattracker2
+- Colordore: https://www.pepto.de/projects/colorvic/
+- http://petscii.krissz.hu
 
 #### Eclipse
 - https://eclipse.dev/justj/?page=documentation
+- [Inside the Memory View: A Guide for Debug Providers](https://www.eclipse.org/articles/Article-MemoryView)

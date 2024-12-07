@@ -374,4 +374,22 @@
           id="net.resheim.eclipse.cc.sourcePathComputer">
     </sourcePathComputer>
  </extension>
+   <extension
+         point="org.eclipse.debug.ui.memoryRenderings">
+      <renderingBindings
+            defaultIds="net.resheim.cc.debug.ui.rendering.character_map"
+            renderingIds="org.eclipse.debug.ui.rendering.raw_memory,net.resheim.cc.debug.ui.rendering.character_map">
+         <enablement>
+            <instanceof
+                  value="net.resheim.eclipse.cc.vice.debug.model.VICEMemoryBlock">
+            </instanceof>
+         </enablement>
+      </renderingBindings>
+      <renderingType
+            class="net.resheim.eclipse.cc.ui.debug.CCRenderingTypeDelegate"
+            id="net.resheim.cc.debug.ui.rendering.character_map"
+            name="Character Map">
+      </renderingType>
+   </extension>
 </plugin>
+

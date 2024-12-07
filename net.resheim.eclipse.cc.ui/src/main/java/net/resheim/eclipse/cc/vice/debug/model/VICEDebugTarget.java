@@ -278,8 +278,9 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public IMemoryBlock getMemoryBlock(long startAddress, long length) throws DebugException {
-		MonitorLogger.info(consoleStream, MonitorLogger.USER, "Get memory block");
-		return null;
+		VICEMemoryBlock vmb = new VICEMemoryBlock(this, (int) startAddress, (int) length,
+				eventDispatcher.getComputerMemory());
+		return vmb;
 	}
 
 	@Override
@@ -305,7 +306,7 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public boolean isDisconnected() {
-		return socket.isConnected();
+		return !socket.isConnected();
 	}
 
 	@Override
@@ -331,7 +332,7 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public boolean supportsStorageRetrieval() {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -388,15 +389,15 @@ public class VICEDebugTarget extends VICEDebugElement
 					// start address of the data included, so it's hard to
 					// figure it out unless we somehow pass that value. We
 					// just read out the entire 64kiB for now.
-//					sendCommand(CommandID.MEMORY_GET, new byte[] { 0x00, // side effects
-//							0x00, // start address LSB
-//							0x00, // start address MSB
-//							(byte) 0xff, // end address LSB
-//							(byte) 0xff, // end address MSB
-//							0x00, // memspace
-//							0x00, // bank ID LSB
-//							0x00 // bank ID MSB
-//					});
+					sendCommand(CommandID.MEMORY_GET, new byte[] { 0x00, // side effects
+							0x00, // start address LSB
+							0x00, // start address MSB
+							(byte) 0xff, // end address LSB
+							(byte) 0xff, // end address MSB
+							0x00, // memspace
+							0x00, // bank ID LSB
+							0x00 // bank ID MSB
+					});
 					// update the list of breakpoints, some may have been
 					// set by code or even another manually connected
 					// monitor
@@ -443,10 +444,6 @@ public class VICEDebugTarget extends VICEDebugElement
 			e.printStackTrace();
 		}
 		return id;
-	}
-
-	public byte[] getComputerMemory() {
-		return eventDispatcher.getComputerMemory();
 	}
 
 	private void updateAdresses(IBreakpoint iBreakpoint) {
