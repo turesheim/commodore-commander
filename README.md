@@ -1,8 +1,12 @@
 # Commodore Commander
 
-This project comprises of a set of plugins to the Eclipse IDE that adds support for building Commodore 64 applications using the [Kick Assembler](http://theweb.dk/KickAssembler/Main.html#frontpage) for the MOS 6510 processor and the [VICE emulator](https://vice-emu.sourceforge.io) for running and debugging. This project's focus will be on editing and debugging – not resource management, of which there are many other excellent tools.
+The Commodore 64, an iconic 8-bit home computer from the 1980s, has experienced a vibrant renaissance in the retro computing world. Renowned for its affordability, robust hardware, and expansive software library, the C64 continues to captivate enthusiasts worldwide. Modern resources such as FPGA-based replicas, enhanced peripherals, and thriving online communities have made it easier than ever to explore and develop for this classic machine. Essential tools like cross-assemblers, emulators like VICE, and comprehensive documentation for its 6502 architecture have become indispensable for both newcomers and seasoned developers.
 
-It is still in a very early stage, but it is usable and currently have the following features:
+Programming for the Commodore 64 is an especially enjoyable experience, thanks to its simplicity, constraints, and direct interaction with hardware. The 6502 assembly language offers a rewarding challenge that inspires creativity, while the well-documented architecture and active retro community make problem-solving a deeply engaging process. Whether pushing graphical limits, composing SID chip music, or crafting efficient code within tight memory constraints, developing for the C64 is a nostalgic journey that combines technical mastery with pure joy.
+
+The _Commodore Commander_ aims to be a valuable addition to this ecosystem of tools. This project provides a set of plugins for the Eclipse IDE, and targets streamlined development for the Commodore 64. It supports building applications using [Kick Assembler](http://theweb.dk/KickAssembler/Main.html#frontpage) and integrates with the [VICE emulator](https://vice-emu.sourceforge.io) for running and debugging code. While the focus of Commodore Commander is on editing and debugging, it complements existing resource management tools, offering developers a cohesive and modernized workflow for creating on this beloved platform.
+
+It is still in an early stage, but it is usable and currently have the following features:
 
 ## Editing
 
@@ -61,22 +65,17 @@ Note that monitors are only updated when the CPU has stopped because of i.e. a b
 
 ## Related resources
 
-### Links
+These resources are only some of those consulted when building this IDE. You may find them useful:
 
-#### Embedded
-- The Kick Assembler: http://theweb.dk/KickAssembler
-- VICE, the Versatile Commodore Emulator: http://vice-emu.sourceforge.net
-
-#### Commodore 64
-- Cycle-accurate 6502 emulator in Javascript: https://github.com/Torlus/6502.js
-- Tuned Simon's BASIC: https://github.com/godot64/TSB
-- SpritePad C64 Pro: https://subchristsoftware.itch.io/spritepad-c64-pro
-- CharPad C64 Pro: https://subchristsoftware.itch.io/charpad-c64-pro
-- SpriteMate: https://www.spritemate.com
-- GoatTracker2: https://sourceforge.net/projects/goattracker2
-- Colordore: https://www.pepto.de/projects/colorvic/
-- http://petscii.krissz.hu
-
-#### Eclipse
-- https://eclipse.dev/justj/?page=documentation
+- [The Kick Assembler](http://theweb.dk/KickAssembler)
+- [VICE, the Versatile Commodore Emulator](http://vice-emu.sourceforge.net)
+- [Cycle-accurate 6502 emulator in Javascript](https://github.com/Torlus/6502.js)
+- [Tuned Simon's BASIC](https://github.com/godot64/TSB)
+- [SpritePad C64 Pro](https://subchristsoftware.itch.io/spritepad-c64-pro)
+- [CharPad C64 Pro](https://subchristsoftware.itch.io/charpad-c64-pro)
+- [SpriteMate](https://www.spritemate.com)
+- [GoatTracker2](https://sourceforge.net/projects/goattracker2)
+- [Colordore](https://www.pepto.de/projects/colorvic/)
+- [PETSCII, A nice web-based editor for sprites, character maps and screens](http://petscii.krissz.hu)
+- [JustJ, a Java Runtime for Eclipse](https://eclipse.dev/justj/?page=documentation)
 - [Inside the Memory View: A Guide for Debug Providers](https://www.eclipse.org/articles/Article-MemoryView)
