@@ -15,6 +15,8 @@ import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.IBreakpointManager;
 import org.eclipse.debug.core.model.IBreakpoint;
+import org.eclipse.debug.core.model.IMemoryBlock;
+import org.eclipse.debug.internal.ui.DebugUIPlugin;
 import org.eclipse.ui.console.MessageConsoleStream;
 
 import net.resheim.eclipse.cc.vice.debug.MonitorLogger;
@@ -277,10 +279,24 @@ public class MonitorEventDispatcher extends Job {
 			// each time instead of implementing something elaborate
 			if (items == 0)
 				items = 65_535;
+
+			// update the cache
 			buffer.get(computerMemory, 0, items);
-			// XXX: No disassemble here, rather update memory views
-//			debugTarget.getDisassembler().disassemble(buffer.array());
-//			debugTarget.fireEvent(new DebugEvent(debugTarget, DebugEvent.MODEL_SPECIFIC, IBinaryMonitor.DISASSEMBLE));
+
+			// update all the blocks already in view
+			IMemoryBlock[] memoryBlocks = DebugPlugin.getDefault().getMemoryBlockManager()
+					.getMemoryBlocks(thread.getDebugTarget());
+			for (IMemoryBlock iMemoryBlock : memoryBlocks) {
+				int startAddress = (int) iMemoryBlock.getStartAddress();
+				int length = (int) iMemoryBlock.getLength();
+				byte[] temp = new byte[length];
+				// why +2 here? must be a bug somewhere
+				System.arraycopy(responseBody, startAddress + 2, temp, 0, length);
+				iMemoryBlock.setValue(0, temp);
+			}
+			// Not sure if this is needed
+			thread.fireEvent(new DebugEvent(thread.getDebugTarget(), DebugEvent.CHANGE, DebugEvent.STATE));
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
