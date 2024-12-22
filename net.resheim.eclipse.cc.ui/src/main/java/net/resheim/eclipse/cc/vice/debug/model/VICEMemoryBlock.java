@@ -1,16 +1,16 @@
-/*******************************************************************************
- * Copyright (c) 2010, 2018 IBM Corporation and others.
+/**
+ * Copyright (c) 2024 Torkild Ulvøy Resheim
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
- *     IBM Corporation - initial API and implementation
- *******************************************************************************/
+ *
+ *   Torkild Ulvøy Resheim <torkildr@gmail.com> - initial API and implementation
+ */
 package net.resheim.eclipse.cc.vice.debug.model;
 
 import org.eclipse.debug.core.DebugException;
@@ -58,12 +58,7 @@ public class VICEMemoryBlock extends VICEDebugElement implements IMemoryBlock {
 
 	@Override
 	public void setValue(long offset, byte[] bytes) throws DebugException {
-//		int i = 0;
-//		long off = offset;
-//		while (off < fBytes.length && i < bytes.length) {
-//			fBytes[(int)off++] = bytes[i++];
-//		}
-//		fireChangeEvent(DebugEvent.CONTENT);
+		// Use ExtendedVICEMemoryBlock
 	}
 
 }
