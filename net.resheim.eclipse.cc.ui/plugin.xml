@@ -377,8 +377,8 @@
    <extension
          point="org.eclipse.debug.ui.memoryRenderings">
       <renderingBindings
-            defaultIds="net.resheim.cc.debug.ui.rendering.screen"
-            renderingIds="org.eclipse.debug.ui.rendering.raw_memory,net.resheim.cc.debug.ui.rendering.screen,net.resheim.cc.debug.ui.rendering.hex">
+            defaultIds="net.resheim.cc.debug.ui.rendering.characters"
+            renderingIds="org.eclipse.debug.ui.rendering.raw_memory,net.resheim.cc.debug.ui.rendering.characters,net.resheim.cc.debug.ui.rendering.hex">
          <enablement>
             <instanceof
                   value="net.resheim.eclipse.cc.vice.debug.model.ExtendedVICEMemoryBlock">
@@ -387,8 +387,8 @@
       </renderingBindings>
       <renderingType
             class="net.resheim.eclipse.cc.ui.debug.CCRenderingTypeDelegate"
-            id="net.resheim.cc.debug.ui.rendering.screen"
-            name="Screeen">
+            id="net.resheim.cc.debug.ui.rendering.characters"
+            name="Characters">
       </renderingType>
       <renderingType
             class="net.resheim.eclipse.cc.ui.debug.CCRenderingTypeDelegate"

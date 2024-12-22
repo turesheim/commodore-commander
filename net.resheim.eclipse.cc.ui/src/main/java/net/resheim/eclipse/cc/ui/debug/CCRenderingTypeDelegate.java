@@ -24,7 +24,7 @@ public class CCRenderingTypeDelegate implements IMemoryRenderingTypeDelegate {
 
 	@Override
 	public IMemoryRendering createRendering(String id) throws CoreException {
-		if ("net.resheim.cc.debug.ui.rendering.screen".equals(id)) {
+		if ("net.resheim.cc.debug.ui.rendering.characters".equals(id)) {
 			return new CharacterRendering(id);
 		}
 		if ("net.resheim.cc.debug.ui.rendering.hex".equals(id)) {
