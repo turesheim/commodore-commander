@@ -13,31 +13,24 @@
  *******************************************************************************/
 package net.resheim.eclipse.cc.vice.debug.model;
 
-import org.eclipse.debug.core.DebugEvent;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IMemoryBlock;
 
 /**
- * Example memory block
+ * A basic memory block – we should probably not be using this one
  */
 public class VICEMemoryBlock extends VICEDebugElement implements IMemoryBlock {
 
 
-	/**
-	 * The bytes
-	 */
-	private byte[] fBytes = null;
-	private int fStart, fLength;
+	protected int fStart, fLength;
 
 	/**
 	 * Constructs a new memory block
 	 */
-	public VICEMemoryBlock(VICEDebugTarget target, int start, int length, byte[] source) {
+	public VICEMemoryBlock(VICEDebugTarget target, int start, int length) {
 		super(target);
-		fBytes = new byte[(int) length];
 		fStart = start;
 		fLength = length;
-		System.arraycopy(source, start, fBytes, 0, length);
 	}
 
 	@Override
@@ -52,7 +45,10 @@ public class VICEMemoryBlock extends VICEDebugElement implements IMemoryBlock {
 
 	@Override
 	public byte[] getBytes() throws DebugException {
-		return fBytes;
+		byte[] bytes = new byte[(int) fLength];
+		VICEDebugTarget target = (VICEDebugTarget) getDebugTarget();
+		System.arraycopy(target.getComputerMemory(), fStart, bytes, 0, fLength);
+		return bytes;
 	}
 
 	@Override
@@ -62,12 +58,12 @@ public class VICEMemoryBlock extends VICEDebugElement implements IMemoryBlock {
 
 	@Override
 	public void setValue(long offset, byte[] bytes) throws DebugException {
-		int i = 0;
-		long off = offset;
-		while (off < fBytes.length && i < bytes.length) {
-			fBytes[(int)off++] = bytes[i++];
-		}
-		fireChangeEvent(DebugEvent.CONTENT);
+//		int i = 0;
+//		long off = offset;
+//		while (off < fBytes.length && i < bytes.length) {
+//			fBytes[(int)off++] = bytes[i++];
+//		}
+//		fireChangeEvent(DebugEvent.CONTENT);
 	}
 
 }

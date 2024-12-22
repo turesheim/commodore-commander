@@ -377,18 +377,23 @@
    <extension
          point="org.eclipse.debug.ui.memoryRenderings">
       <renderingBindings
-            defaultIds="net.resheim.cc.debug.ui.rendering.character_map"
-            renderingIds="org.eclipse.debug.ui.rendering.raw_memory,net.resheim.cc.debug.ui.rendering.character_map">
+            defaultIds="net.resheim.cc.debug.ui.rendering.screen"
+            renderingIds="org.eclipse.debug.ui.rendering.raw_memory,net.resheim.cc.debug.ui.rendering.screen,net.resheim.cc.debug.ui.rendering.hex">
          <enablement>
             <instanceof
-                  value="net.resheim.eclipse.cc.vice.debug.model.VICEMemoryBlock">
+                  value="net.resheim.eclipse.cc.vice.debug.model.ExtendedVICEMemoryBlock">
             </instanceof>
          </enablement>
       </renderingBindings>
       <renderingType
             class="net.resheim.eclipse.cc.ui.debug.CCRenderingTypeDelegate"
-            id="net.resheim.cc.debug.ui.rendering.character_map"
-            name="Character Map">
+            id="net.resheim.cc.debug.ui.rendering.screen"
+            name="Screeen">
+      </renderingType>
+      <renderingType
+            class="net.resheim.eclipse.cc.ui.debug.CCRenderingTypeDelegate"
+            id="net.resheim.cc.debug.ui.rendering.hex"
+            name="8-bit">
       </renderingType>
    </extension>
 </plugin>

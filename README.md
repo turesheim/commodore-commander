@@ -49,6 +49,16 @@ The debugger implements a [VICE Binary Monitor](https://vice-emu.sourceforge.io/
 
 The only type of _checkpoints_ currently supported are _breakpoints_. These are triggered whenever the _program counter_ enteres an address where a breakpoint has been added and will halt the emulator. Breakpoints can be individually disabled and enabled, and as usual be grouped, placed in working sets etc.
 
+### Memory monitor
+
+The memory monitor is used to observe and edit the main computer memory.
+
+Using the **New Memory View** ![](docs/new_con.png) command you can create a view that is able to display one single area of memory at the time (**Add Memory Monitor** ![](docs/monitorexpression_tsk.png)). However you can add several areas to monitor in each view and you can add different _renderings_. Each rendering is a visualization of the memory area and may or may not be editable. The table renderings are typically editable, while the screen rendering shown below is not.
+
+![](docs/memory.png)
+
+Note that monitors are only updated when the CPU has stopped because of i.e. a breakpoint and any changes to the memory will only take effect when the CPU has resumed operation.
+
 ## Related resources
 
 ### Links

@@ -36,6 +36,8 @@ import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.model.IBreakpoint;
 import org.eclipse.debug.core.model.IDebugTarget;
 import org.eclipse.debug.core.model.IMemoryBlock;
+import org.eclipse.debug.core.model.IMemoryBlockExtension;
+import org.eclipse.debug.core.model.IMemoryBlockRetrievalExtension;
 import org.eclipse.debug.core.model.IProcess;
 import org.eclipse.debug.core.model.IRegisterGroup;
 import org.eclipse.debug.core.model.IStackFrame;
@@ -65,7 +67,7 @@ import net.resheim.eclipse.cc.vice.debug.monitor.MonitorEventDispatcher;
  * @author Torkild Ulvøy Resheim
  */
 public class VICEDebugTarget extends VICEDebugElement
-		implements IDebugTarget, IBreakpointManagerListener, IDebugEventSetListener {
+		implements IDebugTarget, IBreakpointManagerListener, IDebugEventSetListener, IMemoryBlockRetrievalExtension {
 
 	private static final int MAX_CONNECTION_ATTEMPTS = 30;
 
@@ -278,9 +280,24 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public IMemoryBlock getMemoryBlock(long startAddress, long length) throws DebugException {
-		VICEMemoryBlock vmb = new VICEMemoryBlock(this, (int) startAddress, (int) length,
-				eventDispatcher.getComputerMemory());
+		VICEMemoryBlock vmb = new VICEMemoryBlock(this, (int) startAddress, (int) length);
 		return vmb;
+	}
+
+	public byte[] getComputerMemory() {
+		return eventDispatcher.getComputerMemory();
+	}
+
+	public synchronized void setComputerMemory(long startAddress, byte[] values) {
+		ByteBuffer buffer = ByteBuffer.allocate(values.length + 8);
+		buffer.order(ByteOrder.LITTLE_ENDIAN);
+		buffer.put((byte) 1);
+		buffer.putShort((short) startAddress);
+		buffer.putShort((short) (startAddress + values.length - 1));
+		buffer.put((byte) 0);
+		buffer.putShort((short) 0);
+		buffer.put(values);
+		sendCommand(CommandID.MEMORY_SET, buffer.array());
 	}
 
 	@Override
@@ -472,4 +489,69 @@ public class VICEDebugTarget extends VICEDebugElement
 		return console;
 	}
 
+	@Override
+	public IMemoryBlockExtension getExtendedMemoryBlock(String expression, Object context) throws DebugException {
+		int start = 0;
+		int length = 256;
+		try {
+
+			// Remove whitespace and split the input
+			expression = expression.trim();
+
+			if (expression.contains("-")) {
+				// A-B syntax: parse start and end, calculate length
+				String[] parts = expression.split("-");
+				if (parts.length == 2) {
+					start = parseNumber(parts[0]);
+					int end = parseNumber(parts[1]);
+					if (end >= start) {
+						length = end - start + 1;
+					} else {
+						throw new IllegalArgumentException(
+								"End address must be greater than or equal to start address.");
+					}
+				} else {
+					throw new IllegalArgumentException("Invalid range format. Use A-B syntax.");
+				}
+			} else if (expression.contains(",")) {
+				// A,Length syntax
+				String[] parts = expression.split(",");
+				if (parts.length > 0) {
+					start = parseNumber(parts[0]);
+				}
+				if (parts.length > 1) {
+					length = parseNumber(parts[1]);
+				}
+			} else {
+				start = parseNumber(expression);
+			}
+
+
+			System.out.println("Start: " + start);
+			System.out.println("Length: " + length);
+		} catch (NumberFormatException e) {
+			System.err.println("Error parsing input: " + e.getMessage());
+		} catch (IllegalArgumentException e) {
+			System.err.println("Error: " + e.getMessage());
+		}
+		return new ExtendedVICEMemoryBlock(this, start, length, expression, context);
+	}
+
+	/**
+	 * Parses a string into an integer. Supports hexadecimal ($ or 0x) and decimal.
+	 *
+	 * @param value the string to parse
+	 * @return the parsed integer value
+	 * @throws NumberFormatException if the string cannot be parsed
+	 */
+	private static int parseNumber(String value) throws NumberFormatException {
+		value = value.trim();
+		if (value.startsWith("$")) {
+			return Integer.parseInt(value.substring(1), 16); // Hexadecimal with $ prefix
+		} else if (value.startsWith("0x")) {
+			return Integer.parseInt(value.substring(2), 16); // Hexadecimal with 0x prefix
+		} else {
+			return Integer.parseInt(value); // Decimal
+		}
+	}
 }
