@@ -582,15 +582,20 @@ public class CharacterRendering extends AbstractMemoryRendering implements IDebu
 	 * @return the parsed integer value
 	 * @throws NumberFormatException if the string cannot be parsed
 	 */
-	private static int parseNumber(String value) throws NumberFormatException {
-		value = value.trim();
-		if (value.startsWith("$")) {
-			return Integer.parseInt(value.substring(1), 16); // Hexadecimal with $ prefix
-		} else if (value.startsWith("0x")) {
-			return Integer.parseInt(value.substring(2), 16); // Hexadecimal with 0x prefix
-		} else {
-			return Integer.parseInt(value); // Decimal
+	private static int parseNumber(String value) {
+		try {
+			value = value.trim();
+			if (value.startsWith("$")) {
+				return Integer.parseInt(value.substring(1), 16); // Hexadecimal with $ prefix
+			} else if (value.startsWith("0x")) {
+				return Integer.parseInt(value.substring(2), 16); // Hexadecimal with 0x prefix
+			} else {
+				return Integer.parseInt(value); // Decimal
+			}
+		} catch (NumberFormatException e) {
+			// we do not care
 		}
+		return 0;
 	}
 
 	private static byte[] convertToByteArray(int[] input) {
