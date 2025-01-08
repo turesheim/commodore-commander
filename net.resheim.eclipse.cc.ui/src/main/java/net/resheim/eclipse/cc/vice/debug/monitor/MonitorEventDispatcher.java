@@ -16,7 +16,6 @@ import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.IBreakpointManager;
 import org.eclipse.debug.core.model.IBreakpoint;
 import org.eclipse.debug.core.model.IMemoryBlock;
-import org.eclipse.debug.internal.ui.DebugUIPlugin;
 import org.eclipse.ui.console.MessageConsoleStream;
 
 import net.resheim.eclipse.cc.vice.debug.MonitorLogger;
@@ -24,6 +23,7 @@ import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Operation;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement.State;
+import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
 import net.resheim.eclipse.cc.vice.debug.model.VICERegisterGroup;
 import net.resheim.eclipse.cc.vice.debug.model.VICEStackFrame;
 import net.resheim.eclipse.cc.vice.debug.model.VICEThread;
@@ -98,6 +98,20 @@ public class MonitorEventDispatcher extends Job {
 		}
 		else if (header.responseType == CommandID.MEMORY_GET.getCode())
 			parseMemoryGet(responseBody);
+		else if (header.responseType == CommandID.MEMORY_SET.getCode())
+			// update the memory image
+			((VICEDebugTarget) thread.getDebugTarget())
+				.sendCommand(CommandID.MEMORY_GET, new byte[] {
+					0x00, // side effects
+					0x00, // start address LSB
+					0x00, // start address MSB
+					(byte) 0xff, // end address LSB
+					(byte) 0xff, // end address MSB
+					0x00, // memspace
+					0x00, // bank ID LSB
+					0x00 // bank ID MSB
+			});
+
 		else if (header.responseType == CommandID.QUIT.getCode()) {
 			thread.setState(State.TERMINATED);
 			thread.fireTerminateEvent();
