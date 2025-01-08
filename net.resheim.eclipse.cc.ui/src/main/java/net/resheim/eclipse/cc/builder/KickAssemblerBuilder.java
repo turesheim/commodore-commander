@@ -253,9 +253,17 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			// determine the output folder
 			IFolder output = (IFolder) file.getParent().findMember("out");
 
+			if (output == null) {
+				return;
+			}
+
 			// find the debug file created by KickAssembler
 			IPath newFilePath = file.getFullPath().removeFileExtension().addFileExtension("dbg");
 			IResource debugFile = output.findMember(newFilePath.lastSegment());
+
+			if (debugFile == null) {
+				return;
+			}
 
 			// parse the debug file
 			JAXBContext context = JAXBContext.newInstance(Assembly.class);

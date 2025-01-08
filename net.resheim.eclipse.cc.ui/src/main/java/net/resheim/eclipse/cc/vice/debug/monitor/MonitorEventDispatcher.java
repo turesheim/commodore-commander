@@ -15,6 +15,7 @@ import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.IBreakpointManager;
 import org.eclipse.debug.core.model.IBreakpoint;
+import org.eclipse.debug.core.model.IMemoryBlock;
 import org.eclipse.ui.console.MessageConsoleStream;
 
 import net.resheim.eclipse.cc.vice.debug.MonitorLogger;
@@ -22,6 +23,7 @@ import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Operation;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement.State;
+import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
 import net.resheim.eclipse.cc.vice.debug.model.VICERegisterGroup;
 import net.resheim.eclipse.cc.vice.debug.model.VICEStackFrame;
 import net.resheim.eclipse.cc.vice.debug.model.VICEThread;
@@ -96,6 +98,20 @@ public class MonitorEventDispatcher extends Job {
 		}
 		else if (header.responseType == CommandID.MEMORY_GET.getCode())
 			parseMemoryGet(responseBody);
+		else if (header.responseType == CommandID.MEMORY_SET.getCode())
+			// update the memory image
+			((VICEDebugTarget) thread.getDebugTarget())
+				.sendCommand(CommandID.MEMORY_GET, new byte[] {
+					0x00, // side effects
+					0x00, // start address LSB
+					0x00, // start address MSB
+					(byte) 0xff, // end address LSB
+					(byte) 0xff, // end address MSB
+					0x00, // memspace
+					0x00, // bank ID LSB
+					0x00 // bank ID MSB
+			});
+
 		else if (header.responseType == CommandID.QUIT.getCode()) {
 			thread.setState(State.TERMINATED);
 			thread.fireTerminateEvent();
@@ -277,10 +293,24 @@ public class MonitorEventDispatcher extends Job {
 			// each time instead of implementing something elaborate
 			if (items == 0)
 				items = 65_535;
+
+			// update the cache
 			buffer.get(computerMemory, 0, items);
-			// XXX: No disassemble here, rather update memory views
-//			debugTarget.getDisassembler().disassemble(buffer.array());
-//			debugTarget.fireEvent(new DebugEvent(debugTarget, DebugEvent.MODEL_SPECIFIC, IBinaryMonitor.DISASSEMBLE));
+
+			// update all the blocks already in view
+			IMemoryBlock[] memoryBlocks = DebugPlugin.getDefault().getMemoryBlockManager()
+					.getMemoryBlocks(thread.getDebugTarget());
+			for (IMemoryBlock iMemoryBlock : memoryBlocks) {
+				int startAddress = (int) iMemoryBlock.getStartAddress();
+				int length = (int) iMemoryBlock.getLength();
+				byte[] temp = new byte[length];
+				// why +2 here? must be a bug somewhere
+				System.arraycopy(responseBody, startAddress + 2, temp, 0, length);
+				iMemoryBlock.setValue(0, temp);
+			}
+			// Not sure if this is needed
+			thread.fireEvent(new DebugEvent(thread.getDebugTarget(), DebugEvent.CHANGE, DebugEvent.STATE));
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

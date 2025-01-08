@@ -374,4 +374,27 @@
           id="net.resheim.eclipse.cc.sourcePathComputer">
     </sourcePathComputer>
  </extension>
+   <extension
+         point="org.eclipse.debug.ui.memoryRenderings">
+      <renderingBindings
+            defaultIds="net.resheim.cc.debug.ui.rendering.characters"
+            renderingIds="org.eclipse.debug.ui.rendering.raw_memory,net.resheim.cc.debug.ui.rendering.characters,net.resheim.cc.debug.ui.rendering.hex">
+         <enablement>
+            <instanceof
+                  value="net.resheim.eclipse.cc.vice.debug.model.ExtendedVICEMemoryBlock">
+            </instanceof>
+         </enablement>
+      </renderingBindings>
+      <renderingType
+            class="net.resheim.eclipse.cc.ui.debug.CCRenderingTypeDelegate"
+            id="net.resheim.cc.debug.ui.rendering.characters"
+            name="Characters">
+      </renderingType>
+      <renderingType
+            class="net.resheim.eclipse.cc.ui.debug.CCRenderingTypeDelegate"
+            id="net.resheim.cc.debug.ui.rendering.hex"
+            name="8-bit">
+      </renderingType>
+   </extension>
 </plugin>
+
