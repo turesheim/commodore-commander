@@ -291,7 +291,7 @@ public class VICEDebugTarget extends VICEDebugElement
 	public synchronized void setComputerMemory(long startAddress, byte[] values) {
 		ByteBuffer buffer = ByteBuffer.allocate(values.length + 8);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
-		buffer.put((byte) 1);
+		buffer.put((byte) 1); // side effects?
 		buffer.putShort((short) startAddress);
 		buffer.putShort((short) (startAddress + values.length - 1));
 		buffer.put((byte) 0);
@@ -406,7 +406,8 @@ public class VICEDebugTarget extends VICEDebugElement
 					// start address of the data included, so it's hard to
 					// figure it out unless we somehow pass that value. We
 					// just read out the entire 64kiB for now.
-					sendCommand(CommandID.MEMORY_GET, new byte[] { 0x00, // side effects
+					sendCommand(CommandID.MEMORY_GET, new byte[] {
+							0x00, // side effects
 							0x00, // start address LSB
 							0x00, // start address MSB
 							(byte) 0xff, // end address LSB
@@ -449,7 +450,7 @@ public class VICEDebugTarget extends VICEDebugElement
 		}
 	}
 
-	synchronized int sendCommand(CommandID command, byte[] body) {
+	public int sendCommand(CommandID command, byte[] body) {
 		int id = counter.incrementAndGet();
 		try {
 			Command msg = new Command(id, command, body);
