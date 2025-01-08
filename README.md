@@ -7,8 +7,6 @@ The _Commodore Commander_ aims to be a valuable addition to this ecosystem of to
 
 This project provides a set of plugins for the Eclipse IDE, and targets streamlined development for the Commodore 64. It supports building applications using [Kick Assembler](http://theweb.dk/KickAssembler/Main.html#frontpage) and integrates with the [VICE emulator](https://vice-emu.sourceforge.io) for running and debugging code. While the focus of Commodore Commander is on editing and debugging, it complements existing resource management tools, offering developers a cohesive and modernized workflow for creating on this beloved platform.
 
-It is still in an early stage, but it is usable and currently have the following features:
-
 # Editing
 
 ![](docs/editor.png)
@@ -87,3 +85,4 @@ These resources are only some of those consulted when building this IDE. You may
 - [PETSCII, A nice web-based editor for sprites, character maps and screens](http://petscii.krissz.hu)
 - [JustJ, a Java Runtime for Eclipse](https://eclipse.dev/justj/?page=documentation)
 - [Inside the Memory View: A Guide for Debug Providers](https://www.eclipse.org/articles/Article-MemoryView)
+- The 1965-1984 [Commodore logo](https://en.wikipedia.org/wiki/Commodore_International#/media/File:Commodore196x.svg) [font](https://www.myfonts.com/products/d-bold-extended-microgramma-330289) (Microgramma D)
