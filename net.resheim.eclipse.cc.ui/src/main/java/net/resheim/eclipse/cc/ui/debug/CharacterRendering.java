@@ -568,10 +568,9 @@ public class CharacterRendering extends AbstractMemoryRendering implements IDebu
 	@Override
 	public void handleDebugEvents(DebugEvent[] events) {
 		// TODO: Only react to events where screen must be repainted
-		canvas.getDisplay().asyncExec(() -> {
-			if (!canvas.isDisposed()) {
+		if (!canvas.isDisposed())
+			canvas.getDisplay().asyncExec(() -> {
 				canvas.redraw();
-			}
 		});
 	}
 
