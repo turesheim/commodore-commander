@@ -67,7 +67,7 @@ The parser will also determine which format was used to declare the values and t
 
 ![](docs/variables.png)
 
-Values that are shown using the diamond icon are editable. Simply click on the value cell and specify a new value.
+The **Variables view** is updated whenever the CPU is suspended. Values that are shown using the diamond icon are editable. Simply click on the value cell and specify a new value. Make sure the value is within the range of the data type. A byte value is for example between 0 and 255.
 
 ## Memory monitor
 
