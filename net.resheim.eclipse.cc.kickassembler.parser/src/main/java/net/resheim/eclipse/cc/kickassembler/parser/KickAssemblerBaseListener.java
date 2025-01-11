@@ -1,4 +1,4 @@
-// Generated from KickAssembler.g4 by ANTLR 4.13.1
+// Generated from KickAssembler.g4 by ANTLR 4.13.2
 package net.resheim.eclipse.cc.kickassembler.parser;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -65,6 +65,18 @@ public class KickAssemblerBaseListener implements KickAssemblerListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterDataDeclaration(KickAssemblerParser.DataDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitDataDeclaration(KickAssemblerParser.DataDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterLabelDeclaration(KickAssemblerParser.LabelDeclarationContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -84,6 +96,78 @@ public class KickAssemblerBaseListener implements KickAssemblerListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitBlockDeclaration(KickAssemblerParser.BlockDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterVariableDeclaration(KickAssemblerParser.VariableDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitVariableDeclaration(KickAssemblerParser.VariableDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterData(KickAssemblerParser.DataContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitData(KickAssemblerParser.DataContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterByte(KickAssemblerParser.ByteContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitByte(KickAssemblerParser.ByteContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterWord(KickAssemblerParser.WordContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitWord(KickAssemblerParser.WordContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterDword(KickAssemblerParser.DwordContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitDword(KickAssemblerParser.DwordContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterText(KickAssemblerParser.TextContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitText(KickAssemblerParser.TextContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

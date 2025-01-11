@@ -18,6 +18,9 @@ import org.eclipse.debug.core.model.IDebugTarget;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
 
+import net.resheim.eclipse.cc.builder.model.Presentation;
+import net.resheim.eclipse.cc.builder.model.Type;
+
 /**
  * A simple {@link IValue} representing a scalar. It has a value and a size in
  * in the number of bits required to represent the value.
@@ -27,32 +30,62 @@ import org.eclipse.debug.core.model.IVariable;
  */
 public class Scalar extends VICEDebugElement implements IValue {
 
-	private short value;
-	private byte size;
+	private int value;
+	private Type type;
+	private Presentation presentation;
 
-	public Scalar(IDebugTarget target, short value, byte size) {
+	public Scalar(IDebugTarget target, int value, Type type, Presentation presentation) {
 		super(target);
 		this.setValue(value);
-		this.size = size;
+		this.type = type;
+		this.presentation = presentation;
+	}
+
+	public Scalar(IDebugTarget target, int value, byte size) {
+		super(target);
+		this.setValue(value);
+		if (size <= 8)
+			type = Type.BYTE;
+		if (size == 16)
+			type = Type.WORD;
 	}
 
 	@Override
 	public String getReferenceTypeName() throws DebugException {
-		if (size == 8) {
+		switch (type) {
+		case BYTE: {
 			return "byte";
 		}
-		if (size == 16) {
-			return "short";
+		case WORD: {
+			return "word";
 		}
-		return null;
+		case DWORD: {
+			return "dword";
+		}
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + type);
+		}
 	}
 
 	@Override
 	public String getValueString() throws DebugException {
-		if (size == 8) {
-			return String.format("$%02X", value);
-		} else {
+		switch (type) {
+		case BYTE: {
+			if (presentation.equals(Presentation.BINARY)) {
+				return String.format("%8s", Integer.toBinaryString(value)).replace(' ', '0');
+			} else if (presentation.equals(Presentation.HEXADECIMAL)) {
+				return String.format("$%02X", value);
+			} else
+				return Integer.toUnsignedString(value);
+		}
+		case WORD: {
 			return String.format("$%04X", value);
+		}
+		case DWORD: {
+			return String.format("$%08X", value);
+		}
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + type);
 		}
 	}
 
@@ -71,12 +104,16 @@ public class Scalar extends VICEDebugElement implements IValue {
 		return false;
 	}
 
-	public void setValue(short value) {
+	public void setValue(int value) {
 		this.value = value;
 	}
 
-	public short getValue() {
+	public int getValue() {
 		return value;
+	}
+
+	public short getShortValue() {
+		return (short) value;
 	}
 
 }

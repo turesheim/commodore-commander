@@ -344,8 +344,9 @@
 
   <extension point="org.eclipse.debug.ui.debugModelPresentations">
     <debugModelPresentation
-      id="net.resheim.eclipse.cc.vice.debug"
-      class="net.resheim.eclipse.cc.ui.VICEDebugModelPresentation">
+          class="net.resheim.eclipse.cc.ui.VICEDebugModelPresentation"
+          detailsViewerConfiguration="net.resheim.eclipse.cc.editor.AssemblyViewerConfiguration"
+          id="net.resheim.eclipse.cc.vice.debug">
     </debugModelPresentation>
  </extension>
 

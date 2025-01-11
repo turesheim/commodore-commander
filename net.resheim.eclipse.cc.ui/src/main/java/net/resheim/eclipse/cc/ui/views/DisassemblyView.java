@@ -250,7 +250,8 @@ public class DisassemblyView extends ViewPart implements IDebugEventSetListener 
 							.getTopStackFrame();
 					if (DebugEvent.MODEL_SPECIFIC == event.getKind()) {
 						annotationModel.removeAllAnnotations();
-						int pc = Short.toUnsignedInt(frame.getProgramCounter());
+//						int pc = Short.toUnsignedInt(frame.getProgramCounter());
+						int pc = frame.getProgramCounter();
 						switch (event.getDetail()) {
 						case IBinaryMonitor.DISASSEMBLE:
 //							disassembler = ((VICEDebugTarget) event.getSource()).getDisassembler();

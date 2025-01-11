@@ -45,6 +45,8 @@ import jakarta.xml.bind.Unmarshaller;
 import kickass.common.diagnostics.DiagnosticType;
 import kickass.common.diagnostics.IDiagnostic;
 import net.resheim.eclipse.cc.builder.model.Breakpoint;
+import net.resheim.eclipse.cc.builder.model.Label;
+import net.resheim.eclipse.cc.builder.model.DataLabel;
 import net.resheim.eclipse.cc.builder.model.LineMapping;
 import net.resheim.eclipse.cc.builder.model.Assembly;
 import net.resheim.eclipse.cc.builder.model.SourceFile;
@@ -64,6 +66,8 @@ import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
  * </ul>
  */
 public class KickAssemblerBuilder extends IncrementalProjectBuilder {
+
+	private HashMap<String, DataLabel> labeledData;
 
 // Make use of this when figured out how to do partial builds.
 //
@@ -105,11 +109,18 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 				afm.addFile(file);
 				try {
 					parser.parseFile(resource);
+					compileLabeledDataList(file);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 			return true;
+		}
+
+		private void compileLabeledDataList(AssemblyFile file) {
+			for (DataLabel data : file.getDataBlocks()) {
+				labeledData.put(data.getLabel(), data);
+			}
 		}
 
 	}
@@ -131,7 +142,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
-	public class AssemblyFileManager {
+	private class AssemblyFileManager {
 
 		// a list of all assembly files found
 		private List<AssemblyFile> allFiles;
@@ -182,9 +193,10 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
 	AssemblyFileManager afm = new AssemblyFileManager();
 
+	// Parse all assembly files and determine the import tree structure.
 	@Override
 	protected IProject[] build(int kind, Map<String, String> args, IProgressMonitor monitor) throws CoreException {
-		// Parse all assembly files and determine the import tree structure.
+		labeledData = new HashMap<>();
 		afm.clear();
 		getProject().accept(new TreeBuildingResourceVisitor());
 		List<AssemblyFile> roots = afm.consolidateTrees();
@@ -224,7 +236,8 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
 		// which still needs program arguments and do the build
 		wrapper.execute(new String[] { "-libdir", file.getProject().getFolder("library").getLocation().toOSString(),
-				file.getLocation().toOSString(), "-odir", "out", "-showmem", "-vicesymbols", "-debugdump" }, out);
+				file.getLocation().toOSString(), "-odir", "out", "-showmem", "-vicesymbols", "-debugdump",
+				"-symbolfile" }, out);
 		// update all views (and workspace model)
 		folder.refreshLocal(IResource.DEPTH_INFINITE, null);
 
@@ -235,7 +248,14 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			addDiagnosticMessage(iDiagnostic);
 		}
 		// add any breakpoints found
-		parseMetadataFile(file);
+		Assembly metadataFile = parseMetadataFile(file);
+
+		// Add data section descriptions to the labels
+		for (Label label : metadataFile.getLabels().getLabels()) {
+			if (labeledData.containsKey(label.getName())) {
+				label.setData(labeledData.get(label.getName()));
+			}
+		}
 
 	}
 
@@ -248,13 +268,13 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 	 * @param file the root assembly file
 	 * @throws CoreException
 	 */
-	private void parseMetadataFile(IFile file) throws CoreException {
+	private Assembly parseMetadataFile(IFile file) throws CoreException {
 		try {
 			// determine the output folder
 			IFolder output = (IFolder) file.getParent().findMember("out");
 
 			if (output == null) {
-				return;
+				return null;
 			}
 
 			// find the debug file created by KickAssembler
@@ -262,7 +282,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			IResource debugFile = output.findMember(newFilePath.lastSegment());
 
 			if (debugFile == null) {
-				return;
+				return null;
 			}
 
 			// parse the debug file
@@ -295,6 +315,9 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 				lineBreakpoint.setStartAddress(address);
 				DebugPlugin.getDefault().getBreakpointManager().addBreakpoint(lineBreakpoint);
 			}
+
+			return assembly;
+
 		} catch (JAXBException e) {
 			throw new CoreException(Status.error("Could not parse debug file", e));
 		}

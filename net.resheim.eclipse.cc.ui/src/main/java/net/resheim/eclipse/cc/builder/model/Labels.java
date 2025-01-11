@@ -19,6 +19,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlValue;
 
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -30,6 +31,9 @@ public class Labels {
     @XmlValue
     private String labelData;
 
+	@XmlTransient
+	private List<Label> labels;
+
 	public String getValues() {
 		return values;
 	}
@@ -38,6 +42,7 @@ public class Labels {
 		return labelData;
 	}
 
+	// Create a list of labels by parsing the labelData field
 	public List<Label> getLineMappings() {
 		List<Label> lineMappings = new CopyOnWriteArrayList<>();
 		String[] split = labelData.split("\\r?\\n");
@@ -50,5 +55,10 @@ public class Labels {
 		return lineMappings;
 	}
 
-    // Getters and Setters
+	public List<Label> getLabels() {
+		if (labels == null) {
+			labels = getLineMappings();
+		}
+		return labels;
+	}
 }
