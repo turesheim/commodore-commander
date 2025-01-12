@@ -7,7 +7,7 @@
          point="org.eclipse.core.runtime.products">
       <product
             name="Commodore Commander"
-            application="org.eclipse.ui.ide.workbench">
+            application="net.resheim.eclipse.cc">
          <property
                name="windowImages"
                value="cc_128.png,cc_256.png">

@@ -397,5 +397,12 @@
             name="8-bit">
       </renderingType>
    </extension>
+<extension
+    point="org.eclipse.core.runtime.applications" id="net.resheim.eclipse.cc">
+    <application>
+        <run class="net.resheim.eclipse.cc.ui.CommanderApplication">
+        </run>
+    </application>
+</extension>
 </plugin>
 

@@ -5,13 +5,16 @@ Programming for the Commodore 64 is an enjoyable experience, thanks to its simpl
 
 The _Commodore Commander_ aims to be a valuable addition to this ecosystem of tools.
 
-This project provides a set of plugins for the Eclipse IDE, and targets streamlined development for the Commodore 64. It supports building applications using [Kick Assembler](http://theweb.dk/KickAssembler/Main.html#frontpage) and integrates with the [VICE emulator](https://vice-emu.sourceforge.io) for running and debugging code. While the focus of Commodore Commander is on editing and debugging, it complements existing resource management tools, offering developers a cohesive and modernized workflow for creating on this beloved platform.
 
 # Installing
 
-` xattr -d com.apple.quarantine Commodore\ Commander.app`
+This project provides a set of features for the Eclipse IDE that can be built and added into an existing Eclipse installation. It also comes with _product builds_ which are standalone applications. However these require that Java 21 is installed and in the system PATH.
 
-# Editing
+Currently only macOS builds are downloadable from the project site. These are not notarized and must be taken out _quarantine_ in order to work. Execute `xattr -d com.apple.quarantine ~/Downloads/Commodore\ Commander.app` after downloading and unpacking the archive.
+
+# Features
+
+## Editing
 
 ![](docs/editor.png)
 
@@ -26,19 +29,19 @@ This project provides a set of plugins for the Eclipse IDE, and targets streamli
 * Tooltips for 6510 mnemonics
 * Tooltips for the Commodore 64 memory map
 
-# Compiling
+## Compiling
 
 Compilation is done automatically with the built-in [Kick Assembler](http://theweb.dk/KickAssembler/Main.html#frontpage) compiler whenever a source file has been changed.
 
 * Problem markers when a compilation produces errors.
 * Compilation output to the _Commodore Commander_ console view.
 
-# Running
+## Running
 
 * Launches the VICE emulator when double clicking a `*.prg` file.
 * Launches will automatically pick up VICE configuration files found either in the same folder as the program, or in any of it's parent folders.
 
-# Debugging
+## Debugging
 
 The debugger implements a [VICE Binary Monitor](https://vice-emu.sourceforge.io/vice_12.html) interface and is currently fairly basic. It currently supports the following features:
 
@@ -50,13 +53,13 @@ The debugger implements a [VICE Binary Monitor](https://vice-emu.sourceforge.io/
 * Debug launches pick up `*.vs` files created by Kick Assembler and passes these to VICE.
 * Support for _step over_, _step into_, _step return_, _suspend_, _resume_ and _terminate_
 
-## Breakpoints
+### Breakpoints
 
 ![](docs/breakpoints.png)
 
 The only type of _checkpoints_ currently supported are _breakpoints_. These are triggered whenever the _program counter_ enteres an address where a breakpoint has been added and will halt the emulator. Breakpoints can be individually disabled and enabled, and as usual be grouped, placed in working sets etc.
 
-## Variables
+### Variables
 
 When building your application, the IDE will automatically detect sections of code that are labelled and that contains data. For example:
 
@@ -73,7 +76,7 @@ The parser will also determine which format was used to declare the values and t
 
 The **Variables view** is updated whenever the CPU is suspended. Values that are shown using the diamond icon are editable. Simply click on the value cell and specify a new value. Make sure the value is within the range of the data type. A byte value is for example between 0 and 255.
 
-## Memory monitor
+### Memory monitor
 
 The memory monitor is used to observe and edit the main computer memory.
 
