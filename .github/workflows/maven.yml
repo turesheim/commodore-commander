@@ -38,6 +38,6 @@ jobs:
       with:
         maven-version: 3.9
     - name: Verify Maven Version
-      run: mvn --version        
+      run: /usr/local/maven/mvn --version        
     - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      run: /usr/local/maven/mvn -B package --file pom.xml
