@@ -36,6 +36,11 @@
               </rootFolders>
             </product>
           </products>
+          <formats>
+            <macos>tar.gz</macos>
+            <linux>tar.gz</linux>
+            <win32>zip</win32>
+          </formats>
         </configuration>
         <executions>
           <execution>
@@ -49,13 +54,6 @@
             <goals>
               <goal>archive-products</goal>
             </goals>
-            <configuration>
-              <formats>
-                <macos>tar.gz</macos>
-                <linux>tar.gz</linux>
-                <win32>zip</win32>
-              </formats>
-            </configuration>
           </execution>
         </executions>
       </plugin>

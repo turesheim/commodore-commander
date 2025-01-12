@@ -39,10 +39,10 @@ jobs:
     - name: Upload build artifacts macosx.cocoa.x86_64
       uses: actions/upload-artifact@v4
       with:
-        name: Commodore Commander for macOS x86_64
+        name: commodore-commander-macosx.cocoa.x86_64.tar.gz
         path: net.resheim.eclipse.cc/target/products/commodore-commander-macosx.cocoa.x86_64.tar.gz
     - name: Upload build artifacts macosx.cocoa.aarch64
       uses: actions/upload-artifact@v4
       with:
-        name: Commodore Commander for macOS aarch64
+        name: commodore-commander-macosx.cocoa.aarch64.tar.gz
         path: net.resheim.eclipse.cc/target/products/commodore-commander-macosx.cocoa.aarch64.tar.gz
