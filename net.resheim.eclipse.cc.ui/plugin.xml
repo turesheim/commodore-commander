@@ -404,5 +404,15 @@
         </run>
     </application>
 </extension>
+<extension
+    point="org.eclipse.ui.perspectives">
+    <perspective
+          class="net.resheim.eclipse.cc.ui.CommanderPerspectiveFactory"
+          default="true"
+          icon="icons/console_view.png"
+          id="net.resheim.eclipse.cc.perspective"
+          name="Commander Perspective">
+    </perspective>
+</extension>
 </plugin>
 
