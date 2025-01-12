@@ -27,6 +27,16 @@
         <groupId>org.eclipse.tycho</groupId>
         <artifactId>tycho-p2-director-plugin</artifactId>
         <version>${tycho.version}</version>
+        <configuration>
+          <products>
+            <product>
+              <id>commodore-commander</id>
+              <rootFolders>
+                <macosx>Commodore Commander</macosx>
+              </rootFolders>
+            </product>
+          </products>
+        </configuration>
         <executions>
           <execution>
             <id>materialize-products</id>
