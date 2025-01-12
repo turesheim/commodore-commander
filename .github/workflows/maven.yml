@@ -40,8 +40,13 @@ jobs:
       run: /usr/local/maven/bin/mvn --version        
     - name: Build with Maven
       run: /usr/local/maven/bin/mvn -B package --file pom.xml
-    - name: Upload build artifacts
+    - name: Upload build artifacts macosx.cocoa.x86_64
       uses: actions/upload-artifact@v3
       with:
-        name: commodore-commander-products
-        path: net.resheim.eclipse.cc/target/products/commodore-commander-*
+        name: Commodore Commander for macOS x86_64
+        path: net.resheim.eclipse.cc/target/products/commodore-commander-macosx.cocoa.x86_64.tar.gz
+    - name: Upload build artifacts macosx.cocoa.aarch64
+      uses: actions/upload-artifact@v3
+      with:
+        name: Commodore Commander for macOS aarch64
+        path: net.resheim.eclipse.cc/target/products/commodore-commander-macosx.cocoa.aarch64.tar.gz
