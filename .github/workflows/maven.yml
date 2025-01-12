@@ -32,12 +32,16 @@ jobs:
         curl -fsSL https://downloads.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz -o maven.tar.gz
         tar -xzf maven.tar.gz
         sudo mv apache-maven-3.9.9 /usr/local/maven
-        echo "export PATH=/usr/local/maven/bin:$PATH" >> $GITHUB_ENV
     - name: Set up Maven
       uses: s4u/maven-settings-action@v3.1.0
       with:
         maven-version: 3.9
     - name: Verify Maven Version
-      run: /usr/local/maven/mvn --version        
+      run: /usr/local/maven/bin/mvn --version        
     - name: Build with Maven
-      run: /usr/local/maven/mvn -B package --file pom.xml
+      run: /usr/local/maven/bin/mvn -B package --file pom.xml
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: commodore-commander-products
+        path: net.resheim.eclipse.cc/target/products/commodore-commander-*
