@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.BitSet;
 
 import org.antlr.v4.runtime.ANTLRErrorListener;
@@ -24,6 +25,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.junit.jupiter.api.Test;
 
+import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerBaseListener;
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerLexer;
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerListener;
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser;
@@ -31,7 +33,11 @@ import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.AbsoluteC
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.AbsoluteXContext;
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.AbsoluteYContext;
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.BlockDeclarationContext;
+import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.ByteContext;
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.CurrentAddressContext;
+import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.DataContext;
+import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.DataDeclarationContext;
+import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.DwordContext;
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.ImmediateContext;
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.Import_codeContext;
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.IndirectContext;
@@ -48,325 +54,64 @@ import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.LineConte
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.NumberContext;
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.OperandContext;
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.ProgramContext;
+import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.TextContext;
+import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.VariableDeclarationContext;
+import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.WordContext;
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.ZeroPageContext;
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.ZeroPageXContext;
 import net.resheim.eclipse.cc.kickassembler.parser.KickAssemblerParser.ZeroPageYContext;
 
 class KickAssemblerProjectTests {
 
-    class Debugger implements KickAssemblerListener {
+    class Debugger extends KickAssemblerBaseListener {
+
+        int dataLength = 0;
+        ArrayList<Integer> lineLengths = new ArrayList<>();
+
 
         @Override
-        public void enterEveryRule(ParserRuleContext arg0) {
-            // TODO Auto-generated method stub
-
+        public void exitByte(ByteContext ctx) {
+            dataLength += ctx.getChildCount() / 2;
+            lineLengths.add(ctx.getChildCount() / 2);
         }
 
         @Override
-        public void exitEveryRule(ParserRuleContext arg0) {
-            // TODO Auto-generated method stub
-
+        public void enterWord(WordContext ctx) {
         }
 
         @Override
-        public void visitErrorNode(ErrorNode arg0) {
-            // TODO Auto-generated method stub
-
+        public void exitWord(WordContext ctx) {
+            dataLength += ctx.getChildCount();
         }
 
         @Override
-        public void visitTerminal(TerminalNode arg0) {
-            // TODO Auto-generated method stub
-
+        public void enterDword(DwordContext ctx) {
         }
 
         @Override
-        public void enterProgram(ProgramContext ctx) {
-            // TODO Auto-generated method stub
-
+        public void exitDword(DwordContext ctx) {
         }
 
         @Override
-        public void exitProgram(ProgramContext ctx) {
-            // TODO Auto-generated method stub
-
+        public void enterText(TextContext ctx) {
         }
 
         @Override
-        public void enterLine(LineContext ctx) {
-            System.out.println(ctx.getAltNumber() + "-" + ctx.getText());
-            // TODO Auto-generated method stub
-
+        public void exitText(TextContext ctx) {
         }
 
         @Override
-        public void exitLine(LineContext ctx) {
-            // TODO Auto-generated method stub
-
+        public void enterDataDeclaration(DataDeclarationContext ctx) {
+            dataLength = 0;
+            lineLengths.clear();
         }
 
         @Override
-        public void enterInstruction(InstructionContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitInstruction(InstructionContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterLabelDeclaration(LabelDeclarationContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitLabelDeclaration(LabelDeclarationContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterOperand(OperandContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitOperand(OperandContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterImmediate(ImmediateContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitImmediate(ImmediateContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterZeroPage(ZeroPageContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitZeroPage(ZeroPageContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterZeroPageX(ZeroPageXContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitZeroPageX(ZeroPageXContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterZeroPageY(ZeroPageYContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitZeroPageY(ZeroPageYContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterAbsolute(AbsoluteContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitAbsolute(AbsoluteContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterAbsoluteX(AbsoluteXContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitAbsoluteX(AbsoluteXContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterAbsoluteY(AbsoluteYContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitAbsoluteY(AbsoluteYContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterIndirect(IndirectContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitIndirect(IndirectContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterIndirectIndexed(IndirectIndexedContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitIndirectIndexed(IndirectIndexedContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterLabel(LabelContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitLabel(LabelContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterLabelX(LabelXContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitLabelX(LabelXContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterLabelY(LabelYContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitLabelY(LabelYContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterLabelIndirect(LabelIndirectContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitLabelIndirect(LabelIndirectContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterLabelIndexed(LabelIndexedContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitLabelIndexed(LabelIndexedContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterCurrentAddress(CurrentAddressContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitCurrentAddress(CurrentAddressContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterLabelReference(LabelReferenceContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitLabelReference(LabelReferenceContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterBlockDeclaration(BlockDeclarationContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitBlockDeclaration(BlockDeclarationContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterImport_code(Import_codeContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitImport_code(Import_codeContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void enterNumber(NumberContext ctx) {
-            // TODO Auto-generated method stub
-
-        }
-
-        @Override
-        public void exitNumber(NumberContext ctx) {
-            // TODO Auto-generated method stub
-
+        public void exitDataDeclaration(DataDeclarationContext ctx) {
+            System.err.println(ctx.name.getText() + ": " + dataLength);
+            for (Integer integer : lineLengths) {
+                System.err.println(integer);
+            }
         }
 
     }

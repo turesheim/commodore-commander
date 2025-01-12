@@ -7,6 +7,10 @@ The _Commodore Commander_ aims to be a valuable addition to this ecosystem of to
 
 This project provides a set of plugins for the Eclipse IDE, and targets streamlined development for the Commodore 64. It supports building applications using [Kick Assembler](http://theweb.dk/KickAssembler/Main.html#frontpage) and integrates with the [VICE emulator](https://vice-emu.sourceforge.io) for running and debugging code. While the focus of Commodore Commander is on editing and debugging, it complements existing resource management tools, offering developers a cohesive and modernized workflow for creating on this beloved platform.
 
+# Installing
+
+` xattr -d com.apple.quarantine Commodore\ Commander.app`
+
 # Editing
 
 ![](docs/editor.png)
@@ -52,6 +56,23 @@ The debugger implements a [VICE Binary Monitor](https://vice-emu.sourceforge.io/
 
 The only type of _checkpoints_ currently supported are _breakpoints_. These are triggered whenever the _program counter_ enteres an address where a breakpoint has been added and will halt the emulator. Breakpoints can be individually disabled and enabled, and as usual be grouped, placed in working sets etc.
 
+## Variables
+
+When building your application, the IDE will automatically detect sections of code that are labelled and that contains data. For example:
+
+```asy
+ClearTable:
+    .byte %11111110
+    .byte %11111101
+    .byte %11111011
+```
+
+The parser will also determine which format was used to declare the values and this information is used when presenting the value in the IDE.
+
+![](docs/variables.png)
+
+The **Variables view** is updated whenever the CPU is suspended. Values that are shown using the diamond icon are editable. Simply click on the value cell and specify a new value. Make sure the value is within the range of the data type. A byte value is for example between 0 and 255.
+
 ## Memory monitor
 
 The memory monitor is used to observe and edit the main computer memory.
@@ -86,3 +107,6 @@ These resources are only some of those consulted when building this IDE. You may
 - [JustJ, a Java Runtime for Eclipse](https://eclipse.dev/justj/?page=documentation)
 - [Inside the Memory View: A Guide for Debug Providers](https://www.eclipse.org/articles/Article-MemoryView)
 - The 1965-1984 [Commodore logo](https://en.wikipedia.org/wiki/Commodore_International#/media/File:Commodore196x.svg) [font](https://www.myfonts.com/products/d-bold-extended-microgramma-330289) (Microgramma D)
+- https://www.eclipse.org/articles/Article-Debugger/how-to.html
+- [64Tass](https://sourceforge.net/projects/tass64/)
+- [65xx Debugger](https://marketplace.visualstudio.com/items?itemName=TRobertson.db65xx)

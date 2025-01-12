@@ -13,6 +13,9 @@
  */
 package net.resheim.eclipse.cc.vice.debug.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugException;
@@ -22,7 +25,12 @@ import org.eclipse.debug.core.model.IThread;
 import org.eclipse.debug.core.model.IVariable;
 
 import net.resheim.eclipse.cc.builder.model.Assembly;
+import net.resheim.eclipse.cc.builder.model.DataLabel;
+import net.resheim.eclipse.cc.builder.model.Label;
+import net.resheim.eclipse.cc.builder.model.Labels;
 import net.resheim.eclipse.cc.builder.model.LineMapping;
+import net.resheim.eclipse.cc.vice.debug.model.data.NamedDataVariable;
+import net.resheim.eclipse.cc.vice.debug.model.data.Variable;
 
 /**
  *
@@ -34,12 +42,31 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 	/** A reusable register group */
 	private VICERegisterGroup registerGroup;
 
+	private IVariable[] variables;
+
 	private final IThread thread;
 
 	public VICEStackFrame(IThread thread) {
 		super(thread.getDebugTarget());
 		this.thread = thread;
 		this.registerGroup = new VICERegisterGroup(getDebugTarget());
+		Labels labels = ((VICEDebugTarget) getDebugTarget()).getAssembly().getLabels();
+		List<Label> assemblyLabels = labels.getLabels();
+		List<IVariable> variables = new ArrayList<>();
+		for (int i = 0; i < assemblyLabels.size(); i++) {
+			Label mapping = assemblyLabels.get(i);
+			DataLabel data = mapping.getData();
+			if (data != null) {
+				if (data.getLineLengths().length > 1) {
+					NamedDataVariable v = new NamedDataVariable(getDebugTarget(), mapping);
+					variables.add(v);
+				} else {
+					Variable v = new Variable(getDebugTarget(), mapping, mapping.getName(), 0);
+					variables.add(v);
+				}
+			}
+		}
+		this.variables = variables.toArray(new IVariable[variables.size()]);
 	}
 
 	@Override
@@ -124,7 +151,7 @@ public class VICEStackFrame extends VICEDebugElement implements IStackFrame {
 
 	@Override
 	public IVariable[] getVariables() throws DebugException {
-		return new IVariable[0];
+		return variables;
 	}
 
 	@Override

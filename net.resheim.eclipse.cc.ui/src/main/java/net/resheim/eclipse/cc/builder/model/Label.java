@@ -1,9 +1,32 @@
+/**
+ * Copyright (c) 2024 Torkild Ulvøy Resheim
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *
+ *   Torkild Ulvøy Resheim <torkildr@gmail.com> - initial API and implementation
+ */
 package net.resheim.eclipse.cc.builder.model;
 
-public class Label extends LineMapping {
+public class Label {
 
 	private String segment;
 	private String name;
+
+	int startAddress;
+	int fileIndex;
+	int startLine;
+	int startColumn;
+	int endLine;
+	int endColumn;
+
+	/** Used if the label is used to name a piece of data */
+	private DataLabel data;
 
 	public Label(String inputString) {
 		String[] split = inputString.split(",");
@@ -17,12 +40,44 @@ public class Label extends LineMapping {
 		endColumn = Integer.parseInt(split[7]);
 	}
 
+	public int getStartAddress() {
+		return startAddress;
+	}
+
 	public String getSegment() {
 		return segment;
 	}
 
 	public String getName() {
 		return name;
+	}
+
+	public DataLabel getData() {
+		return data;
+	}
+
+	public void setData(DataLabel data) {
+		this.data = data;
+	}
+
+	public int getFileIndex() {
+		return fileIndex;
+	}
+
+	public int getStartLine() {
+		return startLine;
+	}
+
+	public int getStartColumn() {
+		return startColumn;
+	}
+
+	public int getEndLine() {
+		return endLine;
+	}
+
+	public int getEndColumn() {
+		return endColumn;
 	}
 
 }

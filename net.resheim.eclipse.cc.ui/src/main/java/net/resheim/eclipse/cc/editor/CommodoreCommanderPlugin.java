@@ -12,6 +12,8 @@
 package net.resheim.eclipse.cc.editor;
 
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.ImageRegistry;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
@@ -24,6 +26,12 @@ public class CommodoreCommanderPlugin extends AbstractUIPlugin {
 	private Mnemonics mnemonics;
 
 	private static CommodoreCommanderPlugin plugin;
+
+	public static final String PLUGIN_ID = "net.resheim.eclipse.cc.ui";
+
+	public static final String IMG_ARRAY_PARTITION = "icons/obj16/arraypartition_obj.png";
+	public static final String IMG_ARRAY = "icons/obj16/array_obj.png";
+	public static final String IMG_GENERIC_REGISTER = "icons/obj16/genericregister_obj.png";
 
 	public CommodoreCommanderPlugin() {
 	}
@@ -58,4 +66,15 @@ public class CommodoreCommanderPlugin extends AbstractUIPlugin {
 		return imageDescriptorFromPlugin("net.resheim.eclipse.cc.ui", path);
 	}
 
+	@Override
+	protected void initializeImageRegistry(ImageRegistry registry) {
+		super.initializeImageRegistry(registry);
+		registry.put(IMG_ARRAY, imageDescriptorFromPlugin(PLUGIN_ID, IMG_ARRAY));
+		registry.put(IMG_ARRAY_PARTITION, imageDescriptorFromPlugin(PLUGIN_ID, IMG_ARRAY_PARTITION));
+		registry.put(IMG_GENERIC_REGISTER, imageDescriptorFromPlugin(PLUGIN_ID, IMG_GENERIC_REGISTER));
+	}
+
+	public Image getImage(String key) {
+		return getImageRegistry().get(key);
+	}
 }

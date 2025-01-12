@@ -1,4 +1,4 @@
-// Generated from KickAssembler.g4 by ANTLR 4.13.1
+// Generated from KickAssembler.g4 by ANTLR 4.13.2
 package net.resheim.eclipse.cc.kickassembler.parser;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -48,6 +48,16 @@ public interface KickAssemblerListener extends ParseTreeListener {
 	 */
 	void exitInstruction(KickAssemblerParser.InstructionContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link KickAssemblerParser#dataDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterDataDeclaration(KickAssemblerParser.DataDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KickAssemblerParser#dataDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitDataDeclaration(KickAssemblerParser.DataDeclarationContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link KickAssemblerParser#labelDeclaration}.
 	 * @param ctx the parse tree
 	 */
@@ -67,6 +77,66 @@ public interface KickAssemblerListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitBlockDeclaration(KickAssemblerParser.BlockDeclarationContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KickAssemblerParser#variableDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterVariableDeclaration(KickAssemblerParser.VariableDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KickAssemblerParser#variableDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitVariableDeclaration(KickAssemblerParser.VariableDeclarationContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KickAssemblerParser#data}.
+	 * @param ctx the parse tree
+	 */
+	void enterData(KickAssemblerParser.DataContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KickAssemblerParser#data}.
+	 * @param ctx the parse tree
+	 */
+	void exitData(KickAssemblerParser.DataContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KickAssemblerParser#byte}.
+	 * @param ctx the parse tree
+	 */
+	void enterByte(KickAssemblerParser.ByteContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KickAssemblerParser#byte}.
+	 * @param ctx the parse tree
+	 */
+	void exitByte(KickAssemblerParser.ByteContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KickAssemblerParser#word}.
+	 * @param ctx the parse tree
+	 */
+	void enterWord(KickAssemblerParser.WordContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KickAssemblerParser#word}.
+	 * @param ctx the parse tree
+	 */
+	void exitWord(KickAssemblerParser.WordContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KickAssemblerParser#dword}.
+	 * @param ctx the parse tree
+	 */
+	void enterDword(KickAssemblerParser.DwordContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KickAssemblerParser#dword}.
+	 * @param ctx the parse tree
+	 */
+	void exitDword(KickAssemblerParser.DwordContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KickAssemblerParser#text}.
+	 * @param ctx the parse tree
+	 */
+	void enterText(KickAssemblerParser.TextContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KickAssemblerParser#text}.
+	 * @param ctx the parse tree
+	 */
+	void exitText(KickAssemblerParser.TextContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link KickAssemblerParser#operand}.
 	 * @param ctx the parse tree

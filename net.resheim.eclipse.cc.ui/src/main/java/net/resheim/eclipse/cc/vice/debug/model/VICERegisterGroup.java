@@ -76,7 +76,7 @@ public class VICERegisterGroup extends VICEDebugElement implements IRegisterGrou
 		VICERegister viceRegister = registers.get(pcId);
 		if (viceRegister != null) {
 			Scalar value = (Scalar) viceRegister.getValue();
-			return value.getValue();
+			return value.getShortValue();
 		}
 		return -1;
 	}

@@ -19,11 +19,14 @@ import java.util.Map;
 
 import org.eclipse.core.resources.IResource;
 
+import net.resheim.eclipse.cc.builder.model.DataLabel;
+
 public class AssemblyFile {
 
 	private IResource resource;
 	private List<AssemblyFile> parents = new ArrayList<>();
 	private HashMap<IResource, AssemblyFile> inclusions = new HashMap<>();
+	private List<DataLabel> dataBlocks = new ArrayList<>();
 
 	public AssemblyFile(IResource resource, AssemblyFile parent) {
 		this.resource = resource;
@@ -34,6 +37,7 @@ public class AssemblyFile {
 		inclusions.put(file.getResource(), file);
 	}
 
+
 	public HashMap<IResource, AssemblyFile> getInclusions() {
 		return inclusions;
 	}
@@ -41,6 +45,7 @@ public class AssemblyFile {
 	public List<AssemblyFile> getParents() {
 		return parents;
 	}
+
 
 	public void addParent(AssemblyFile parent) {
 		this.parents.add(parent);
@@ -74,5 +79,13 @@ public class AssemblyFile {
 			}
 		}
 		return false;
+	}
+
+	public void addDataBlock(DataLabel block) {
+		dataBlocks.add(block);
+	}
+
+	public List<DataLabel> getDataBlocks() {
+		return dataBlocks;
 	}
 }

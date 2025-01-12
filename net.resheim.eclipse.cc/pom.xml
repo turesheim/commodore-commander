@@ -29,25 +29,23 @@
         <version>${tycho.version}</version>
         <executions>
           <execution>
-            <id>materialize-products</id>
+            <id>create distributions</id>
             <goals>
               <goal>materialize-products</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>archive-products</id>
-            <goals>
               <goal>archive-products</goal>
             </goals>
-            <configuration>
-              <formats>
-                <macos>tar.gz</macos>
-                <linux>tar.gz</linux>
-                <win32>zip</win32>
-              </formats>
-            </configuration>
           </execution>
         </executions>
+        <configuration>
+          <products>
+            <product>
+              <id>commodore-commander</id>
+              <rootFolders>
+                <macosx>Commodore Commander</macosx>
+              </rootFolders>
+            </product>
+          </products>
+        </configuration>
       </plugin>
     </plugins>
   </build>

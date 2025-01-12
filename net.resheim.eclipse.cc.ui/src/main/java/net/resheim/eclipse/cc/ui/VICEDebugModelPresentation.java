@@ -23,7 +23,10 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.part.FileEditorInput;
 
+import net.resheim.eclipse.cc.editor.CommodoreCommanderPlugin;
 import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
+import net.resheim.eclipse.cc.vice.debug.model.data.ArrayValueRow;
+import net.resheim.eclipse.cc.vice.debug.model.data.NamedDataVariable;
 
 public class VICEDebugModelPresentation implements IDebugModelPresentation {
 
@@ -81,6 +84,13 @@ public class VICEDebugModelPresentation implements IDebugModelPresentation {
 
 	@Override
 	public Image getImage(Object element) {
+		if (element instanceof ArrayValueRow) {
+			return CommodoreCommanderPlugin.getPlugin().getImage(CommodoreCommanderPlugin.IMG_ARRAY_PARTITION);
+		}
+		if (element instanceof NamedDataVariable) {
+			return CommodoreCommanderPlugin.getPlugin().getImage(CommodoreCommanderPlugin.IMG_ARRAY);
+		}
+
 		return null;
 	}
 

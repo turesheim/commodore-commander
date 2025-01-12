@@ -5,7 +5,7 @@
  * Commodore 64, none of the 65C02 variants are supported in this grammar.
  *
  * The KickAssembler compiler supports a wide range of different instructions
- * and features. It may be
+ * and features.
  *
  */
 grammar KickAssembler;
@@ -16,15 +16,35 @@ options {
 
 program         : line* EOF;
 
-line            : ( instruction | labelDeclaration | blockDeclaration | import_code )? EOL ;
+line            :
+                (
+                  instruction
+                | data
+                | variableDeclaration
+                | dataDeclaration
+                | labelDeclaration
+                | blockDeclaration
+                | import_code
+                )? EOL ;
 
 import_code     : ( P_IMPORT | P_IMPORTIF ) fileName=STRING_LITERAL;
 
 instruction     : labelDeclaration? OPCODE operand? ;
 
+dataDeclaration: name=IDENTIFIER COLON ( ( EOL )* data )+ ;
 labelDeclaration: BANG? IDENTIFIER? COLON ;
 
+
 blockDeclaration: ASTERISK EQUALS number ( STRING_LITERAL | IDENTIFIER );
+
+variableDeclaration: D_VAR variable=IDENTIFIER EQUALS number;
+
+data            : ( byte | word | dword | text );
+
+byte            : D_BYTE ( DECIMAL_LITERAL | BYTE_LITERAL | BINARY_LITERAL ) ( COMMA ( DECIMAL_LITERAL | BYTE_LITERAL | BINARY_LITERAL ) )*;
+word            : D_WORD ( DECIMAL_LITERAL | WORD_LITERAL ) ( COMMA ( DECIMAL_LITERAL | WORD_LITERAL ) )* ;
+dword           : D_DWORD ( DECIMAL_LITERAL | DWORD_LITERAL ) ( COMMA ( DECIMAL_LITERAL | DWORD_LITERAL ) )* ;
+text            : D_TEXT STRING_LITERAL ;
 
 operand:          immediate
                 | zeroPage | zeroPageX | zeroPageY
@@ -34,15 +54,15 @@ operand:          immediate
                 | currentAddress // Only for JMP?
                 ;
 
-immediate       : (IDENTIFIER COLON)? HASH ( HEX_LITERAL | BINARY_LITERAL | DECIMAL_LITERAL );
-zeroPage        : HEX_LITERAL ;
-zeroPageX       : HEX_LITERAL COMMA X ;
-zeroPageY       : HEX_LITERAL COMMA Y ;
-absolute        : HEX_LONG_LITERAL ;
-absoluteX       : HEX_LONG_LITERAL COMMA X ;
-absoluteY       : HEX_LONG_LITERAL COMMA Y ;
-indirect        : LEFT_PAREN HEX_LONG_LITERAL RIGHT_PAREN ;
-indirectIndexed : LEFT_PAREN HEX_LITERAL RIGHT_PAREN COMMA Y;
+immediate       : (IDENTIFIER COLON)? HASH ( BYTE_LITERAL | BINARY_LITERAL | DECIMAL_LITERAL );
+zeroPage        : BYTE_LITERAL ;
+zeroPageX       : BYTE_LITERAL COMMA X ;
+zeroPageY       : BYTE_LITERAL COMMA Y ;
+absolute        : WORD_LITERAL ;
+absoluteX       : WORD_LITERAL COMMA X ;
+absoluteY       : WORD_LITERAL COMMA Y ;
+indirect        : LEFT_PAREN WORD_LITERAL RIGHT_PAREN ;
+indirectIndexed : LEFT_PAREN BYTE_LITERAL RIGHT_PAREN COMMA Y;
 label           : labelReference ;
 labelX          : labelReference COMMA X ;
 labelY          : labelReference COMMA Y ;
@@ -50,7 +70,7 @@ labelIndirect   : LEFT_PAREN labelReference RIGHT_PAREN ;
 labelIndexed    : LEFT_PAREN labelReference RIGHT_PAREN COMMA Y ;
 currentAddress  : ASTERISK ( ( PLUS | MINUS ) DECIMAL_LITERAL )* ;
 
-number          : ( DECIMAL_LITERAL | HEX_LONG_LITERAL | HEX_LITERAL ) ;
+number          : ( DECIMAL_LITERAL | WORD_LITERAL | BYTE_LITERAL ) ;
 
 labelReference: IDENTIFIER | BANG IDENTIFIER | BANG IDENTIFIER? ( PLUS | MINUS )+ ;
 
@@ -66,17 +86,24 @@ OPCODE          :
 
 KEYWORD         :
                 ( '.align' | '.assert' | '.asserterror' | '.break'
-                | '.by' | '.byte' | '.const' | '.cpu' | '.define' | '.disk'
-                | '.dw' | '.dword' | '.encoding' | '.enum' | '.error'
+                | '.const' | '.cpu' | '.define' | '.disk'
+                | '.encoding' | '.enum' | '.error'
                 | '.errorif' | '.eval' | '.file' | '.filemodify'
                 | '.filenamespace' | '.fill' | '.fillword' | '.for'
                 | '.function' | '.if' | '.import' | '.importonce' | '.label'
                 | '.lohifill' | '.macro' | '.memblock' | '.modify'
                 | '.namespace' | '.pc' | '.plugin' | '.print' | '.printnow'
                 | '.pseudocommand' | '.pseudopc' | '.return' | '.segment'
-                | '.segmentdef' | '.segmentout' | '.struct' | '.te' | '.text'
-                | '.var' | '.while' | '.wo' | '.word' | '.zp'
+                | '.segmentdef' | '.segmentout' | '.struct'
+                | '.while' | '.zp'
                 );
+
+D_VAR           : '.var' ;
+
+D_BYTE          : ( '.by' | '.byte' );
+D_WORD          : ( '.wo' | '.word' );
+D_DWORD         : ( '.dw' | '.dword' );
+D_TEXT          : ( '.te' | '.text' );
 
 COLOR           :
                 ( 'black' | 'white'  | 'red'    | 'cyan'  | 'purple' | 'green'
@@ -116,8 +143,9 @@ IDENTIFIER      : [a-z_] [a-z0-9_]* ;
 
 // Numbers
 DECIMAL_LITERAL : [0-9]+ ;
-HEX_LITERAL     : '$' [0-9a-f] [0-9a-f] ;
-HEX_LONG_LITERAL: '$' [0-9a-f] [0-9a-f] [0-9a-f] [0-9a-f] ;
+BYTE_LITERAL     : '$' [0-9a-f] [0-9a-f]? ;
+WORD_LITERAL     : '$' [0-9a-f] [0-9a-f] [0-9a-f] [0-9a-f] ;
+DWORD_LITERAL    : '$' [0-9a-f] [0-9a-f] [0-9a-f] [0-9a-f] [0-9a-f] [0-9a-f] [0-9a-f] [0-9a-f] ;
 BINARY_LITERAL  : '%' [01]+ ;
 STRING_LITERAL  : '"' ~["]* '"';
 

@@ -27,9 +27,22 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
+    - name: Install Maven 3.9
+      run: |
+        curl -fsSL https://downloads.apache.org/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz -o maven.tar.gz
+        tar -xzf maven.tar.gz
+        sudo mv apache-maven-3.9.9 /usr/local/maven
+    - name: Verify Maven Version
+      run: /usr/local/maven/bin/mvn --version        
     - name: Build with Maven
-      run: mvn -B package --file pom.xml
-
-    # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
-    - name: Update dependency graph
-      uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
+      run: /usr/local/maven/bin/mvn -B package --file pom.xml
+    - name: Upload build artifacts macosx.cocoa.x86_64
+      uses: actions/upload-artifact@v4
+      with:
+        name: commodore-commander-macosx.cocoa.x86_64.tar.gz
+        path: net.resheim.eclipse.cc/target/products/commodore-commander-macosx.cocoa.x86_64.tar.gz
+    - name: Upload build artifacts macosx.cocoa.aarch64
+      uses: actions/upload-artifact@v4
+      with:
+        name: commodore-commander-macosx.cocoa.aarch64.tar.gz
+        path: net.resheim.eclipse.cc/target/products/commodore-commander-macosx.cocoa.aarch64.tar.gz
