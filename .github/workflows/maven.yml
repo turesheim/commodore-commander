@@ -27,9 +27,17 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
+    - name: Install Maven 3.9
+      run: |
+        curl -fsSL https://downloads.apache.org/maven/maven-3/3.9.0/binaries/apache-maven-3.9.0-bin.tar.gz -o maven.tar.gz
+        tar -xzf maven.tar.gz
+        sudo mv apache-maven-3.9.0 /usr/local/maven
+        echo "export PATH=/usr/local/maven/bin:$PATH" >> $GITHUB_ENV
     - name: Set up Maven
       uses: s4u/maven-settings-action@v3.1.0
       with:
         maven-version: 3.9
+    - name: Verify Maven Version
+      run: mvn --version        
     - name: Build with Maven
-      run: mvn -version -B package --file pom.xml
+      run: mvn -B package --file pom.xml
