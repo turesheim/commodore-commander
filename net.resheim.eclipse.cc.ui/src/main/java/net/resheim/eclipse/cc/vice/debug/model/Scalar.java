@@ -48,6 +48,7 @@ public class Scalar extends VICEDebugElement implements IValue {
 			type = Type.BYTE;
 		if (size == 16)
 			type = Type.WORD;
+		presentation = Presentation.HEXADECIMAL;
 	}
 
 	@Override
