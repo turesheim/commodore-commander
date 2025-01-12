@@ -7,6 +7,10 @@ The _Commodore Commander_ aims to be a valuable addition to this ecosystem of to
 
 This project provides a set of plugins for the Eclipse IDE, and targets streamlined development for the Commodore 64. It supports building applications using [Kick Assembler](http://theweb.dk/KickAssembler/Main.html#frontpage) and integrates with the [VICE emulator](https://vice-emu.sourceforge.io) for running and debugging code. While the focus of Commodore Commander is on editing and debugging, it complements existing resource management tools, offering developers a cohesive and modernized workflow for creating on this beloved platform.
 
+# Installing
+
+` xattr -d com.apple.quarantine Commodore\ Commander.app`
+
 # Editing
 
 ![](docs/editor.png)
