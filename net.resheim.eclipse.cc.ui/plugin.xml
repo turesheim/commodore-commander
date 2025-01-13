@@ -398,11 +398,14 @@
       </renderingType>
    </extension>
 <extension
-    point="org.eclipse.core.runtime.applications" id="net.resheim.eclipse.cc">
-    <application>
-        <run class="net.resheim.eclipse.cc.ui.CommanderApplication">
-        </run>
-    </application>
+    point="org.eclipse.ui.perspectives">
+    <perspective
+          class="net.resheim.eclipse.cc.ui.CommanderPerspectiveFactory"
+          default="true"
+          icon="icons/console_view.png"
+          id="net.resheim.eclipse.cc.perspective"
+          name="Commodore Commander">
+    </perspective>
 </extension>
 </plugin>
 
