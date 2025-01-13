@@ -3,31 +3,26 @@ The Commodore 64, an iconic 8-bit home computer from the 1980s, has experienced 
 
 Programming for the Commodore 64 is an enjoyable experience, thanks to its simplicity, constraints, and direct interaction with hardware. The 6502 assembly language offers a rewarding challenge that inspires creativity, while the well-documented architecture and active retro community make problem-solving an engaging process. Whether pushing graphical limits, composing SID chip music, or crafting efficient code within tight memory constraints, developing for the C64 is a nostalgic journey that combines technical mastery with pure joy.
 
-The _Commodore Commander_ aims to be a valuable addition to this ecosystem of tools.
-
-
-# Installing
-
-This project provides a set of features for the Eclipse IDE that can be built and added into an existing Eclipse installation. It also comes with _product builds_ which are standalone applications. However these require that Java 21 is installed and in the system PATH.
-
-Currently only macOS builds are downloadable from the project site. These are not notarized and must be taken out _quarantine_ in order to work. Execute `xattr -d com.apple.quarantine ~/Downloads/Commodore\ Commander.app` after downloading and unpacking the archive.
+The _Commodore Commander_ aims to be a useful addition to this ecosystem of tools.
 
 # Features
 
-## Editing
+This project provides a set of features for the Eclipse IDE that can be built and added into an existing Eclipse installation. It also comes with _product builds_ which are standalone applications. However these require that Java 21 is installed and in the system PATH.
 
 ![](docs/editor.png)
 
+* Git support
+  * "Quick diff" and revision information in editor
 * Editor with 6502 opcode syntax coloring
-* As with most Eclipse based editors:
-  * "Quick diff" and revision information
   * Task and bookmarks
   * Search and navigation
   * Block selection
   * `TODO` and `FIXME` markers
   * Bookmarks, and much more
-* Tooltips for 6510 mnemonics
-* Tooltips for the Commodore 64 memory map
+ * Tooltips for 6510 mnemonics
+ * Tooltips for the Commodore 64 memory map
+* Built-in [Kick Assembler](http://theweb.dk/KickAssembler/Main.html#frontpage) 
+* Built-in [VICE](https://vice-emu.sourceforge.io) based debugger with support for stepping, memory view, variables view, live editing etc.
 
 ## Compiling
 
@@ -91,6 +86,10 @@ Note that monitors are only updated when the CPU has stopped because of i.e. a b
 By selecting _Custom_ **Character set** and specifying it's location one can see the memory monitor rendered using this character set.
 
 ![](docs/font.png)
+
+# Installing
+
+Currently only macOS builds are downloadable from the project site. These are not notarized and must be taken out _quarantine_ in order to work. Execute `xattr -d com.apple.quarantine ~/Downloads/Commodore\ Commander.app` after downloading and unpacking the archive.
 
 
 # Related resources
