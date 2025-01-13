@@ -7,7 +7,7 @@
          point="org.eclipse.core.runtime.products">
       <product
             name="Commodore Commander"
-            application="net.resheim.eclipse.cc">
+            application="org.eclipse.ui.ide.workbench">
          <property
                name="windowImages"
                value="cc_128.png,cc_256.png">
@@ -26,7 +26,7 @@
          </property>
          <property
                name="startupProgressRect"
-               value="2,290,450,10">
+               value="7,280,440,10">
          </property>
          <property
                name="startupMessageRect"

@@ -1,7 +1,9 @@
 package net.resheim.eclipse.cc.ui;
 import org.eclipse.equinox.app.IApplication;
 import org.eclipse.equinox.app.IApplicationContext;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 
 public class CommanderApplication implements IApplication {
@@ -10,6 +12,7 @@ public class CommanderApplication implements IApplication {
     public Object start(IApplicationContext context) throws Exception {
         Display display = PlatformUI.createDisplay();
         try {
+			Shell shell = new Shell(display, SWT.ON_TOP);
 			int returnCode = PlatformUI.createAndRunWorkbench(display, new CommanderWorkbenchAdvisor());
             if (returnCode == PlatformUI.RETURN_RESTART) {
                 return IApplication.EXIT_RESTART;
@@ -17,7 +20,9 @@ public class CommanderApplication implements IApplication {
                 return IApplication.EXIT_OK;
             }
         } finally {
-            display.dispose();
+			if (display != null) {
+				display.dispose();
+			}
         }
     }
 
