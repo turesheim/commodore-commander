@@ -1,13 +1,11 @@
 package net.resheim.eclipse.cc.ui;
 
-import org.eclipse.debug.internal.ui.IInternalDebugUIConstants;
 import org.eclipse.debug.ui.IDebugUIConstants;
 import org.eclipse.ui.IFolderLayout;
 import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IPerspectiveFactory;
 import org.eclipse.ui.console.IConsoleConstants;
 import org.eclipse.ui.progress.IProgressConstants;
-import org.eclipse.ui.texteditor.templates.TemplatesView;
 
 public class CommanderPerspectiveFactory implements IPerspectiveFactory {
 
