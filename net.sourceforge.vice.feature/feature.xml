@@ -2,7 +2,7 @@
 <feature
       id="net.sourceforge.vice.feature"
       label="Versatile Commodore Emulator (VICE)"
-      version="3.8.0.qualifier"
+      version="3.9.0.qualifier"
       provider-name="Torkild U. Resheim"
       plugin="net.sourceforge.vice"
       os="macosx"
