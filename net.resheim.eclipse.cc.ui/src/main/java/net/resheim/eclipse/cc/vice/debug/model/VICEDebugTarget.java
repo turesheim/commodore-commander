@@ -459,7 +459,8 @@ public class VICEDebugTarget extends VICEDebugElement
 			out.write(messageToSend);
 			out.flush();
 		} catch (IOException e) {
-			e.printStackTrace();
+			thread.setState(State.TERMINATED);
+			fireTerminateEvent();
 		}
 		return id;
 	}
