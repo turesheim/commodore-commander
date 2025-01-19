@@ -26,11 +26,11 @@
 		</data>
 		<key>Resources/bin/c1541</key>
 		<data>
-		XxRi8+PWnRdv4s6f+zgM070FDVo=
+		nx1jgwul1Mynl9s30He5CD5Bk/I=
 		</data>
 		<key>Resources/bin/cartconv</key>
 		<data>
-		ZW4z6cOPfmGAdcQUTmIdY3RtvLY=
+		R+S0kgDmiZzdo3EN5NzmKrOReMc=
 		</data>
 		<key>Resources/bin/common-runtime.sh</key>
 		<data>
@@ -38,799 +38,183 @@
 		</data>
 		<key>Resources/bin/petcat</key>
 		<data>
-		jVzKGRGXzj5pN55nZZXhW7FUaUc=
+		LaClqHud+se99WdQt9Bz5X/JptM=
 		</data>
 		<key>Resources/bin/ui-runtime.sh</key>
 		<data>
-		0EUnJCVb4G09sb740pRrKZT31pU=
+		DeJgiayNsL4q8Rmchxb+v9WvBso=
 		</data>
 		<key>Resources/bin/vsid</key>
 		<data>
-		Bj/T5pBFM/9SIni483Hz/786ZEM=
+		Hv+qt8q7Js6fZVLzgihE3IqK16E=
 		</data>
 		<key>Resources/bin/x128</key>
 		<data>
-		GFghZcBgyfTp3mFc/qZ2J92dTIA=
+		6kJFTrHD63dHDpzvq1UH9J5yd/k=
 		</data>
 		<key>Resources/bin/x64dtv</key>
 		<data>
-		XbUvwXICKAggXxf/SF7Zu93Ennw=
+		jSuDaLMTj1lqSu9wPs1DxzDK3Zw=
 		</data>
 		<key>Resources/bin/x64sc</key>
 		<data>
-		XQsxVB3vhe9yxRxufSB0AWnz/mE=
+		giOQx5mQSx1z2HHoiguka0HQZQU=
 		</data>
 		<key>Resources/bin/xcbm2</key>
 		<data>
-		0b7K7/rXy2zFsaZ5ykdeyt1kzZQ=
+		fLZLe6mhjzrPD/A2xIK2u01FAfY=
 		</data>
 		<key>Resources/bin/xcbm5x0</key>
 		<data>
-		O8tflegS6Wh0gRJdpQ+48fh+QnI=
+		oAeFDLeLRMCVd4Is6PfvGYQSAgs=
 		</data>
 		<key>Resources/bin/xpet</key>
 		<data>
-		DxeVS/ocmAChXLfDf0M2FxRnUo4=
+		//SmXKzpKJUV52u8XUUL302d6TI=
 		</data>
 		<key>Resources/bin/xplus4</key>
 		<data>
-		jG7rd4eBXNwCaCARxr8FkzSdQ3w=
+		nDJWfSOV3BRHViUoQkeLKqNgZxI=
 		</data>
 		<key>Resources/bin/xscpu64</key>
 		<data>
-		F5SiKr5upzlHE4CnZXSwnEtA6qk=
+		/ljy8g7R1eyywpqpAsMc2sUfbu4=
 		</data>
 		<key>Resources/bin/xvic</key>
 		<data>
-		F3HW8hy7YPzl0JbkeLb9yNgMTMs=
-		</data>
-		<key>Resources/etc/gtk-3.0/gdk-pixbuf.loaders</key>
-		<data>
-		ykkbjlfOd/g2ck+JsHW02XtgL8I=
-		</data>
-		<key>Resources/etc/gtk-3.0/gtk.immodules</key>
-		<data>
-		xGhM7h42Npg9a0CGr7v4q7Ifkd0=
-		</data>
-		<key>Resources/etc/gtk-3.0/im-multipress.conf</key>
-		<data>
-		V2/8L1eKi3iyKVWEwFkzjZdsSFo=
-		</data>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache</key>
-		<data>
-		tjeAc09BgqqTekedwraMwQ5hVAg=
-		</data>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-ani.so</key>
-		<data>
-		dRsReb7bDa3lC6EGhGhEwfOR6WY=
-		</data>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-bmp.so</key>
-		<data>
-		2r5okaHatFQoXxnQBddHiVoC8P8=
-		</data>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-gif.so</key>
-		<data>
-		khIwP1mZaRZMSriNNR0jJ9nX6bU=
-		</data>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-icns.so</key>
-		<data>
-		WnHq6RNiqKQSt2cklTDMnuGGLo0=
-		</data>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-ico.so</key>
-		<data>
-		Eork5b2Ulq6NSfNNz4v4eRWpubk=
-		</data>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-pnm.so</key>
-		<data>
-		FdEwWarSEpa3arqfEQw3BotPo5A=
-		</data>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-qtif.so</key>
-		<data>
-		2CUEq1OUu3TZFd3yRHoemZeugTs=
-		</data>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-svg.so</key>
-		<data>
-		w1XSsTNTEOxLvczQGeKy8oMlQqU=
-		</data>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-tga.so</key>
-		<data>
-		LkCvq6yhgOTVC8bdDv7NGuEzYeg=
-		</data>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-tiff.so</key>
-		<data>
-		JbvB0sEoKTQZ+ZO/zL+AAHfvQpI=
-		</data>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-xbm.so</key>
-		<data>
-		x1UkYyrbt2ItqmZAypmJLQUqLR0=
-		</data>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-xpm.so</key>
-		<data>
-		YH2sEDTguV2/Av7ygDkGJP6Z+8o=
-		</data>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-am-et.so</key>
-		<data>
-		oDZlyLPYJrIJ/Q5ltGDMpWOV1es=
-		</data>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-cedilla.so</key>
-		<data>
-		N4g8hMybXPhbe4DYp1Cf9fi6BkQ=
-		</data>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-cyrillic-translit.so</key>
-		<data>
-		5jBsCGU4IcbsYh2yksq1SNlMdkU=
-		</data>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-inuktitut.so</key>
-		<data>
-		89zZJOlLu0hSdsn7HBuCzAmsiO0=
-		</data>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-ipa.so</key>
-		<data>
-		F4q5LaOUVj8tN/bvAUAdzhPd3F8=
-		</data>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-multipress.so</key>
-		<data>
-		dBRp/Ly/nilaAOBnnh73+iDVH2g=
-		</data>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-quartz.so</key>
-		<data>
-		m7yZhrwzOU8KTKlT8ylCCiTrnfw=
-		</data>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-thai.so</key>
-		<data>
-		IfCtajIKA33ft/4BDxQpi2AgBoE=
-		</data>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-ti-er.so</key>
-		<data>
-		cftw0fKZ9Kwd6kFXNz+AROzs86Y=
-		</data>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-ti-et.so</key>
-		<data>
-		HzvBd8aGX/+g9C6czFsjPZOtffs=
-		</data>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-viqr.so</key>
-		<data>
-		02MwHTB3rBRODDwJbMPgWGWGtJo=
-		</data>
-		<key>Resources/lib/gtk-3.0/3.0.0/printbackends/libprintbackend-cups.so</key>
-		<data>
-		FDHcInz1nS5uFp0TITs6gvts7Lw=
-		</data>
-		<key>Resources/lib/gtk-3.0/3.0.0/printbackends/libprintbackend-file.so</key>
-		<data>
-		PmC5FAF0Mqm060JlGRUd4UXYRHw=
-		</data>
-		<key>Resources/lib/gtk-3.0/3.0.0/printbackends/libprintbackend-lpr.so</key>
-		<data>
-		aLFgkHdH1/XxPfXwtaL9OLrkZ/8=
+		EF6UDBIedp5Bfta9euhrpb8bTyk=
 		</data>
 		<key>Resources/lib/libFLAC.12.dylib</key>
 		<data>
-		1H9NXxE8onYm9XPfYCUOgkt+KWw=
-		</data>
-		<key>Resources/lib/libGLEW.2.2.0.dylib</key>
-		<data>
-		JMUkwI9iyGB8vgkfb08WZXjaviM=
+		CmrSD1uHUNd0BU6Lf0aWQHhm7cs=
 		</data>
 		<key>Resources/lib/libLerc.4.dylib</key>
 		<data>
-		VwTPKOCVdALMi2F4vlpJ92mnHGw=
+		36JLq49ozY3s5E6cwFIic2V7BgU=
 		</data>
-		<key>Resources/lib/libX11-xcb.1.dylib</key>
+		<key>Resources/lib/libSDL2-2.0.0.dylib</key>
 		<data>
-		F+bWWC8D+WZJk0gEHiAtbGQY2pE=
+		LbHcStdjgRne6qgXWk6scSbUG5o=
 		</data>
-		<key>Resources/lib/libX11.6.dylib</key>
+		<key>Resources/lib/libSDL2_image-2.0.0.dylib</key>
 		<data>
-		QajCUPlUNBkXk8qliixa1iSC24Q=
-		</data>
-		<key>Resources/lib/libXau.6.dylib</key>
-		<data>
-		2K4P3xdti+9uX2urUabUN7+Cgts=
-		</data>
-		<key>Resources/lib/libXdmcp.6.dylib</key>
-		<data>
-		IlOiuj35BZJfVqomQFiBgW7fRXg=
-		</data>
-		<key>Resources/lib/libXext.6.dylib</key>
-		<data>
-		J+wo+a8c7EkiGn0jwXnj3l4lF34=
-		</data>
-		<key>Resources/lib/libXrender.1.dylib</key>
-		<data>
-		nBbT+ZfwkyJTHkgGT8TlaXzm6Ek=
-		</data>
-		<key>Resources/lib/libatk-1.0.0.dylib</key>
-		<data>
-		kUq3YoZ13omFRIJT/bwsPziqCZ8=
+		Bg5WES9XLhx7mpjJ+kxyZNmkWPg=
 		</data>
 		<key>Resources/lib/libbrotlicommon.1.dylib</key>
 		<data>
-		sRnCq5Sr/IpZJgfym/+TMUDYDhA=
+		GeMRaWMN6H2euyGgdvtEi0B22h4=
 		</data>
 		<key>Resources/lib/libbrotlidec.1.dylib</key>
 		<data>
-		MBqoCTodETBejcazhEd/9P3cjAA=
-		</data>
-		<key>Resources/lib/libbz2.1.0.dylib</key>
-		<data>
-		dXIodjTlAhRoE64GY1nKjOjH1jw=
-		</data>
-		<key>Resources/lib/libcairo-gobject.2.dylib</key>
-		<data>
-		xuP5Tv4tlWp/kYg553JsPsGu0zo=
-		</data>
-		<key>Resources/lib/libcairo.2.dylib</key>
-		<data>
-		3+IDohS/TBOGOVPKQELxah91JGM=
+		ssmLigPvHw+T54zM2qjAKTJW/eo=
 		</data>
 		<key>Resources/lib/libcrypto.3.dylib</key>
 		<data>
-		XAoIPYJpQZzma6zU67kvJ9/ltCw=
+		86SRk45fMnxTB0sV9Pxfgk9kr3A=
 		</data>
 		<key>Resources/lib/libcurl.4.dylib</key>
 		<data>
-		X50qyciSa94twUicGx3mOmQT7TY=
+		YcSz4lwcqbcPXEjjaF5hmtIqtw8=
 		</data>
 		<key>Resources/lib/libdeflate.0.dylib</key>
 		<data>
-		Nz2Dtu3Q5Oa9t6LKvkElN3CLXFE=
-		</data>
-		<key>Resources/lib/libepoxy.0.dylib</key>
-		<data>
-		FtrlEYOyjz1q/7oeJmvD4HR+l8A=
-		</data>
-		<key>Resources/lib/libexpat.1.dylib</key>
-		<data>
-		ct8zdvx5uio4SrBl2x9xvTAG6v8=
-		</data>
-		<key>Resources/lib/libffi.8.dylib</key>
-		<data>
-		3mdBdKFaVa64BT0IW8QL/L7KQYc=
-		</data>
-		<key>Resources/lib/libfontconfig.1.dylib</key>
-		<data>
-		/jrzlbXoIExLQU+IO3KTi5ya6uw=
-		</data>
-		<key>Resources/lib/libfreetype.6.dylib</key>
-		<data>
-		eTee55fKwvi63OdDLx6mtxlrYiI=
-		</data>
-		<key>Resources/lib/libfribidi.0.dylib</key>
-		<data>
-		44nLEH0gfOzqM/udfV9VGcTK7ms=
-		</data>
-		<key>Resources/lib/libgdk-3.0.dylib</key>
-		<data>
-		ELaaFQ/HD21fzrtXa+5cjhll3U8=
-		</data>
-		<key>Resources/lib/libgdk_pixbuf-2.0.0.dylib</key>
-		<data>
-		wSAN6lDkZLSNQPAYCLzEMFz/OSo=
+		9ijs6FSoVmPJKUPlVH7LEIJQQck=
 		</data>
 		<key>Resources/lib/libgif.4.dylib</key>
 		<data>
-		pZ9X4qFDv8YAVSnEituulqtyHrg=
-		</data>
-		<key>Resources/lib/libgio-2.0.0.dylib</key>
-		<data>
-		7ICMjI7M+81iv774xoN94UISQiU=
-		</data>
-		<key>Resources/lib/libglib-2.0.0.dylib</key>
-		<data>
-		g/HJBaOSv8wBwjIbYNM4TxfT3iE=
-		</data>
-		<key>Resources/lib/libgmodule-2.0.0.dylib</key>
-		<data>
-		dECr0yYHkMfPXSOHQCrT/4FRax4=
-		</data>
-		<key>Resources/lib/libgobject-2.0.0.dylib</key>
-		<data>
-		SwCqIhx+jC5nLRfGi/4lwUVOzLM=
-		</data>
-		<key>Resources/lib/libgraphite2.3.dylib</key>
-		<data>
-		5d7PV/jQCmITJ8nb099hnfj+csU=
-		</data>
-		<key>Resources/lib/libgtk-3.0.dylib</key>
-		<data>
-		H8OPF34li54MmVblc7TVLGwX9fA=
-		</data>
-		<key>Resources/lib/libharfbuzz.0.dylib</key>
-		<data>
-		Zsf3aeulskNi9iU6g8kVI2IduNQ=
+		QySTV0DVL6iI8afLiZRc5WhVXFo=
 		</data>
 		<key>Resources/lib/libiconv.2.dylib</key>
 		<data>
-		BwzvGR5NLa9zCJzYMBPG+s3iS1c=
-		</data>
-		<key>Resources/lib/libicudata.74.dylib</key>
-		<data>
-		iWOew8Ra2aY1DIWVr2SPFAQm8n8=
-		</data>
-		<key>Resources/lib/libicui18n.74.dylib</key>
-		<data>
-		jAFg+3ct4miav3KFeOhZ97scCsg=
-		</data>
-		<key>Resources/lib/libicuuc.74.dylib</key>
-		<data>
-		8WYJLS9fR1vpAlvggsbsWCSRdlI=
+		EY9ilX4go8m+4+mUSs8fxDChBdE=
 		</data>
 		<key>Resources/lib/libidn2.0.dylib</key>
 		<data>
-		fsdmYk87HSe5j5gpiLoiqb+gE7Q=
+		RhN/s6vNHVsUsQH9yfs6JxSjl5o=
 		</data>
 		<key>Resources/lib/libintl.8.dylib</key>
 		<data>
-		cWLVGRnGMn4NQKNLVd3zMRJz9Kw=
+		v3F5nF0/2KQDF6WNKUjORVGm9fY=
 		</data>
 		<key>Resources/lib/libjpeg.8.dylib</key>
 		<data>
-		MoPklZmSzodGtMxgOjRVEgC9jH8=
+		9dJ9zHu/DDFjSaf5fOQ7QXdWzLQ=
 		</data>
 		<key>Resources/lib/liblzma.5.dylib</key>
 		<data>
-		PTYFJPQJgtobM3IGD51EfG9Jucg=
+		+aVKm0gsLwqHYaacQe4ojrmmZe0=
 		</data>
 		<key>Resources/lib/libmp3lame.0.dylib</key>
 		<data>
-		3QVLLQRsEdvMLHVrwuAnYqC6jU8=
+		ofXkUb7djgZmBDLRoY0vdd+fYaM=
 		</data>
 		<key>Resources/lib/libnghttp2.14.dylib</key>
 		<data>
-		LZ/agXcxKIU15oHb+CV78m6l4Hk=
+		+fNw09Ny9WGtannSCZ6U+XUSzVs=
 		</data>
 		<key>Resources/lib/libogg.0.dylib</key>
 		<data>
-		s7SZkI6+r/sZZ8i8PP3aDfvIgm4=
+		ytmWZzaUvE/oGfVKfNbldMjfNCg=
 		</data>
 		<key>Resources/lib/libomp.dylib</key>
 		<data>
-		3mWfmFqVpZE+V2N/wVC27ZsXqS8=
-		</data>
-		<key>Resources/lib/libpango-1.0.0.dylib</key>
-		<data>
-		NRgLALT8p4ktne040FmftL7Uqg8=
-		</data>
-		<key>Resources/lib/libpangocairo-1.0.0.dylib</key>
-		<data>
-		XbYIP8KXShnJL8iJbFWF5vI0iN8=
-		</data>
-		<key>Resources/lib/libpangoft2-1.0.0.dylib</key>
-		<data>
-		rh1xlhQWlbSTh5O/N0TQn+iAx0Q=
-		</data>
-		<key>Resources/lib/libpcre2-8.0.dylib</key>
-		<data>
-		1rCeUbSvAeMjxUTgHLY2PMYjxYw=
-		</data>
-		<key>Resources/lib/libpixman-1.0.dylib</key>
-		<data>
-		d4FRkihaYuRKtichK7ztZkb4jwE=
+		1N0IaJdXpGn7XNuVfeS1Km0iA64=
 		</data>
 		<key>Resources/lib/libpng16.16.dylib</key>
 		<data>
-		16uZG+SqozwKRG9hBjUzHGYWSrU=
+		85tNfRGvNYw3PSVqICsbFdBzGpk=
 		</data>
 		<key>Resources/lib/libpsl.5.dylib</key>
 		<data>
-		NP7zYZu7jRB8pGQWuHhVVxHw6Js=
+		MCRpbm1LqS0wIIICbXq9YP7CijE=
 		</data>
-		<key>Resources/lib/librsvg-2.2.dylib</key>
+		<key>Resources/lib/libsharpyuv.0.dylib</key>
 		<data>
-		BrmbEPyXSPgnWHkL5digIFPn2+Y=
+		UVGTM37OO0FShS1LRh6UWZ7B6/g=
 		</data>
 		<key>Resources/lib/libssl.3.dylib</key>
 		<data>
-		eYCy4p5Asc+9/SobVVTCceS2EZ8=
+		1OY5P5z7kdkP9eTNVy0HDeZVhe8=
 		</data>
 		<key>Resources/lib/libtiff.6.dylib</key>
 		<data>
-		semFlYIuWtgLc4gqyyxrertYl/A=
+		uarslliWUy/iCD1xWGQ2ykSEB9g=
 		</data>
 		<key>Resources/lib/libunistring.5.dylib</key>
 		<data>
-		QFXL0QOYUFa152osuhZxbgeH21o=
+		I8u23ba+RAj1z9VVxPeUscbiMPo=
 		</data>
 		<key>Resources/lib/libvorbis.0.dylib</key>
 		<data>
-		8pq8N1RBne1mU04l1ZXmWomk7Ko=
+		innXDMjVB2KXxlZ5v31yhspOHrI=
 		</data>
 		<key>Resources/lib/libvorbisenc.2.dylib</key>
 		<data>
-		qHZM5kUwlpfbmv7X5uhySaoEVew=
+		CIlVKmEoFtZLegZWLoMDQ9JKsfo=
 		</data>
 		<key>Resources/lib/libvorbisfile.3.dylib</key>
 		<data>
-		2L1rMt+SBt6OCu3jcc2z3jN+1Ws=
+		upshsz2d4Fln/fPbwFVo+NE4Fnk=
 		</data>
-		<key>Resources/lib/libxcb-render.0.dylib</key>
+		<key>Resources/lib/libwebp.7.dylib</key>
 		<data>
-		4BOsLuoPnUprCQMt2iWRQP0Zcos=
+		xCoQFLYJxKNt/KMV0+ZSqiH7RTo=
 		</data>
-		<key>Resources/lib/libxcb.1.dylib</key>
+		<key>Resources/lib/libwebpdemux.2.dylib</key>
 		<data>
-		KSoBRi8hGqC8CmRriDadNGmapfU=
-		</data>
-		<key>Resources/lib/libxml2.2.dylib</key>
-		<data>
-		OwVfWCxRXJc2qKUp/YMvUzh8XG0=
+		z31/r/y0OPUfIkiKYOeMt89r6Hg=
 		</data>
 		<key>Resources/lib/libz.1.dylib</key>
 		<data>
-		u/z1IGAX1RT+e+9Jdwb+0y1nih8=
+		KG7hhuzW4rejncT1vlL606o2umU=
 		</data>
 		<key>Resources/lib/libzstd.1.dylib</key>
 		<data>
-		G9R6johesj2GUGLY1JoxbwlcozQ=
+		JE4Y4frzVNoTnidyD0eidUCoZpo=
 		</data>
 		<key>Resources/script</key>
 		<data>
 		8Gk8afb+73nxO2etEJjRD6CI40Q=
-		</data>
-		<key>Resources/share/glib-2.0/codegen/__init__.py</key>
-		<data>
-		VByxgARauQxSWU/6n3974iBfy6g=
-		</data>
-		<key>Resources/share/glib-2.0/codegen/codegen.py</key>
-		<data>
-		4zKhDrRdKPkG2zi63JyKEbNh02I=
-		</data>
-		<key>Resources/share/glib-2.0/codegen/codegen_docbook.py</key>
-		<data>
-		2n96F4goLlXHTa/P09TPOYS8Yho=
-		</data>
-		<key>Resources/share/glib-2.0/codegen/codegen_main.py</key>
-		<data>
-		07Hl1Qo99Cg+pnGlPbcFAqHpPMo=
-		</data>
-		<key>Resources/share/glib-2.0/codegen/codegen_md.py</key>
-		<data>
-		HqALGlKbnCued8Qh6CGL0ZBxdkQ=
-		</data>
-		<key>Resources/share/glib-2.0/codegen/codegen_rst.py</key>
-		<data>
-		UlRgZPcASKxk2nsAu0sfO6Bxgio=
-		</data>
-		<key>Resources/share/glib-2.0/codegen/config.py</key>
-		<data>
-		r5t0/HvDy7Ll4cOrXRxhvQKYHR0=
-		</data>
-		<key>Resources/share/glib-2.0/codegen/dbustypes.py</key>
-		<data>
-		3XJUuMJMQ1F80NnlkxpDJckkpxA=
-		</data>
-		<key>Resources/share/glib-2.0/codegen/parser.py</key>
-		<data>
-		3mke/r9DhptI3CpjzX0mzHjJEHU=
-		</data>
-		<key>Resources/share/glib-2.0/codegen/utils.py</key>
-		<data>
-		+aHMD217n/XXw8pZ3+IXFwes5bE=
-		</data>
-		<key>Resources/share/glib-2.0/dtds/gresource.dtd</key>
-		<data>
-		Dm9p8Qfx8ytSUVy+tD3TL4aAqDE=
-		</data>
-		<key>Resources/share/glib-2.0/gdb/glib_gdb.py</key>
-		<data>
-		QQMqUUXKO/6E211I/Xab5Bxt9GI=
-		</data>
-		<key>Resources/share/glib-2.0/gdb/gobject_gdb.py</key>
-		<data>
-		rvDL++D5V4jg7UPIUUYbnWP8W1c=
-		</data>
-		<key>Resources/share/glib-2.0/gettext/po/Makefile.in.in</key>
-		<data>
-		WNaPI9ph7Z4jjpm57T85QzQTr70=
-		</data>
-		<key>Resources/share/glib-2.0/schemas/gschema.dtd</key>
-		<data>
-		BY2rQNdph/3FfTHf7nnlVZ+U2/0=
-		</data>
-		<key>Resources/share/glib-2.0/schemas/gschemas.compiled</key>
-		<data>
-		L54fU/VBfSV0mVd1acR/3jLfKSU=
-		</data>
-		<key>Resources/share/glib-2.0/schemas/org.gtk.Settings.ColorChooser.gschema.xml</key>
-		<data>
-		qreFPMPDmTrTIExJSUVOd8JnCqM=
-		</data>
-		<key>Resources/share/glib-2.0/schemas/org.gtk.Settings.Debug.gschema.xml</key>
-		<data>
-		N/245mb8HtF87tnodnEtmS/Ghx4=
-		</data>
-		<key>Resources/share/glib-2.0/schemas/org.gtk.Settings.EmojiChooser.gschema.xml</key>
-		<data>
-		iWDxpJZRdsfa1w/o9oFg/tok33s=
-		</data>
-		<key>Resources/share/glib-2.0/schemas/org.gtk.Settings.FileChooser.gschema.xml</key>
-		<data>
-		FvziSnO5phJSNrmpSWnG3L3+K+U=
-		</data>
-		<key>Resources/share/glib-2.0/valgrind/glib.supp</key>
-		<data>
-		MlytPXCU4mn3nTHRvCLij/L2t7M=
-		</data>
-		<key>Resources/share/icons/Adwaita/icon-theme.cache</key>
-		<data>
-		kFJVXNN37VGYG9Wmkg/ecIIDGcg=
-		</data>
-		<key>Resources/share/icons/Adwaita/index.theme</key>
-		<data>
-		AH0MDT+S61IDxmMMsFAJ1bIYda0=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/audio-headphones.svg</key>
-		<data>
-		GkfyWzokhewxRYk/Xg3rAXirxEU=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/audio-headset.svg</key>
-		<data>
-		3uuRvianyNn9NGnMLDb7jFctLd0=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/camera-web.svg</key>
-		<data>
-		Wkax6Be9X6J/PxvNy1L/Omidid8=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/computer.svg</key>
-		<data>
-		I+Y+eWRaOW/4ftmCqoThR3PDwt8=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/drive-harddisk.svg</key>
-		<data>
-		yW325KmxyC+q+mnPORxVYFaUVZE=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/drive-multidisk.svg</key>
-		<data>
-		0cShpaOb2RcS1BFuGwW7/E94tDc=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/drive-optical.svg</key>
-		<data>
-		uHzEifR3y96Nfemy29CBbJ596Fw=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/drive-removable-media.svg</key>
-		<data>
-		Lv3MyWhBwYLoWVbPTfVZzroK6Qg=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/ebook-reader.svg</key>
-		<data>
-		G1HFm0YABl6djzq3XwKIJhX+j1Q=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/input-gaming.svg</key>
-		<data>
-		v4IMnxmt81zu+t3fO8IagG/Ne1Y=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/input-keyboard.svg</key>
-		<data>
-		Qe7etZ2oiRpQOgXe9oh4LfQ2+eM=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/input-mouse.svg</key>
-		<data>
-		Ma5brN1N5T/TzQhepQ1HygOsNxw=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/input-tablet.svg</key>
-		<data>
-		9cD5JvC1QKODZgZW9SJ5Hg5OVdw=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/media-flash.svg</key>
-		<data>
-		/2+gyoAZCEPHUGsBJaWewKpRc9w=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/media-optical.svg</key>
-		<data>
-		sRqdYf+40BBjScERGwL83hNyJPw=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/media-removable.svg</key>
-		<data>
-		zw8/pubjovq0kk+APRsZx9g8Mv8=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/microphone.svg</key>
-		<data>
-		uVYJN5cEzDyBVaup6tjACHezyJM=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/phone.svg</key>
-		<data>
-		UiEO7koK8FxWz4jcwBxXZW2IHFs=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/printer-network.svg</key>
-		<data>
-		ZjUayze+XuahjQ2EKmx/D6Bf5RM=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/printer.svg</key>
-		<data>
-		OON1wQ/qlELTdZ6a2iGXCFUxStY=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/scanner.svg</key>
-		<data>
-		bEsCUEbA4cCYwgOjPlxxNosCz0A=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/devices/video-display.svg</key>
-		<data>
-		Ceahv5689PIqIshcHOP12eFpk8s=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/application-x-addon.svg</key>
-		<data>
-		QrmVdg8g04gzJ9mdos3B0orxgwk=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/application-x-executable.svg</key>
-		<data>
-		nYH+iL05j8BssKfqvk2oPqK9rKc=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/application-x-firmware.svg</key>
-		<data>
-		D86mnG6Yho8LlfcT3zj2aT0JxOE=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/application-x-generic.svg</key>
-		<data>
-		I45Y+F8IEhXCD9vbtJRShxTGNPM=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/application-x-sharedlib.svg</key>
-		<data>
-		WW0F7d/dJ7lSrqYQs+5g22pzO9I=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/audio-x-generic.svg</key>
-		<data>
-		1qhNIaX9Q8UHuisLe9dbcFoQQoo=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/font-x-generic.svg</key>
-		<data>
-		5uOOA/1Vly3EWQ/ptAHkDx2sleE=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/image-x-generic.svg</key>
-		<data>
-		A0sLnNXqJQy4ONgoYvurKPIimrg=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/inode-directory.svg</key>
-		<data>
-		U4/jJ3LVZKpxhFHhrA9Q/j11nEg=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/inode-symlink.svg</key>
-		<data>
-		xFlsGJz01qHaro76dXNdAYapuAw=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/model.svg</key>
-		<data>
-		gyxZaqLwrdb8tRb+5VX7TIWtXgo=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/package-x-generic.svg</key>
-		<data>
-		36i2UsuSP8oWHS6tbZBsZMpl92w=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/text-html.svg</key>
-		<data>
-		e7SSfJ24mZyZzWd8nXYzj1QE7qE=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/text-x-generic.svg</key>
-		<data>
-		GOCMs44fpmrdZ8kKYGaYanVj9Xo=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/text-x-preview.svg</key>
-		<data>
-		I45Y+F8IEhXCD9vbtJRShxTGNPM=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/text-x-script.svg</key>
-		<data>
-		3elM4LXOv+TajmZlolkjE9jyJnk=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/video-x-generic.svg</key>
-		<data>
-		ewJPDpFdvrEvW6RqNgEqdrZJOkY=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-addressbook.svg</key>
-		<data>
-		HLSyGsj/8gmeMAVE1sA1Md2fkO4=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-document-template.svg</key>
-		<data>
-		xay5gp3gA4k8YPW5kgLYpMYoy/E=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-document.svg</key>
-		<data>
-		EJakWPfb8zhxK6bduLn0i3CnaWE=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-drawing.svg</key>
-		<data>
-		FBzlxjunWVrNgn8Jqs0RYcW57x4=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-presentation-template.svg</key>
-		<data>
-		pB2HM5AsVFtU1ZQdJKxRdCsy5BU=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-presentation.svg</key>
-		<data>
-		TFp+yyhXKQgdmlkMEnsSEhh5AnM=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-spreadsheet-template.svg</key>
-		<data>
-		s98VIzrpfL4r19HoU+nrlYMqfN4=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-spreadsheet.svg</key>
-		<data>
-		nGovNDkECDgnD1FqZaRHY2WpeAM=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-package-repository.svg</key>
-		<data>
-		N/FWa0HqUvaY4fsO848sV9BId3g=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-documents.svg</key>
-		<data>
-		YoEfX9qUtUo7kFGk1p98CvGljLU=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-download.svg</key>
-		<data>
-		8T6Ucr/fT8W7pCwKyk9/c7kCjmQ=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-music.svg</key>
-		<data>
-		6dzP/E7cSW7eNUJb07miV50gnig=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-pictures.svg</key>
-		<data>
-		XMkcOkrH9/NGzVsRYmb5lp/oeNo=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-publicshare.svg</key>
-		<data>
-		zhk3JfA4uO/k7WiCh/7HfLZJf8k=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-remote.svg</key>
-		<data>
-		cm6VdEd/87U5W1wgCmzNVQe9gCU=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-templates.svg</key>
-		<data>
-		O7khULwAMOrOYOdhwJcZVo0yxeY=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-videos.svg</key>
-		<data>
-		las/8NZC4Sshk1y6jslQMFPrQjY=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder.svg</key>
-		<data>
-		U4/jJ3LVZKpxhFHhrA9Q/j11nEg=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/network-server.svg</key>
-		<data>
-		hOyrNL/4+itHeZhXFU5enYDXXwg=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/network-workgroup.svg</key>
-		<data>
-		0sfz106n1hX7D4HUIBAH4XZyXlY=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/user-bookmarks.svg</key>
-		<data>
-		OgrAycXyBVtHqYh7KBqsZNhcTQI=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/user-desktop.svg</key>
-		<data>
-		8EVnQfSpTfavn0AuB3IcaWPt/9k=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/user-home.svg</key>
-		<data>
-		lW4PfK2oGHAq74Oey3RvIbKumcY=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/places/user-trash.svg</key>
-		<data>
-		IIKQYlOfnpFeq9OkfEGIVr1s2Uo=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/status/avatar-default.svg</key>
-		<data>
-		mWKIprnaWahWR320hW5U6DoZFhI=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/status/image-loading.svg</key>
-		<data>
-		1X2cViA+iSVfADBYJrEiOG1s3n0=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/status/image-missing.svg</key>
-		<data>
-		WaCImd/h9gpbwjCw0+5kOgTxDbY=
-		</data>
-		<key>Resources/share/icons/Adwaita/scalable/status/user-trash-full.svg</key>
-		<data>
-		drRYsevmT9Xv+4EX6M5+YWRvFMU=
-		</data>
-		<key>Resources/share/icons/hicolor/index.theme</key>
-		<data>
-		bYjbE3evakShnurbj1AsAZKIhaM=
 		</data>
 		<key>Resources/share/vice/C128/basic64-901226-01.bin</key>
 		<data>
@@ -912,42 +296,6 @@
 		<data>
 		RwS772dAFTX5ke8wZS1CcyUezBk=
 		</data>
-		<key>Resources/share/vice/C128/gtk3_keyrahv3.vkm</key>
-		<data>
-		reh81u1inRI3qggGDEor2KnMTWM=
-		</data>
-		<key>Resources/share/vice/C128/gtk3_keyrahv3_de.vkm</key>
-		<data>
-		qItd+Z3wJc7RwQEPXGn/UFmfpT0=
-		</data>
-		<key>Resources/share/vice/C128/gtk3_pos.vkm</key>
-		<data>
-		3Ax2bSPSJAJS6CzvJGmzXzFyO+0=
-		</data>
-		<key>Resources/share/vice/C128/gtk3_pos_de.vkm</key>
-		<data>
-		xto1ugq3uVEf+oiZ53TrDfckCPg=
-		</data>
-		<key>Resources/share/vice/C128/gtk3_pos_se.vkm</key>
-		<data>
-		dEqCKwTCb6hqBAOSxjKF9YXmoNw=
-		</data>
-		<key>Resources/share/vice/C128/gtk3_sym.vkm</key>
-		<data>
-		fTv0pTOhqQMS1lwMrc01GShHeH0=
-		</data>
-		<key>Resources/share/vice/C128/gtk3_sym_de.vkm</key>
-		<data>
-		8Bl073z9E2T4SYRqTaq4kGSgRpM=
-		</data>
-		<key>Resources/share/vice/C128/gtk3_sym_fr.vkm</key>
-		<data>
-		glHU4rC2SJuT5x1C10y5LhSgQj8=
-		</data>
-		<key>Resources/share/vice/C128/gtk3_sym_se.vkm</key>
-		<data>
-		ScsHaPUbOYtZVa3WYsQYI2ETSg4=
-		</data>
 		<key>Resources/share/vice/C128/kernal-315078-03.bin</key>
 		<data>
 		Nimz+ii2owvMAntkfyZlSSntGw8=
@@ -991,6 +339,10 @@
 		<key>Resources/share/vice/C128/kernalno</key>
 		<data>
 		AP4v1hCoEhIb76secjj6iCwPglc=
+		</data>
+		<key>Resources/share/vice/C128/lemon64.vpl</key>
+		<data>
+		hG44L+EROaZaIWk5nzk7me9Rye8=
 		</data>
 		<key>Resources/share/vice/C128/palette.vpl</key>
 		<data>
@@ -1051,6 +403,30 @@
 		<key>Resources/share/vice/C128/rgb.vpl</key>
 		<data>
 		CmsbieSl2rx5YYSofLR393HMDGw=
+		</data>
+		<key>Resources/share/vice/C128/sdl_pos.vkm</key>
+		<data>
+		9tPjVJZvqqiIJEW78QWYPr7aboQ=
+		</data>
+		<key>Resources/share/vice/C128/sdl_pos_de.vkm</key>
+		<data>
+		MOxczZQ3b4VDeOxJ87GMjPK2RpM=
+		</data>
+		<key>Resources/share/vice/C128/sdl_sym.vkm</key>
+		<data>
+		+BPlMJ96P/ncST7NU8ZTPaRqLsA=
+		</data>
+		<key>Resources/share/vice/C128/sdl_sym_de.vkm</key>
+		<data>
+		1bU169Dm7fm8Y1rizEuJ8lO0MuQ=
+		</data>
+		<key>Resources/share/vice/C128/sdl_sym_fr.vkm</key>
+		<data>
+		SDsS9NfqzYMRE2n32Pj7JVWI/m8=
+		</data>
+		<key>Resources/share/vice/C128/sdl_v128.vkm</key>
+		<data>
+		HgmJYaBLMdyy6uxoOffLBWE7gu0=
 		</data>
 		<key>Resources/share/vice/C128/the64.vpl</key>
 		<data>
@@ -1128,90 +504,6 @@
 		<data>
 		RwS772dAFTX5ke8wZS1CcyUezBk=
 		</data>
-		<key>Resources/share/vice/C64/gtk3_keyrah.vkm</key>
-		<data>
-		/C8emANTW8/evVj2GA33071GKrQ=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_keyrah_de.vkm</key>
-		<data>
-		XO7aM1pMePSU1LNYeEWNsj//Hhg=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_pos.vkm</key>
-		<data>
-		q7kirTeIioUhyQEJ0/zId9APgyU=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_pos_bmc64.vkm</key>
-		<data>
-		d187nzidRhtDKtHMIv6EQ0K+oH8=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_pos_de.vkm</key>
-		<data>
-		0cdw8RhdpuVGO0NrF2AF7wxFQNA=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_pos_es.vkm</key>
-		<data>
-		P67rttTsJSimDjbrLk1xU9wn8e8=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_pos_it.vkm</key>
-		<data>
-		URfYmEUHkoNqECBYGJT0OfYPm4k=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_pos_se.vkm</key>
-		<data>
-		D+Qiif1naQjYYBbKxqRCX4g262E=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_pos_tr.vkm</key>
-		<data>
-		aVxVJaSgydac2LgfH58UBRbshxk=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_pos_uk.vkm</key>
-		<data>
-		1rdNFdeP/kCVN11L/Ty65/zo0mU=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_sym.vkm</key>
-		<data>
-		f+jXBrKyQ0+ydnCcX1CdwUU0KaM=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_sym_be.vkm</key>
-		<data>
-		+4zAlfys5mS+ywkpE+9c9hmgdc0=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_sym_da.vkm</key>
-		<data>
-		hhxqTB9IvraaDnxR2y/2sWEA6Uo=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_sym_de.vkm</key>
-		<data>
-		IPsvIejmSAvRVuXndX8dHk0xJl4=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_sym_fr.vkm</key>
-		<data>
-		m3AynKAEVdpQeOLWF+D1+WisLS4=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_sym_it.vkm</key>
-		<data>
-		VezviwOKIUb6NtnGivBErTqghuM=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_sym_nl.vkm</key>
-		<data>
-		kRPGE1ifKIFyooTP8v6Xuv+0D38=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_sym_se.vkm</key>
-		<data>
-		DA3x/vdZa794ReaNI+P2/D7P7WE=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_sym_tr.vkm</key>
-		<data>
-		v2fr7vJOWm/7x4akaI0kUKCId6o=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_sym_uk.vkm</key>
-		<data>
-		gDwtPL2Zvfo0zsWKx6Q444Iuy0U=
-		</data>
-		<key>Resources/share/vice/C64/gtk3_the64_de.vkm</key>
-		<data>
-		CHXPU59D6MW7gMcYjdCDy17BNTs=
-		</data>
 		<key>Resources/share/vice/C64/kernal-251104-04.bin</key>
 		<data>
 		qhNukezzxaxk9paz28v8W6CHHJg=
@@ -1239,6 +531,10 @@
 		<key>Resources/share/vice/C64/kernal-906145-02.bin</key>
 		<data>
 		T/DxHoD0tXQw2PDDeZ7Q8OD0Vl0=
+		</data>
+		<key>Resources/share/vice/C64/lemon64.vpl</key>
+		<data>
+		hG44L+EROaZaIWk5nzk7me9Rye8=
 		</data>
 		<key>Resources/share/vice/C64/palette.vpl</key>
 		<data>
@@ -1300,6 +596,106 @@
 		<data>
 		CmsbieSl2rx5YYSofLR393HMDGw=
 		</data>
+		<key>Resources/share/vice/C64/sdl_joymap_keyrah_v3.vjm</key>
+		<data>
+		pXBQK78WnlLgUyrj64TippA+6no=
+		</data>
+		<key>Resources/share/vice/C64/sdl_joymap_ps3.vjm</key>
+		<data>
+		YF0ECE8D2OSvd6OgmLACWlNWpe8=
+		</data>
+		<key>Resources/share/vice/C64/sdl_joymap_thec64.vjm</key>
+		<data>
+		gyBNA3TtoX9J590t7MoglknzS94=
+		</data>
+		<key>Resources/share/vice/C64/sdl_joymap_xbox360.vjm</key>
+		<data>
+		VS5YpFhvNuZoKNRLIHmcIJS3g/Q=
+		</data>
+		<key>Resources/share/vice/C64/sdl_keyrah.vkm</key>
+		<data>
+		rDlp08DI4z0qFwTMUNylCBTyszc=
+		</data>
+		<key>Resources/share/vice/C64/sdl_keyrah_combian.vkm</key>
+		<data>
+		JetB/dMXkoaFN66DGXGGROVaqDE=
+		</data>
+		<key>Resources/share/vice/C64/sdl_keyrah_de.vkm</key>
+		<data>
+		Vv52uNreD2OcevvYG2wLRbsYb+o=
+		</data>
+		<key>Resources/share/vice/C64/sdl_keyrah_retropie.vkm</key>
+		<data>
+		yHuYwkplO7+jTd0uIzva1dxwZSI=
+		</data>
+		<key>Resources/share/vice/C64/sdl_keyrah_retropie_de.vkm</key>
+		<data>
+		zlWuvivJ9OLctaGrIGgAw1lu/7k=
+		</data>
+		<key>Resources/share/vice/C64/sdl_pos.vkm</key>
+		<data>
+		kn4bFmHkNh/amBR9cLO4goYQSo8=
+		</data>
+		<key>Resources/share/vice/C64/sdl_pos_ch.vkm</key>
+		<data>
+		z9U9V3wC2YZrF6rrgEsiZWfPF8A=
+		</data>
+		<key>Resources/share/vice/C64/sdl_pos_da.vkm</key>
+		<data>
+		vUXFJ1jXWmdX97ld49n9OtoIpWc=
+		</data>
+		<key>Resources/share/vice/C64/sdl_pos_de.vkm</key>
+		<data>
+		zQ5bRgfD1wKsQWW6+qzGgmSNEBQ=
+		</data>
+		<key>Resources/share/vice/C64/sdl_pos_fi.vkm</key>
+		<data>
+		q7yzuwtnGAABj4pRuPHznQqW0C0=
+		</data>
+		<key>Resources/share/vice/C64/sdl_pos_no.vkm</key>
+		<data>
+		0cMUBqPCLNLBaLqoGZdt7jukqWk=
+		</data>
+		<key>Resources/share/vice/C64/sdl_pos_tr.vkm</key>
+		<data>
+		7wBeyM9bEG/2NHfma+BY9g78kOA=
+		</data>
+		<key>Resources/share/vice/C64/sdl_pos_uk.vkm</key>
+		<data>
+		+pFzMjtCUg6M+E8m0kBmti88HdI=
+		</data>
+		<key>Resources/share/vice/C64/sdl_sym.vkm</key>
+		<data>
+		zUOfLGetPfwglfOQk0jxF1JOM+o=
+		</data>
+		<key>Resources/share/vice/C64/sdl_sym_da.vkm</key>
+		<data>
+		yZ4eiiTJIyzPli1JtzcB/9FwP6c=
+		</data>
+		<key>Resources/share/vice/C64/sdl_sym_de.vkm</key>
+		<data>
+		xsIRyaIFsfl4YT30WGKEROXazMY=
+		</data>
+		<key>Resources/share/vice/C64/sdl_sym_fr.vkm</key>
+		<data>
+		VpkN5i44qUZKeCsA+g1/G7UJIpk=
+		</data>
+		<key>Resources/share/vice/C64/sdl_sym_it.vkm</key>
+		<data>
+		4bNPe6NobzwN2xMZv/7iWCGleyI=
+		</data>
+		<key>Resources/share/vice/C64/sdl_sym_nl.vkm</key>
+		<data>
+		s6EC1Wv9RwP9gVfjS7WyKKrcnis=
+		</data>
+		<key>Resources/share/vice/C64/sdl_sym_tr.vkm</key>
+		<data>
+		C5m08b18BC4GaBZ8KXl9DxDlsuM=
+		</data>
+		<key>Resources/share/vice/C64/sdl_sym_uk.vkm</key>
+		<data>
+		L900DmWny+Y2Qhw287MW58k9mso=
+		</data>
 		<key>Resources/share/vice/C64/the64.vpl</key>
 		<data>
 		sOn5LWtBBF/f1qJlkaNqcg7lYuQ=
@@ -1328,93 +724,93 @@
 		<data>
 		crTI2gdWRsyZQOQ3cATIEZLHsLE=
 		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_keyrah.vkm</key>
-		<data>
-		/C8emANTW8/evVj2GA33071GKrQ=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_keyrah_de.vkm</key>
-		<data>
-		XO7aM1pMePSU1LNYeEWNsj//Hhg=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_pos.vkm</key>
-		<data>
-		q7kirTeIioUhyQEJ0/zId9APgyU=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_pos_bmc64.vkm</key>
-		<data>
-		d187nzidRhtDKtHMIv6EQ0K+oH8=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_pos_de.vkm</key>
-		<data>
-		0cdw8RhdpuVGO0NrF2AF7wxFQNA=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_pos_es.vkm</key>
-		<data>
-		P67rttTsJSimDjbrLk1xU9wn8e8=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_pos_it.vkm</key>
-		<data>
-		URfYmEUHkoNqECBYGJT0OfYPm4k=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_pos_se.vkm</key>
-		<data>
-		D+Qiif1naQjYYBbKxqRCX4g262E=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_pos_tr.vkm</key>
-		<data>
-		aVxVJaSgydac2LgfH58UBRbshxk=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_pos_uk.vkm</key>
-		<data>
-		1rdNFdeP/kCVN11L/Ty65/zo0mU=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_sym.vkm</key>
-		<data>
-		f+jXBrKyQ0+ydnCcX1CdwUU0KaM=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_be.vkm</key>
-		<data>
-		+4zAlfys5mS+ywkpE+9c9hmgdc0=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_da.vkm</key>
-		<data>
-		hhxqTB9IvraaDnxR2y/2sWEA6Uo=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_de.vkm</key>
-		<data>
-		IPsvIejmSAvRVuXndX8dHk0xJl4=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_fr.vkm</key>
-		<data>
-		cMBXF7obLtteBK05vuoVxtPLSn8=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_it.vkm</key>
-		<data>
-		IxcJSsaJL3MgqzCZBIKLR1ZZ+oQ=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_nl.vkm</key>
-		<data>
-		kRPGE1ifKIFyooTP8v6Xuv+0D38=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_se.vkm</key>
-		<data>
-		DA3x/vdZa794ReaNI+P2/D7P7WE=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_tr.vkm</key>
-		<data>
-		v2fr7vJOWm/7x4akaI0kUKCId6o=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_uk.vkm</key>
-		<data>
-		gDwtPL2Zvfo0zsWKx6Q444Iuy0U=
-		</data>
-		<key>Resources/share/vice/C64DTV/gtk3_the64_de.vkm</key>
-		<data>
-		CHXPU59D6MW7gMcYjdCDy17BNTs=
-		</data>
 		<key>Resources/share/vice/C64DTV/kernal-901227-03.bin</key>
 		<data>
 		HVA+Vt+Fpi/uaW52GNxbTngd8bs=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_keyrah.vkm</key>
+		<data>
+		rDlp08DI4z0qFwTMUNylCBTyszc=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_keyrah_combian.vkm</key>
+		<data>
+		JetB/dMXkoaFN66DGXGGROVaqDE=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_keyrah_de.vkm</key>
+		<data>
+		Vv52uNreD2OcevvYG2wLRbsYb+o=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_keyrah_retropie.vkm</key>
+		<data>
+		yHuYwkplO7+jTd0uIzva1dxwZSI=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_keyrah_retropie_de.vkm</key>
+		<data>
+		zlWuvivJ9OLctaGrIGgAw1lu/7k=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_pos.vkm</key>
+		<data>
+		kn4bFmHkNh/amBR9cLO4goYQSo8=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_pos_ch.vkm</key>
+		<data>
+		z9U9V3wC2YZrF6rrgEsiZWfPF8A=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_pos_da.vkm</key>
+		<data>
+		vUXFJ1jXWmdX97ld49n9OtoIpWc=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_pos_de.vkm</key>
+		<data>
+		zQ5bRgfD1wKsQWW6+qzGgmSNEBQ=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_pos_fi.vkm</key>
+		<data>
+		q7yzuwtnGAABj4pRuPHznQqW0C0=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_pos_no.vkm</key>
+		<data>
+		0cMUBqPCLNLBaLqoGZdt7jukqWk=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_pos_tr.vkm</key>
+		<data>
+		7wBeyM9bEG/2NHfma+BY9g78kOA=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_pos_uk.vkm</key>
+		<data>
+		+pFzMjtCUg6M+E8m0kBmti88HdI=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_sym.vkm</key>
+		<data>
+		zUOfLGetPfwglfOQk0jxF1JOM+o=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_sym_da.vkm</key>
+		<data>
+		yZ4eiiTJIyzPli1JtzcB/9FwP6c=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_sym_de.vkm</key>
+		<data>
+		xsIRyaIFsfl4YT30WGKEROXazMY=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_sym_fr.vkm</key>
+		<data>
+		VpkN5i44qUZKeCsA+g1/G7UJIpk=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_sym_it.vkm</key>
+		<data>
+		4bNPe6NobzwN2xMZv/7iWCGleyI=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_sym_nl.vkm</key>
+		<data>
+		s6EC1Wv9RwP9gVfjS7WyKKrcnis=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_sym_tr.vkm</key>
+		<data>
+		C5m08b18BC4GaBZ8KXl9DxDlsuM=
+		</data>
+		<key>Resources/share/vice/C64DTV/sdl_sym_uk.vkm</key>
+		<data>
+		L900DmWny+Y2Qhw287MW58k9mso=
 		</data>
 		<key>Resources/share/vice/C64DTV/spiff.vpl</key>
 		<data>
@@ -1487,22 +883,6 @@
 		<key>Resources/share/vice/CBM-II/green.vpl</key>
 		<data>
 		VJy8WQjKmhmm1N5WT52yWHDrCKU=
-		</data>
-		<key>Resources/share/vice/CBM-II/gtk3_pos.vkm</key>
-		<data>
-		B2+6QWM8Lt74nSiqYSe/NJAzMME=
-		</data>
-		<key>Resources/share/vice/CBM-II/gtk3_pos_de.vkm</key>
-		<data>
-		NTgvlxw/eTId2NtOBAG9U6pn91w=
-		</data>
-		<key>Resources/share/vice/CBM-II/gtk3_sym.vkm</key>
-		<data>
-		ZlL1v6Gt5NzaqfCAMuvrqdOKwoQ=
-		</data>
-		<key>Resources/share/vice/CBM-II/gtk3_sym_de.vkm</key>
-		<data>
-		7WQDs2chDwP0m55c7CK1jXrr1RE=
 		</data>
 		<key>Resources/share/vice/CBM-II/kernal-901234-02.bin</key>
 		<data>
@@ -1592,6 +972,14 @@
 		<data>
 		6w3KMhFuD0ympHX9zrjA/KYTW40=
 		</data>
+		<key>Resources/share/vice/CBM-II/sdl_pos.vkm</key>
+		<data>
+		HgP+QOroFLSF2G7gzlO93O2kQOQ=
+		</data>
+		<key>Resources/share/vice/CBM-II/sdl_sym.vkm</key>
+		<data>
+		f5ZqQvT0liuQYnl0y7ECPWjgWzQ=
+		</data>
 		<key>Resources/share/vice/CBM-II/the64.vpl</key>
 		<data>
 		sOn5LWtBBF/f1qJlkaNqcg7lYuQ=
@@ -1659,26 +1047,6 @@
 		<key>Resources/share/vice/DRIVES/dos9000-300516+7-revC.bin</key>
 		<data>
 		xI3yy7DuplbDJD336ov+/NFxuOg=
-		</data>
-		<key>Resources/share/vice/GLSL/bicubic-interlaced.frag</key>
-		<data>
-		i67w8Oyr9puXK0740d7xwp2rXxo=
-		</data>
-		<key>Resources/share/vice/GLSL/bicubic.frag</key>
-		<data>
-		6F4ZrVLrCGOKMpqymAZhXKkZcy8=
-		</data>
-		<key>Resources/share/vice/GLSL/builtin-interlaced.frag</key>
-		<data>
-		B/bGztbprhvdshqDOCB175Ij8OA=
-		</data>
-		<key>Resources/share/vice/GLSL/builtin.frag</key>
-		<data>
-		aZBrf70svyQ2ZInrkIF1ixjaQno=
-		</data>
-		<key>Resources/share/vice/GLSL/viewport.vert</key>
-		<data>
-		TssRV/xdC3MAnuQHU0tpymfGp3Q=
 		</data>
 		<key>Resources/share/vice/PET/2001-blueish.vpl</key>
 		<data>
@@ -1764,62 +1132,6 @@
 		<data>
 		NYLHYOfZAOzxO4Yk+ozgtgyTlLE=
 		</data>
-		<key>Resources/share/vice/PET/gtk3_bude_pos.vkm</key>
-		<data>
-		D5M7fEBIrX62/jVBr5EQ/kmQPiQ=
-		</data>
-		<key>Resources/share/vice/PET/gtk3_bude_pos_de.vkm</key>
-		<data>
-		z+XkOwj6IJANEIk/5CPwXaiV5jE=
-		</data>
-		<key>Resources/share/vice/PET/gtk3_bude_sym.vkm</key>
-		<data>
-		4bTZQxDNGXxzD+9LcvWskckLaK4=
-		</data>
-		<key>Resources/share/vice/PET/gtk3_bude_sym_de.vkm</key>
-		<data>
-		WDu6fwFiv2ZliH8Yn+QmKrCsvdM=
-		</data>
-		<key>Resources/share/vice/PET/gtk3_buuk_pos.vkm</key>
-		<data>
-		lnivQmveTMetFtuu0WkJsOTNtWg=
-		</data>
-		<key>Resources/share/vice/PET/gtk3_buuk_pos_de.vkm</key>
-		<data>
-		SXCy3G9cSlQlfLebw5FXq/fzO1I=
-		</data>
-		<key>Resources/share/vice/PET/gtk3_buuk_sym.vkm</key>
-		<data>
-		dgW7TCJWVyQP+FGjjyguMEN2/To=
-		</data>
-		<key>Resources/share/vice/PET/gtk3_buuk_sym_de.vkm</key>
-		<data>
-		a8+newolRQX552+o0sUK5ZNb9H4=
-		</data>
-		<key>Resources/share/vice/PET/gtk3_grus_pos.vkm</key>
-		<data>
-		+bmcrI1qSBmbijRLne2h2pe+i6Y=
-		</data>
-		<key>Resources/share/vice/PET/gtk3_grus_pos_de.vkm</key>
-		<data>
-		JWBaHqLs/cW9TbM4jmJQo5caMEE=
-		</data>
-		<key>Resources/share/vice/PET/gtk3_grus_sym.vkm</key>
-		<data>
-		DGa4RJcK3dHb3pqUdO1nvYe0gwg=
-		</data>
-		<key>Resources/share/vice/PET/gtk3_grus_sym_de.vkm</key>
-		<data>
-		cdmF0EMp1HPqlHc3wrFstta7FJM=
-		</data>
-		<key>Resources/share/vice/PET/gtk3_pos.vkm</key>
-		<data>
-		Vr4S1zfKvjlBCpdG2oQMYvmwNGk=
-		</data>
-		<key>Resources/share/vice/PET/gtk3_sym.vkm</key>
-		<data>
-		jKmSyKHHMHWNMkR/0V76fZnt0Zs=
-		</data>
 		<key>Resources/share/vice/PET/hre-9000.324992-02.bin</key>
 		<data>
 		A6qGbkvE446VmDpqgrqSXnEL7eg=
@@ -1871,6 +1183,46 @@
 		<key>Resources/share/vice/PET/romsuperpet.vrs</key>
 		<data>
 		LGzquOl420yyzAkqdHnP/rB/MVU=
+		</data>
+		<key>Resources/share/vice/PET/sdl_buuk_pos.vkm</key>
+		<data>
+		Nc7VhG1Nf++KcGNeeGT6BJw4mD4=
+		</data>
+		<key>Resources/share/vice/PET/sdl_buuk_pos_de.vkm</key>
+		<data>
+		8LY2i3T9hwNRPzbvvrFuGlj38LA=
+		</data>
+		<key>Resources/share/vice/PET/sdl_buuk_sym.vkm</key>
+		<data>
+		WnO567igWm8AZtp5H6bCjwnCBr8=
+		</data>
+		<key>Resources/share/vice/PET/sdl_buuk_sym_de.vkm</key>
+		<data>
+		VUA1D27b/CfuaWgYbCMPckfCmYw=
+		</data>
+		<key>Resources/share/vice/PET/sdl_grus_pos.vkm</key>
+		<data>
+		I1M8ITjy0m/YhMNVFZ4c7wWrH+I=
+		</data>
+		<key>Resources/share/vice/PET/sdl_grus_pos_de.vkm</key>
+		<data>
+		c6Wqod0yPMKaMlQ01c6lo3RUyXk=
+		</data>
+		<key>Resources/share/vice/PET/sdl_grus_sym.vkm</key>
+		<data>
+		xbpYN5WFlrX2J2xm/UToanUunz4=
+		</data>
+		<key>Resources/share/vice/PET/sdl_grus_sym_de.vkm</key>
+		<data>
+		piRVA08TlzIdtLybaM/+2qYao9k=
+		</data>
+		<key>Resources/share/vice/PET/sdl_pos.vkm</key>
+		<data>
+		hTMMZVXYGNtPhwYi9gWyrPv05lA=
+		</data>
+		<key>Resources/share/vice/PET/sdl_sym.vkm</key>
+		<data>
+		lewIsL1KNf94pxdIqqEG/7dFao4=
 		</data>
 		<key>Resources/share/vice/PET/waterloo-a000.901898-01.bin</key>
 		<data>
@@ -1936,46 +1288,6 @@
 		<data>
 		Gi8wfNj4nvzjzcqynP7HqcMzvts=
 		</data>
-		<key>Resources/share/vice/PLUS4/gtk3_c116_pos_it.vkm</key>
-		<data>
-		Ob4p+qCBt2PoTVU73eByZPzE9is=
-		</data>
-		<key>Resources/share/vice/PLUS4/gtk3_c16_pos_it.vkm</key>
-		<data>
-		bBcONaNEI65dU7kpqyV32KP8f5s=
-		</data>
-		<key>Resources/share/vice/PLUS4/gtk3_pos.vkm</key>
-		<data>
-		lMmq2ThQs+8BGV653En5WgI1NA8=
-		</data>
-		<key>Resources/share/vice/PLUS4/gtk3_pos_de.vkm</key>
-		<data>
-		JR393SjpDK6LEKmvR02l6dSm+Os=
-		</data>
-		<key>Resources/share/vice/PLUS4/gtk3_pos_es.vkm</key>
-		<data>
-		En/Oq1nq92FWbQZBl03BJev3ndE=
-		</data>
-		<key>Resources/share/vice/PLUS4/gtk3_pos_it.vkm</key>
-		<data>
-		hB0jdHZqZTmcAipe4sh37puF7N4=
-		</data>
-		<key>Resources/share/vice/PLUS4/gtk3_sym.vkm</key>
-		<data>
-		OltmGdnQcoy03hzhMqO1ml4ioJ4=
-		</data>
-		<key>Resources/share/vice/PLUS4/gtk3_sym_de.vkm</key>
-		<data>
-		Zita16ebXpdqswcLlQ/CvpmGlU8=
-		</data>
-		<key>Resources/share/vice/PLUS4/gtk3_sym_fr.vkm</key>
-		<data>
-		NoTBeGOdsRCvWwtSYLmZvdHuLQM=
-		</data>
-		<key>Resources/share/vice/PLUS4/gtk3_sym_it.vkm</key>
-		<data>
-		RZDdrChGugNMD+Vsg+Qc0b2wbA8=
-		</data>
 		<key>Resources/share/vice/PLUS4/kernal-318004-01.bin</key>
 		<data>
 		PHfK9ykUwcCgh1s6f2k1zTDFQgE=
@@ -1991,6 +1303,22 @@
 		<key>Resources/share/vice/PLUS4/kernal-364.bin</key>
 		<data>
 		uaW12s1XyhF+8LOvKekZmL9Nfl8=
+		</data>
+		<key>Resources/share/vice/PLUS4/sdl_pos.vkm</key>
+		<data>
+		Oc6g0aKUaew1KKd2b6yxoxj3h0A=
+		</data>
+		<key>Resources/share/vice/PLUS4/sdl_pos_fr.vkm</key>
+		<data>
+		ClDePR7KqAaX5OR2naACbUkR0RI=
+		</data>
+		<key>Resources/share/vice/PLUS4/sdl_sym.vkm</key>
+		<data>
+		Y5Qa0dZcPFsbqtpcU3QwfYDfF8E=
+		</data>
+		<key>Resources/share/vice/PLUS4/sdl_sym_de.vkm</key>
+		<data>
+		vsHTGnWRn9y+K0aKkNAeq7MC268=
 		</data>
 		<key>Resources/share/vice/PLUS4/yape-ntsc.vpl</key>
 		<data>
@@ -2096,89 +1424,9 @@
 		<data>
 		RwS772dAFTX5ke8wZS1CcyUezBk=
 		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_keyrah.vkm</key>
+		<key>Resources/share/vice/SCPU64/lemon64.vpl</key>
 		<data>
-		/C8emANTW8/evVj2GA33071GKrQ=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_keyrah_de.vkm</key>
-		<data>
-		XO7aM1pMePSU1LNYeEWNsj//Hhg=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_pos.vkm</key>
-		<data>
-		q7kirTeIioUhyQEJ0/zId9APgyU=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_pos_bmc64.vkm</key>
-		<data>
-		d187nzidRhtDKtHMIv6EQ0K+oH8=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_pos_de.vkm</key>
-		<data>
-		0cdw8RhdpuVGO0NrF2AF7wxFQNA=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_pos_es.vkm</key>
-		<data>
-		P67rttTsJSimDjbrLk1xU9wn8e8=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_pos_it.vkm</key>
-		<data>
-		URfYmEUHkoNqECBYGJT0OfYPm4k=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_pos_se.vkm</key>
-		<data>
-		D+Qiif1naQjYYBbKxqRCX4g262E=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_pos_tr.vkm</key>
-		<data>
-		aVxVJaSgydac2LgfH58UBRbshxk=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_pos_uk.vkm</key>
-		<data>
-		1rdNFdeP/kCVN11L/Ty65/zo0mU=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_sym.vkm</key>
-		<data>
-		f+jXBrKyQ0+ydnCcX1CdwUU0KaM=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_be.vkm</key>
-		<data>
-		+4zAlfys5mS+ywkpE+9c9hmgdc0=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_da.vkm</key>
-		<data>
-		hhxqTB9IvraaDnxR2y/2sWEA6Uo=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_de.vkm</key>
-		<data>
-		IPsvIejmSAvRVuXndX8dHk0xJl4=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_fr.vkm</key>
-		<data>
-		cMBXF7obLtteBK05vuoVxtPLSn8=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_it.vkm</key>
-		<data>
-		IxcJSsaJL3MgqzCZBIKLR1ZZ+oQ=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_nl.vkm</key>
-		<data>
-		kRPGE1ifKIFyooTP8v6Xuv+0D38=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_se.vkm</key>
-		<data>
-		DA3x/vdZa794ReaNI+P2/D7P7WE=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_tr.vkm</key>
-		<data>
-		v2fr7vJOWm/7x4akaI0kUKCId6o=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_uk.vkm</key>
-		<data>
-		gDwtPL2Zvfo0zsWKx6Q444Iuy0U=
-		</data>
-		<key>Resources/share/vice/SCPU64/gtk3_the64_de.vkm</key>
-		<data>
-		CHXPU59D6MW7gMcYjdCDy17BNTs=
+		hG44L+EROaZaIWk5nzk7me9Rye8=
 		</data>
 		<key>Resources/share/vice/SCPU64/palette.vpl</key>
 		<data>
@@ -2248,6 +1496,90 @@
 		<data>
 		qoBYYt1MB/ILfOkQ7OJq7ORq+ps=
 		</data>
+		<key>Resources/share/vice/SCPU64/sdl_keyrah.vkm</key>
+		<data>
+		rDlp08DI4z0qFwTMUNylCBTyszc=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_keyrah_combian.vkm</key>
+		<data>
+		JetB/dMXkoaFN66DGXGGROVaqDE=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_keyrah_de.vkm</key>
+		<data>
+		Vv52uNreD2OcevvYG2wLRbsYb+o=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_keyrah_retropie.vkm</key>
+		<data>
+		yHuYwkplO7+jTd0uIzva1dxwZSI=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_keyrah_retropie_de.vkm</key>
+		<data>
+		zlWuvivJ9OLctaGrIGgAw1lu/7k=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_pos.vkm</key>
+		<data>
+		kn4bFmHkNh/amBR9cLO4goYQSo8=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_pos_ch.vkm</key>
+		<data>
+		z9U9V3wC2YZrF6rrgEsiZWfPF8A=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_pos_da.vkm</key>
+		<data>
+		vUXFJ1jXWmdX97ld49n9OtoIpWc=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_pos_de.vkm</key>
+		<data>
+		CXXfOyyQHzgrvIi8AYHo/IevQls=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_pos_fi.vkm</key>
+		<data>
+		q7yzuwtnGAABj4pRuPHznQqW0C0=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_pos_no.vkm</key>
+		<data>
+		0cMUBqPCLNLBaLqoGZdt7jukqWk=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_pos_tr.vkm</key>
+		<data>
+		7wBeyM9bEG/2NHfma+BY9g78kOA=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_pos_uk.vkm</key>
+		<data>
+		+pFzMjtCUg6M+E8m0kBmti88HdI=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_sym.vkm</key>
+		<data>
+		zUOfLGetPfwglfOQk0jxF1JOM+o=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_sym_da.vkm</key>
+		<data>
+		yZ4eiiTJIyzPli1JtzcB/9FwP6c=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_sym_de.vkm</key>
+		<data>
+		xsIRyaIFsfl4YT30WGKEROXazMY=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_sym_fr.vkm</key>
+		<data>
+		VpkN5i44qUZKeCsA+g1/G7UJIpk=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_sym_it.vkm</key>
+		<data>
+		4bNPe6NobzwN2xMZv/7iWCGleyI=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_sym_nl.vkm</key>
+		<data>
+		s6EC1Wv9RwP9gVfjS7WyKKrcnis=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_sym_tr.vkm</key>
+		<data>
+		C5m08b18BC4GaBZ8KXl9DxDlsuM=
+		</data>
+		<key>Resources/share/vice/SCPU64/sdl_sym_uk.vkm</key>
+		<data>
+		L900DmWny+Y2Qhw287MW58k9mso=
+		</data>
 		<key>Resources/share/vice/SCPU64/the64.vpl</key>
 		<data>
 		sOn5LWtBBF/f1qJlkaNqcg7lYuQ=
@@ -2280,34 +1612,6 @@
 		<data>
 		0OBSVfD2Z5Tuy0Mxmc0ddR/c07w=
 		</data>
-		<key>Resources/share/vice/VIC20/gtk3_pos.vkm</key>
-		<data>
-		y5PMC5keDN2ousoRvrTJ451lWH0=
-		</data>
-		<key>Resources/share/vice/VIC20/gtk3_pos_de.vkm</key>
-		<data>
-		G3V8W1oRqCkMnBr9rojfoy1W6Uo=
-		</data>
-		<key>Resources/share/vice/VIC20/gtk3_pos_it.vkm</key>
-		<data>
-		5a0VmSMoPK+uZqlwnL5Agz0R9Tw=
-		</data>
-		<key>Resources/share/vice/VIC20/gtk3_sym.vkm</key>
-		<data>
-		DzJWPEfQbsE6zVcTMZYm70ChwgM=
-		</data>
-		<key>Resources/share/vice/VIC20/gtk3_sym_de.vkm</key>
-		<data>
-		vQrljbSagWipNF2hiSpMb4Qo+Eo=
-		</data>
-		<key>Resources/share/vice/VIC20/gtk3_sym_fr.vkm</key>
-		<data>
-		KoZJPcCXsCuzV+Pzof+NNLRscPg=
-		</data>
-		<key>Resources/share/vice/VIC20/gtk3_sym_it.vkm</key>
-		<data>
-		ustEf32bHB619+PifuCBdUTf9Ug=
-		</data>
 		<key>Resources/share/vice/VIC20/kernal.901486-02.bin</key>
 		<data>
 		yerUXmZ00QQsphmRYOhYPCOurCI=
@@ -2328,6 +1632,38 @@
 		<data>
 		k5VJhjsfRhXEXqm2F+BjTrAZt80=
 		</data>
+		<key>Resources/share/vice/VIC20/sdl_pos.vkm</key>
+		<data>
+		nNfhoeUffQy1PZkufvA8A+OGnVw=
+		</data>
+		<key>Resources/share/vice/VIC20/sdl_pos_de.vkm</key>
+		<data>
+		4AtiwzcKW3VqSmGMxNTSX0GUHXc=
+		</data>
+		<key>Resources/share/vice/VIC20/sdl_pos_fi.vkm</key>
+		<data>
+		QsIMrqiD4q8BTFonoYZ+xivXVA0=
+		</data>
+		<key>Resources/share/vice/VIC20/sdl_pos_fr.vkm</key>
+		<data>
+		LyPhTipq/ufumiw9bWvT6gyE248=
+		</data>
+		<key>Resources/share/vice/VIC20/sdl_pos_uk.vkm</key>
+		<data>
+		z7DWnpA6Aaw2641YVeWGQ/f/Lvs=
+		</data>
+		<key>Resources/share/vice/VIC20/sdl_sym.vkm</key>
+		<data>
+		OKp4G+c1rcrwpkd09tqGAdNGoYE=
+		</data>
+		<key>Resources/share/vice/VIC20/sdl_sym_de.vkm</key>
+		<data>
+		lZhGWo/KxEPUDge3tuD/UtvGPtI=
+		</data>
+		<key>Resources/share/vice/VIC20/sdl_sym_uk.vkm</key>
+		<data>
+		x2eFYvkvH0GwlTi5umMN9L0f4iQ=
+		</data>
 		<key>Resources/share/vice/VIC20/vice.vpl</key>
 		<data>
 		FJImbisgfnBd9SDekJ+/H8dmuRA=
@@ -2336,13 +1672,9 @@
 		<data>
 		Gq6UJN9WC87G0E5mXjH5WQD7qMI=
 		</data>
-		<key>Resources/share/vice/common/vice.gresource</key>
-		<data>
-		63JumCAQ/e8om7ZOsM62NfWyQlU=
-		</data>
 		<key>Resources/share/vice/doc/vice.pdf</key>
 		<data>
-		Wqt76LGSeZOJiNusmmIT454sVFk=
+		hy1/RREZ/8AgsKbvoUTW6oQWYMs=
 		</data>
 		<key>Resources/share/vice/hotkeys/hotkeys-cartridge.vhk</key>
 		<data>
@@ -2450,22 +1782,22 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			XxRi8+PWnRdv4s6f+zgM070FDVo=
+			nx1jgwul1Mynl9s30He5CD5Bk/I=
 			</data>
 			<key>hash2</key>
 			<data>
-			B+lSY8fdc0N54glsMnRG3vftXVUr2PewvyGWNGb/3Js=
+			+XPTF7xB4RfJk1MwyUSheGGtzIOq+BAHdzDLDKn6pbk=
 			</data>
 		</dict>
 		<key>Resources/bin/cartconv</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			ZW4z6cOPfmGAdcQUTmIdY3RtvLY=
+			R+S0kgDmiZzdo3EN5NzmKrOReMc=
 			</data>
 			<key>hash2</key>
 			<data>
-			5+j1QforE8aLLA3HGSd5YtLrGvKV342BfCxQv7y8gPo=
+			/Ir5HHVoj53hjPr3OKg9jlV9TF01zHKW8ELwDni8Lbs=
 			</data>
 		</dict>
 		<key>Resources/bin/common-runtime.sh</key>
@@ -2483,935 +1815,308 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			jVzKGRGXzj5pN55nZZXhW7FUaUc=
+			LaClqHud+se99WdQt9Bz5X/JptM=
 			</data>
 			<key>hash2</key>
 			<data>
-			HYcdZi6QvVr9vkSw2tfyq01YMeQAZnqV0yCukeGkzqQ=
+			Ii4N2YmYknV0KNbhSIeBh/RWkr/my9gCtIUKDrnfP7w=
 			</data>
 		</dict>
 		<key>Resources/bin/ui-runtime.sh</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			0EUnJCVb4G09sb740pRrKZT31pU=
+			DeJgiayNsL4q8Rmchxb+v9WvBso=
 			</data>
 			<key>hash2</key>
 			<data>
-			1pDLuJFaYX5hi6l27sV04KwA7YOH6CY/tTj9NbgEPlM=
+			vBgxlEWsrF6HN50+hZMM8VEkrZorRgpZ6cmh/1KTt0U=
 			</data>
 		</dict>
 		<key>Resources/bin/vsid</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			Bj/T5pBFM/9SIni483Hz/786ZEM=
+			Hv+qt8q7Js6fZVLzgihE3IqK16E=
 			</data>
 			<key>hash2</key>
 			<data>
-			3FLrBAUsDace8TZRayKriMgkYZ/bC0A6ywVxdoEjbvY=
+			bQBvvGWfxzQy7SRUuw/7Vbeaxkc2Ry/ddYtiNe2cxkk=
 			</data>
 		</dict>
 		<key>Resources/bin/x128</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			GFghZcBgyfTp3mFc/qZ2J92dTIA=
+			6kJFTrHD63dHDpzvq1UH9J5yd/k=
 			</data>
 			<key>hash2</key>
 			<data>
-			V8YCuqAdEDaNPEjSj/7tChrf3V7UYw00mU2jjEZPnME=
+			kFsS1lJ0SAHDN/PrSp+3wfjcUJadbWadWBE89PFpGOA=
 			</data>
 		</dict>
 		<key>Resources/bin/x64dtv</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			XbUvwXICKAggXxf/SF7Zu93Ennw=
+			jSuDaLMTj1lqSu9wPs1DxzDK3Zw=
 			</data>
 			<key>hash2</key>
 			<data>
-			g0rwNkuIDUUxOTMu0Yg8lnospFGIB8J6tDa0SYPq9I8=
+			OOwKrdZkizQptvOHBuSMrXGwqERDtSxvCqCySyuzhZY=
 			</data>
 		</dict>
 		<key>Resources/bin/x64sc</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			XQsxVB3vhe9yxRxufSB0AWnz/mE=
+			giOQx5mQSx1z2HHoiguka0HQZQU=
 			</data>
 			<key>hash2</key>
 			<data>
-			SuxjYPG631F60uUUVfqcprcRLrFxieVcB53Jj2dmwvM=
+			tZaojAnGZuhr4YK2YbPl/qlubBv392q2mSlMrzySfwg=
 			</data>
 		</dict>
 		<key>Resources/bin/xcbm2</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			0b7K7/rXy2zFsaZ5ykdeyt1kzZQ=
+			fLZLe6mhjzrPD/A2xIK2u01FAfY=
 			</data>
 			<key>hash2</key>
 			<data>
-			1lD017Y3puZ6kpuSiwBIG0BHOpxd6tSOhHMgzmbqyrI=
+			NRB11DUSHJD2yyBNqzVO09ItYHTeEMoFGPEytN3qwPY=
 			</data>
 		</dict>
 		<key>Resources/bin/xcbm5x0</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			O8tflegS6Wh0gRJdpQ+48fh+QnI=
+			oAeFDLeLRMCVd4Is6PfvGYQSAgs=
 			</data>
 			<key>hash2</key>
 			<data>
-			EY7jtLzbqcgu0BYeUsXC2SdkjXQ2VJ7aamZK37xnvjg=
+			8+YTMb+6kvxoBmRsiI2c4V3PjcYlOtHP/FVXk1aHJY8=
 			</data>
 		</dict>
 		<key>Resources/bin/xpet</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			DxeVS/ocmAChXLfDf0M2FxRnUo4=
+			//SmXKzpKJUV52u8XUUL302d6TI=
 			</data>
 			<key>hash2</key>
 			<data>
-			hJBV7EEQjac/z7xYWrOMtvbzj/AQSLq3zCq8B7BjjEE=
+			X4uVf+eXPL+Q0sMCakkqfywnADDvuRysWvv7nBKG9hE=
 			</data>
 		</dict>
 		<key>Resources/bin/xplus4</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			jG7rd4eBXNwCaCARxr8FkzSdQ3w=
+			nDJWfSOV3BRHViUoQkeLKqNgZxI=
 			</data>
 			<key>hash2</key>
 			<data>
-			9jTkFKcZW1GKYRgblfj46DQ37jG7DQMZf292Yc8nrHU=
+			H3d2Tm20zb4SLSHdPaFNBKb7mRUKi/i6gEfkfSRuQnk=
 			</data>
 		</dict>
 		<key>Resources/bin/xscpu64</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			F5SiKr5upzlHE4CnZXSwnEtA6qk=
+			/ljy8g7R1eyywpqpAsMc2sUfbu4=
 			</data>
 			<key>hash2</key>
 			<data>
-			f8iQIfjJSIIAG1/qrZV+XQmftyt2kwt0/ibPU/8Z0P8=
+			9MIEr0qlKGG+QaCXLSBRHa0wOVBMyHqVAShRMhcbgJ4=
 			</data>
 		</dict>
 		<key>Resources/bin/xvic</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			F3HW8hy7YPzl0JbkeLb9yNgMTMs=
+			EF6UDBIedp5Bfta9euhrpb8bTyk=
 			</data>
 			<key>hash2</key>
 			<data>
-			vCx8n53SmocpYKa50VNLZ6G9qYKYHKelpogSDJC6Hyg=
-			</data>
-		</dict>
-		<key>Resources/etc/gtk-3.0/gdk-pixbuf.loaders</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			ykkbjlfOd/g2ck+JsHW02XtgL8I=
-			</data>
-			<key>hash2</key>
-			<data>
-			kbDOuxpyUNNWCbzsB9u7kSrCsk93Ax6YMOYYv+gNxW4=
-			</data>
-		</dict>
-		<key>Resources/etc/gtk-3.0/gtk.immodules</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			xGhM7h42Npg9a0CGr7v4q7Ifkd0=
-			</data>
-			<key>hash2</key>
-			<data>
-			wUeh1C0j2d5c19XCMTF4e7AFdsBae6RPAmrUbaf6rBE=
-			</data>
-		</dict>
-		<key>Resources/etc/gtk-3.0/im-multipress.conf</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			V2/8L1eKi3iyKVWEwFkzjZdsSFo=
-			</data>
-			<key>hash2</key>
-			<data>
-			1S3+qI9ZZLdYHJPN6ho+R917HYM06PXrUwGHEUKCIe0=
-			</data>
-		</dict>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			tjeAc09BgqqTekedwraMwQ5hVAg=
-			</data>
-			<key>hash2</key>
-			<data>
-			4KGV+ZkwJcl9weB/WTm2BZDGdJRC6P+YdT/4La3w+Vc=
-			</data>
-		</dict>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-ani.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			dRsReb7bDa3lC6EGhGhEwfOR6WY=
-			</data>
-			<key>hash2</key>
-			<data>
-			o1MZMLen5C6imI3tJ0EkQJNJxLvxolo50STBTKztBII=
-			</data>
-		</dict>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-bmp.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			2r5okaHatFQoXxnQBddHiVoC8P8=
-			</data>
-			<key>hash2</key>
-			<data>
-			C3wJIw+HijsKORA2cqpy4i+Wgb0CxB7BfdM+5Rrm9mI=
-			</data>
-		</dict>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-gif.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			khIwP1mZaRZMSriNNR0jJ9nX6bU=
-			</data>
-			<key>hash2</key>
-			<data>
-			Bd1jQnfNUT/rcEW/6hKA5naMaqfoU5EYQAbSbDA0yVI=
-			</data>
-		</dict>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-icns.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			WnHq6RNiqKQSt2cklTDMnuGGLo0=
-			</data>
-			<key>hash2</key>
-			<data>
-			FXphJxtMCm2BXufNOmK4mphTfl7+3sBPjHZqz2sK+e8=
-			</data>
-		</dict>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-ico.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			Eork5b2Ulq6NSfNNz4v4eRWpubk=
-			</data>
-			<key>hash2</key>
-			<data>
-			iPjSnUf/65VGxZpew41e8ZY0DeqiNndz72NMLTBav7U=
-			</data>
-		</dict>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-pnm.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			FdEwWarSEpa3arqfEQw3BotPo5A=
-			</data>
-			<key>hash2</key>
-			<data>
-			4bNRNlhvhqRhg2zheuRSxrwwFtG1MufVRe0VUFz3XHQ=
-			</data>
-		</dict>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-qtif.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			2CUEq1OUu3TZFd3yRHoemZeugTs=
-			</data>
-			<key>hash2</key>
-			<data>
-			eN0eCYZfnck33vZNYMtbfbjciPscdwAgB+5UZ7aoduA=
-			</data>
-		</dict>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-svg.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			w1XSsTNTEOxLvczQGeKy8oMlQqU=
-			</data>
-			<key>hash2</key>
-			<data>
-			tuNEHfQW/Hqzb0Buhf6OBAU9SUfFRGj1hqztCzQRxbk=
-			</data>
-		</dict>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-tga.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			LkCvq6yhgOTVC8bdDv7NGuEzYeg=
-			</data>
-			<key>hash2</key>
-			<data>
-			jLdm3uANvbwjzFDbiDAoBXaCwh9YHFDKbe1e0giu2uA=
-			</data>
-		</dict>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-tiff.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			JbvB0sEoKTQZ+ZO/zL+AAHfvQpI=
-			</data>
-			<key>hash2</key>
-			<data>
-			mZkjbkpmGXM6R7t+FZrSIbNxk1pCF7Ay95pBxTzzxMY=
-			</data>
-		</dict>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-xbm.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			x1UkYyrbt2ItqmZAypmJLQUqLR0=
-			</data>
-			<key>hash2</key>
-			<data>
-			L36uedFxqK0FymCdL3HH1Ks1sSfHZSWrVRSPRHze1wY=
-			</data>
-		</dict>
-		<key>Resources/lib/gdk-pixbuf-2.0/2.10.0/loaders/libpixbufloader-xpm.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			YH2sEDTguV2/Av7ygDkGJP6Z+8o=
-			</data>
-			<key>hash2</key>
-			<data>
-			QOd9a4zvGJSpzkeQivJ/qP6suPSwMV7BsMm7MLJ2pv4=
-			</data>
-		</dict>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-am-et.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			oDZlyLPYJrIJ/Q5ltGDMpWOV1es=
-			</data>
-			<key>hash2</key>
-			<data>
-			nu0Sb3u80Nuv2MznNcW05nDiqcmV0m0DVL2qF0zcG8g=
-			</data>
-		</dict>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-cedilla.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			N4g8hMybXPhbe4DYp1Cf9fi6BkQ=
-			</data>
-			<key>hash2</key>
-			<data>
-			3rNvBy4i8+VBjfvzpk1wda7YasZnSHZUayzUT2zpsx8=
-			</data>
-		</dict>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-cyrillic-translit.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			5jBsCGU4IcbsYh2yksq1SNlMdkU=
-			</data>
-			<key>hash2</key>
-			<data>
-			UtSHLVoZTZJd1QpLhkn3rC8Iw+8URHTyPg+n5mltYMA=
-			</data>
-		</dict>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-inuktitut.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			89zZJOlLu0hSdsn7HBuCzAmsiO0=
-			</data>
-			<key>hash2</key>
-			<data>
-			6UspZjCEygK8Nn2Otnx1UnMta2KVnniNMqvM4iuWsUw=
-			</data>
-		</dict>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-ipa.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			F4q5LaOUVj8tN/bvAUAdzhPd3F8=
-			</data>
-			<key>hash2</key>
-			<data>
-			ToK+8m+4/E2JPnNMWSe0v74ovp0mxGswZV7EmNhhdcc=
-			</data>
-		</dict>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-multipress.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			dBRp/Ly/nilaAOBnnh73+iDVH2g=
-			</data>
-			<key>hash2</key>
-			<data>
-			XG4F5tOgf4a7sruoCVDYqc5PN+hECnzlW1FcesenrHE=
-			</data>
-		</dict>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-quartz.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			m7yZhrwzOU8KTKlT8ylCCiTrnfw=
-			</data>
-			<key>hash2</key>
-			<data>
-			BiHelZtY4xLlxvEvU18eK0zufsSvxK3RkLom4DY2GKE=
-			</data>
-		</dict>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-thai.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			IfCtajIKA33ft/4BDxQpi2AgBoE=
-			</data>
-			<key>hash2</key>
-			<data>
-			6V/3lL1yaj2K1pqHFdyrQkkE2zKE8vs93X16FKSvZbk=
-			</data>
-		</dict>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-ti-er.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			cftw0fKZ9Kwd6kFXNz+AROzs86Y=
-			</data>
-			<key>hash2</key>
-			<data>
-			iJ+AHz5Ok76O9nU6lAlsBi+NwUPXtL8UC/Vhzwjc810=
-			</data>
-		</dict>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-ti-et.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			HzvBd8aGX/+g9C6czFsjPZOtffs=
-			</data>
-			<key>hash2</key>
-			<data>
-			YY+j03R3MiqPp8mNHIPQslXIPWQOV4/TSzEAI59zdgU=
-			</data>
-		</dict>
-		<key>Resources/lib/gtk-3.0/3.0.0/immodules/im-viqr.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			02MwHTB3rBRODDwJbMPgWGWGtJo=
-			</data>
-			<key>hash2</key>
-			<data>
-			5mu9QOCl3u9sdZnY8zRyHoeudLJaIOK4ABvOLf6FRJw=
-			</data>
-		</dict>
-		<key>Resources/lib/gtk-3.0/3.0.0/printbackends/libprintbackend-cups.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			FDHcInz1nS5uFp0TITs6gvts7Lw=
-			</data>
-			<key>hash2</key>
-			<data>
-			s/8Nk24qOnbav4uWfFm967VCL5JGN1kjLnE4rmIK9NM=
-			</data>
-		</dict>
-		<key>Resources/lib/gtk-3.0/3.0.0/printbackends/libprintbackend-file.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			PmC5FAF0Mqm060JlGRUd4UXYRHw=
-			</data>
-			<key>hash2</key>
-			<data>
-			xrIBqkcwdFp5Fh1YKQX/K+XfNykkO5RjXMedbAm+ooA=
-			</data>
-		</dict>
-		<key>Resources/lib/gtk-3.0/3.0.0/printbackends/libprintbackend-lpr.so</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			aLFgkHdH1/XxPfXwtaL9OLrkZ/8=
-			</data>
-			<key>hash2</key>
-			<data>
-			/cAr+YvJBgxwoHqw7LdhiYcvF5/tEyh8uxWMrqeZ9+w=
+			QZz+qQjKf90ePfQst+ueq3Sy8MJVD2sxiqzFV1j4xM4=
 			</data>
 		</dict>
 		<key>Resources/lib/libFLAC.12.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			1H9NXxE8onYm9XPfYCUOgkt+KWw=
+			CmrSD1uHUNd0BU6Lf0aWQHhm7cs=
 			</data>
 			<key>hash2</key>
 			<data>
-			pZ1hzOS18JqD9r7Tki4vtnUMh89jm0kcelYGt6XjkaU=
-			</data>
-		</dict>
-		<key>Resources/lib/libGLEW.2.2.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			JMUkwI9iyGB8vgkfb08WZXjaviM=
-			</data>
-			<key>hash2</key>
-			<data>
-			eZb+DIWb273H/TKF8c+PGCTh19qfLECU0ydY+NrsPiw=
+			fdqQuJJpy71fIcnSAPl8u/SCTTNQahf7/apQA07G50k=
 			</data>
 		</dict>
 		<key>Resources/lib/libLerc.4.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			VwTPKOCVdALMi2F4vlpJ92mnHGw=
+			36JLq49ozY3s5E6cwFIic2V7BgU=
 			</data>
 			<key>hash2</key>
 			<data>
-			w8ZYz9eOpqwFQ2AacQIxAzIikfqCP4zhz+ficCTpl5k=
+			nFpgJanaYS35Skp3SNVDGcm+DfA4w8jHqzpT9o8lPaM=
 			</data>
 		</dict>
-		<key>Resources/lib/libX11-xcb.1.dylib</key>
+		<key>Resources/lib/libSDL2-2.0.0.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			F+bWWC8D+WZJk0gEHiAtbGQY2pE=
+			LbHcStdjgRne6qgXWk6scSbUG5o=
 			</data>
 			<key>hash2</key>
 			<data>
-			8j3MS+HH86SWwVQPnaDYeFhTdeOhl/X0X23Wg4/hVlI=
+			7I11MjX3GWpgluHdCqr0rbxZDZUOSq7STJ0fU3ZZbY8=
 			</data>
 		</dict>
-		<key>Resources/lib/libX11.6.dylib</key>
+		<key>Resources/lib/libSDL2_image-2.0.0.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			QajCUPlUNBkXk8qliixa1iSC24Q=
+			Bg5WES9XLhx7mpjJ+kxyZNmkWPg=
 			</data>
 			<key>hash2</key>
 			<data>
-			XIfLe60CZGmWQUGeL25NWMx33Od5Mw/n5O0MHHuRQaQ=
-			</data>
-		</dict>
-		<key>Resources/lib/libXau.6.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			2K4P3xdti+9uX2urUabUN7+Cgts=
-			</data>
-			<key>hash2</key>
-			<data>
-			wjEWfQGWYZX0SxXu7io2ADxeCyuKqH5HOJfuJoVyh6Q=
-			</data>
-		</dict>
-		<key>Resources/lib/libXdmcp.6.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			IlOiuj35BZJfVqomQFiBgW7fRXg=
-			</data>
-			<key>hash2</key>
-			<data>
-			g4Q5FuHDVtq78FxHjKscvc+hPDpzaxFWmfgfydlp1Ts=
-			</data>
-		</dict>
-		<key>Resources/lib/libXext.6.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			J+wo+a8c7EkiGn0jwXnj3l4lF34=
-			</data>
-			<key>hash2</key>
-			<data>
-			SoTWFwVnJuVN0DbbDUIt4slqcEUNzYtetLkve2zhAr4=
-			</data>
-		</dict>
-		<key>Resources/lib/libXrender.1.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			nBbT+ZfwkyJTHkgGT8TlaXzm6Ek=
-			</data>
-			<key>hash2</key>
-			<data>
-			FyiWjcUhZFCyIeVwVRgfo4Oo92sDpIWvpA7USwdft6Q=
-			</data>
-		</dict>
-		<key>Resources/lib/libatk-1.0.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			kUq3YoZ13omFRIJT/bwsPziqCZ8=
-			</data>
-			<key>hash2</key>
-			<data>
-			LHyoLjrrYgo6sVcwjnRpFFsZE9gdsV7ur16ih6DstdM=
+			n0qD6TXDkmGiJURkdiNw9+Yqqqfe5EyjzOMkU8zvUX8=
 			</data>
 		</dict>
 		<key>Resources/lib/libbrotlicommon.1.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			sRnCq5Sr/IpZJgfym/+TMUDYDhA=
+			GeMRaWMN6H2euyGgdvtEi0B22h4=
 			</data>
 			<key>hash2</key>
 			<data>
-			tQttYu9t4th0978+lPqvlEFH+Dbk7qqPU2s+68+UhIA=
+			1rv6/8E6gusaIpLraXDOaPq+CavbHhux4Y9azy8I01c=
 			</data>
 		</dict>
 		<key>Resources/lib/libbrotlidec.1.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			MBqoCTodETBejcazhEd/9P3cjAA=
+			ssmLigPvHw+T54zM2qjAKTJW/eo=
 			</data>
 			<key>hash2</key>
 			<data>
-			0MMY8EawB2LXvWVQyLQFtlVLEjbg5+qFr5my5EKJ/nk=
-			</data>
-		</dict>
-		<key>Resources/lib/libbz2.1.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			dXIodjTlAhRoE64GY1nKjOjH1jw=
-			</data>
-			<key>hash2</key>
-			<data>
-			YzjarVdIBcZyV7KAdYYCWOhLx0gq309PKrt52nulcTo=
-			</data>
-		</dict>
-		<key>Resources/lib/libcairo-gobject.2.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			xuP5Tv4tlWp/kYg553JsPsGu0zo=
-			</data>
-			<key>hash2</key>
-			<data>
-			wHvGse02YdC24P4QzvPLmjDbsOHR1DLW7R7WBA00bTI=
-			</data>
-		</dict>
-		<key>Resources/lib/libcairo.2.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			3+IDohS/TBOGOVPKQELxah91JGM=
-			</data>
-			<key>hash2</key>
-			<data>
-			HMaMKlUm3UOjn75Or7vP0gon25jLbQcWupkvH54iN8o=
+			BAo7/lpkLeeWQE7ZPGaE9qHqQn4mctl8EMKK6sglRVU=
 			</data>
 		</dict>
 		<key>Resources/lib/libcrypto.3.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			XAoIPYJpQZzma6zU67kvJ9/ltCw=
+			86SRk45fMnxTB0sV9Pxfgk9kr3A=
 			</data>
 			<key>hash2</key>
 			<data>
-			GmId+DD8HCbHuK9CnILpcLrgC1yMLBJtfhTX8Gwwdtw=
+			nHa3atRvILSewl2ZGa/zGjFBBBfeV4NyYB7K7yavTJ8=
 			</data>
 		</dict>
 		<key>Resources/lib/libcurl.4.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			X50qyciSa94twUicGx3mOmQT7TY=
+			YcSz4lwcqbcPXEjjaF5hmtIqtw8=
 			</data>
 			<key>hash2</key>
 			<data>
-			XNgGyJHOqKq/zC28diPuTAAdJ04MnZCF7gIUsosaz2s=
+			XOe31dkIEcZoxZjfLFWsP4BQTTNbpPhlnYuDf3TSAKI=
 			</data>
 		</dict>
 		<key>Resources/lib/libdeflate.0.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			Nz2Dtu3Q5Oa9t6LKvkElN3CLXFE=
+			9ijs6FSoVmPJKUPlVH7LEIJQQck=
 			</data>
 			<key>hash2</key>
 			<data>
-			TM6f9N0SDfFfFVdRGMEw/sy/agCs+55fKZcY96+5DQg=
-			</data>
-		</dict>
-		<key>Resources/lib/libepoxy.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			FtrlEYOyjz1q/7oeJmvD4HR+l8A=
-			</data>
-			<key>hash2</key>
-			<data>
-			iH5UWgb8tT9xVOFra+POwRXmWENrTjemqRIldQhADNA=
-			</data>
-		</dict>
-		<key>Resources/lib/libexpat.1.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			ct8zdvx5uio4SrBl2x9xvTAG6v8=
-			</data>
-			<key>hash2</key>
-			<data>
-			d/JxBbWc6AagBTSbI6hFvZR5Aj8TqDEqPQhoeWDLG2U=
-			</data>
-		</dict>
-		<key>Resources/lib/libffi.8.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			3mdBdKFaVa64BT0IW8QL/L7KQYc=
-			</data>
-			<key>hash2</key>
-			<data>
-			9mxjHyqQrKaJZO56ukBhS/mrqxidD255+zE/R1co9iQ=
-			</data>
-		</dict>
-		<key>Resources/lib/libfontconfig.1.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			/jrzlbXoIExLQU+IO3KTi5ya6uw=
-			</data>
-			<key>hash2</key>
-			<data>
-			FbQEh82UehmoEBAEM+4e97LOYQrYHPtCdBqy/+5ezjs=
-			</data>
-		</dict>
-		<key>Resources/lib/libfreetype.6.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			eTee55fKwvi63OdDLx6mtxlrYiI=
-			</data>
-			<key>hash2</key>
-			<data>
-			UK3K6vlA7er3HfoZvJ9JK9oDBIfJWsa+WpkqTlSegWw=
-			</data>
-		</dict>
-		<key>Resources/lib/libfribidi.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			44nLEH0gfOzqM/udfV9VGcTK7ms=
-			</data>
-			<key>hash2</key>
-			<data>
-			6Ah9THju7aU9YxRg5wC0K/aPD+0bLDv+dahiqCB71PM=
-			</data>
-		</dict>
-		<key>Resources/lib/libgdk-3.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			ELaaFQ/HD21fzrtXa+5cjhll3U8=
-			</data>
-			<key>hash2</key>
-			<data>
-			11RhLJqBzmCYHu2dUg597PwimvvFCpsblz5EsvqVYMA=
-			</data>
-		</dict>
-		<key>Resources/lib/libgdk_pixbuf-2.0.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			wSAN6lDkZLSNQPAYCLzEMFz/OSo=
-			</data>
-			<key>hash2</key>
-			<data>
-			kE69+sjK2ooG+CzZgWEHnjrGuGf7JC2FA6L7YFUdxHI=
+			HWr96yvzIITwA35GPHESOMieBUxR4D3xqYaR+jJ2yOg=
 			</data>
 		</dict>
 		<key>Resources/lib/libgif.4.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			pZ9X4qFDv8YAVSnEituulqtyHrg=
+			QySTV0DVL6iI8afLiZRc5WhVXFo=
 			</data>
 			<key>hash2</key>
 			<data>
-			HBTPgglTFSxFT8FLW1grWThNHek4UP86KhIwbkHcaLw=
-			</data>
-		</dict>
-		<key>Resources/lib/libgio-2.0.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			7ICMjI7M+81iv774xoN94UISQiU=
-			</data>
-			<key>hash2</key>
-			<data>
-			ubOdzIG+Gy+vZYNZ4m1I90FYi82nby3tf02cr3XvmT8=
-			</data>
-		</dict>
-		<key>Resources/lib/libglib-2.0.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			g/HJBaOSv8wBwjIbYNM4TxfT3iE=
-			</data>
-			<key>hash2</key>
-			<data>
-			ESQCLMz7++bzBK15QbFQdhrN98yGDJBjWUIo5bxgGSs=
-			</data>
-		</dict>
-		<key>Resources/lib/libgmodule-2.0.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			dECr0yYHkMfPXSOHQCrT/4FRax4=
-			</data>
-			<key>hash2</key>
-			<data>
-			XDibaBrhAEABQB3KzjhyNwxG+3kGMIpcS2+vNr+H2ow=
-			</data>
-		</dict>
-		<key>Resources/lib/libgobject-2.0.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			SwCqIhx+jC5nLRfGi/4lwUVOzLM=
-			</data>
-			<key>hash2</key>
-			<data>
-			TCTADN1z9RuUiia7Uo5+ppK4iDd5WRSKJsdyUCrVZjM=
-			</data>
-		</dict>
-		<key>Resources/lib/libgraphite2.3.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			5d7PV/jQCmITJ8nb099hnfj+csU=
-			</data>
-			<key>hash2</key>
-			<data>
-			oLIth/pLTSt0sLoy6oyFO5L97kBIQWuOuSoTRhoHmlA=
-			</data>
-		</dict>
-		<key>Resources/lib/libgtk-3.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			H8OPF34li54MmVblc7TVLGwX9fA=
-			</data>
-			<key>hash2</key>
-			<data>
-			bhDNTnqJx9J+yqUgkow5TkLdQOw72vUfjlj856CjzmM=
-			</data>
-		</dict>
-		<key>Resources/lib/libharfbuzz.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			Zsf3aeulskNi9iU6g8kVI2IduNQ=
-			</data>
-			<key>hash2</key>
-			<data>
-			9roVFD3RiCmRdMK0QqncfBFygGMSlD+VNbgl9j0vuRM=
+			/g2YiBBgUdjf8GKO+pF2ViOuqM8lfplkCWlElQQHzzI=
 			</data>
 		</dict>
 		<key>Resources/lib/libiconv.2.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			BwzvGR5NLa9zCJzYMBPG+s3iS1c=
+			EY9ilX4go8m+4+mUSs8fxDChBdE=
 			</data>
 			<key>hash2</key>
 			<data>
-			u/l2K3EHEw3dSQh8vmipYYjnLa5wCy65suOiyT1tdrs=
-			</data>
-		</dict>
-		<key>Resources/lib/libicudata.74.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			iWOew8Ra2aY1DIWVr2SPFAQm8n8=
-			</data>
-			<key>hash2</key>
-			<data>
-			0M97w3fLLQydehEHqKPzoRm+dQtwk2+faFfjoW/W1Bo=
-			</data>
-		</dict>
-		<key>Resources/lib/libicui18n.74.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			jAFg+3ct4miav3KFeOhZ97scCsg=
-			</data>
-			<key>hash2</key>
-			<data>
-			CyPobS/GS2otJ9sM6f064E/5gAaef8kpmMcvnG4DCgg=
-			</data>
-		</dict>
-		<key>Resources/lib/libicuuc.74.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			8WYJLS9fR1vpAlvggsbsWCSRdlI=
-			</data>
-			<key>hash2</key>
-			<data>
-			uQhZUbIJIEX4TLNmfpLYQ3SbVzHvoiVV99kwMLszqH8=
+			Xq2c6wvwqVjPnkXwtZih2AGrupCfnzgXN6+6WoP/ido=
 			</data>
 		</dict>
 		<key>Resources/lib/libidn2.0.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			fsdmYk87HSe5j5gpiLoiqb+gE7Q=
+			RhN/s6vNHVsUsQH9yfs6JxSjl5o=
 			</data>
 			<key>hash2</key>
 			<data>
-			6VPcTXmqyjxMrjKe+FLVopX81SQ/5OjNbEKtaTOnaoU=
+			pJxkxrVhJ3e25/R3BIVbfENY9GbaJJkaZyt0BwNZKTU=
 			</data>
 		</dict>
 		<key>Resources/lib/libintl.8.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			cWLVGRnGMn4NQKNLVd3zMRJz9Kw=
+			v3F5nF0/2KQDF6WNKUjORVGm9fY=
 			</data>
 			<key>hash2</key>
 			<data>
-			q5AbsUfTO3ON2jOhAje2CXux2Ca482EHyjsEDwZCfuw=
+			s80AQ0OINE/jva9TbMcm/mb8Jx+TWxEOpXElIyDYoIs=
 			</data>
 		</dict>
 		<key>Resources/lib/libjpeg.8.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			MoPklZmSzodGtMxgOjRVEgC9jH8=
+			9dJ9zHu/DDFjSaf5fOQ7QXdWzLQ=
 			</data>
 			<key>hash2</key>
 			<data>
-			w6yLYOHf0q5Eslb8Wjer64X96APq5QxgBGO2v5SCQ6Y=
+			naIHOwEJb/B5WwFVlqRB2IuYq7rKomsbHCN0u37VeE4=
 			</data>
 		</dict>
 		<key>Resources/lib/liblzma.5.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			PTYFJPQJgtobM3IGD51EfG9Jucg=
+			+aVKm0gsLwqHYaacQe4ojrmmZe0=
 			</data>
 			<key>hash2</key>
 			<data>
-			aXAvvCO6sORzKImo3soX3TfnDqGqiXfxuKOvFolw2bs=
+			9/fsk4uZlVt8eXSbhVWpyIqbeI8FY5Lgsz8EW9cta00=
 			</data>
 		</dict>
 		<key>Resources/lib/libmp3lame.0.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			3QVLLQRsEdvMLHVrwuAnYqC6jU8=
+			ofXkUb7djgZmBDLRoY0vdd+fYaM=
 			</data>
 			<key>hash2</key>
 			<data>
-			rlnHCKkCJ9700UWHUyKbHaVeB/Dx5pcY3WxYy+edPHs=
+			WEWWMvHRQxy8pGDKStlS0PgUAD0AKsAtSoeJSMRsI04=
 			</data>
 		</dict>
 		<key>Resources/lib/libmp3lame.dylib</key>
@@ -3423,242 +2128,176 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			LZ/agXcxKIU15oHb+CV78m6l4Hk=
+			+fNw09Ny9WGtannSCZ6U+XUSzVs=
 			</data>
 			<key>hash2</key>
 			<data>
-			bEPBhHvXgXJwrZEPN3gFgjR7L/bVEt7nqksj3AnUJso=
+			T5o2CehEX3ilcuzxD682xwloyziHPQ0acxxwbdLs+9s=
 			</data>
 		</dict>
 		<key>Resources/lib/libogg.0.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			s7SZkI6+r/sZZ8i8PP3aDfvIgm4=
+			ytmWZzaUvE/oGfVKfNbldMjfNCg=
 			</data>
 			<key>hash2</key>
 			<data>
-			56Q/PMlPbSOmmwa6BQUGjnYK5FBTlGmA4U7qD5oxN4A=
+			Wi4x00fdPQZ08Lxq5LfUGBFd59d0/KaSvvjys6k+ODY=
 			</data>
 		</dict>
 		<key>Resources/lib/libomp.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			3mWfmFqVpZE+V2N/wVC27ZsXqS8=
+			1N0IaJdXpGn7XNuVfeS1Km0iA64=
 			</data>
 			<key>hash2</key>
 			<data>
-			iXd7++VeCW3/HJZNM+3beoNloZleEYRKy9DRv4CeR7M=
-			</data>
-		</dict>
-		<key>Resources/lib/libpango-1.0.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			NRgLALT8p4ktne040FmftL7Uqg8=
-			</data>
-			<key>hash2</key>
-			<data>
-			GMOA3lU3Dec+1IpwJmpK58KQjAbHNTLpZkUpfeMgsoA=
-			</data>
-		</dict>
-		<key>Resources/lib/libpangocairo-1.0.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			XbYIP8KXShnJL8iJbFWF5vI0iN8=
-			</data>
-			<key>hash2</key>
-			<data>
-			oVY92UwrfUZbdhduydpaAQSmleMuzB8K36cqlsoaDLY=
-			</data>
-		</dict>
-		<key>Resources/lib/libpangoft2-1.0.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			rh1xlhQWlbSTh5O/N0TQn+iAx0Q=
-			</data>
-			<key>hash2</key>
-			<data>
-			Imv5wrsrDz4ZzrICH+1Z4TXdtkFOSzu6kGttWwZu+KA=
-			</data>
-		</dict>
-		<key>Resources/lib/libpcre2-8.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			1rCeUbSvAeMjxUTgHLY2PMYjxYw=
-			</data>
-			<key>hash2</key>
-			<data>
-			ZRc1/UAcey0Iyoq5R9HXicfAFxjj0VbqnAMQAcBQKFU=
-			</data>
-		</dict>
-		<key>Resources/lib/libpixman-1.0.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			d4FRkihaYuRKtichK7ztZkb4jwE=
-			</data>
-			<key>hash2</key>
-			<data>
-			pKj6zgbKx5D2WSbZMVagXW8jdVXwaro/q5M6E7l2n9w=
+			HK1z9hrEdrJz+eo4LRTQyKN99NXg0rVV/pV27TQYvcU=
 			</data>
 		</dict>
 		<key>Resources/lib/libpng16.16.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			16uZG+SqozwKRG9hBjUzHGYWSrU=
+			85tNfRGvNYw3PSVqICsbFdBzGpk=
 			</data>
 			<key>hash2</key>
 			<data>
-			Qs8sDO5aYwaX1EfcfAAmJBorHg3JkqO7SB5s5cZ9gaY=
+			3xiEZSymHfvFFoKlXSCddsrHZfjSfn2eKeqercWv1KQ=
 			</data>
 		</dict>
 		<key>Resources/lib/libpsl.5.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			NP7zYZu7jRB8pGQWuHhVVxHw6Js=
+			MCRpbm1LqS0wIIICbXq9YP7CijE=
 			</data>
 			<key>hash2</key>
 			<data>
-			JsrjjtOcfwUQpeX+Yp94Cmosv+2E9SWn8Xlpf3cll8c=
+			P0+iNO8c258NMnJQDT28/glAZGi89O+h21AfzAosfaU=
 			</data>
 		</dict>
-		<key>Resources/lib/librsvg-2.2.dylib</key>
+		<key>Resources/lib/libsharpyuv.0.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			BrmbEPyXSPgnWHkL5digIFPn2+Y=
+			UVGTM37OO0FShS1LRh6UWZ7B6/g=
 			</data>
 			<key>hash2</key>
 			<data>
-			zJI35SAkc+iMH9RMG15pMdQ0tw0DR2TqWtVXDOrEXZ8=
+			bbDYIpwH3kmexraWriAJ26Hce2tadrX67iJgLuuBucE=
 			</data>
 		</dict>
 		<key>Resources/lib/libssl.3.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			eYCy4p5Asc+9/SobVVTCceS2EZ8=
+			1OY5P5z7kdkP9eTNVy0HDeZVhe8=
 			</data>
 			<key>hash2</key>
 			<data>
-			PwiLQOdq028OgMNXOiAs4wKXJ/YJVycjcHdICW8Mt5A=
+			9NgLLzDLhU6pttQmGqQ/gjgbSPz7YqA9PrQPB67Egt0=
 			</data>
 		</dict>
 		<key>Resources/lib/libtiff.6.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			semFlYIuWtgLc4gqyyxrertYl/A=
+			uarslliWUy/iCD1xWGQ2ykSEB9g=
 			</data>
 			<key>hash2</key>
 			<data>
-			YWERXdzcTDaV/5lPoF07mhjG4VyA6QbnyRBOJisCpZs=
+			gI0Qx7yz/6F0nloPTiPforvJPhFYvqtmdgRh11hHtK0=
 			</data>
 		</dict>
 		<key>Resources/lib/libunistring.5.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			QFXL0QOYUFa152osuhZxbgeH21o=
+			I8u23ba+RAj1z9VVxPeUscbiMPo=
 			</data>
 			<key>hash2</key>
 			<data>
-			F+mItsRNf9CopOrpZJz+GGuboR+fnHfRWb/2HXqk8h8=
+			SAPcc29+h9QUh9sbZC12QLFAP+A8wQX+EvN/m1g0dME=
 			</data>
 		</dict>
 		<key>Resources/lib/libvorbis.0.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			8pq8N1RBne1mU04l1ZXmWomk7Ko=
+			innXDMjVB2KXxlZ5v31yhspOHrI=
 			</data>
 			<key>hash2</key>
 			<data>
-			DwxjZhHDSRXr/JMoIYmK2FfKoDryIm2ZWNuZCLvXyAY=
+			AG282ml1a13nKZCGGehiSjtqowiYyi3zeNtEbiqa3yw=
 			</data>
 		</dict>
 		<key>Resources/lib/libvorbisenc.2.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			qHZM5kUwlpfbmv7X5uhySaoEVew=
+			CIlVKmEoFtZLegZWLoMDQ9JKsfo=
 			</data>
 			<key>hash2</key>
 			<data>
-			ccmmYfp1lwzDP+OqNU485WJbi1gbMt8UZ/mNtBiFQ78=
+			aEnZFMhjrgAZIwNRbRtngj/soeXVBaMqG+yFZKZgDY8=
 			</data>
 		</dict>
 		<key>Resources/lib/libvorbisfile.3.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			2L1rMt+SBt6OCu3jcc2z3jN+1Ws=
+			upshsz2d4Fln/fPbwFVo+NE4Fnk=
 			</data>
 			<key>hash2</key>
 			<data>
-			IZCTv0kOIxUoY72YClOapnc6t2rZZ6EjCQMyTE3D2Rc=
+			5bwNW/zJAFU+Bclcd+WyBEk1cqUcV7iUp5iFoh3CLfU=
 			</data>
 		</dict>
-		<key>Resources/lib/libxcb-render.0.dylib</key>
+		<key>Resources/lib/libwebp.7.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			4BOsLuoPnUprCQMt2iWRQP0Zcos=
+			xCoQFLYJxKNt/KMV0+ZSqiH7RTo=
 			</data>
 			<key>hash2</key>
 			<data>
-			rJcpQSOZnD6sJUOJrPPeNBhvMMJxx7xR1M31egS2COk=
+			pw+xFT2uuw3S5mtjkL6XkMcv/YXmf2PreGr9qvFPWH4=
 			</data>
 		</dict>
-		<key>Resources/lib/libxcb.1.dylib</key>
+		<key>Resources/lib/libwebpdemux.2.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			KSoBRi8hGqC8CmRriDadNGmapfU=
+			z31/r/y0OPUfIkiKYOeMt89r6Hg=
 			</data>
 			<key>hash2</key>
 			<data>
-			z/ksiad8UyoBkaz/dwnGst5bwDS75GCLJfK6tFQoBxY=
-			</data>
-		</dict>
-		<key>Resources/lib/libxml2.2.dylib</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			OwVfWCxRXJc2qKUp/YMvUzh8XG0=
-			</data>
-			<key>hash2</key>
-			<data>
-			cY7ckJd65TT3IOQq7o9ncKSJIeVfRA3kRG3WYjgmDj4=
+			qWIazPeTTSedlW71vMN5ZCftaIUovixuDiWaIzAzthU=
 			</data>
 		</dict>
 		<key>Resources/lib/libz.1.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			u/z1IGAX1RT+e+9Jdwb+0y1nih8=
+			KG7hhuzW4rejncT1vlL606o2umU=
 			</data>
 			<key>hash2</key>
 			<data>
-			iHbKMEPn0o8S6l9AeyMudIrPEbYDKGothduvL17EeJk=
+			gC1eka88YI7ai5TJZwujQomZTW/m4ROoRMW7ZI5yMHg=
 			</data>
 		</dict>
 		<key>Resources/lib/libzstd.1.dylib</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			G9R6johesj2GUGLY1JoxbwlcozQ=
+			JE4Y4frzVNoTnidyD0eidUCoZpo=
 			</data>
 			<key>hash2</key>
 			<data>
-			NoVlcUl+grwDV5mJ6PSTo+72+oam5u5g3tCGyOQzFEE=
+			TqHpUxIwFTwac8n1R3LYn/xyUABVW2Wi/P4znx58nSY=
 			</data>
 		</dict>
 		<key>Resources/script</key>
@@ -3670,1007 +2309,6 @@
 			<key>hash2</key>
 			<data>
 			1C17y4hxvu6u65TLcx9xGql4ygBPqg6WUTsxHVQkVDo=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/codegen/__init__.py</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			VByxgARauQxSWU/6n3974iBfy6g=
-			</data>
-			<key>hash2</key>
-			<data>
-			ywAaj+NplVNzig+Ap2MZ0z+PSfFOarYxglweRhu4OmY=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/codegen/codegen.py</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			4zKhDrRdKPkG2zi63JyKEbNh02I=
-			</data>
-			<key>hash2</key>
-			<data>
-			hsoQrWaVPnsZSeprXBs+UAqB6ao2nOlC3jPoC0vcvek=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/codegen/codegen_docbook.py</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			2n96F4goLlXHTa/P09TPOYS8Yho=
-			</data>
-			<key>hash2</key>
-			<data>
-			9HcUZx09+nnWxO1fJn7tZHx6ppwHCfYI4OlZnGYLkrU=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/codegen/codegen_main.py</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			07Hl1Qo99Cg+pnGlPbcFAqHpPMo=
-			</data>
-			<key>hash2</key>
-			<data>
-			+a2ZyixFk83eOSLA0RCNH9Zxn/j7n8vh1m7AezwyqJY=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/codegen/codegen_md.py</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			HqALGlKbnCued8Qh6CGL0ZBxdkQ=
-			</data>
-			<key>hash2</key>
-			<data>
-			b5oSuEihBlX1Y0Qm3Ws+dHelmRiT29M/n0kwfzZVbPI=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/codegen/codegen_rst.py</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			UlRgZPcASKxk2nsAu0sfO6Bxgio=
-			</data>
-			<key>hash2</key>
-			<data>
-			kWomTuAIybE3Dh2dr+/0tBK+vzzwZimTOcvjcQSeSBo=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/codegen/config.py</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			r5t0/HvDy7Ll4cOrXRxhvQKYHR0=
-			</data>
-			<key>hash2</key>
-			<data>
-			bSObXasPnY6ttgmdNE5B8kKRoaLmyze+5gKGaXRqlVE=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/codegen/dbustypes.py</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			3XJUuMJMQ1F80NnlkxpDJckkpxA=
-			</data>
-			<key>hash2</key>
-			<data>
-			jH+oCsRBDfqNquh4jXVNQP3Hxx2XTlvZMhcGh6Shqf0=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/codegen/parser.py</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			3mke/r9DhptI3CpjzX0mzHjJEHU=
-			</data>
-			<key>hash2</key>
-			<data>
-			PV/uxBLZp0bSn7x7GOVi4L+8NvngmHDRnM4+IH2xrhM=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/codegen/utils.py</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			+aHMD217n/XXw8pZ3+IXFwes5bE=
-			</data>
-			<key>hash2</key>
-			<data>
-			4Z042tQPAr1Lb/pcc1Lu6rf41EYpwNtklmDW5ZFZRHs=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/dtds/gresource.dtd</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			Dm9p8Qfx8ytSUVy+tD3TL4aAqDE=
-			</data>
-			<key>hash2</key>
-			<data>
-			4a+DEgIgj1fbbU3tGuZen8lYayBnXbgJaeV/0qUgbXA=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/gdb/glib_gdb.py</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			QQMqUUXKO/6E211I/Xab5Bxt9GI=
-			</data>
-			<key>hash2</key>
-			<data>
-			n+8GgiN/W/530+yzbmK2I0opreVPsFsysbBp+sGSYCY=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/gdb/gobject_gdb.py</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			rvDL++D5V4jg7UPIUUYbnWP8W1c=
-			</data>
-			<key>hash2</key>
-			<data>
-			JSciSsvjLYv5n5FDyN4sHRWrrpMQ5F6k2bEQ5R9q4Ns=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/gettext/po/Makefile.in.in</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			WNaPI9ph7Z4jjpm57T85QzQTr70=
-			</data>
-			<key>hash2</key>
-			<data>
-			x1cG65+iCoxi7P9ovBaeEV6ZK6M2VL5YKTThTfSKJcw=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/schemas/gschema.dtd</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			BY2rQNdph/3FfTHf7nnlVZ+U2/0=
-			</data>
-			<key>hash2</key>
-			<data>
-			RKEvM5BCo/VWipzIa7YX+rr0olg2uMlRCqneIkMZMMY=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/schemas/gschemas.compiled</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			L54fU/VBfSV0mVd1acR/3jLfKSU=
-			</data>
-			<key>hash2</key>
-			<data>
-			HmIXlnI6SPXnihbM8Hjz7/s0ffWOrxPQaGvhIZZPyw8=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/schemas/org.gtk.Settings.ColorChooser.gschema.xml</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			qreFPMPDmTrTIExJSUVOd8JnCqM=
-			</data>
-			<key>hash2</key>
-			<data>
-			5HaRPvYeZxn/VsLkxbiydq8wIL+w0AcmPCokGDVzCII=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/schemas/org.gtk.Settings.Debug.gschema.xml</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			N/245mb8HtF87tnodnEtmS/Ghx4=
-			</data>
-			<key>hash2</key>
-			<data>
-			3gaF/cL26JDjJEWnmqk45VZrjdQG3XHWxqZsaeP5QeM=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/schemas/org.gtk.Settings.EmojiChooser.gschema.xml</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			iWDxpJZRdsfa1w/o9oFg/tok33s=
-			</data>
-			<key>hash2</key>
-			<data>
-			Iquiilp4dF2H7t7YjxuG993qJLG5B3EVHvSUxmChtZE=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/schemas/org.gtk.Settings.FileChooser.gschema.xml</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			FvziSnO5phJSNrmpSWnG3L3+K+U=
-			</data>
-			<key>hash2</key>
-			<data>
-			xwifQdIrOFTAX+SZb/JxlJtAFIpAucbwrgNJeS3JS3c=
-			</data>
-		</dict>
-		<key>Resources/share/glib-2.0/valgrind/glib.supp</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			MlytPXCU4mn3nTHRvCLij/L2t7M=
-			</data>
-			<key>hash2</key>
-			<data>
-			rzkU2QhrJlIU+++cv/oDfylYyK/nCfwkhI5Jq0LnAwM=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/icon-theme.cache</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			kFJVXNN37VGYG9Wmkg/ecIIDGcg=
-			</data>
-			<key>hash2</key>
-			<data>
-			1M9GQ/zYmxGL0gcYt3C9xSSozu6SiaHoFH33Hs/wGxU=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/index.theme</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			AH0MDT+S61IDxmMMsFAJ1bIYda0=
-			</data>
-			<key>hash2</key>
-			<data>
-			JJTA4Mf3AI0lWH0zGa7FD4kOxhLGUb4dv1fxayefSDo=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/audio-headphones.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			GkfyWzokhewxRYk/Xg3rAXirxEU=
-			</data>
-			<key>hash2</key>
-			<data>
-			6EOhHBG53C7b4W0FdsM9x1teOj80HaO1TWYj0XSumB0=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/audio-headset.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			3uuRvianyNn9NGnMLDb7jFctLd0=
-			</data>
-			<key>hash2</key>
-			<data>
-			Trkygt0RY90hbEO4dxvM1NoNLCof6lqEI1JVTboCj7s=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/camera-web.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			Wkax6Be9X6J/PxvNy1L/Omidid8=
-			</data>
-			<key>hash2</key>
-			<data>
-			tJa16qWzvseyaFuU2ebeZ23guEHxrKP0qQcgobLS1nU=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/computer.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			I+Y+eWRaOW/4ftmCqoThR3PDwt8=
-			</data>
-			<key>hash2</key>
-			<data>
-			MQpYGuBy9ml5Gss6hogRW4QuLwo3RgqHIVXCYKQws6A=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/drive-harddisk.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			yW325KmxyC+q+mnPORxVYFaUVZE=
-			</data>
-			<key>hash2</key>
-			<data>
-			4+GRosEr4RiHN9QjqOG6VP4AsffEfFXdrgwvj1azwEM=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/drive-multidisk.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			0cShpaOb2RcS1BFuGwW7/E94tDc=
-			</data>
-			<key>hash2</key>
-			<data>
-			I3unjLFPANgiYUURGJXfTsEV9LhacUkbhiHdTC/mfW0=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/drive-optical.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			uHzEifR3y96Nfemy29CBbJ596Fw=
-			</data>
-			<key>hash2</key>
-			<data>
-			HxJo7iupbV2RzvGXXntaAVyhZR709+AgEFnZI5P9M1M=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/drive-removable-media.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			Lv3MyWhBwYLoWVbPTfVZzroK6Qg=
-			</data>
-			<key>hash2</key>
-			<data>
-			SFHIN41/luR4SpaS839aHO2KYL8IK8Ii0rbP6quknTs=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/ebook-reader.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			G1HFm0YABl6djzq3XwKIJhX+j1Q=
-			</data>
-			<key>hash2</key>
-			<data>
-			3P2g5cRhp6S8Oz1Mk+z0uFs+L0ADSwqPNfsZgAMjusw=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/input-gaming.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			v4IMnxmt81zu+t3fO8IagG/Ne1Y=
-			</data>
-			<key>hash2</key>
-			<data>
-			2RHBIr4VSqwuhI8FPmDGwJhIBtXpQGoyPYWsJRzwVvU=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/input-keyboard.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			Qe7etZ2oiRpQOgXe9oh4LfQ2+eM=
-			</data>
-			<key>hash2</key>
-			<data>
-			jj6VJEyY92eyWXfTa7dhshjdfVco4gfOn1zc6U2gG48=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/input-mouse.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			Ma5brN1N5T/TzQhepQ1HygOsNxw=
-			</data>
-			<key>hash2</key>
-			<data>
-			PUJ45i6Lw4b2rbDKZ/7BWlB13aq3qWCxLClRH3Up3ek=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/input-tablet.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			9cD5JvC1QKODZgZW9SJ5Hg5OVdw=
-			</data>
-			<key>hash2</key>
-			<data>
-			4skP4SYGKz3vxXzQ0z85vpzbP/pFNqLdVOV3bKZYAzE=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/media-flash.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			/2+gyoAZCEPHUGsBJaWewKpRc9w=
-			</data>
-			<key>hash2</key>
-			<data>
-			IDRaXM4erOpDH3oWiBaxhLydawO8BbQujKUZsYB3FvE=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/media-optical.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			sRqdYf+40BBjScERGwL83hNyJPw=
-			</data>
-			<key>hash2</key>
-			<data>
-			xBEsO5IYhNIeLglK1TmbnDLKNdWYqgeYFcP8CWDjVtQ=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/media-removable.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			zw8/pubjovq0kk+APRsZx9g8Mv8=
-			</data>
-			<key>hash2</key>
-			<data>
-			qol6jTuNtm8+XOjkELC6LKZe+vnLwmEdVTMwZjOHQgM=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/microphone.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			uVYJN5cEzDyBVaup6tjACHezyJM=
-			</data>
-			<key>hash2</key>
-			<data>
-			EPOOKpggTCbuDo8rcUyVMe+rHpZmAXh0nSuYKp9MC/g=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/phone.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			UiEO7koK8FxWz4jcwBxXZW2IHFs=
-			</data>
-			<key>hash2</key>
-			<data>
-			SR+TGNRAEX8VRGasmiB8rOgXaqqzBxUPkXHIk6LO0Qg=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/printer-network.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			ZjUayze+XuahjQ2EKmx/D6Bf5RM=
-			</data>
-			<key>hash2</key>
-			<data>
-			bkFQeL/1GuwOmEq/UWDFbjAoNoOb1v4xmVovOyuN6CA=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/printer.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			OON1wQ/qlELTdZ6a2iGXCFUxStY=
-			</data>
-			<key>hash2</key>
-			<data>
-			zK7sK3c79nkjnmbLne/qIsVbIiHUvKwq3ZH3RwKObGg=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/scanner.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			bEsCUEbA4cCYwgOjPlxxNosCz0A=
-			</data>
-			<key>hash2</key>
-			<data>
-			ssYdlUZMyeHYTGbnq9TCLrFAiSCYp6IZdS96+096NpA=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/devices/video-display.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			Ceahv5689PIqIshcHOP12eFpk8s=
-			</data>
-			<key>hash2</key>
-			<data>
-			WC2IEm2PUbxHB4hYXdu/vNppmdSnP7vhRGUGtb0VdqI=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/application-x-addon.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			QrmVdg8g04gzJ9mdos3B0orxgwk=
-			</data>
-			<key>hash2</key>
-			<data>
-			yO76DasjG5loDKAVFf0TTxhA19m5VpmjeOS/m637l60=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/application-x-executable.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			nYH+iL05j8BssKfqvk2oPqK9rKc=
-			</data>
-			<key>hash2</key>
-			<data>
-			qsBZ9mzoZH7VfQlgQ280RK+Bvir+6c71UyerdXK5ASA=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/application-x-firmware.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			D86mnG6Yho8LlfcT3zj2aT0JxOE=
-			</data>
-			<key>hash2</key>
-			<data>
-			U22N3Nz0wqtrNB3FGOEgRcuf5O71aFoyQXQ63cF67Rg=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/application-x-generic.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			I45Y+F8IEhXCD9vbtJRShxTGNPM=
-			</data>
-			<key>hash2</key>
-			<data>
-			mrwiZO8aSpY2Ep6aRdxBJiCNbS2NeOzkItrSW9q8VYI=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/application-x-sharedlib.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			WW0F7d/dJ7lSrqYQs+5g22pzO9I=
-			</data>
-			<key>hash2</key>
-			<data>
-			7xBnauZOSqb0rEG/MEAazn316SDGkLDJpC2GryhhAvQ=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/audio-x-generic.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			1qhNIaX9Q8UHuisLe9dbcFoQQoo=
-			</data>
-			<key>hash2</key>
-			<data>
-			VThyerWVPIrIBpseqIPgN91960Ip6YhOD0WsL8QXrXg=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/font-x-generic.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			5uOOA/1Vly3EWQ/ptAHkDx2sleE=
-			</data>
-			<key>hash2</key>
-			<data>
-			HfBV697iWI3NhRaiXzDyX30/lwsuMZERPE2bqnlPWu8=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/image-x-generic.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			A0sLnNXqJQy4ONgoYvurKPIimrg=
-			</data>
-			<key>hash2</key>
-			<data>
-			gJxN6fIomEZerpWkK1i/Id1X6e8Xj8is8AnXPrgElNU=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/inode-directory.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			U4/jJ3LVZKpxhFHhrA9Q/j11nEg=
-			</data>
-			<key>hash2</key>
-			<data>
-			GtSuouOI9VP9lY+gzoEg+4DUgxmgBNSM53fYngUcF50=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/inode-symlink.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			xFlsGJz01qHaro76dXNdAYapuAw=
-			</data>
-			<key>hash2</key>
-			<data>
-			w67hrEEfU02H9PbRtyYBfs7Shkq1sBwE3r/Jo3x4Rpc=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/model.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			gyxZaqLwrdb8tRb+5VX7TIWtXgo=
-			</data>
-			<key>hash2</key>
-			<data>
-			dhv8RSeUfeKlx3DJoWGn+9aRFeketnnbqkG3gUkALY8=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/package-x-generic.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			36i2UsuSP8oWHS6tbZBsZMpl92w=
-			</data>
-			<key>hash2</key>
-			<data>
-			0yr3EJWH9f4uduzgAerEBoMNqQfg51tdbrGR88FpReI=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/text-html.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			e7SSfJ24mZyZzWd8nXYzj1QE7qE=
-			</data>
-			<key>hash2</key>
-			<data>
-			y9HKXVDQ0lu9Vs7b68ad1rXm6hBzh/p0ESBKpeQ5RhY=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/text-x-generic.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			GOCMs44fpmrdZ8kKYGaYanVj9Xo=
-			</data>
-			<key>hash2</key>
-			<data>
-			RECJS1yIEUloffOc5mfRAD9ePAAD+5qb8b1AVV38dd8=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/text-x-preview.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			I45Y+F8IEhXCD9vbtJRShxTGNPM=
-			</data>
-			<key>hash2</key>
-			<data>
-			mrwiZO8aSpY2Ep6aRdxBJiCNbS2NeOzkItrSW9q8VYI=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/text-x-script.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			3elM4LXOv+TajmZlolkjE9jyJnk=
-			</data>
-			<key>hash2</key>
-			<data>
-			Z6/cEQ4SYXrS+xXf+qVGihUZLWMFoyVu9iL26LfHVow=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/video-x-generic.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			ewJPDpFdvrEvW6RqNgEqdrZJOkY=
-			</data>
-			<key>hash2</key>
-			<data>
-			XtAom3rLl5QH2dLRgoGLeUpuRACn0ghOLNEGGC/aj2M=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-addressbook.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			HLSyGsj/8gmeMAVE1sA1Md2fkO4=
-			</data>
-			<key>hash2</key>
-			<data>
-			RfjWMCqZgDnfWMg7I7flLWnMy0BN5cfX/HmFeq8JG4I=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-document-template.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			xay5gp3gA4k8YPW5kgLYpMYoy/E=
-			</data>
-			<key>hash2</key>
-			<data>
-			Nc6mJuGNMMRRKoU7vk92ERIpXoJZgENOCOw6UbVgVN0=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-document.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			EJakWPfb8zhxK6bduLn0i3CnaWE=
-			</data>
-			<key>hash2</key>
-			<data>
-			WsTmmM9/3Gj9IB5JIXj384l5rDrz72d2jqAjxXONLBk=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-drawing.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			FBzlxjunWVrNgn8Jqs0RYcW57x4=
-			</data>
-			<key>hash2</key>
-			<data>
-			bK1bAovdsjj/g9j/RIQMOJWfi2h+J6NWJBuAmMXNLT4=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-presentation-template.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			pB2HM5AsVFtU1ZQdJKxRdCsy5BU=
-			</data>
-			<key>hash2</key>
-			<data>
-			5JhCXGDCImmtr3W1dyhkP+s7rASfQMataaygI1tzRWo=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-presentation.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			TFp+yyhXKQgdmlkMEnsSEhh5AnM=
-			</data>
-			<key>hash2</key>
-			<data>
-			oLx+Nr9+WCZZnlq7qwdvHqKHBmhwVRrMQi86RZ87IQs=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-spreadsheet-template.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			s98VIzrpfL4r19HoU+nrlYMqfN4=
-			</data>
-			<key>hash2</key>
-			<data>
-			3FJb5gbgB9Yi9iofxrLdo6n4Ipy0WrniraVxJ83t0bA=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-office-spreadsheet.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			nGovNDkECDgnD1FqZaRHY2WpeAM=
-			</data>
-			<key>hash2</key>
-			<data>
-			ePArSyDEVDFaeT87IfBf9wG+NVE+BZ6UsViqS0Tu/Vc=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/mimetypes/x-package-repository.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			N/FWa0HqUvaY4fsO848sV9BId3g=
-			</data>
-			<key>hash2</key>
-			<data>
-			tZnvTsmOFN4ifS2/cFOTtBxbRWNUVryHv2XHrzGTypk=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-documents.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			YoEfX9qUtUo7kFGk1p98CvGljLU=
-			</data>
-			<key>hash2</key>
-			<data>
-			mtwZnuWVOYvlksyZibu8AtjKQjVbGOjhpsjMElq+W18=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-download.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			8T6Ucr/fT8W7pCwKyk9/c7kCjmQ=
-			</data>
-			<key>hash2</key>
-			<data>
-			l8qnEP1WDttHnf644E+lh65lUEu+At9sL96KIlFOh0Y=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-music.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			6dzP/E7cSW7eNUJb07miV50gnig=
-			</data>
-			<key>hash2</key>
-			<data>
-			S0bpgefG4OlQOu1s1cp6y8LImmb0oLYig/CLA/2oIB0=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-pictures.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			XMkcOkrH9/NGzVsRYmb5lp/oeNo=
-			</data>
-			<key>hash2</key>
-			<data>
-			Szaj3HjQaJU3p2vvQ4C9au/WHZPP6jQyuO0ZjAZGJe0=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-publicshare.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			zhk3JfA4uO/k7WiCh/7HfLZJf8k=
-			</data>
-			<key>hash2</key>
-			<data>
-			V3ZxPyiOnBfPo6/hqep/FqXLYMbUtUVxppNWxk3fL1s=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-remote.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			cm6VdEd/87U5W1wgCmzNVQe9gCU=
-			</data>
-			<key>hash2</key>
-			<data>
-			yPxZI94vnMZqaKdz180lDXsLU8AfAb0TLezXRnhLjVE=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-templates.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			O7khULwAMOrOYOdhwJcZVo0yxeY=
-			</data>
-			<key>hash2</key>
-			<data>
-			SQ+YQFVBja+xwXOF4lr2t4naEz/lYjVyxrfjGj+9vBI=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder-videos.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			las/8NZC4Sshk1y6jslQMFPrQjY=
-			</data>
-			<key>hash2</key>
-			<data>
-			xI97RkR4mtZo4H7CZ7Rde8Wu+drWhL/Nb1ur8l5yyFI=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/folder.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			U4/jJ3LVZKpxhFHhrA9Q/j11nEg=
-			</data>
-			<key>hash2</key>
-			<data>
-			GtSuouOI9VP9lY+gzoEg+4DUgxmgBNSM53fYngUcF50=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/network-server.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			hOyrNL/4+itHeZhXFU5enYDXXwg=
-			</data>
-			<key>hash2</key>
-			<data>
-			PSfWU6IY7ziykpaF54KzeM31Ap7pLfBEB39SS/BDq6k=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/network-workgroup.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			0sfz106n1hX7D4HUIBAH4XZyXlY=
-			</data>
-			<key>hash2</key>
-			<data>
-			MRllzOF2oCiYPXfugPhXXU9AA2gjzKzP3yv2+4stqLE=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/user-bookmarks.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			OgrAycXyBVtHqYh7KBqsZNhcTQI=
-			</data>
-			<key>hash2</key>
-			<data>
-			UVXYmegntvY1gllO8GhMdCm6/XU5MAb3GgS3gNyhy58=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/user-desktop.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			8EVnQfSpTfavn0AuB3IcaWPt/9k=
-			</data>
-			<key>hash2</key>
-			<data>
-			rQ68RmueUq/qX4de75vDFwyAA1a2Vw/zYcs8/LklhaA=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/user-home.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			lW4PfK2oGHAq74Oey3RvIbKumcY=
-			</data>
-			<key>hash2</key>
-			<data>
-			4eNwciOPKTjnHOeZC7alUeH4S1tCS9LPWEf/s1/2PMg=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/places/user-trash.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			IIKQYlOfnpFeq9OkfEGIVr1s2Uo=
-			</data>
-			<key>hash2</key>
-			<data>
-			L3dSJN8WQknb8lDPkRd8krVfWOOjZsqc8TTBOQhXvtQ=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/status/avatar-default.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			mWKIprnaWahWR320hW5U6DoZFhI=
-			</data>
-			<key>hash2</key>
-			<data>
-			l9zrU7p+78Y4sF+n/UjvnlViLimpDnmIbOBoE/mi6TE=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/status/image-loading.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			1X2cViA+iSVfADBYJrEiOG1s3n0=
-			</data>
-			<key>hash2</key>
-			<data>
-			T/el2QYWDHp3zsj87KUlivQFp4fWnuWBi+9hO2hDyE8=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/status/image-missing.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			WaCImd/h9gpbwjCw0+5kOgTxDbY=
-			</data>
-			<key>hash2</key>
-			<data>
-			r2sfvHSx3sJDE1IVO3R+jNWEsR/Ldi2XsVY9wDorahg=
-			</data>
-		</dict>
-		<key>Resources/share/icons/Adwaita/scalable/status/user-trash-full.svg</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			drRYsevmT9Xv+4EX6M5+YWRvFMU=
-			</data>
-			<key>hash2</key>
-			<data>
-			DsAwOHR38hmZL7tv5tc5sTu8xZr7JyPk9gJXc0NGZK4=
-			</data>
-		</dict>
-		<key>Resources/share/icons/hicolor/index.theme</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			bYjbE3evakShnurbj1AsAZKIhaM=
-			</data>
-			<key>hash2</key>
-			<data>
-			oC214bID2YFwFIG774tvrhxXa680kn7svA/q4NLLm8U=
 			</data>
 		</dict>
 		<key>Resources/share/vice/C128/basic64-901226-01.bin</key>
@@ -4893,105 +2531,6 @@
 			FKPl178gxl/Js7+/9PALWHH5cgPnA0KuqUJLi2jj11s=
 			</data>
 		</dict>
-		<key>Resources/share/vice/C128/gtk3_keyrahv3.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			reh81u1inRI3qggGDEor2KnMTWM=
-			</data>
-			<key>hash2</key>
-			<data>
-			L2FcNNmypIsBQbcbm3m8jFx1W8q8j45N1lNbMMdFSPM=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C128/gtk3_keyrahv3_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			qItd+Z3wJc7RwQEPXGn/UFmfpT0=
-			</data>
-			<key>hash2</key>
-			<data>
-			7I3iADfElKEXuD082h+RSfGSqW2LFeSRc70Eh6pIEHc=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C128/gtk3_pos.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			3Ax2bSPSJAJS6CzvJGmzXzFyO+0=
-			</data>
-			<key>hash2</key>
-			<data>
-			xVF70lOfUryRsX+LRlzKJzGxCQK/RDNvnK0LmtRGbFg=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C128/gtk3_pos_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			xto1ugq3uVEf+oiZ53TrDfckCPg=
-			</data>
-			<key>hash2</key>
-			<data>
-			SoO7U9TTFdzr67J4XN4Eq9Xq3xj8Fjkw0MiBZWuezgU=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C128/gtk3_pos_se.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			dEqCKwTCb6hqBAOSxjKF9YXmoNw=
-			</data>
-			<key>hash2</key>
-			<data>
-			M8hmfs/Mvu+PRTdZDGtsfItLOnqY6LF8c+t1W/PrRJ8=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C128/gtk3_sym.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			fTv0pTOhqQMS1lwMrc01GShHeH0=
-			</data>
-			<key>hash2</key>
-			<data>
-			YFVo3Y4a18qVFp+bTxm5VhnXpgbwAEDTORdt3Byvy4U=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C128/gtk3_sym_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			8Bl073z9E2T4SYRqTaq4kGSgRpM=
-			</data>
-			<key>hash2</key>
-			<data>
-			+t7kYBB9efuDseJ7XEA++IK2ABbxqw+kwC2Faql9qis=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C128/gtk3_sym_fr.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			glHU4rC2SJuT5x1C10y5LhSgQj8=
-			</data>
-			<key>hash2</key>
-			<data>
-			eiec8BAJmI8qJzkC4sUM0xW9Anpyc2Hxt0FGZbb+dgE=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C128/gtk3_sym_se.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			ScsHaPUbOYtZVa3WYsQYI2ETSg4=
-			</data>
-			<key>hash2</key>
-			<data>
-			OzyX+vEq3ZXeA+bF9b8vCND4zV7K39cwX0VTAkhTYGc=
-			</data>
-		</dict>
 		<key>Resources/share/vice/C128/kernal-315078-03.bin</key>
 		<dict>
 			<key>hash</key>
@@ -5111,6 +2650,17 @@
 			<key>hash2</key>
 			<data>
 			Gl298kHhzhcZOBuALb+bLNFLVsAtMSvO7I/h/FZtFuw=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C128/lemon64.vpl</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			hG44L+EROaZaIWk5nzk7me9Rye8=
+			</data>
+			<key>hash2</key>
+			<data>
+			umWoUgl7fVgavQdgP1hspQFvARMRDOwBJ0ZMoxBDLDg=
 			</data>
 		</dict>
 		<key>Resources/share/vice/C128/palette.vpl</key>
@@ -5276,6 +2826,72 @@
 			<key>hash2</key>
 			<data>
 			KQniWau/z/8No0wB2YWWn59w5Jp6s2A4Hu3xw4YCN6g=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C128/sdl_pos.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			9tPjVJZvqqiIJEW78QWYPr7aboQ=
+			</data>
+			<key>hash2</key>
+			<data>
+			zl7mPw/AktYD/K7j9fgeO8khZNxZ0XiOFk0g58aXFpM=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C128/sdl_pos_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			MOxczZQ3b4VDeOxJ87GMjPK2RpM=
+			</data>
+			<key>hash2</key>
+			<data>
+			SpEQunRyLTNVfL7bQ5L47KCd7YgVXWDFyyZRU3xIlEU=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C128/sdl_sym.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			+BPlMJ96P/ncST7NU8ZTPaRqLsA=
+			</data>
+			<key>hash2</key>
+			<data>
+			h2/8kNq4YX7YhzmpNQRR1Fv6Fu4NWAHTxwKYt2RakJ8=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C128/sdl_sym_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			1bU169Dm7fm8Y1rizEuJ8lO0MuQ=
+			</data>
+			<key>hash2</key>
+			<data>
+			ayRtyW/No3O91PyXex7m1qsmfqViJ/dar3p1WSFPbOc=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C128/sdl_sym_fr.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			SDsS9NfqzYMRE2n32Pj7JVWI/m8=
+			</data>
+			<key>hash2</key>
+			<data>
+			Sd67mTV6A/mjEq+ryznhNUPoVghiihUdrm9J4Pq63IE=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C128/sdl_v128.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			HgmJYaBLMdyy6uxoOffLBWE7gu0=
+			</data>
+			<key>hash2</key>
+			<data>
+			b2cfQglXCjY97muiSPwnuF+IyOfasmumn9Cxyhtkjxo=
 			</data>
 		</dict>
 		<key>Resources/share/vice/C128/the64.vpl</key>
@@ -5487,237 +3103,6 @@
 			FKPl178gxl/Js7+/9PALWHH5cgPnA0KuqUJLi2jj11s=
 			</data>
 		</dict>
-		<key>Resources/share/vice/C64/gtk3_keyrah.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			/C8emANTW8/evVj2GA33071GKrQ=
-			</data>
-			<key>hash2</key>
-			<data>
-			thhHWk3I6dE0JzyVmMQPdBxEJJ3viTTxpDWCgeU/0xA=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_keyrah_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			XO7aM1pMePSU1LNYeEWNsj//Hhg=
-			</data>
-			<key>hash2</key>
-			<data>
-			1IxsCbqn4VF7FJeB5VBZtCbMHEepVtm3Odo2+w/4gFQ=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_pos.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			q7kirTeIioUhyQEJ0/zId9APgyU=
-			</data>
-			<key>hash2</key>
-			<data>
-			33MyxSQw7DRMmCHq2PFmUMox3FZ20MQMWRXlWUvTST0=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_pos_bmc64.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			d187nzidRhtDKtHMIv6EQ0K+oH8=
-			</data>
-			<key>hash2</key>
-			<data>
-			MipcwE+ADS5IX2LD4S0hCR6NGQQVBu/QzBC8Bo5Igbk=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_pos_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			0cdw8RhdpuVGO0NrF2AF7wxFQNA=
-			</data>
-			<key>hash2</key>
-			<data>
-			nvwH5jdrzdmJrCM5s8Ob7BZ/lhncBNyRViTHP1LI0nY=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_pos_es.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			P67rttTsJSimDjbrLk1xU9wn8e8=
-			</data>
-			<key>hash2</key>
-			<data>
-			ueOsBC9yka+XTn78FaZB0NC7EhcfDTK4gDspDAT65uw=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_pos_it.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			URfYmEUHkoNqECBYGJT0OfYPm4k=
-			</data>
-			<key>hash2</key>
-			<data>
-			yXCtVFsHhuF0Fl37kx75nU9yECuhGtn72wn4BJ6FbU4=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_pos_se.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			D+Qiif1naQjYYBbKxqRCX4g262E=
-			</data>
-			<key>hash2</key>
-			<data>
-			hcIekUWyzhCPyM2jyDRceOWGtH3Ocy33HQsGtVPtfjo=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_pos_tr.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			aVxVJaSgydac2LgfH58UBRbshxk=
-			</data>
-			<key>hash2</key>
-			<data>
-			olkAT9SxrUm8PYNq07O70cIKYub6HpXyHe6cE/9zTQ0=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_pos_uk.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			1rdNFdeP/kCVN11L/Ty65/zo0mU=
-			</data>
-			<key>hash2</key>
-			<data>
-			n0gCGG7mHOS+ia6l+31CNbbWkr/5gPL3oGs7/bSgE+o=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_sym.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			f+jXBrKyQ0+ydnCcX1CdwUU0KaM=
-			</data>
-			<key>hash2</key>
-			<data>
-			R499Rrz6BUfSw/4ftBCoVFAeKDNHL6R0SPKREN+glCg=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_sym_be.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			+4zAlfys5mS+ywkpE+9c9hmgdc0=
-			</data>
-			<key>hash2</key>
-			<data>
-			oNfVS0aL9b5O1kPCWUyCkW6fogD6wKjYxN3/4JpJAzw=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_sym_da.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			hhxqTB9IvraaDnxR2y/2sWEA6Uo=
-			</data>
-			<key>hash2</key>
-			<data>
-			arlYaP7lE0SvaTRT6cCbPHkPLQr1Ncyv2rT3rTXR/m8=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_sym_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			IPsvIejmSAvRVuXndX8dHk0xJl4=
-			</data>
-			<key>hash2</key>
-			<data>
-			Go9eJCStLdBAIruwNS1nuA538acgb/R2V714J4nuwMI=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_sym_fr.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			m3AynKAEVdpQeOLWF+D1+WisLS4=
-			</data>
-			<key>hash2</key>
-			<data>
-			W130559FklCP2DM8RdiEqsyaCwwIYPrhNLcqjgO+mK4=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_sym_it.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			VezviwOKIUb6NtnGivBErTqghuM=
-			</data>
-			<key>hash2</key>
-			<data>
-			LJmNhqlReo7sJyCoQKuugOEdjdwIAMVecN8Vs622IEA=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_sym_nl.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			kRPGE1ifKIFyooTP8v6Xuv+0D38=
-			</data>
-			<key>hash2</key>
-			<data>
-			75qKr0y5fC5CofDqzP9OhvNPmN9sKiFZokaQzUzqhtI=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_sym_se.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			DA3x/vdZa794ReaNI+P2/D7P7WE=
-			</data>
-			<key>hash2</key>
-			<data>
-			GVYOU2gA3tnQ5dFJwFrK8C5ClIi4P40LJMZrbAJW+TE=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_sym_tr.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			v2fr7vJOWm/7x4akaI0kUKCId6o=
-			</data>
-			<key>hash2</key>
-			<data>
-			2V1EH7/juhscDPay5k17eBWRJVBepX7Y9laPDhw8UxU=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_sym_uk.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			gDwtPL2Zvfo0zsWKx6Q444Iuy0U=
-			</data>
-			<key>hash2</key>
-			<data>
-			KRgFtT5lyMP84VIHJgj0QC9UQIuUZhhjI11brhvAepo=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64/gtk3_the64_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			CHXPU59D6MW7gMcYjdCDy17BNTs=
-			</data>
-			<key>hash2</key>
-			<data>
-			uzI6q8x/YRequNvmJGxViY+e6ca0h6EQ+SHj++yH1Ec=
-			</data>
-		</dict>
 		<key>Resources/share/vice/C64/kernal-251104-04.bin</key>
 		<dict>
 			<key>hash</key>
@@ -5793,6 +3178,17 @@
 			<key>hash2</key>
 			<data>
 			SK9IBw7Jrdp5rn9lt3LEIgYusS5pIUp894jmlHo7QRc=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/lemon64.vpl</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			hG44L+EROaZaIWk5nzk7me9Rye8=
+			</data>
+			<key>hash2</key>
+			<data>
+			umWoUgl7fVgavQdgP1hspQFvARMRDOwBJ0ZMoxBDLDg=
 			</data>
 		</dict>
 		<key>Resources/share/vice/C64/palette.vpl</key>
@@ -5960,6 +3356,281 @@
 			KQniWau/z/8No0wB2YWWn59w5Jp6s2A4Hu3xw4YCN6g=
 			</data>
 		</dict>
+		<key>Resources/share/vice/C64/sdl_joymap_keyrah_v3.vjm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			pXBQK78WnlLgUyrj64TippA+6no=
+			</data>
+			<key>hash2</key>
+			<data>
+			hNBW1IjBaCkku7YAhvcrDIiRUPBYtwvIzRSABvsNb84=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_joymap_ps3.vjm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			YF0ECE8D2OSvd6OgmLACWlNWpe8=
+			</data>
+			<key>hash2</key>
+			<data>
+			QL19SK6NjENJSL1u6ndcp9YACCs1T3vZM1sd0Ng177s=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_joymap_thec64.vjm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			gyBNA3TtoX9J590t7MoglknzS94=
+			</data>
+			<key>hash2</key>
+			<data>
+			B8hmwlF94Df+GikRMK7bkXgjvu7B0hvOhwGhn+1sSJE=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_joymap_xbox360.vjm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			VS5YpFhvNuZoKNRLIHmcIJS3g/Q=
+			</data>
+			<key>hash2</key>
+			<data>
+			O3uHz2AUIjzUEAUvws/ooNIDsC+GzWHFbXcs1mvuHEc=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_keyrah.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			rDlp08DI4z0qFwTMUNylCBTyszc=
+			</data>
+			<key>hash2</key>
+			<data>
+			KKoYiIn7nqyZyfgRV/6bRUcJjnWkGVjRFSczieuK4F0=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_keyrah_combian.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			JetB/dMXkoaFN66DGXGGROVaqDE=
+			</data>
+			<key>hash2</key>
+			<data>
+			wYvgClP4YQhBZavwqP5VgQ2WKrzfaPHztFTQIdySs4M=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_keyrah_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			Vv52uNreD2OcevvYG2wLRbsYb+o=
+			</data>
+			<key>hash2</key>
+			<data>
+			WxDnnmxB8HSHvpnUQSAo3hmH9rxxI9JL5IQUj1BTkw4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_keyrah_retropie.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			yHuYwkplO7+jTd0uIzva1dxwZSI=
+			</data>
+			<key>hash2</key>
+			<data>
+			ermArQ1ttap8N4U2hmWCMlTxi6+w7uZbNrPOZUEa5mo=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_keyrah_retropie_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			zlWuvivJ9OLctaGrIGgAw1lu/7k=
+			</data>
+			<key>hash2</key>
+			<data>
+			PTD3tP8W4YBRiZExK7uXukhzSn5xaxtq1BVxyq7V2OU=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_pos.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			kn4bFmHkNh/amBR9cLO4goYQSo8=
+			</data>
+			<key>hash2</key>
+			<data>
+			20RklqJ41HuhMnzltKspiFllQqV1F+/O1o3Yk3yJqzY=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_pos_ch.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			z9U9V3wC2YZrF6rrgEsiZWfPF8A=
+			</data>
+			<key>hash2</key>
+			<data>
+			gJreApPAnPtivpZy7jhr8i4WV6VW2cm/nUVwhbG5cQI=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_pos_da.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			vUXFJ1jXWmdX97ld49n9OtoIpWc=
+			</data>
+			<key>hash2</key>
+			<data>
+			SJgow52pCFSs+6MniXah9Wip5+IeyCGI+yXr8OpLFoo=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_pos_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			zQ5bRgfD1wKsQWW6+qzGgmSNEBQ=
+			</data>
+			<key>hash2</key>
+			<data>
+			q4RS9UgQjx2bp0fQxyjZcQ+GRvvhni9sPsy+Uf2pmso=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_pos_fi.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			q7yzuwtnGAABj4pRuPHznQqW0C0=
+			</data>
+			<key>hash2</key>
+			<data>
+			5wHzc6lNmpOU8g0/mKMcd0CBZ5IOXcl/h9rPDyX/mF4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_pos_no.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			0cMUBqPCLNLBaLqoGZdt7jukqWk=
+			</data>
+			<key>hash2</key>
+			<data>
+			8/iOSuq8ARoX0hSEiRUNMENeMUbMUWox8NVMV4/6UO4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_pos_tr.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			7wBeyM9bEG/2NHfma+BY9g78kOA=
+			</data>
+			<key>hash2</key>
+			<data>
+			EaXPVgOi7rsZf/2U5KqD3ceYNIDaNl8xS5tcQjxpoG4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_pos_uk.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			+pFzMjtCUg6M+E8m0kBmti88HdI=
+			</data>
+			<key>hash2</key>
+			<data>
+			rIgLlZ9eFRcnK1DZNhjRe3l10tWk5+Yhhap8IA1dNGg=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_sym.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			zUOfLGetPfwglfOQk0jxF1JOM+o=
+			</data>
+			<key>hash2</key>
+			<data>
+			iD0SLzy6jHB61HyKULN9FY3x/FSKMu04kzhiQ908TDg=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_sym_da.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			yZ4eiiTJIyzPli1JtzcB/9FwP6c=
+			</data>
+			<key>hash2</key>
+			<data>
+			bB0jF63jzSrGOAriI/3cSm7RuimCVuzfoZC0gyD4ZUc=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_sym_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			xsIRyaIFsfl4YT30WGKEROXazMY=
+			</data>
+			<key>hash2</key>
+			<data>
+			MM42oWy5GQNVqfNg1Q3+UddsA+1oZHx9UdclHw5G06M=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_sym_fr.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			VpkN5i44qUZKeCsA+g1/G7UJIpk=
+			</data>
+			<key>hash2</key>
+			<data>
+			wkfu67CVP8cBDmfKsO1JZlvvKZhWcSuGECHxaSzEeT4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_sym_it.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			4bNPe6NobzwN2xMZv/7iWCGleyI=
+			</data>
+			<key>hash2</key>
+			<data>
+			SO0kjaMuZOzvjXDD6pTJ6tGlltnYyIEyzyhQ5xx8BrQ=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_sym_nl.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			s6EC1Wv9RwP9gVfjS7WyKKrcnis=
+			</data>
+			<key>hash2</key>
+			<data>
+			lfz6FUtAemNcnphkNC04Ypm0KyhWb5OwXuMLeo1XEdI=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_sym_tr.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			C5m08b18BC4GaBZ8KXl9DxDlsuM=
+			</data>
+			<key>hash2</key>
+			<data>
+			dDXNlXU+00zWAR+kGJiMWc6p8jbg4wJGHHMiU9ufjLQ=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64/sdl_sym_uk.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			L900DmWny+Y2Qhw287MW58k9mso=
+			</data>
+			<key>hash2</key>
+			<data>
+			DU6YJMrp3hW1h7WnAj2Cd0hCkKzRutPYjsoJDhDGXAA=
+			</data>
+		</dict>
 		<key>Resources/share/vice/C64/the64.vpl</key>
 		<dict>
 			<key>hash</key>
@@ -6037,237 +3708,6 @@
 			bAFY5tejQ+IxJt75+KK4nFYqT4Lbj2Fdo6zNrruUNRg=
 			</data>
 		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_keyrah.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			/C8emANTW8/evVj2GA33071GKrQ=
-			</data>
-			<key>hash2</key>
-			<data>
-			thhHWk3I6dE0JzyVmMQPdBxEJJ3viTTxpDWCgeU/0xA=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_keyrah_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			XO7aM1pMePSU1LNYeEWNsj//Hhg=
-			</data>
-			<key>hash2</key>
-			<data>
-			1IxsCbqn4VF7FJeB5VBZtCbMHEepVtm3Odo2+w/4gFQ=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_pos.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			q7kirTeIioUhyQEJ0/zId9APgyU=
-			</data>
-			<key>hash2</key>
-			<data>
-			33MyxSQw7DRMmCHq2PFmUMox3FZ20MQMWRXlWUvTST0=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_pos_bmc64.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			d187nzidRhtDKtHMIv6EQ0K+oH8=
-			</data>
-			<key>hash2</key>
-			<data>
-			MipcwE+ADS5IX2LD4S0hCR6NGQQVBu/QzBC8Bo5Igbk=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_pos_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			0cdw8RhdpuVGO0NrF2AF7wxFQNA=
-			</data>
-			<key>hash2</key>
-			<data>
-			nvwH5jdrzdmJrCM5s8Ob7BZ/lhncBNyRViTHP1LI0nY=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_pos_es.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			P67rttTsJSimDjbrLk1xU9wn8e8=
-			</data>
-			<key>hash2</key>
-			<data>
-			ueOsBC9yka+XTn78FaZB0NC7EhcfDTK4gDspDAT65uw=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_pos_it.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			URfYmEUHkoNqECBYGJT0OfYPm4k=
-			</data>
-			<key>hash2</key>
-			<data>
-			yXCtVFsHhuF0Fl37kx75nU9yECuhGtn72wn4BJ6FbU4=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_pos_se.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			D+Qiif1naQjYYBbKxqRCX4g262E=
-			</data>
-			<key>hash2</key>
-			<data>
-			hcIekUWyzhCPyM2jyDRceOWGtH3Ocy33HQsGtVPtfjo=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_pos_tr.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			aVxVJaSgydac2LgfH58UBRbshxk=
-			</data>
-			<key>hash2</key>
-			<data>
-			olkAT9SxrUm8PYNq07O70cIKYub6HpXyHe6cE/9zTQ0=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_pos_uk.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			1rdNFdeP/kCVN11L/Ty65/zo0mU=
-			</data>
-			<key>hash2</key>
-			<data>
-			n0gCGG7mHOS+ia6l+31CNbbWkr/5gPL3oGs7/bSgE+o=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_sym.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			f+jXBrKyQ0+ydnCcX1CdwUU0KaM=
-			</data>
-			<key>hash2</key>
-			<data>
-			R499Rrz6BUfSw/4ftBCoVFAeKDNHL6R0SPKREN+glCg=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_be.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			+4zAlfys5mS+ywkpE+9c9hmgdc0=
-			</data>
-			<key>hash2</key>
-			<data>
-			oNfVS0aL9b5O1kPCWUyCkW6fogD6wKjYxN3/4JpJAzw=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_da.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			hhxqTB9IvraaDnxR2y/2sWEA6Uo=
-			</data>
-			<key>hash2</key>
-			<data>
-			arlYaP7lE0SvaTRT6cCbPHkPLQr1Ncyv2rT3rTXR/m8=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			IPsvIejmSAvRVuXndX8dHk0xJl4=
-			</data>
-			<key>hash2</key>
-			<data>
-			Go9eJCStLdBAIruwNS1nuA538acgb/R2V714J4nuwMI=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_fr.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			cMBXF7obLtteBK05vuoVxtPLSn8=
-			</data>
-			<key>hash2</key>
-			<data>
-			77i/AkRRZ29ZQby+ZgFh5FYL/NowuUKaW/VTJdEujbk=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_it.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			IxcJSsaJL3MgqzCZBIKLR1ZZ+oQ=
-			</data>
-			<key>hash2</key>
-			<data>
-			qiz1TaN+zBf5mOng4ihNBhPbkCmlV9yGygplFa3BdKs=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_nl.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			kRPGE1ifKIFyooTP8v6Xuv+0D38=
-			</data>
-			<key>hash2</key>
-			<data>
-			75qKr0y5fC5CofDqzP9OhvNPmN9sKiFZokaQzUzqhtI=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_se.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			DA3x/vdZa794ReaNI+P2/D7P7WE=
-			</data>
-			<key>hash2</key>
-			<data>
-			GVYOU2gA3tnQ5dFJwFrK8C5ClIi4P40LJMZrbAJW+TE=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_tr.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			v2fr7vJOWm/7x4akaI0kUKCId6o=
-			</data>
-			<key>hash2</key>
-			<data>
-			2V1EH7/juhscDPay5k17eBWRJVBepX7Y9laPDhw8UxU=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_sym_uk.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			gDwtPL2Zvfo0zsWKx6Q444Iuy0U=
-			</data>
-			<key>hash2</key>
-			<data>
-			KRgFtT5lyMP84VIHJgj0QC9UQIuUZhhjI11brhvAepo=
-			</data>
-		</dict>
-		<key>Resources/share/vice/C64DTV/gtk3_the64_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			CHXPU59D6MW7gMcYjdCDy17BNTs=
-			</data>
-			<key>hash2</key>
-			<data>
-			uzI6q8x/YRequNvmJGxViY+e6ca0h6EQ+SHj++yH1Ec=
-			</data>
-		</dict>
 		<key>Resources/share/vice/C64DTV/kernal-901227-03.bin</key>
 		<dict>
 			<key>hash</key>
@@ -6277,6 +3717,237 @@
 			<key>hash2</key>
 			<data>
 			g8YNRwR9e+q45be/b2f4DaoIi3pqJ94NfgFvZIQEJyE=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_keyrah.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			rDlp08DI4z0qFwTMUNylCBTyszc=
+			</data>
+			<key>hash2</key>
+			<data>
+			KKoYiIn7nqyZyfgRV/6bRUcJjnWkGVjRFSczieuK4F0=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_keyrah_combian.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			JetB/dMXkoaFN66DGXGGROVaqDE=
+			</data>
+			<key>hash2</key>
+			<data>
+			wYvgClP4YQhBZavwqP5VgQ2WKrzfaPHztFTQIdySs4M=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_keyrah_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			Vv52uNreD2OcevvYG2wLRbsYb+o=
+			</data>
+			<key>hash2</key>
+			<data>
+			WxDnnmxB8HSHvpnUQSAo3hmH9rxxI9JL5IQUj1BTkw4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_keyrah_retropie.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			yHuYwkplO7+jTd0uIzva1dxwZSI=
+			</data>
+			<key>hash2</key>
+			<data>
+			ermArQ1ttap8N4U2hmWCMlTxi6+w7uZbNrPOZUEa5mo=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_keyrah_retropie_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			zlWuvivJ9OLctaGrIGgAw1lu/7k=
+			</data>
+			<key>hash2</key>
+			<data>
+			PTD3tP8W4YBRiZExK7uXukhzSn5xaxtq1BVxyq7V2OU=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_pos.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			kn4bFmHkNh/amBR9cLO4goYQSo8=
+			</data>
+			<key>hash2</key>
+			<data>
+			20RklqJ41HuhMnzltKspiFllQqV1F+/O1o3Yk3yJqzY=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_pos_ch.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			z9U9V3wC2YZrF6rrgEsiZWfPF8A=
+			</data>
+			<key>hash2</key>
+			<data>
+			gJreApPAnPtivpZy7jhr8i4WV6VW2cm/nUVwhbG5cQI=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_pos_da.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			vUXFJ1jXWmdX97ld49n9OtoIpWc=
+			</data>
+			<key>hash2</key>
+			<data>
+			SJgow52pCFSs+6MniXah9Wip5+IeyCGI+yXr8OpLFoo=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_pos_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			zQ5bRgfD1wKsQWW6+qzGgmSNEBQ=
+			</data>
+			<key>hash2</key>
+			<data>
+			q4RS9UgQjx2bp0fQxyjZcQ+GRvvhni9sPsy+Uf2pmso=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_pos_fi.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			q7yzuwtnGAABj4pRuPHznQqW0C0=
+			</data>
+			<key>hash2</key>
+			<data>
+			5wHzc6lNmpOU8g0/mKMcd0CBZ5IOXcl/h9rPDyX/mF4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_pos_no.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			0cMUBqPCLNLBaLqoGZdt7jukqWk=
+			</data>
+			<key>hash2</key>
+			<data>
+			8/iOSuq8ARoX0hSEiRUNMENeMUbMUWox8NVMV4/6UO4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_pos_tr.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			7wBeyM9bEG/2NHfma+BY9g78kOA=
+			</data>
+			<key>hash2</key>
+			<data>
+			EaXPVgOi7rsZf/2U5KqD3ceYNIDaNl8xS5tcQjxpoG4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_pos_uk.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			+pFzMjtCUg6M+E8m0kBmti88HdI=
+			</data>
+			<key>hash2</key>
+			<data>
+			rIgLlZ9eFRcnK1DZNhjRe3l10tWk5+Yhhap8IA1dNGg=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_sym.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			zUOfLGetPfwglfOQk0jxF1JOM+o=
+			</data>
+			<key>hash2</key>
+			<data>
+			iD0SLzy6jHB61HyKULN9FY3x/FSKMu04kzhiQ908TDg=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_sym_da.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			yZ4eiiTJIyzPli1JtzcB/9FwP6c=
+			</data>
+			<key>hash2</key>
+			<data>
+			bB0jF63jzSrGOAriI/3cSm7RuimCVuzfoZC0gyD4ZUc=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_sym_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			xsIRyaIFsfl4YT30WGKEROXazMY=
+			</data>
+			<key>hash2</key>
+			<data>
+			MM42oWy5GQNVqfNg1Q3+UddsA+1oZHx9UdclHw5G06M=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_sym_fr.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			VpkN5i44qUZKeCsA+g1/G7UJIpk=
+			</data>
+			<key>hash2</key>
+			<data>
+			wkfu67CVP8cBDmfKsO1JZlvvKZhWcSuGECHxaSzEeT4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_sym_it.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			4bNPe6NobzwN2xMZv/7iWCGleyI=
+			</data>
+			<key>hash2</key>
+			<data>
+			SO0kjaMuZOzvjXDD6pTJ6tGlltnYyIEyzyhQ5xx8BrQ=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_sym_nl.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			s6EC1Wv9RwP9gVfjS7WyKKrcnis=
+			</data>
+			<key>hash2</key>
+			<data>
+			lfz6FUtAemNcnphkNC04Ypm0KyhWb5OwXuMLeo1XEdI=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_sym_tr.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			C5m08b18BC4GaBZ8KXl9DxDlsuM=
+			</data>
+			<key>hash2</key>
+			<data>
+			dDXNlXU+00zWAR+kGJiMWc6p8jbg4wJGHHMiU9ufjLQ=
+			</data>
+		</dict>
+		<key>Resources/share/vice/C64DTV/sdl_sym_uk.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			L900DmWny+Y2Qhw287MW58k9mso=
+			</data>
+			<key>hash2</key>
+			<data>
+			DU6YJMrp3hW1h7WnAj2Cd0hCkKzRutPYjsoJDhDGXAA=
 			</data>
 		</dict>
 		<key>Resources/share/vice/C64DTV/spiff.vpl</key>
@@ -6475,50 +4146,6 @@
 			<key>hash2</key>
 			<data>
 			Qptb4tQAtlF+W2sNw8nScfDHlPiIgloPNEM6NFmSwPc=
-			</data>
-		</dict>
-		<key>Resources/share/vice/CBM-II/gtk3_pos.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			B2+6QWM8Lt74nSiqYSe/NJAzMME=
-			</data>
-			<key>hash2</key>
-			<data>
-			RaOtGZg61OMrdneAa5cwYSXIpFmquRiz7r1BaWSsl5g=
-			</data>
-		</dict>
-		<key>Resources/share/vice/CBM-II/gtk3_pos_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			NTgvlxw/eTId2NtOBAG9U6pn91w=
-			</data>
-			<key>hash2</key>
-			<data>
-			AJmfqpH73mMBepoTlagD2jtPkmPpxe5EbNN4q++JNOs=
-			</data>
-		</dict>
-		<key>Resources/share/vice/CBM-II/gtk3_sym.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			ZlL1v6Gt5NzaqfCAMuvrqdOKwoQ=
-			</data>
-			<key>hash2</key>
-			<data>
-			hGR0KS2WfH/sX868HQke/4YT4R1N5B6K3w8x/poVRhA=
-			</data>
-		</dict>
-		<key>Resources/share/vice/CBM-II/gtk3_sym_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			7WQDs2chDwP0m55c7CK1jXrr1RE=
-			</data>
-			<key>hash2</key>
-			<data>
-			kIi3iSV5Gny+K77cIb+RqjwKxDxYlsz4SCQZjOsO13U=
 			</data>
 		</dict>
 		<key>Resources/share/vice/CBM-II/kernal-901234-02.bin</key>
@@ -6763,6 +4390,28 @@
 			KIiNyPvMRdVlJoneTjwj8v3KIrrheMF3YQGlYpJThsU=
 			</data>
 		</dict>
+		<key>Resources/share/vice/CBM-II/sdl_pos.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			HgP+QOroFLSF2G7gzlO93O2kQOQ=
+			</data>
+			<key>hash2</key>
+			<data>
+			9JdKVWpT/PBMXaQXFB8iCDghv8n3p41QyBfcsvwQUoc=
+			</data>
+		</dict>
+		<key>Resources/share/vice/CBM-II/sdl_sym.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			f5ZqQvT0liuQYnl0y7ECPWjgWzQ=
+			</data>
+			<key>hash2</key>
+			<data>
+			qkGt9n411Bc2JaIOgJbdRFYjCFA8BN6fwFfQ4Og7fFU=
+			</data>
+		</dict>
 		<key>Resources/share/vice/CBM-II/the64.vpl</key>
 		<dict>
 			<key>hash</key>
@@ -6948,61 +4597,6 @@
 			<key>hash2</key>
 			<data>
 			aabWcMqg235Q5ZArXG0H3wTdKKOm6lZIoJfBfbWQ480=
-			</data>
-		</dict>
-		<key>Resources/share/vice/GLSL/bicubic-interlaced.frag</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			i67w8Oyr9puXK0740d7xwp2rXxo=
-			</data>
-			<key>hash2</key>
-			<data>
-			FLVp49nfxBCTdWIM3ydHkjNXcwyQn48DfDTxcMHPgUk=
-			</data>
-		</dict>
-		<key>Resources/share/vice/GLSL/bicubic.frag</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			6F4ZrVLrCGOKMpqymAZhXKkZcy8=
-			</data>
-			<key>hash2</key>
-			<data>
-			GeRvpft8FKmSBMgzr2+bH+F+htz+mWYoavOpkY19RzA=
-			</data>
-		</dict>
-		<key>Resources/share/vice/GLSL/builtin-interlaced.frag</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			B/bGztbprhvdshqDOCB175Ij8OA=
-			</data>
-			<key>hash2</key>
-			<data>
-			3iS8qs0PwRYjPeYQH+L3Mw0gAHheBkk1qL/oH632o1s=
-			</data>
-		</dict>
-		<key>Resources/share/vice/GLSL/builtin.frag</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			aZBrf70svyQ2ZInrkIF1ixjaQno=
-			</data>
-			<key>hash2</key>
-			<data>
-			5CifReJIWyi8NgZpEk5pnYcKJwAcBvicZVSnAhF5PTw=
-			</data>
-		</dict>
-		<key>Resources/share/vice/GLSL/viewport.vert</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			TssRV/xdC3MAnuQHU0tpymfGp3Q=
-			</data>
-			<key>hash2</key>
-			<data>
-			cO90f9TDJe4G3ROJCwazVZMueVljXi0zd4W5bYBLizI=
 			</data>
 		</dict>
 		<key>Resources/share/vice/PET/2001-blueish.vpl</key>
@@ -7236,160 +4830,6 @@
 			4bzTuGG/3uioex/349iOkbrrf6Fs7owuKSKD1dbPmBk=
 			</data>
 		</dict>
-		<key>Resources/share/vice/PET/gtk3_bude_pos.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			D5M7fEBIrX62/jVBr5EQ/kmQPiQ=
-			</data>
-			<key>hash2</key>
-			<data>
-			cyN8vZ2rHM526pLRlPztZpIBGWiz8j9wuADME2SuiPI=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PET/gtk3_bude_pos_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			z+XkOwj6IJANEIk/5CPwXaiV5jE=
-			</data>
-			<key>hash2</key>
-			<data>
-			WfjeMJAgGjhuZfFoKihSVnjikH2swWXSzcN9+XQhBJM=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PET/gtk3_bude_sym.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			4bTZQxDNGXxzD+9LcvWskckLaK4=
-			</data>
-			<key>hash2</key>
-			<data>
-			9ml7iJKiB3lqshqob1u2w/52h9oS7AxhnLpwyaB6l0w=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PET/gtk3_bude_sym_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			WDu6fwFiv2ZliH8Yn+QmKrCsvdM=
-			</data>
-			<key>hash2</key>
-			<data>
-			OdySvyAgw+U/BuVUR9AtKseqj8uVJ5xQeiq3MyOC2Tg=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PET/gtk3_buuk_pos.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			lnivQmveTMetFtuu0WkJsOTNtWg=
-			</data>
-			<key>hash2</key>
-			<data>
-			ChHoSon3Y9DXmiv5hxUYFET2eo3NkA6byk6PZaxP31Q=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PET/gtk3_buuk_pos_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			SXCy3G9cSlQlfLebw5FXq/fzO1I=
-			</data>
-			<key>hash2</key>
-			<data>
-			rE9Rs4o8WUfxyizju32R4x8KoSA1ykvRo21b5IdV32w=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PET/gtk3_buuk_sym.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			dgW7TCJWVyQP+FGjjyguMEN2/To=
-			</data>
-			<key>hash2</key>
-			<data>
-			bcAbtnItrNJJYKvUJmn6liUJu/dEpuKQmZ+rOJHHv8U=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PET/gtk3_buuk_sym_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			a8+newolRQX552+o0sUK5ZNb9H4=
-			</data>
-			<key>hash2</key>
-			<data>
-			MsYYj9RBKmpW44HXlpbE5yoCzgFnadQJ5Q8idixuGUA=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PET/gtk3_grus_pos.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			+bmcrI1qSBmbijRLne2h2pe+i6Y=
-			</data>
-			<key>hash2</key>
-			<data>
-			3765+Kp0GfNTzZVk+83nuS+wGGWNzPcxBbBpEfh1Tto=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PET/gtk3_grus_pos_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			JWBaHqLs/cW9TbM4jmJQo5caMEE=
-			</data>
-			<key>hash2</key>
-			<data>
-			WV6/U5gwAyytQg2wO8VTKW61cZLihG+42f/t/gicdCA=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PET/gtk3_grus_sym.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			DGa4RJcK3dHb3pqUdO1nvYe0gwg=
-			</data>
-			<key>hash2</key>
-			<data>
-			ltU2ntVCYMFPkVUd6p+F6NFt9chmHFhY03kSd+QtyNw=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PET/gtk3_grus_sym_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			cdmF0EMp1HPqlHc3wrFstta7FJM=
-			</data>
-			<key>hash2</key>
-			<data>
-			6iqqLrVAz99QBcwAnLVpQ0nsNIboBIQ/95f2Qyt+t4M=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PET/gtk3_pos.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			Vr4S1zfKvjlBCpdG2oQMYvmwNGk=
-			</data>
-			<key>hash2</key>
-			<data>
-			iLvrTVz2Be+qPLyZK6NnVAnY+uiCXywyhLbuA4jlV18=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PET/gtk3_sym.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			jKmSyKHHMHWNMkR/0V76fZnt0Zs=
-			</data>
-			<key>hash2</key>
-			<data>
-			Il+VAVd7q9kyeOh/Qt1QNQE+we36gOCYndJpw6atOpc=
-			</data>
-		</dict>
 		<key>Resources/share/vice/PET/hre-9000.324992-02.bin</key>
 		<dict>
 			<key>hash</key>
@@ -7531,6 +4971,116 @@
 			<key>hash2</key>
 			<data>
 			V3PvqPtoER713EH5KjQDaVTUfN3DUApdZNzEdz0OdPo=
+			</data>
+		</dict>
+		<key>Resources/share/vice/PET/sdl_buuk_pos.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			Nc7VhG1Nf++KcGNeeGT6BJw4mD4=
+			</data>
+			<key>hash2</key>
+			<data>
+			f+4b0Sp6Ny1u8YPFfTuSHl16DJh1PAvQ1/zZkEKBsy4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/PET/sdl_buuk_pos_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			8LY2i3T9hwNRPzbvvrFuGlj38LA=
+			</data>
+			<key>hash2</key>
+			<data>
+			VAWwUrKkfckXhYWvvbi9UV3NGs38gLnAPeS8q91s2nA=
+			</data>
+		</dict>
+		<key>Resources/share/vice/PET/sdl_buuk_sym.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			WnO567igWm8AZtp5H6bCjwnCBr8=
+			</data>
+			<key>hash2</key>
+			<data>
+			0lUxI+D7ZvhCRRTBNUAxDs3r+yc4rrfI0IqxwjCftA4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/PET/sdl_buuk_sym_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			VUA1D27b/CfuaWgYbCMPckfCmYw=
+			</data>
+			<key>hash2</key>
+			<data>
+			E9XGbqDIEaAX1BIm8tszjxbW23cy0LqdzLc/Y5G2FfE=
+			</data>
+		</dict>
+		<key>Resources/share/vice/PET/sdl_grus_pos.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			I1M8ITjy0m/YhMNVFZ4c7wWrH+I=
+			</data>
+			<key>hash2</key>
+			<data>
+			6CF3M/IWha8pXlKYqx7FskWUHf5o7CdUQ/XYYQm8sLA=
+			</data>
+		</dict>
+		<key>Resources/share/vice/PET/sdl_grus_pos_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			c6Wqod0yPMKaMlQ01c6lo3RUyXk=
+			</data>
+			<key>hash2</key>
+			<data>
+			ln4Mny/8DplRudQiTA5rm0lzbidrdHpfKGegRBFezO0=
+			</data>
+		</dict>
+		<key>Resources/share/vice/PET/sdl_grus_sym.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			xbpYN5WFlrX2J2xm/UToanUunz4=
+			</data>
+			<key>hash2</key>
+			<data>
+			ho+ZV4pNm18TER8tjAOJbV1xcyNWH7PnOH1avmnjjww=
+			</data>
+		</dict>
+		<key>Resources/share/vice/PET/sdl_grus_sym_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			piRVA08TlzIdtLybaM/+2qYao9k=
+			</data>
+			<key>hash2</key>
+			<data>
+			G7ke1z+uSqpsEJ2C8rVN/e0NobIr/SINDxS6CA/BgeE=
+			</data>
+		</dict>
+		<key>Resources/share/vice/PET/sdl_pos.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			hTMMZVXYGNtPhwYi9gWyrPv05lA=
+			</data>
+			<key>hash2</key>
+			<data>
+			JT6eg992S1k5t2f8k1LmMw3Z+xP4WhHw1JWiWI7hbaM=
+			</data>
+		</dict>
+		<key>Resources/share/vice/PET/sdl_sym.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			lewIsL1KNf94pxdIqqEG/7dFao4=
+			</data>
+			<key>hash2</key>
+			<data>
+			ri/Ki1323fijc2yyGZHqrd/KM5gDfsKhjvlRiqDU6R8=
 			</data>
 		</dict>
 		<key>Resources/share/vice/PET/waterloo-a000.901898-01.bin</key>
@@ -7709,116 +5259,6 @@
 			O+QY1QPJygvLFQB2ZjzINUtlcYOWvZL5UEzEvyesC14=
 			</data>
 		</dict>
-		<key>Resources/share/vice/PLUS4/gtk3_c116_pos_it.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			Ob4p+qCBt2PoTVU73eByZPzE9is=
-			</data>
-			<key>hash2</key>
-			<data>
-			KYOJf/ZsRuud5fMAZg4YGxhpw7PK5E2/JPa2L3j/raQ=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PLUS4/gtk3_c16_pos_it.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			bBcONaNEI65dU7kpqyV32KP8f5s=
-			</data>
-			<key>hash2</key>
-			<data>
-			tvDeGG/DFucUIynKP226GFFpOXgDigNu5tNlza6RKuU=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PLUS4/gtk3_pos.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			lMmq2ThQs+8BGV653En5WgI1NA8=
-			</data>
-			<key>hash2</key>
-			<data>
-			6roErAI+mulEQUhuMqnyuCElH9rQM7vixddJovJmvsU=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PLUS4/gtk3_pos_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			JR393SjpDK6LEKmvR02l6dSm+Os=
-			</data>
-			<key>hash2</key>
-			<data>
-			lsRLRuBPxTuJcj9KZrJth7OCa7/BVSFBzA2LlFVwHxY=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PLUS4/gtk3_pos_es.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			En/Oq1nq92FWbQZBl03BJev3ndE=
-			</data>
-			<key>hash2</key>
-			<data>
-			SbXtzgsOSJJwiwRCIs8LPElyj7c5jDR+Q0s7veYrUN8=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PLUS4/gtk3_pos_it.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			hB0jdHZqZTmcAipe4sh37puF7N4=
-			</data>
-			<key>hash2</key>
-			<data>
-			95iAywdrkjOluYf0OXdLKiyGrHEa7sRBt8vn+TnN2FA=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PLUS4/gtk3_sym.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			OltmGdnQcoy03hzhMqO1ml4ioJ4=
-			</data>
-			<key>hash2</key>
-			<data>
-			tX+ajxA+aoMlS4T1lCWLUhr9eK7RreaXOBS1soNwqGw=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PLUS4/gtk3_sym_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			Zita16ebXpdqswcLlQ/CvpmGlU8=
-			</data>
-			<key>hash2</key>
-			<data>
-			rWbSMLZlBvmMDGZG1ibTtk88UWLbTvdmAiahMoMfdaY=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PLUS4/gtk3_sym_fr.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			NoTBeGOdsRCvWwtSYLmZvdHuLQM=
-			</data>
-			<key>hash2</key>
-			<data>
-			iA8LtCSact7+rDqyVoKylkfaIE0D29N/3Hhur9L33f4=
-			</data>
-		</dict>
-		<key>Resources/share/vice/PLUS4/gtk3_sym_it.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			RZDdrChGugNMD+Vsg+Qc0b2wbA8=
-			</data>
-			<key>hash2</key>
-			<data>
-			+Ch246o02LLv9KYsguJQJVMHU4rkxiAurgqnKSONK9E=
-			</data>
-		</dict>
 		<key>Resources/share/vice/PLUS4/kernal-318004-01.bin</key>
 		<dict>
 			<key>hash</key>
@@ -7861,6 +5301,50 @@
 			<key>hash2</key>
 			<data>
 			xoPUmLLV/uzWS7uK3VSOF/m2K+6AoLrx9m7Kz3ErYJI=
+			</data>
+		</dict>
+		<key>Resources/share/vice/PLUS4/sdl_pos.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			Oc6g0aKUaew1KKd2b6yxoxj3h0A=
+			</data>
+			<key>hash2</key>
+			<data>
+			HkVZCaOL0a3aHh2lpV+rHvM2XMeCpMohmXWwS8Np1/s=
+			</data>
+		</dict>
+		<key>Resources/share/vice/PLUS4/sdl_pos_fr.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			ClDePR7KqAaX5OR2naACbUkR0RI=
+			</data>
+			<key>hash2</key>
+			<data>
+			DmunkDf0cmjZtuwU7YDYCb2i0gn5Cj0WZrB0XGnpUGs=
+			</data>
+		</dict>
+		<key>Resources/share/vice/PLUS4/sdl_sym.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			Y5Qa0dZcPFsbqtpcU3QwfYDfF8E=
+			</data>
+			<key>hash2</key>
+			<data>
+			419CkHSrzd1LXtp7h+ic5Iw2G96hMp4yyYapJ82shzo=
+			</data>
+		</dict>
+		<key>Resources/share/vice/PLUS4/sdl_sym_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			vsHTGnWRn9y+K0aKkNAeq7MC268=
+			</data>
+			<key>hash2</key>
+			<data>
+			69QEttGXSMbRtEl4JVeAwT/orMR26hk4wDlJ4uZtFic=
 			</data>
 		</dict>
 		<key>Resources/share/vice/PLUS4/yape-ntsc.vpl</key>
@@ -8149,235 +5633,15 @@
 			FKPl178gxl/Js7+/9PALWHH5cgPnA0KuqUJLi2jj11s=
 			</data>
 		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_keyrah.vkm</key>
+		<key>Resources/share/vice/SCPU64/lemon64.vpl</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			/C8emANTW8/evVj2GA33071GKrQ=
+			hG44L+EROaZaIWk5nzk7me9Rye8=
 			</data>
 			<key>hash2</key>
 			<data>
-			thhHWk3I6dE0JzyVmMQPdBxEJJ3viTTxpDWCgeU/0xA=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_keyrah_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			XO7aM1pMePSU1LNYeEWNsj//Hhg=
-			</data>
-			<key>hash2</key>
-			<data>
-			1IxsCbqn4VF7FJeB5VBZtCbMHEepVtm3Odo2+w/4gFQ=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_pos.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			q7kirTeIioUhyQEJ0/zId9APgyU=
-			</data>
-			<key>hash2</key>
-			<data>
-			33MyxSQw7DRMmCHq2PFmUMox3FZ20MQMWRXlWUvTST0=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_pos_bmc64.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			d187nzidRhtDKtHMIv6EQ0K+oH8=
-			</data>
-			<key>hash2</key>
-			<data>
-			MipcwE+ADS5IX2LD4S0hCR6NGQQVBu/QzBC8Bo5Igbk=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_pos_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			0cdw8RhdpuVGO0NrF2AF7wxFQNA=
-			</data>
-			<key>hash2</key>
-			<data>
-			nvwH5jdrzdmJrCM5s8Ob7BZ/lhncBNyRViTHP1LI0nY=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_pos_es.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			P67rttTsJSimDjbrLk1xU9wn8e8=
-			</data>
-			<key>hash2</key>
-			<data>
-			ueOsBC9yka+XTn78FaZB0NC7EhcfDTK4gDspDAT65uw=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_pos_it.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			URfYmEUHkoNqECBYGJT0OfYPm4k=
-			</data>
-			<key>hash2</key>
-			<data>
-			yXCtVFsHhuF0Fl37kx75nU9yECuhGtn72wn4BJ6FbU4=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_pos_se.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			D+Qiif1naQjYYBbKxqRCX4g262E=
-			</data>
-			<key>hash2</key>
-			<data>
-			hcIekUWyzhCPyM2jyDRceOWGtH3Ocy33HQsGtVPtfjo=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_pos_tr.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			aVxVJaSgydac2LgfH58UBRbshxk=
-			</data>
-			<key>hash2</key>
-			<data>
-			olkAT9SxrUm8PYNq07O70cIKYub6HpXyHe6cE/9zTQ0=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_pos_uk.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			1rdNFdeP/kCVN11L/Ty65/zo0mU=
-			</data>
-			<key>hash2</key>
-			<data>
-			n0gCGG7mHOS+ia6l+31CNbbWkr/5gPL3oGs7/bSgE+o=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_sym.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			f+jXBrKyQ0+ydnCcX1CdwUU0KaM=
-			</data>
-			<key>hash2</key>
-			<data>
-			R499Rrz6BUfSw/4ftBCoVFAeKDNHL6R0SPKREN+glCg=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_be.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			+4zAlfys5mS+ywkpE+9c9hmgdc0=
-			</data>
-			<key>hash2</key>
-			<data>
-			oNfVS0aL9b5O1kPCWUyCkW6fogD6wKjYxN3/4JpJAzw=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_da.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			hhxqTB9IvraaDnxR2y/2sWEA6Uo=
-			</data>
-			<key>hash2</key>
-			<data>
-			arlYaP7lE0SvaTRT6cCbPHkPLQr1Ncyv2rT3rTXR/m8=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			IPsvIejmSAvRVuXndX8dHk0xJl4=
-			</data>
-			<key>hash2</key>
-			<data>
-			Go9eJCStLdBAIruwNS1nuA538acgb/R2V714J4nuwMI=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_fr.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			cMBXF7obLtteBK05vuoVxtPLSn8=
-			</data>
-			<key>hash2</key>
-			<data>
-			77i/AkRRZ29ZQby+ZgFh5FYL/NowuUKaW/VTJdEujbk=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_it.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			IxcJSsaJL3MgqzCZBIKLR1ZZ+oQ=
-			</data>
-			<key>hash2</key>
-			<data>
-			qiz1TaN+zBf5mOng4ihNBhPbkCmlV9yGygplFa3BdKs=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_nl.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			kRPGE1ifKIFyooTP8v6Xuv+0D38=
-			</data>
-			<key>hash2</key>
-			<data>
-			75qKr0y5fC5CofDqzP9OhvNPmN9sKiFZokaQzUzqhtI=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_se.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			DA3x/vdZa794ReaNI+P2/D7P7WE=
-			</data>
-			<key>hash2</key>
-			<data>
-			GVYOU2gA3tnQ5dFJwFrK8C5ClIi4P40LJMZrbAJW+TE=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_tr.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			v2fr7vJOWm/7x4akaI0kUKCId6o=
-			</data>
-			<key>hash2</key>
-			<data>
-			2V1EH7/juhscDPay5k17eBWRJVBepX7Y9laPDhw8UxU=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_sym_uk.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			gDwtPL2Zvfo0zsWKx6Q444Iuy0U=
-			</data>
-			<key>hash2</key>
-			<data>
-			KRgFtT5lyMP84VIHJgj0QC9UQIuUZhhjI11brhvAepo=
-			</data>
-		</dict>
-		<key>Resources/share/vice/SCPU64/gtk3_the64_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			CHXPU59D6MW7gMcYjdCDy17BNTs=
-			</data>
-			<key>hash2</key>
-			<data>
-			uzI6q8x/YRequNvmJGxViY+e6ca0h6EQ+SHj++yH1Ec=
+			umWoUgl7fVgavQdgP1hspQFvARMRDOwBJ0ZMoxBDLDg=
 			</data>
 		</dict>
 		<key>Resources/share/vice/SCPU64/palette.vpl</key>
@@ -8567,6 +5831,237 @@
 			boznjxpaHy+eBOmQtIrmV8LdEn8ad0XpQgQbFPKH/sM=
 			</data>
 		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_keyrah.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			rDlp08DI4z0qFwTMUNylCBTyszc=
+			</data>
+			<key>hash2</key>
+			<data>
+			KKoYiIn7nqyZyfgRV/6bRUcJjnWkGVjRFSczieuK4F0=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_keyrah_combian.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			JetB/dMXkoaFN66DGXGGROVaqDE=
+			</data>
+			<key>hash2</key>
+			<data>
+			wYvgClP4YQhBZavwqP5VgQ2WKrzfaPHztFTQIdySs4M=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_keyrah_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			Vv52uNreD2OcevvYG2wLRbsYb+o=
+			</data>
+			<key>hash2</key>
+			<data>
+			WxDnnmxB8HSHvpnUQSAo3hmH9rxxI9JL5IQUj1BTkw4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_keyrah_retropie.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			yHuYwkplO7+jTd0uIzva1dxwZSI=
+			</data>
+			<key>hash2</key>
+			<data>
+			ermArQ1ttap8N4U2hmWCMlTxi6+w7uZbNrPOZUEa5mo=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_keyrah_retropie_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			zlWuvivJ9OLctaGrIGgAw1lu/7k=
+			</data>
+			<key>hash2</key>
+			<data>
+			PTD3tP8W4YBRiZExK7uXukhzSn5xaxtq1BVxyq7V2OU=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_pos.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			kn4bFmHkNh/amBR9cLO4goYQSo8=
+			</data>
+			<key>hash2</key>
+			<data>
+			20RklqJ41HuhMnzltKspiFllQqV1F+/O1o3Yk3yJqzY=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_pos_ch.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			z9U9V3wC2YZrF6rrgEsiZWfPF8A=
+			</data>
+			<key>hash2</key>
+			<data>
+			gJreApPAnPtivpZy7jhr8i4WV6VW2cm/nUVwhbG5cQI=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_pos_da.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			vUXFJ1jXWmdX97ld49n9OtoIpWc=
+			</data>
+			<key>hash2</key>
+			<data>
+			SJgow52pCFSs+6MniXah9Wip5+IeyCGI+yXr8OpLFoo=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_pos_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			CXXfOyyQHzgrvIi8AYHo/IevQls=
+			</data>
+			<key>hash2</key>
+			<data>
+			MYMtTa7mUKZJgGg5zbNM3c8qu4yYI3Cv5BmxzGFqKGg=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_pos_fi.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			q7yzuwtnGAABj4pRuPHznQqW0C0=
+			</data>
+			<key>hash2</key>
+			<data>
+			5wHzc6lNmpOU8g0/mKMcd0CBZ5IOXcl/h9rPDyX/mF4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_pos_no.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			0cMUBqPCLNLBaLqoGZdt7jukqWk=
+			</data>
+			<key>hash2</key>
+			<data>
+			8/iOSuq8ARoX0hSEiRUNMENeMUbMUWox8NVMV4/6UO4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_pos_tr.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			7wBeyM9bEG/2NHfma+BY9g78kOA=
+			</data>
+			<key>hash2</key>
+			<data>
+			EaXPVgOi7rsZf/2U5KqD3ceYNIDaNl8xS5tcQjxpoG4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_pos_uk.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			+pFzMjtCUg6M+E8m0kBmti88HdI=
+			</data>
+			<key>hash2</key>
+			<data>
+			rIgLlZ9eFRcnK1DZNhjRe3l10tWk5+Yhhap8IA1dNGg=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_sym.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			zUOfLGetPfwglfOQk0jxF1JOM+o=
+			</data>
+			<key>hash2</key>
+			<data>
+			iD0SLzy6jHB61HyKULN9FY3x/FSKMu04kzhiQ908TDg=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_sym_da.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			yZ4eiiTJIyzPli1JtzcB/9FwP6c=
+			</data>
+			<key>hash2</key>
+			<data>
+			bB0jF63jzSrGOAriI/3cSm7RuimCVuzfoZC0gyD4ZUc=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_sym_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			xsIRyaIFsfl4YT30WGKEROXazMY=
+			</data>
+			<key>hash2</key>
+			<data>
+			MM42oWy5GQNVqfNg1Q3+UddsA+1oZHx9UdclHw5G06M=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_sym_fr.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			VpkN5i44qUZKeCsA+g1/G7UJIpk=
+			</data>
+			<key>hash2</key>
+			<data>
+			wkfu67CVP8cBDmfKsO1JZlvvKZhWcSuGECHxaSzEeT4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_sym_it.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			4bNPe6NobzwN2xMZv/7iWCGleyI=
+			</data>
+			<key>hash2</key>
+			<data>
+			SO0kjaMuZOzvjXDD6pTJ6tGlltnYyIEyzyhQ5xx8BrQ=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_sym_nl.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			s6EC1Wv9RwP9gVfjS7WyKKrcnis=
+			</data>
+			<key>hash2</key>
+			<data>
+			lfz6FUtAemNcnphkNC04Ypm0KyhWb5OwXuMLeo1XEdI=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_sym_tr.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			C5m08b18BC4GaBZ8KXl9DxDlsuM=
+			</data>
+			<key>hash2</key>
+			<data>
+			dDXNlXU+00zWAR+kGJiMWc6p8jbg4wJGHHMiU9ufjLQ=
+			</data>
+		</dict>
+		<key>Resources/share/vice/SCPU64/sdl_sym_uk.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			L900DmWny+Y2Qhw287MW58k9mso=
+			</data>
+			<key>hash2</key>
+			<data>
+			DU6YJMrp3hW1h7WnAj2Cd0hCkKzRutPYjsoJDhDGXAA=
+			</data>
+		</dict>
 		<key>Resources/share/vice/SCPU64/the64.vpl</key>
 		<dict>
 			<key>hash</key>
@@ -8655,83 +6150,6 @@
 			bLlVrQN2azwYkd79+5CwdFfQFOdjJcC/RAHe/HnfWhY=
 			</data>
 		</dict>
-		<key>Resources/share/vice/VIC20/gtk3_pos.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			y5PMC5keDN2ousoRvrTJ451lWH0=
-			</data>
-			<key>hash2</key>
-			<data>
-			Yd/R5xejpqP83oTzaMybZCi8Yv4ynBVy08U4sG2q4fo=
-			</data>
-		</dict>
-		<key>Resources/share/vice/VIC20/gtk3_pos_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			G3V8W1oRqCkMnBr9rojfoy1W6Uo=
-			</data>
-			<key>hash2</key>
-			<data>
-			IRIgUoS/05myxkkTmZtRtie8Y4LRM/dxkodI+1viFIU=
-			</data>
-		</dict>
-		<key>Resources/share/vice/VIC20/gtk3_pos_it.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			5a0VmSMoPK+uZqlwnL5Agz0R9Tw=
-			</data>
-			<key>hash2</key>
-			<data>
-			vex4EqLxPJdhcetT19OQP7379YYA4fLwcqVL+I48rZs=
-			</data>
-		</dict>
-		<key>Resources/share/vice/VIC20/gtk3_sym.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			DzJWPEfQbsE6zVcTMZYm70ChwgM=
-			</data>
-			<key>hash2</key>
-			<data>
-			ubdGIgZXmeS4oWchfDSYrDJbe8gxA2EAwhuKnUBdU1Q=
-			</data>
-		</dict>
-		<key>Resources/share/vice/VIC20/gtk3_sym_de.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			vQrljbSagWipNF2hiSpMb4Qo+Eo=
-			</data>
-			<key>hash2</key>
-			<data>
-			0uRiN+FXW5briPn48U9h+iRk7AQoVoeuXH91e1opeLM=
-			</data>
-		</dict>
-		<key>Resources/share/vice/VIC20/gtk3_sym_fr.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			KoZJPcCXsCuzV+Pzof+NNLRscPg=
-			</data>
-			<key>hash2</key>
-			<data>
-			gAjQEju1w9N0p2J+wilaVxU85R0Y/ILD3d+vvsU3yus=
-			</data>
-		</dict>
-		<key>Resources/share/vice/VIC20/gtk3_sym_it.vkm</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			ustEf32bHB619+PifuCBdUTf9Ug=
-			</data>
-			<key>hash2</key>
-			<data>
-			rcZktuRn78pjQdzub+D8Sl5CIRF8TpzaEvN2jmVj5mw=
-			</data>
-		</dict>
 		<key>Resources/share/vice/VIC20/kernal.901486-02.bin</key>
 		<dict>
 			<key>hash</key>
@@ -8787,6 +6205,94 @@
 			L9XG/JRQvhkC16T9K4O+gAAe1ABK17e6Hr74O6tW4Jk=
 			</data>
 		</dict>
+		<key>Resources/share/vice/VIC20/sdl_pos.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			nNfhoeUffQy1PZkufvA8A+OGnVw=
+			</data>
+			<key>hash2</key>
+			<data>
+			/KyvH0tqMI5ITXssPpaImAD31uoXrT6WwvgKMqxws/E=
+			</data>
+		</dict>
+		<key>Resources/share/vice/VIC20/sdl_pos_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			4AtiwzcKW3VqSmGMxNTSX0GUHXc=
+			</data>
+			<key>hash2</key>
+			<data>
+			s1pmc5reEH5G9mox/cYkVWpPYGWabnbuPCuGKDc7ZG0=
+			</data>
+		</dict>
+		<key>Resources/share/vice/VIC20/sdl_pos_fi.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			QsIMrqiD4q8BTFonoYZ+xivXVA0=
+			</data>
+			<key>hash2</key>
+			<data>
+			88feCTIlPdIO6h+4VXZX4q+PZVtAiA0t16J4Aw0UrGY=
+			</data>
+		</dict>
+		<key>Resources/share/vice/VIC20/sdl_pos_fr.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			LyPhTipq/ufumiw9bWvT6gyE248=
+			</data>
+			<key>hash2</key>
+			<data>
+			hDzDvtvHnHJ3qP91CH5IExy8He92CS0nxYdBae2U9ys=
+			</data>
+		</dict>
+		<key>Resources/share/vice/VIC20/sdl_pos_uk.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			z7DWnpA6Aaw2641YVeWGQ/f/Lvs=
+			</data>
+			<key>hash2</key>
+			<data>
+			8L+w0Ut+8JJ6WoTB6FMP9yVs9Tj7NJg44st8g5TgWw4=
+			</data>
+		</dict>
+		<key>Resources/share/vice/VIC20/sdl_sym.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			OKp4G+c1rcrwpkd09tqGAdNGoYE=
+			</data>
+			<key>hash2</key>
+			<data>
+			PeV0JHckFcmuR2Br4im5VCS5qKh1AILMMahiNGMGfpc=
+			</data>
+		</dict>
+		<key>Resources/share/vice/VIC20/sdl_sym_de.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			lZhGWo/KxEPUDge3tuD/UtvGPtI=
+			</data>
+			<key>hash2</key>
+			<data>
+			5S5akWtJmyU2Lbpr3Lh3+Pc3UOW/sqqlNQeZZ+ElHZ0=
+			</data>
+		</dict>
+		<key>Resources/share/vice/VIC20/sdl_sym_uk.vkm</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			x2eFYvkvH0GwlTi5umMN9L0f4iQ=
+			</data>
+			<key>hash2</key>
+			<data>
+			P9GJE+LaLxgVAXV3XS9UtdAYkW9fUZJqpginhnFjsss=
+			</data>
+		</dict>
 		<key>Resources/share/vice/VIC20/vice.vpl</key>
 		<dict>
 			<key>hash</key>
@@ -8809,26 +6315,15 @@
 			srbU76D7cXDyc9wOFumlT8UCHCR9vZ4jWxat+Qv+ANg=
 			</data>
 		</dict>
-		<key>Resources/share/vice/common/vice.gresource</key>
-		<dict>
-			<key>hash</key>
-			<data>
-			63JumCAQ/e8om7ZOsM62NfWyQlU=
-			</data>
-			<key>hash2</key>
-			<data>
-			8WJukpf1+TxmUdlmtC5FsL0kVejiKhUHCb/Lj9xR/4Y=
-			</data>
-		</dict>
 		<key>Resources/share/vice/doc/vice.pdf</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			Wqt76LGSeZOJiNusmmIT454sVFk=
+			hy1/RREZ/8AgsKbvoUTW6oQWYMs=
 			</data>
 			<key>hash2</key>
 			<data>
-			biUBuFWYYWICyXuOYJtfr3DWyt69v96vX6x7s4ao5YI=
+			Ig4B8televv4JRSS2DEScJhsNzpBZ8RaVQi+kNzRFMY=
 			</data>
 		</dict>
 		<key>Resources/share/vice/hotkeys/hotkeys-cartridge.vhk</key>

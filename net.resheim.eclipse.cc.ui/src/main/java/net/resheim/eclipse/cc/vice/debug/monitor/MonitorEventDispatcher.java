@@ -362,7 +362,18 @@ public class MonitorEventDispatcher extends Job {
 			} // while
 			return Status.OK_STATUS;
 		} catch (IOException | DebugException e) {
-			return Status.error("Could not read from monitor", e);
+			try {
+				thread.getLaunch().terminate();
+			} catch (DebugException e1) {
+				e1.printStackTrace();
+			}
+			return Status.CANCEL_STATUS;
+		} finally {
+			try {
+				inputStream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 

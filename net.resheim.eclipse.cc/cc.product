@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Commodore Commander" uid="commodore-commander" id="net.resheim.eclipse.cc.product" application="org.eclipse.ui.ide.workbench" version="1.0.0.qualifier" type="features" includeLaunchers="true" autoIncludeRequirements="true">
+<product name="Commodore Commander" uid="commodore-commander" id="net.resheim.eclipse.cc.product" application="org.eclipse.ui.ide.workbench" version="1.0.0.qualifier" type="features" includeLaunchers="false" autoIncludeRequirements="true">
 
    <aboutInfo>
       <image path="eclipse_lg.png"/>
@@ -159,6 +159,11 @@
       <feature id="org.eclipse.ecf.core.ssl.feature" installMode="root"/>
       <feature id="org.eclipse.ecf.filetransfer.ssl.feature" installMode="root"/>
       <feature id="org.eclipse.e4.rcp" installMode="root"/>
+      <feature id="org.eclipse.jgit.ssh.apache" installMode="root"/>
+      <feature id="org.eclipse.egit" installMode="root"/>
+      <feature id="org.eclipse.jgit.http.apache" installMode="root"/>
+      <feature id="org.eclipse.jgit" installMode="root"/>
+      <feature id="org.eclipse.jgit.gpg.bc" installMode="root"/>
    </features>
 
    <configurations>

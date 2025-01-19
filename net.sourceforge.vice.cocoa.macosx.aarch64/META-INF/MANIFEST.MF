@@ -4,7 +4,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Versatile Commodore Emulator
 Bundle-SymbolicName: net.sourceforge.vice.cocoa.macosx.aarch64
 Bundle-Vendor: blackystardust, gpz
-Bundle-Version: 3.8.0.qualifier
+Bundle-Version: 3.9.0.qualifier
 Automatic-Module-Name: net.sourceforge.vice.cocoa.macosx.aarch64
 Eclipse-PlatformFilter: (& (osgi.ws=cocoa) (osgi.os=macosx) (osgi.arch=aarch64) )
 Eclipse-BundleShape: dir
