@@ -1,3 +1,16 @@
+/**
+ * Copyright (c) 2024 Torkild Ulvøy Resheim
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *
+ *   Torkild Ulvøy Resheim <torkildr@gmail.com> - initial API and implementation
+ */
 package net.resheim.eclipse.cc.vice.debug.monitor;
 
 import java.io.IOException;
@@ -19,8 +32,7 @@ import org.eclipse.debug.core.model.IMemoryBlock;
 import org.eclipse.ui.console.MessageConsoleStream;
 
 import net.resheim.eclipse.cc.vice.debug.MonitorLogger;
-import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
-import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Operation;
+import net.resheim.eclipse.cc.vice.debug.model.VICECheckpoint;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement.State;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
@@ -157,58 +169,38 @@ public class MonitorEventDispatcher extends Job {
 
 
 	private void parseCheckpointInfo(Response header, byte[] responseBody) {
-//		try {
-			ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
-			buffer.order(ByteOrder.LITTLE_ENDIAN);
-			// Create a checkpoint representation from the emulator
-			Checkpoint cp = new Checkpoint();
-			cp.setNumber(buffer.getInt());
-			// Update the checkpoint with values from the emulator
-			cp.setCurrentlyHit(buffer.get() == 0x01);
-			cp.setStartAddress(buffer.getShort());
-			cp.setEndAddress(buffer.getShort());
-			cp.setStopWhenHit(buffer.get() == 0x01);
-			buffer.get(); // skip one byte
-			// cp.setEnabledRemotely(buffer.get() == 0x01);
-			cp.setOperation(Operation.parseByte(buffer.get()));
-			cp.setTemporary(buffer.get() == 0x01);
-//			cp.setHitCount(id);
-//			cp.setIgnoreCount(id);
-//			cp.setHasCondition(buffer.get() == 0x01);
-//			cp.setMemspace(buffer.get());
+		ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
+		buffer.order(ByteOrder.LITTLE_ENDIAN);
+		int number = buffer.getInt();
+		// Update the checkpoint with values from the emulator
+		buffer.get();
+		int startAddress = buffer.getShort() & 0xFFFF;
 
-			// see if we have the breakpoint already
-			IBreakpointManager breakpointManager = DebugPlugin.getDefault().getBreakpointManager();
-			IBreakpoint[] breakpoints = breakpointManager.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
-			// XXX: Rewrite to make sure the correct breakpoint is the correct
-			for (IBreakpoint iBreakpoint : breakpoints) {
-				if (iBreakpoint instanceof Checkpoint) {
-					Checkpoint testing = (Checkpoint) iBreakpoint;
-					// hitherto unnumbered checkpoint
-					if (testing.getNumber() == 0) {
-						// If the command request identifier matches the one
-						// used when creating the checkpoint we can use the ID
-						if (header.requestId == testing.getRequestId()) {
-							testing.setNumber(cp.getNumber());
-							testing.setRequestId(0);
-							// Assuming that there never will be two breakpoints on
-							// the same address
-						} else if (cp.getStartAddress() == testing.getStartAddress()) {
-							testing.setNumber(cp.getNumber());
-						}
-					}
-					if (testing.getNumber() == 0) {
-						MonitorLogger.error(consoleStream, MonitorLogger.USER, "Unknown breakpoint " + cp.getNumber());
-						return;
+		// see if we have the breakpoint already
+		IBreakpointManager breakpointManager = DebugPlugin.getDefault().getBreakpointManager();
+		IBreakpoint[] breakpoints = breakpointManager.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
+		for (IBreakpoint iBreakpoint : breakpoints) {
+			if (iBreakpoint instanceof VICECheckpoint) {
+				VICECheckpoint testing = (VICECheckpoint) iBreakpoint;
+				// hitherto unnumbered checkpoint
+				if (testing.getNumber() == 0) {
+					// If the command request identifier matches the one
+					// used when creating the checkpoint we can use the ID
+					if (header.requestId == testing.getRequestId()) {
+						testing.setNumber(number);
+						testing.setRequestId(0);
+						// Assuming that there never will be two breakpoints on
+						// the same address
+					} else if (startAddress == testing.getStartAddress()) {
+						testing.setNumber(number);
 					}
 				}
+				if (testing.getNumber() == 0) {
+					MonitorLogger.error(consoleStream, MonitorLogger.USER, "Unknown checkpoint " + number);
+					return;
+				}
 			}
-			// Use this for breakpoints added in code
-//			breakpointManager.addBreakpoint(cp);
-
-//		} catch (CoreException e) {
-//			e.printStackTrace();
-//		}
+		}
 	}
 
 	private void parseRegistersAvailable(byte[] responseBody) {
