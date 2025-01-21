@@ -168,6 +168,13 @@ public class MonitorEventDispatcher extends Job {
 	}
 
 
+	/**
+	 * It appears that when VICE is reporting watchpoints with read/write actions
+	 * set, it will return two instances at the same address.
+	 *
+	 * @param header
+	 * @param responseBody
+	 */
 	private void parseCheckpointInfo(Response header, byte[] responseBody) {
 		ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -175,7 +182,6 @@ public class MonitorEventDispatcher extends Job {
 		// Update the checkpoint with values from the emulator
 		buffer.get();
 		int startAddress = buffer.getShort() & 0xFFFF;
-
 		// see if we have the breakpoint already
 		IBreakpointManager breakpointManager = DebugPlugin.getDefault().getBreakpointManager();
 		IBreakpoint[] breakpoints = breakpointManager.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
@@ -189,14 +195,18 @@ public class MonitorEventDispatcher extends Job {
 					if (header.requestId == testing.getRequestId()) {
 						testing.setNumber(number);
 						testing.setRequestId(0);
+						break;
 						// Assuming that there never will be two breakpoints on
 						// the same address
 					} else if (startAddress == testing.getStartAddress()) {
 						testing.setNumber(number);
+						testing.setRequestId(0);
+						break;
 					}
 				}
 				if (testing.getNumber() == 0) {
-					MonitorLogger.error(consoleStream, MonitorLogger.USER, "Unknown checkpoint " + number);
+					MonitorLogger.error(consoleStream, MonitorLogger.USER,
+							"Unknown checkpoint number " + number + " at $" + Integer.toHexString(startAddress));
 					return;
 				}
 			}
