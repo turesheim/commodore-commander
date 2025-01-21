@@ -13,11 +13,10 @@
  */
 package net.resheim.eclipse.cc.vice.debug.model;
 
-import java.util.EnumSet;
-
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IBreakpoint;
 import org.eclipse.debug.core.model.LineBreakpoint;
 
@@ -28,7 +27,17 @@ import net.resheim.eclipse.cc.launch.VICELaunchDelegate;
  * @since 1.0
  * @author Torkild Ulvøy Resheim
  */
-public class Checkpoint extends LineBreakpoint {
+public class VICECheckpoint extends LineBreakpoint {
+
+	public static final String SOURCE = "source";
+	public static final String OPERATION = "operation";
+	public static final String CONDITION = "condition";
+	public static final String MEMSPACE = "memspace";
+	public static final String START_ADDRESS = "start_address";
+	public static final String END_ADDRESS = "end_address";
+	public static final String BREAK_ON_LOAD = "break_on_load";
+	public static final String BREAK_ON_STORE = "break_on_store";
+	public static final String BREAK_ON_EXEC = "break_on_exec";
 
 	public enum Source {
 		/**
@@ -40,38 +49,6 @@ public class Checkpoint extends LineBreakpoint {
 		 * The checkpoint has been created using the Commodore Commander user interface.
 		 */
 		USER
-	}
-
-	/**
-	 * The operation that will trigger the checkpoint.
-	 */
-	public enum Operation {
-		/** Read value from address */
-		LOAD(0x01),
-		/** Store value to address */
-		STORE(0x02),
-		/** Execute address */
-		EXEC(0x04);
-
-		private final byte value;
-
-		Operation(int value) {
-            this.value = (byte) value;
-        }
-
-		public byte getValue() {
-			return value;
-		}
-
-		public static EnumSet<Operation> parseByte(byte b) {
-			EnumSet<Operation> instructions = EnumSet.noneOf(Operation.class);
-			for (Operation instruction : Operation.values()) {
-				if ((b & instruction.getValue()) != 0) {
-					instructions.add(instruction);
-				}
-			}
-			return instructions;
-		}
 	}
 
 	/**
@@ -115,16 +92,6 @@ public class Checkpoint extends LineBreakpoint {
 	/** The source of the breakpoint, how it was created */
 	private Source source;
 
-	/**
-	 * The end address of the breakpoint. Will be set/updated when the
-	 * {@link VICELaunchDelegate} updates from the metadata created from assembling
-	 * the program. It is only valid within that context.
-	 */
-	private int endAddress;
-
-	/** Break when the address is executed */
-	private boolean exec = false;
-
 	private boolean hasCondition = false;
 
 	private boolean currentlyHit = false;
@@ -133,10 +100,78 @@ public class Checkpoint extends LineBreakpoint {
 
 	private int ignoreCount;
 
-	/** Break when the address is read */
-	private boolean load = false;
+	/**
+	 * The checkpoint number. Will be set when the
+	 * {@link VICEDebugTarget#installDeferredBreakpoints()} has submitted all
+	 * checkpoints that are created by the user and an ID has been assigned.
+	 */
+	private int number;
 
-	private boolean stopWhenHit = false;
+	/**
+	 * Deletes the checkpoint after it has been hit once. This is similar to "until"
+	 * command, but it will not resume the emulator.
+	 */
+	private boolean temporary = false;
+
+	/**
+	 * The ID of the monitor command that was sent to create the checkpoint. The
+	 * response will use the same ID and some extra details that must be used to
+	 * update the checkpoint.
+	 */
+	private int requestId;
+
+	public VICECheckpoint() {
+	}
+
+	protected VICECheckpoint(IResource resource, String type, Source source, int lineNumber, int operation)
+			throws DebugException, CoreException {
+		super();
+
+		IMarker marker = resource.createMarker(type);
+		setMarker(marker);
+		setEnabled(true);
+
+		ensureMarker().setAttribute(IBreakpoint.ID, getModelIdentifier());
+		ensureMarker().setAttribute(IMarker.LINE_NUMBER, lineNumber);
+		ensureMarker().setAttribute(VICECheckpoint.SOURCE, source.name());
+		ensureMarker().setAttribute(IBreakpoint.ENABLED, true);
+
+		boolean isLoad = (operation & (1 << 0)) != 0; // Check bit 0
+		boolean isStore = (operation & (1 << 1)) != 0; // Check bit 1
+		boolean isExec = (operation & (1 << 2)) != 0; // Check bit 2
+
+		setLoad(isLoad);
+		setStore(isStore);
+		setExec(isExec);
+
+	}
+
+
+
+	public String getCondition() {
+		return condition;
+	}
+
+	/**
+	 * The end address of the breakpoint. Will be set/updated when the
+	 * {@link VICELaunchDelegate} updates from the metadata created from assembling
+	 * the program. It is only valid within that context.
+	 */
+	public int getEndAddress() throws CoreException {
+		IMarker m = getMarker();
+		if (m != null) {
+			return m.getAttribute(VICECheckpoint.END_ADDRESS, -1);
+		}
+		return -1;
+	}
+
+	public int getHitCount() {
+		return hitCount;
+	}
+
+	public int getIgnoreCount() {
+		return ignoreCount;
+	}
 
 	/**
 	 * Describes which part of the computer to checkpoint:
@@ -148,92 +183,29 @@ public class Checkpoint extends LineBreakpoint {
 	 * <li>0x04: drive 11</li>
 	 * </ul>
 	 */
-	private int memspace;
-
-	/**
-	 * The checkpoint number. Will be set when the
-	 * {@link VICEDebugTarget#installDeferredBreakpoints()} has submitted all
-	 * checkpoints that are created by the user and an ID has been assigned.
-	 */
-	private int number;
-
-	/**
-	 * The start address of the breakpoint. Will be set/updated when the
-	 * {@link VICELaunchDelegate} updates from the metadata created from assembling
-	 * the program. It is only valid within that context.
-	 */
-	private int startAddress;
-
-	/** Break when the address is written */
-	private boolean store = false;
-
-	/**
-	 * Deletes the checkpoint after it has been hit once. This is similar to "until"
-	 * command, but it will not resume the emulator.
-	 */
-	private boolean temporary = false;
-
-	private EnumSet<Operation> operation;
-
-	/**
-	 * The ID of the monitor command that was sent to create the checkpoint. The
-	 * response will use the same ID and some extra details that must be used to
-	 * update the checkpoint.
-	 */
-	private int requestId;
-
-	public Checkpoint() {
-		super();
-	}
-
-	public Checkpoint(IResource resource, int lineNumber, Source source) throws CoreException {
-		super();
-		IMarker marker = resource.createMarker("net.resheim.eclipse.cc.checkpointMarker");
-		setMarker(marker);
-		setEnabled(true);
-		ensureMarker().setAttribute(IBreakpoint.ENABLED, true);
-		ensureMarker().setAttribute(IMarker.MESSAGE, "Checkpoint");
-		ensureMarker().setAttribute(IBreakpoint.ID, getModelIdentifier());
-		ensureMarker().setAttribute(IMarker.LINE_NUMBER, lineNumber);
-		ensureMarker().setAttribute("source", source.name());
-	}
-
-//	public Checkpoint(IResource resource, int adddress) throws CoreException {
-//		super();
-//		IMarker marker = resource.createMarker("net.resheim.eclipse.cc.checkpointMarker");
-//		setMarker(marker);
-//		setEnabled(true);
-//		ensureMarker().setAttribute(IBreakpoint.ENABLED, true);
-//		ensureMarker().setAttribute(IMarker.MESSAGE, "Breakpoint at address ");
-//		ensureMarker().setAttribute(IBreakpoint.ID, getModelIdentifier());
-//	}
-
-	public String getCondition() {
-		return condition;
-	}
-
-	public int getEndAddress() {
-		return endAddress;
-	}
-
-	public int getHitCount() {
-		return hitCount;
-	}
-
-	public int getIgnoreCount() {
-		return ignoreCount;
-	}
-
 	public int getMemspace() {
-		return memspace;
+		IMarker m = getMarker();
+		if (m != null) {
+			return m.getAttribute(VICECheckpoint.MEMSPACE, -1);
+		}
+		return -1;
 	}
 
 	public int getNumber() {
 		return number;
 	}
 
+	/**
+	 * The start address of the breakpoint. Will be set/updated when the
+	 * {@link VICELaunchDelegate} updates from the metadata created from assembling
+	 * the program. It is only valid within that context.
+	 */
 	public int getStartAddress() {
-		return startAddress;
+		IMarker m = getMarker();
+		if (m != null) {
+			return m.getAttribute(VICECheckpoint.START_ADDRESS, -1);
+		}
+		return -1;
 	}
 
 	public boolean hasCondition() {
@@ -241,15 +213,27 @@ public class Checkpoint extends LineBreakpoint {
 	}
 
 	public boolean isExec() {
-		return exec;
+		IMarker m = getMarker();
+		if (m != null) {
+			return m.getAttribute(VICECheckpoint.BREAK_ON_EXEC, false);
+		}
+		return false;
 	}
 
 	public boolean isLoad() {
-		return load;
+		IMarker m = getMarker();
+		if (m != null) {
+			return m.getAttribute(VICECheckpoint.BREAK_ON_LOAD, false);
+		}
+		return false;
 	}
 
 	public boolean isStore() {
-		return store;
+		IMarker m = getMarker();
+		if (m != null) {
+			return m.getAttribute(VICECheckpoint.BREAK_ON_STORE, false);
+		}
+		return false;
 	}
 
 	public boolean isTemporary() {
@@ -260,12 +244,18 @@ public class Checkpoint extends LineBreakpoint {
 		this.condition = condition;
 	}
 
-	public void setEndAddress(int endAddress) {
-		this.endAddress = endAddress;
+	public void setEndAddress(int endAddress) throws CoreException {
+		IMarker m = getMarker();
+		if (m != null) {
+			m.setAttribute(VICECheckpoint.END_ADDRESS, endAddress);
+		}
 	}
 
-	public void setExec(boolean exec) {
-		this.exec = exec;
+	public void setExec(boolean exec) throws CoreException {
+		IMarker m = getMarker();
+		if (m != null) {
+			m.setAttribute(VICECheckpoint.BREAK_ON_EXEC, exec);
+		}
 	}
 
 	public void setHasCondition(boolean hasCondition) {
@@ -280,45 +270,49 @@ public class Checkpoint extends LineBreakpoint {
 		this.ignoreCount = ignoreCount;
 	}
 
-	public void setLoad(boolean load) {
-		this.load = load;
+	public void setLoad(boolean load) throws CoreException {
+		IMarker m = getMarker();
+		if (m != null) {
+			m.setAttribute(VICECheckpoint.BREAK_ON_LOAD, load);
+		}
 	}
 
-	public void setMemspace(int memspace) {
-		this.memspace = memspace;
+	public void setMemspace(int memspace) throws CoreException {
+		IMarker m = getMarker();
+		if (m != null) {
+			m.setAttribute(VICECheckpoint.MEMSPACE, memspace);
+		}
 	}
 
 	public void setNumber(int number) {
 		this.number = number;
 	}
 
-	public void setStartAddress(int startAddress) {
-		this.startAddress = startAddress;
+	public void setStartAddress(int startAddress) throws CoreException {
+		IMarker m = getMarker();
+		if (m != null) {
+			m.setAttribute(VICECheckpoint.START_ADDRESS, startAddress);
+		}
 	}
 
-	public void setStore(boolean store) {
-		this.store = store;
+	public void setStore(boolean store) throws CoreException {
+		IMarker m = getMarker();
+		if (m != null) {
+			m.setAttribute(VICECheckpoint.BREAK_ON_STORE, store);
+		}
 	}
 
 	public void setTemporary(boolean temporary) {
 		this.temporary = temporary;
 	}
 
-	public boolean isStopWhenHit() {
-		return stopWhenHit;
-	}
-
-	public void setStopWhenHit(boolean stopWhenHit) {
-		this.stopWhenHit = stopWhenHit;
-	}
-
-	public EnumSet<Operation> getOperation() {
-		return operation;
-	}
-
-	public void setOperation(EnumSet<Operation> operation) {
-		this.operation = operation;
-	}
+//	public boolean isStopWhenHit() {
+//		return stopWhenHit;
+//	}
+//
+//	public void setStopWhenHit(boolean stopWhenHit) {
+//		this.stopWhenHit = stopWhenHit;
+//	}
 
 	public boolean isCurrentlyHit() {
 		return currentlyHit;
@@ -333,14 +327,27 @@ public class Checkpoint extends LineBreakpoint {
 		return VICEDebugElement.DEBUG_MODEL_ID;
 	}
 
-	public Source getSource() {
+	public Source getSource() throws CoreException {
+		IMarker m = getMarker();
+		if (m != null) {
+			return Source.valueOf(m.getAttribute(VICECheckpoint.SOURCE).toString());
+		}
 		return source;
 	}
 
-	public void setSource(Source source) {
-		this.source = source;
+	public void setSource(Source source) throws CoreException {
+		IMarker m = getMarker();
+		if (m != null) {
+			m.setAttribute(VICECheckpoint.SOURCE, source.toString());
+		}
 	}
 
+	/**
+	 * This value is determined by VICE and depends on the order of the
+	 * {@link VICECheckpoint} being submitted to the emulator
+	 *
+	 * @return the ID of the command used to set the {@link VICECheckpoint}
+	 */
 	public int getRequestId() {
 		return requestId;
 	}

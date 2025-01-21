@@ -48,8 +48,8 @@ import org.osgi.framework.Bundle;
 import net.resheim.eclipse.cc.builder.Assemblies;
 import net.resheim.eclipse.cc.builder.model.Assembly;
 import net.resheim.eclipse.cc.builder.model.LineMapping;
-import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
-import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Source;
+import net.resheim.eclipse.cc.vice.debug.model.VICECheckpoint;
+import net.resheim.eclipse.cc.vice.debug.model.VICECheckpoint.Source;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
 
@@ -128,7 +128,7 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 				try (FileWriter fw = new FileWriter(mcommands.toFile(), true)) {
 					for (IBreakpoint iBreakpoint : breakpoints) {
 						if (iBreakpoint.isEnabled()) {
-							Checkpoint cp = (Checkpoint) iBreakpoint;
+							VICECheckpoint cp = (VICECheckpoint) iBreakpoint;
 							updateAdresses(assembly, iBreakpoint);
 							fw.append("break ");
 							fw.append(Integer.toHexString(cp.getStartAddress()));
@@ -146,6 +146,8 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 				// Break as soon as the kernal is ready. If we omit this, VICE
 				// will crash immediately when stepping through code. See
 				// https://sourceforge.net/p/vice-emu/bugs/2083/
+				// Appears to have been fixed in 3.9, but we need it to set breakpoints as early
+				// as possible
 				args.add("-initbreak");
 				args.add("ready");
 			}
@@ -192,7 +194,7 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 	}
 
 	private void updateAdresses(Assembly assembly, IBreakpoint iBreakpoint) throws CoreException {
-		Checkpoint cp = (Checkpoint) iBreakpoint;
+		VICECheckpoint cp = (VICECheckpoint) iBreakpoint;
 		if (cp.getSource() != Source.CODE) {
 			IResource br = iBreakpoint.getMarker().getResource();
 			// see if the checkpoint is in one of the assembled files

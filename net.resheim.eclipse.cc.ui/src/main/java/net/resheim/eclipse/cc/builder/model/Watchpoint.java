@@ -21,7 +21,9 @@ public class Watchpoint extends Breakpoint {
 		String[] split = inputString.split(",");
 		segment = split[0];
 		startAddress = Integer.parseInt(split[1].substring(1), 16);
-		endAddress = Integer.parseInt(split[2].substring(1), 16);
+		if (split.length > 2) {
+			endAddress = Integer.parseInt(split[2].substring(1), 16);
+		}
 		if (split.length > 3)
 			argument = split[3];
 	}
