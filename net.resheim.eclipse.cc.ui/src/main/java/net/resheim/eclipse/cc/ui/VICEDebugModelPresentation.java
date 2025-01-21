@@ -13,8 +13,12 @@
  */
 package net.resheim.eclipse.cc.ui;
 
+import java.text.MessageFormat;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.debug.core.model.ILineBreakpoint;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.ui.IDebugModelPresentation;
 import org.eclipse.debug.ui.IValueDetailListener;
@@ -24,7 +28,7 @@ import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.part.FileEditorInput;
 
 import net.resheim.eclipse.cc.editor.CommodoreCommanderPlugin;
-import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
+import net.resheim.eclipse.cc.vice.debug.model.VICECheckpoint;
 import net.resheim.eclipse.cc.vice.debug.model.data.ArrayValueRow;
 import net.resheim.eclipse.cc.vice.debug.model.data.NamedDataVariable;
 
@@ -53,8 +57,8 @@ public class VICEDebugModelPresentation implements IDebugModelPresentation {
 	public IEditorInput getEditorInput(Object element) {
 		// figure out an editor input for the checkpoint so that a double click or
 		// similar action will open an editor on the checkpoint
-		if (element instanceof Checkpoint) {
-			Checkpoint checkpoint = (Checkpoint) element;
+		if (element instanceof VICECheckpoint) {
+			VICECheckpoint checkpoint = (VICECheckpoint) element;
 			IResource resource = checkpoint.getMarker().getResource();
 			if (resource instanceof IFile) {
 				IFile file = (IFile) resource;
@@ -69,7 +73,7 @@ public class VICEDebugModelPresentation implements IDebugModelPresentation {
 
 	@Override
 	public String getEditorId(IEditorInput input, Object element) {
-		if (element instanceof Checkpoint) {
+		if (element instanceof VICECheckpoint) {
 			return ASSEMBLY_EDITOR;
 		}
 		if (element instanceof IFile) {
@@ -96,11 +100,29 @@ public class VICEDebugModelPresentation implements IDebugModelPresentation {
 
 	@Override
 	public String getText(Object element) {
+		if (element instanceof VICECheckpoint) {
+			return getBreakpointText((VICECheckpoint) element);
+		}
 		return null;
 	}
 
 	@Override
 	public void computeDetail(IValue value, IValueDetailListener listener) {
+	}
+
+	private String getBreakpointText(VICECheckpoint breakpoint) {
+		IResource resource = breakpoint.getMarker().getResource();
+		StringBuilder label = new StringBuilder();
+		if (resource != null) {
+			label.append(resource.getName());
+		}
+		try {
+			int lineNumber = ((ILineBreakpoint) breakpoint).getLineNumber();
+			label.append(MessageFormat.format(" [line: {0}] ${1}",
+					new Object[] { Integer.toString(lineNumber), Integer.toHexString(breakpoint.getStartAddress()) }));
+		} catch (CoreException e) {
+		}
+		return label.toString();
 	}
 
 }
