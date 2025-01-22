@@ -300,7 +300,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			clearOldCompiledWatchpoints(assembly);
 
 
-			// iterate over the parsed watchpoints, which only have a segment
+			// Iterate over the parsed watchpoints, which only have a segment
 			// and an address, use this to determine the actual location in the
 			// file and create a debug model version of each watchpoint – this will be shown
 			// in the user interface once the build has completed.
@@ -308,7 +308,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			List<Breakpoint> breakpoints = assembly.getBreakpoints();
 			for (Breakpoint breakpoint : breakpoints) {
 				int address = breakpoint.getStartAddress();
-				// determine the position in the file for the given address.
+				// determine the position in the file for the given addres.
 				LineMapping lineMapping = assembly.getLineMapping(address);
 				int fileIndex = lineMapping.getFileIndex();
 				IPath checkpointFile = getFile(assembly, fileIndex);
@@ -322,11 +322,12 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			List<Watchpoint> watchpoints = assembly.getWatchpoints();
 			for (Watchpoint watchpoint : watchpoints) {
 				int address = watchpoint.getStartAddress();
-				// determine the position in the file for the given address.
+				// determine the position in the file for the given address
 				LineMapping lineMapping = assembly.getLineMapping(address);
 				int fileIndex = lineMapping.getFileIndex();
 				IPath checkpointFile = getFile(assembly, fileIndex);
 				int bitmask = 0;
+				// the operations below are those supported by VICE
 				if (watchpoint.getArgument() != null) {
 					if (watchpoint.getArgument().contains("load")) {
 						bitmask |= (1 << 0);
