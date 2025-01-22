@@ -22,19 +22,35 @@ import org.eclipse.debug.core.model.ILineBreakpoint;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.ui.IDebugModelPresentation;
 import org.eclipse.debug.ui.IValueDetailListener;
+import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider.IStyledLabelProvider;
+import org.eclipse.jface.viewers.IColorProvider;
 import org.eclipse.jface.viewers.ILabelProviderListener;
+import org.eclipse.jface.viewers.StyledString;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.FileEditorInput;
 
+import net.resheim.eclipse.cc.builder.Assemblies;
+import net.resheim.eclipse.cc.builder.model.Assembly;
+import net.resheim.eclipse.cc.builder.model.Label;
 import net.resheim.eclipse.cc.editor.CommodoreCommanderPlugin;
 import net.resheim.eclipse.cc.vice.debug.model.VICECheckpoint;
 import net.resheim.eclipse.cc.vice.debug.model.data.ArrayValueRow;
 import net.resheim.eclipse.cc.vice.debug.model.data.NamedDataVariable;
 
-public class VICEDebugModelPresentation implements IDebugModelPresentation {
+public class VICEDebugModelPresentation implements IDebugModelPresentation, IColorProvider, IStyledLabelProvider {
 
 	private static final String ASSEMBLY_EDITOR = "net.resheim.eclipse.cc.ui.assembly.editor";
+
+	private Color redColor;
+
+	public VICEDebugModelPresentation() {
+		PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
+			redColor = PlatformUI.getWorkbench().getDisplay().getSystemColor(org.eclipse.swt.SWT.COLOR_RED);
+		});
+	}
 
 	@Override
 	public void addListener(ILabelProviderListener listener) {
@@ -112,17 +128,47 @@ public class VICEDebugModelPresentation implements IDebugModelPresentation {
 
 	private String getBreakpointText(VICECheckpoint breakpoint) {
 		IResource resource = breakpoint.getMarker().getResource();
-		StringBuilder label = new StringBuilder();
+		StringBuilder sb = new StringBuilder();
 		if (resource != null) {
-			label.append(resource.getName());
+			sb.append(resource.getName());
 		}
 		try {
 			int lineNumber = ((ILineBreakpoint) breakpoint).getLineNumber();
-			label.append(MessageFormat.format(" [line: {0}] ${1}",
-					new Object[] { Integer.toString(lineNumber), Integer.toHexString(breakpoint.getStartAddress()) }));
+			Assembly assembly = Assemblies.getDefault().getAssembly((IFile) resource);
+			// We cannot use the address because it will vary depending on what assembly is
+			// created. The same file can be used several places, and the address may vary.
+			if (assembly != null) {
+				Label labeledAddress = assembly.getLabel(breakpoint.getStartAddress());
+				if (labeledAddress != null) {
+					sb.append(
+							MessageFormat.format(" [line: {0}] ({2} @ ${1})", new Object[] {
+									Integer.toString(lineNumber),
+									Integer.toHexString(breakpoint.getStartAddress()), labeledAddress.getName() }));
+					return sb.toString();
+				}
+
+			}
+			sb.append(MessageFormat.format(" [line: {0}]", new Object[] { Integer.toString(lineNumber) }));
 		} catch (CoreException e) {
 		}
-		return label.toString();
+		return sb.toString();
+	}
+
+	@Override
+	public StyledString getStyledText(Object element) {
+		System.out.println("VICEDebugModelPresentation.getStyledText()");
+		return null;
+	}
+
+	@Override
+	public Color getForeground(Object element) {
+		// return redColor;
+		return null;
+	}
+
+	@Override
+	public Color getBackground(Object element) {
+		return null;
 	}
 
 }

@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -54,7 +55,6 @@ import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.ResponseID;
  *
  * @since 1.0
  * @author Torkild Ulvøy Resheim
- *
  */
 public class MonitorEventDispatcher extends Job {
 
@@ -92,49 +92,58 @@ public class MonitorEventDispatcher extends Job {
 	}
 
 	private void parseResponse(Response header, byte[] responseBody) throws DebugException {
+		try {
+			debug(header, responseBody);
+			if (header.responseType == ResponseID.STOPPED.getCode()) {
+				thread.setState(State.SUSPENDED);
+				if (thread.isStepping()) {
+					thread.fireSuspendEvent(DebugEvent.STEP_END);
+				} else {
+					thread.fireSuspendEvent(DebugEvent.UNSPECIFIED);
+				}
+			} else if (header.responseType == ResponseID.CHECKPOINT_INFO.getCode())
+				parseCheckpointInfo(header, responseBody);
+			else if (header.responseType == ResponseID.RESUMED.getCode()) {
+				thread.setState(State.RUNNING);
+				thread.fireResumeEvent(DebugEvent.UNSPECIFIED);
+			} else if (header.responseType == CommandID.MEMORY_GET.getCode())
+				parseMemoryGet(responseBody);
+			else if (header.responseType == CommandID.MEMORY_SET.getCode())
+				// update the memory image
+				((VICEDebugTarget) thread.getDebugTarget()).sendCommand(CommandID.MEMORY_GET, new byte[] { 0x00, // side
+																													// effects
+						0x00, // start address LSB
+						0x00, // start address MSB
+						(byte) 0xff, // end address LSB
+						(byte) 0xff, // end address MSB
+						0x00, // memspace
+						0x00, // bank ID LSB
+						0x00 // bank ID MSB
+				});
 
-		debug(header, responseBody);
-		if (header.responseType == ResponseID.STOPPED.getCode()) {
-			thread.setState(State.SUSPENDED);
-			if (thread.isStepping()) {
-				thread.fireSuspendEvent(DebugEvent.STEP_END);
-			} else {
-				thread.fireSuspendEvent(DebugEvent.UNSPECIFIED);
+			else if (header.responseType == CommandID.QUIT.getCode()) {
+				thread.setState(State.TERMINATED);
+				thread.fireTerminateEvent();
 			}
+			else if (header.responseType == ResponseID.REGISTER_INFO.getCode())
+				parseRegistersGet(responseBody);
+			else if (header.responseType == CommandID.CHECKPOINT_TOGGLE.getCode())
+				ack();
+			else if (header.responseType == CommandID.REGISTERS_AVAILABLE.getCode())
+				parseRegistersAvailable(responseBody);
+			else
+				MonitorLogger.error(consoleStream, MonitorLogger.OUTPUT,
+						"Unhandled response " + String.format("$%02X", header.responseType));
+		} catch (CoreException e) {
+			throw new DebugException(Status.error("Could not parse", e));
 		}
-		else if (header.responseType == ResponseID.CHECKPOINT_INFO.getCode())
-			parseCheckpointInfo(header, responseBody);
-		else if (header.responseType == ResponseID.RESUMED.getCode()) {
-			thread.setState(State.RUNNING);
-			thread.fireResumeEvent(DebugEvent.UNSPECIFIED);
-		}
-		else if (header.responseType == CommandID.MEMORY_GET.getCode())
-			parseMemoryGet(responseBody);
-		else if (header.responseType == CommandID.MEMORY_SET.getCode())
-			// update the memory image
-			((VICEDebugTarget) thread.getDebugTarget())
-				.sendCommand(CommandID.MEMORY_GET, new byte[] {
-					0x00, // side effects
-					0x00, // start address LSB
-					0x00, // start address MSB
-					(byte) 0xff, // end address LSB
-					(byte) 0xff, // end address MSB
-					0x00, // memspace
-					0x00, // bank ID LSB
-					0x00 // bank ID MSB
-			});
+	}
 
-		else if (header.responseType == CommandID.QUIT.getCode()) {
-			thread.setState(State.TERMINATED);
-			thread.fireTerminateEvent();
-		}
-		else if (header.responseType == ResponseID.REGISTER_INFO.getCode())
-			parseRegistersGet(responseBody);
-		else if (header.responseType == CommandID.REGISTERS_AVAILABLE.getCode())
-			parseRegistersAvailable(responseBody);
-		else
-			MonitorLogger.error(consoleStream, MonitorLogger.OUTPUT,
-					"Unhandled response " + String.format("$%02X", header.responseType));
+	/**
+	 * Does nothing.
+	 */
+	private void ack() {
+		// TODO Auto-generated method stub
 	}
 
 	private void debug(Response header, byte[] responseBody) {
@@ -174,14 +183,24 @@ public class MonitorEventDispatcher extends Job {
 	 *
 	 * @param header
 	 * @param responseBody
+	 * @throws CoreException
 	 */
-	private void parseCheckpointInfo(Response header, byte[] responseBody) {
+	private void parseCheckpointInfo(Response header, byte[] responseBody) throws CoreException {
+		// parse information from the checkooint info
 		ByteBuffer buffer = ByteBuffer.wrap(responseBody, 0, responseBody.length);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
-		int number = buffer.getInt();
-		// Update the checkpoint with values from the emulator
-		buffer.get();
+		int number = buffer.getInt(); // first four bytes
+		boolean hit = buffer.get() == 0x1 ? true : false;
 		int startAddress = buffer.getShort() & 0xFFFF;
+		int endAddress = buffer.getShort() & 0xFFFF;
+		boolean stop = buffer.get() == 0x1 ? true : false;
+		boolean enabled = buffer.get() == 0x1 ? true : false;
+		byte bitmask = buffer.get();
+		boolean isLoad = (bitmask & (1 << 0)) != 0; // Check bit 0
+		boolean isStore = (bitmask & (1 << 1)) != 0; // Check bit 1
+		boolean isExec = (bitmask & (1 << 2)) != 0; // Check bit 2
+		boolean temp = buffer.get() == 0x1 ? true : false;
+
 		// see if we have the breakpoint already
 		IBreakpointManager breakpointManager = DebugPlugin.getDefault().getBreakpointManager();
 		IBreakpoint[] breakpoints = breakpointManager.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
@@ -190,17 +209,20 @@ public class MonitorEventDispatcher extends Job {
 				VICECheckpoint testing = (VICECheckpoint) iBreakpoint;
 				// hitherto unnumbered checkpoint
 				if (testing.getNumber() == 0) {
-					// If the command request identifier matches the one
-					// used when creating the checkpoint we can use the ID
-					if (header.requestId == testing.getRequestId()) {
+					// If the command request identifier matches the one used when creating the
+					// checkpoint we can use the ID otherwise, we may be able to use the address, in
+					// order to number the breakpoint that we already have registered in the debug
+					// manager
+					if (header.requestId == testing.getRequestId() || startAddress == testing.getStartAddress()) {
 						testing.setNumber(number);
 						testing.setRequestId(0);
-						break;
-						// Assuming that there never will be two breakpoints on
-						// the same address
-					} else if (startAddress == testing.getStartAddress()) {
-						testing.setNumber(number);
-						testing.setRequestId(0);
+						testing.setCurrentlyHit(hit);
+						testing.setLoad(isLoad);
+						testing.setExec(isExec);
+						testing.setStore(isStore);
+						testing.setEnabled(enabled);
+						testing.setTemporary(temp);
+						testing.setEndAddress(endAddress);
 						break;
 					}
 				}

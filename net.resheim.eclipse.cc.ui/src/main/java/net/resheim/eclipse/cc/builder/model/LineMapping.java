@@ -13,6 +13,10 @@
  */
 package net.resheim.eclipse.cc.builder.model;
 
+/**
+ * A {@link LineMapping} represents a mapping between line numbers, columns,
+ * start address, end address and file index.
+ */
 public class LineMapping {
 
 	int startAddress;

@@ -48,6 +48,7 @@ import org.osgi.framework.Bundle;
 import net.resheim.eclipse.cc.builder.Assemblies;
 import net.resheim.eclipse.cc.builder.model.Assembly;
 import net.resheim.eclipse.cc.builder.model.LineMapping;
+import net.resheim.eclipse.cc.vice.debug.model.VICEBreakpoint;
 import net.resheim.eclipse.cc.vice.debug.model.VICECheckpoint;
 import net.resheim.eclipse.cc.vice.debug.model.VICECheckpoint.Source;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
@@ -119,20 +120,34 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 					args.add("-moncommands");
 					args.add(mcommands.toOSString());
 				}
-
 				// Update the monitor commands file with a list of checkpoints.
 				// this way we do not have to break just after starting the
-				// emulator for doing this.
+				// emulator.
+				//
+				// break [load|store|exec] [address [address] [if <cond_expr>]]
+				//
+				// This command allows setting a breakpoint or listing the current breakpoints.
+				// If no address is given, the currently valid checkpoints are printed. If an
+				// address is given, a breakpoint is set for that address and the breakpoint
+				// number is printed. The "load|store|exec" parameter can be either "load",
+				// "store" or "exec" (or any combination of these) to determine on which
+				// operation the monitor breaks. If not specified, the monitor breaks on "exec".
+				// A conditional expression can also be specified for the breakpoint. For more
+				// information on conditions, see the CONDITION command.
 				IBreakpoint[] breakpoints = DebugPlugin.getDefault().getBreakpointManager()
 						.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
 				try (FileWriter fw = new FileWriter(mcommands.toFile(), true)) {
 					for (IBreakpoint iBreakpoint : breakpoints) {
-						if (iBreakpoint.isEnabled()) {
+						if (iBreakpoint.isEnabled() && iBreakpoint instanceof VICECheckpoint) {
 							VICECheckpoint cp = (VICECheckpoint) iBreakpoint;
-							updateAdresses(assembly, iBreakpoint);
-							fw.append("break ");
-							fw.append(Integer.toHexString(cp.getStartAddress()));
-							fw.append(" \n");
+							if (cp.getSource().equals(Source.USER)) {
+								updateAdresses(assembly, iBreakpoint);
+								if (cp instanceof VICEBreakpoint) {
+									fw.append("break ");
+									fw.append(Integer.toHexString(cp.getStartAddress()));
+									fw.append(" \n");
+								}
+							}
 						}
 					}
 				}
@@ -148,8 +163,8 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 				// https://sourceforge.net/p/vice-emu/bugs/2083/
 				// Appears to have been fixed in 3.9, but we need it to set breakpoints as early
 				// as possible
-				args.add("-initbreak");
-				args.add("ready");
+//				args.add("-initbreak");
+//				args.add("ready");
 			}
 
 			// We're looking for a viceconfig somewhere in the
@@ -193,6 +208,14 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 		}
 	}
 
+	/**
+	 * Examines the assembly to find the start and end address of the breakpoint
+	 * based on the file and the line number the breakpoint has been assigned to.
+	 *
+	 * @param assembly    the assembly to be launched
+	 * @param iBreakpoint the breakpoint
+	 * @throws CoreException
+	 */
 	private void updateAdresses(Assembly assembly, IBreakpoint iBreakpoint) throws CoreException {
 		VICECheckpoint cp = (VICECheckpoint) iBreakpoint;
 		if (cp.getSource() != Source.CODE) {

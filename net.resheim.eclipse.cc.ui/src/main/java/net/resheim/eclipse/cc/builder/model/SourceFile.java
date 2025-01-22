@@ -14,7 +14,6 @@
 package net.resheim.eclipse.cc.builder.model;
 
 import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.Path;
 
 /**
  * A numbered source file in an {@link Assembly}.
@@ -30,7 +29,8 @@ public class SourceFile {
 	public SourceFile(String input) {
 		String[] split = input.strip().split(",");
 		fileNumber = Integer.parseInt(split[0]);
-		path = Path.fromOSString(split[1]);
+
+		path = IPath.fromOSString(split[1]);
 	}
 
 	public int getFileNumber() {

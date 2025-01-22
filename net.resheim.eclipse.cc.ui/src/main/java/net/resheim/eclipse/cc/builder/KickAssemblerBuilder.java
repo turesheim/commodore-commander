@@ -326,9 +326,23 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 				LineMapping lineMapping = assembly.getLineMapping(address);
 				int fileIndex = lineMapping.getFileIndex();
 				IPath checkpointFile = getFile(assembly, fileIndex);
+				int bitmask = 0;
+				if (watchpoint.getArgument() != null) {
+					if (watchpoint.getArgument().contains("load")) {
+						bitmask |= (1 << 0);
+					}
+					if (watchpoint.getArgument().contains("store")) {
+						bitmask |= (1 << 1);
+					}
+					if (watchpoint.getArgument().contains("exec")) {
+						bitmask |= (1 << 2);
+					}
+				} else {
+					bitmask = 3;
+				}
 				IFile fileForLocation = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(checkpointFile);
 				VICEWatchpoint lineWatchpoint = new VICEWatchpoint(fileForLocation, lineMapping.getStartLine(),
-						Source.CODE, 2 /* store */);
+						Source.CODE, bitmask);
 				lineWatchpoint.setStartAddress(address);
 				DebugPlugin.getDefault().getBreakpointManager().addBreakpoint(lineWatchpoint);
 			}

@@ -136,7 +136,6 @@ public class VICEDebugTarget extends VICEDebugElement
 			try {
 				Socket socket = new Socket();
 				socket.connect(new InetSocketAddress(hostname, port), 100); // Timeout for each attempt is 100ms second
-				System.out.println("Connected to " + hostname + ":" + port);
 				return socket;
 			} catch (Exception e) {
 				if (++attemptCount >= MAX_CONNECTION_ATTEMPTS) {
@@ -213,27 +212,26 @@ public class VICEDebugTarget extends VICEDebugElement
 		// Otherwise breakpointAdded and breakpointRemoved should be sufficient.
 		if (delta != null && delta.getKind() == IResourceDelta.CHANGED) {
 			MonitorLogger.info(consoleStream, MonitorLogger.USER, "Checkpoint changed " + breakpoint);
-			System.out.println("CHANGED >> " + delta);
-			// Toggle the checkpoint if this is the attribute that has changed
 			try {
-				boolean newState = !delta.getAttribute(IBreakpoint.ENABLED, true);
-				if (cp.isEnabled() == newState) {
-					MonitorLogger.info(consoleStream, MonitorLogger.USER, "Toggling state " + newState);
+				// Toggle the checkpoint enabled state if this is the attribute that has changed
+				if (cp.isEnabled() != delta.getAttribute(IBreakpoint.ENABLED, true)) {
+					MonitorLogger.info(consoleStream, MonitorLogger.USER, "Toggling state " + cp.isEnabled());
 					ByteBuffer buffer = ByteBuffer.allocate(5);
 					buffer.order(ByteOrder.LITTLE_ENDIAN);
 					buffer.putInt(cp.getNumber());
-					buffer.put(newState ? (byte) 0x01 : (byte) 0x00);
+					buffer.put(cp.isEnabled() ? (byte) 0x01 : (byte) 0x00);
 					sendCommand(CommandID.CHECKPOINT_TOGGLE, buffer.array());
-				} else {
-					MonitorLogger.info(consoleStream, MonitorLogger.USER, "Re-adding checkpoint");
-					ByteBuffer buffer = ByteBuffer.allocate(4);
-					buffer.order(ByteOrder.LITTLE_ENDIAN);
-					buffer.putInt(cp.getNumber());
-					sendCommand(CommandID.CHECKPOINT_DELETE, buffer.array());
-					cp.setNumber(0);
-					registerBreakpoint(breakpoint);
-
 				}
+//				else {
+//					MonitorLogger.info(consoleStream, MonitorLogger.USER, "Re-adding checkpoint");
+//					ByteBuffer buffer = ByteBuffer.allocate(4);
+//					buffer.order(ByteOrder.LITTLE_ENDIAN);
+//					buffer.putInt(cp.getNumber());
+//					sendCommand(CommandID.CHECKPOINT_DELETE, buffer.array());
+//					cp.setNumber(0);
+//					registerBreakpoint(breakpoint);
+//
+//				}
 				// operating mode
 			} catch (CoreException e) {
 				e.printStackTrace();

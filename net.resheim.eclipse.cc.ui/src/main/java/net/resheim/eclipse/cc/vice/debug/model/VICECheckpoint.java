@@ -143,10 +143,7 @@ public class VICECheckpoint extends LineBreakpoint {
 		setLoad(isLoad);
 		setStore(isStore);
 		setExec(isExec);
-
 	}
-
-
 
 	public String getCondition() {
 		return condition;
