@@ -43,6 +43,7 @@ Compilation is done automatically with the built-in [Kick Assembler](http://thew
 The debugger implements a [VICE Binary Monitor](https://vice-emu.sourceforge.io/vice_12.html) interface and is currently fairly basic but still useful. It currently supports the following features:
 
 * [Breakpoints and watchpoints](#breakpoints-and-watchpoints) along with associated commands: **Step Over** ![](docs/commands/stepover_co.png), **Step Into** ![](docs/commands/stepinto_co.png), **Step Return** ![](docs/commands/stepreturn_co.png), **Suspend** ![](docs/commands/suspend_co.png), **Resume** ![](docs/commands/resume_co.png) and **Terminate** ![](docs/commands/terminate_co.png)
+* [Registers](#registers) view showing the CPU registers with values
 * [Variables](#variables) view showing and editing labeled data
 * [Memory Monitor](memory-monitor) for displaying and editing memory areas
 * Built in [VICE](https://vice-emu.sourceforge.io) emulator
@@ -61,6 +62,12 @@ Currently, the only way to add a _watchpoint_ is by code. Use the statement `.wa
 
 Breakpoints can be individually disabled and enabled, and as be grouped by; types, projects, files, working custom working sets etc. They can also be exported and imported for sharing between developers or stored in a project folder.
 
+### Registers
+
+![](docs/registers.png)
+
+The **Registers** view show all of the CPU's registers and their values as the CPU is suspended. The yellow coloring indicates that the value was changed since the previous suspension.
+
 ### Variables
 
 When building your application, the IDE will automatically detect sections of code that are labelled and that contains data. For example:
@@ -76,7 +83,7 @@ The parser will also determine which format was used to declare the values and t
 
 ![](docs/variables.png)
 
-The **Variables view** is updated whenever the CPU is suspended. Values that are shown using the diamond icon are editable. Simply click on the value cell and specify a new value. Make sure the value is within the range of the data type. A byte value is for example between 0 and 255.
+The **Variables** view is updated whenever the CPU is suspended. Values that are shown using the diamond icon are editable. Simply click on the value cell and specify a new value. Make sure the value is within the range of the data type. A byte value is for example between 0 and 255.
 
 ### Memory monitor
 
