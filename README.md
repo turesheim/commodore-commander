@@ -42,9 +42,9 @@ Compilation is done automatically with the built-in [Kick Assembler](http://thew
 
 The debugger implements a [VICE Binary Monitor](https://vice-emu.sourceforge.io/vice_12.html) interface and is currently fairly basic but still useful. It currently supports the following features:
 
-* *Breakpoints* and *watchpoints* along with associated commands: **Step Over** ![](docs/commands/stepover_co.png), **Step Into** ![](docs/commands/stepinto_co.png), **Step Return** ![](docs/commands/stepreturn_co.png), **Suspend** ![](docs/commands/suspend_co.png), **Resume** ![](docs/commands/resume_co.png) and **Terminate** ![](docs/commands/terminate_co.png)
-* *Variables* view showing and editing labeled data
-* *Memory Monitor* for displaying and editing memory areas
+* [Breakpoints and watchpoints](#breakpoints-and-watchpoints) along with associated commands: **Step Over** ![](docs/commands/stepover_co.png), **Step Into** ![](docs/commands/stepinto_co.png), **Step Return** ![](docs/commands/stepreturn_co.png), **Suspend** ![](docs/commands/suspend_co.png), **Resume** ![](docs/commands/resume_co.png) and **Terminate** ![](docs/commands/terminate_co.png)
+* [Variables](#variables) view showing and editing labeled data
+* [Memory Monitor](memory-monitor) for displaying and editing memory areas
 * Built in [VICE](https://vice-emu.sourceforge.io) emulator
   * macOS GTK version on aarch64 and x86_64
   * Windows GTK x86_64 version (planned)
