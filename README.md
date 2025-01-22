@@ -9,6 +9,8 @@ The _Commodore Commander_ aims to be a useful addition to this ecosystem of tool
 
 This project provides a set of features for the Eclipse IDE that can be built and added into an existing Eclipse installation. It also comes with _product builds_ which are standalone applications. However these require that Java 21 is installed and in the system PATH.
 
+## Editing
+
 ![](docs/editor.png)
 
 * Git support
@@ -38,21 +40,28 @@ Compilation is done automatically with the built-in [Kick Assembler](http://thew
 
 ## Debugging
 
-The debugger implements a [VICE Binary Monitor](https://vice-emu.sourceforge.io/vice_12.html) interface and is currently fairly basic. It currently supports the following features:
+The debugger implements a [VICE Binary Monitor](https://vice-emu.sourceforge.io/vice_12.html) interface and is currently fairly basic but still useful. It currently supports the following features:
 
+* Breakpoints and watchpoints
+  * Support for _step over_, _step into_, _step return_, _suspend_, _resume_ and _terminate_
+* Variables view
+* Memory Monitor
 * Built in [VICE](https://vice-emu.sourceforge.io) emulator
-  * macOS GTK version on aarch64 and x86
-  * Windows GTK x86 version (planned)
-  * Linux GTK x86 version (planned)
+  * macOS GTK version on aarch64 and x86_64
+  * Windows GTK x86_64 version (planned)
+  * Linux GTK x86_64 version (planned)
 * Support for Eclipse run and debug launch shortcuts.
 * Debug launches pick up `*.vs` files created by Kick Assembler and passes these to VICE.
-* Support for _step over_, _step into_, _step return_, _suspend_, _resume_ and _terminate_
 
-### Breakpoints
+### Breakpoints and watchpoints
 
 ![](docs/breakpoints.png)
 
-The only type of _checkpoints_ currently supported are _breakpoints_. These are triggered whenever the _program counter_ enteres an address where a breakpoint has been added and will halt the emulator. Breakpoints can be individually disabled and enabled, and as usual be grouped, placed in working sets etc.
+VICE supports three types of _checkpoints_; _breakpoints_, _watchpoints_ and _tracepoints_. Only the two prior is supported by this IDE. Breakpoints can be created by adding the statement `.break` to your code, or by double clicking on a line in the leftmost part of the editor. Double clicking on an existing breakpoint will remove it, unless added by code.
+
+Currently, the only way to add a _watchpoint_ is by code. Use the statement `.watch <label name>` to add a watchpoint that is triggered both by reading and writing to the named data area. Use `.watch <label name>,,"load"` to trigger when the data is read and replace `"load"` with `"store"` to trigger when the data is written.
+
+Breakpoints can be individually disabled and enabled, and as be grouped by; types, projects, files, working custom working sets etc. They can also be exported and imported for sharing between developers or stored in a project folder.
 
 ### Variables
 
@@ -91,6 +100,7 @@ By selecting _Custom_ **Character set** and specifying it's location one can see
 
 Currently only macOS builds are downloadable from the project site. These are not notarized and must be taken out _quarantine_ in order to work. Execute `xattr -d com.apple.quarantine ~/Downloads/Commodore\ Commander.app` after downloading and unpacking the archive.
 
+Support for providing VICE installations other than the ones built in is not yet supported. So this IDE will only work on macOS until this is remedied.
 
 # Related resources
 
