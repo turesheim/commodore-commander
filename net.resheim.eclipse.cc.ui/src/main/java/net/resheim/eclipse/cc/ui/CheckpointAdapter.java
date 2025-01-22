@@ -85,6 +85,7 @@ public class CheckpointAdapter implements IToggleBreakpointsTargetExtension {
 					}
 				}
 			}
+
 			// otherwise we create one
 			VICECheckpoint lineBreakpoint = new VICEBreakpoint(resource, lineNumber + 1, Source.USER, 4);
 			DebugPlugin.getDefault().getBreakpointManager().addBreakpoint(lineBreakpoint);

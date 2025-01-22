@@ -42,16 +42,14 @@ Compilation is done automatically with the built-in [Kick Assembler](http://thew
 
 The debugger implements a [VICE Binary Monitor](https://vice-emu.sourceforge.io/vice_12.html) interface and is currently fairly basic but still useful. It currently supports the following features:
 
-* Breakpoints and watchpoints
-  * Support for _step over_, _step into_, _step return_, _suspend_, _resume_ and _terminate_
-* Variables view
-* Memory Monitor
+* *Breakpoints* and *watchpoints* along with associated commands: **Step Over** ![](docs/commands/stepover_co.png), **Step Into** ![](docs/commands/stepinto_co.png), **Step Return** ![](docs/commands/stepreturn_co.png), **Suspend** ![](docs/commands/suspend_co.png), **Resume** ![](docs/commands/resume_co.png) and **Terminate** ![](docs/commands/terminate_co.png)
+* *Variables* view showing and editing labeled data
+* *Memory Monitor* for displaying and editing memory areas
 * Built in [VICE](https://vice-emu.sourceforge.io) emulator
   * macOS GTK version on aarch64 and x86_64
   * Windows GTK x86_64 version (planned)
   * Linux GTK x86_64 version (planned)
-* Support for Eclipse run and debug launch shortcuts.
-* Debug launches pick up `*.vs` files created by Kick Assembler and passes these to VICE.
+* Configurable run and debug launch shortcuts
 
 ### Breakpoints and watchpoints
 
@@ -74,7 +72,7 @@ ClearTable:
     .byte %11111011
 ```
 
-The parser will also determine which format was used to declare the values and this information is used when presenting the value in the IDE.
+The parser will also determine which format was used to declare the values and this information is used when presenting the value in the IDE, so that it looks the same.
 
 ![](docs/variables.png)
 
