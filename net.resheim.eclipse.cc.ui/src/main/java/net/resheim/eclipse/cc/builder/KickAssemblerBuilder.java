@@ -68,6 +68,10 @@ import net.resheim.eclipse.cc.vice.debug.model.VICEWatchpoint;
  */
 public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
+	public static final String BUILDER_ID = "net.resheim.eclipse.cc.ui.kickassemblerBuilder";
+
+	private static final String MARKER_TYPE = "net.resheim.eclipse.cc.ui.kickAssemblerProblem";
+
 	private HashMap<String, DataLabel> labeledData;
 
 // Make use of this when figured out how to do partial builds.
@@ -125,10 +129,6 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 
 	}
-
-	public static final String BUILDER_ID = "net.resheim.eclipse.cc.ui.kickassemblerBuilder";
-
-	private static final String MARKER_TYPE = "net.resheim.eclipse.cc.ui.kickAssemblerProblem";
 
 	private void addMarker(IFile file, String message, int lineNumber, int severity) {
 		try {
@@ -300,9 +300,9 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			clearOldCompiledWatchpoints(assembly);
 
 
-			// Iterate over the parsed watchpoints, which only have a segment
+			// Iterate over the parsed checkpoint, which only have a segment
 			// and an address, use this to determine the actual location in the
-			// file and create a debug model version of each watchpoint – this will be shown
+			// file and create a debug model version of each checkpoint – this will be shown
 			// in the user interface once the build has completed.
 
 			List<Breakpoint> breakpoints = assembly.getBreakpoints();
