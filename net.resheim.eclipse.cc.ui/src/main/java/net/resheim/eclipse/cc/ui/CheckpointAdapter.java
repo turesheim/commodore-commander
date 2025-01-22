@@ -24,14 +24,16 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.texteditor.ITextEditor;
 
-import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
-import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Source;
+import net.resheim.eclipse.cc.vice.debug.model.VICEBreakpoint;
+import net.resheim.eclipse.cc.vice.debug.model.VICECheckpoint;
+import net.resheim.eclipse.cc.vice.debug.model.VICECheckpoint.Source;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
 
 public class CheckpointAdapter implements IToggleBreakpointsTargetExtension {
 
 	@Override
 	public void toggleLineBreakpoints(IWorkbenchPart part, ISelection selection) throws CoreException {
+		System.out.println("CheckpointAdapter.toggleLineBreakpoints()" + selection);
 	}
 
 	@Override
@@ -55,11 +57,12 @@ public class CheckpointAdapter implements IToggleBreakpointsTargetExtension {
 
 	@Override
 	public void toggleWatchpoints(IWorkbenchPart part, ISelection selection) throws CoreException {
+		System.out.println("CheckpointAdapter.toggleWatchpoints()" + selection);
 	}
 
 	@Override
 	public boolean canToggleWatchpoints(IWorkbenchPart part, ISelection selection) {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -82,8 +85,9 @@ public class CheckpointAdapter implements IToggleBreakpointsTargetExtension {
 					}
 				}
 			}
+
 			// otherwise we create one
-			Checkpoint lineBreakpoint = new Checkpoint(resource, lineNumber + 1, Source.USER);
+			VICECheckpoint lineBreakpoint = new VICEBreakpoint(resource, lineNumber + 1, Source.USER, 4);
 			DebugPlugin.getDefault().getBreakpointManager().addBreakpoint(lineBreakpoint);
 		}
 }

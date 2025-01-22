@@ -323,18 +323,36 @@
    <extension
          point="org.eclipse.debug.core.breakpoints">
       <breakpoint
-            class="net.resheim.eclipse.cc.vice.debug.model.Checkpoint"
-            id="net.resheim.eclipse.cc.checkpoint"
-            markerType="net.resheim.eclipse.cc.checkpointMarker"
-            name="Checkpoint">
+            class="net.resheim.eclipse.cc.vice.debug.model.VICEBreakpoint"
+            id="net.resheim.eclipse.cc.breakpoint"
+            markerType="net.resheim.eclipse.cc.breakpointMarker"
+            name="Breakpoint">
+      </breakpoint>
+      <breakpoint
+            class="net.resheim.eclipse.cc.vice.debug.model.VICEWatchpoint"
+            id="net.resheim.eclipse.cc.watchpoint"
+            markerType="net.resheim.eclipse.cc.watchpointMarker"
+            name="Watchpoint">
       </breakpoint>
    </extension>
 
    <extension
-         id="net.resheim.eclipse.cc.checkpointMarker"
-         name="Checkpoint"
+         id="net.resheim.eclipse.cc.breakpointMarker"
+         name="Breakpoint"
          point="org.eclipse.core.resources.markers">
       <super type="org.eclipse.debug.core.breakpointMarker"/>
+      <persistent value="true">
+      </persistent>
+      <attribute
+            name="source">
+      </attribute>
+  </extension>
+
+   <extension
+         id="net.resheim.eclipse.cc.watchpointMarker"
+         name="Watchpoint"
+         point="org.eclipse.core.resources.markers">
+      <super type="net.resheim.eclipse.cc.breakpointMarker"/>
       <persistent value="true">
       </persistent>
       <attribute

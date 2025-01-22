@@ -20,6 +20,7 @@ import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IDebugTarget;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
+import org.eclipse.debug.core.model.IWatchpoint;
 
 import net.resheim.eclipse.cc.builder.model.Label;
 import net.resheim.eclipse.cc.builder.model.Type;
@@ -30,6 +31,16 @@ import net.resheim.eclipse.cc.vice.debug.model.Scalar;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugTarget;
 
+/**
+ * This type represents a memory value 8, 16 or 32 bits long. It can be changed
+ *
+ * <h1>Fix required</h1>
+ * <p>
+ * This is probably not the best place to implement a {@link IWatchpoint}, so
+ * that bit of the code should probably be moved elsewhere.
+ * </p>
+ *
+ */
 public class Variable extends VICEDebugElement implements IVariable {
 
 	private String name;

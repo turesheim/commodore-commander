@@ -97,7 +97,6 @@ public class Assembly {
 				}
 
 			}
-
 		}
 		return null;
 	}
@@ -121,7 +120,16 @@ public class Assembly {
 		return null;
 	}
 
-	public int findFilenumber(IFile file) {
+	public Label getLabel(int address) {
+		List<Label> labelsList = getLabels().getLabels();
+		for (Label label : labelsList) {
+			if (label.getStartAddress() == address)
+				return label;
+		}
+		return null;
+	}
+
+	private int findFilenumber(IFile file) {
 		for (SourceFile sourceFile : sources.getSourceFiles()) {
 			IFile sf = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(sourceFile.getPath());
 			if (sf != null && sf.equals(file)) {

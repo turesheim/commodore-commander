@@ -51,7 +51,7 @@ import net.resheim.eclipse.cc.builder.model.Assembly;
 import net.resheim.eclipse.cc.builder.model.LineMapping;
 import net.resheim.eclipse.cc.ui.ConsoleFactory;
 import net.resheim.eclipse.cc.vice.debug.MonitorLogger;
-import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Source;
+import net.resheim.eclipse.cc.vice.debug.model.VICECheckpoint.Source;
 import net.resheim.eclipse.cc.vice.debug.monitor.Command;
 import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor;
 import net.resheim.eclipse.cc.vice.debug.monitor.IBinaryMonitor.CommandID;
@@ -136,7 +136,6 @@ public class VICEDebugTarget extends VICEDebugElement
 			try {
 				Socket socket = new Socket();
 				socket.connect(new InetSocketAddress(hostname, port), 100); // Timeout for each attempt is 100ms second
-				System.out.println("Connected to " + hostname + ":" + port);
 				return socket;
 			} catch (Exception e) {
 				if (++attemptCount >= MAX_CONNECTION_ATTEMPTS) {
@@ -149,15 +148,14 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public void breakpointAdded(IBreakpoint breakpoint) {
-		MonitorLogger.info(consoleStream, MonitorLogger.USER, "Breakpoint added " + breakpoint);
+		MonitorLogger.info(consoleStream, MonitorLogger.USER, "Checkpoint added " + breakpoint);
 		// This method will be called when installing deferred breakpoints and
 		// when responding to a new breakpoint added using the UI. As the program
 		// is already running we must first determine the breakpoint address
 		// since we typically only know the file and the line number.
-		updateAdresses(breakpoint);
-		// XXX: Watchpoints are currently not supported
 		if (supportsBreakpoint(breakpoint)) {
 			try {
+				updateAdresses(breakpoint);
 				if ((breakpoint.isEnabled()
 						&& getBreakpointManager().isEnabled()) /* || !breakpoint.isRegistered() */) {
 					registerBreakpoint(breakpoint);
@@ -168,14 +166,24 @@ public class VICEDebugTarget extends VICEDebugElement
 	}
 
 	private void registerBreakpoint(IBreakpoint breakpoint) throws CoreException {
-		Checkpoint cp = (Checkpoint) breakpoint;
+		VICECheckpoint cp = (VICECheckpoint) breakpoint;
 		ByteBuffer buffer = ByteBuffer.allocate(8);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
 		buffer.putShort((short) cp.getStartAddress());
 		buffer.putShort((short) cp.getEndAddress());
 		buffer.put((byte) 0x01); // stop when hit
 		buffer.put(breakpoint.isEnabled() ? (byte) 0x01 : (byte) 0x00);
-		buffer.put((byte) 0x04); // on execute
+		int bitmask = 0;
+		if (cp.isLoad()) {
+			bitmask |= (1 << 0);
+		}
+		if (cp.isStore()) {
+			bitmask |= (1 << 1);
+		}
+		if (cp.isExec()) {
+			bitmask |= (1 << 2);
+		}
+		buffer.put((byte) bitmask);
 		buffer.put((byte) 0x00); // is not temporary
 		int id = sendCommand(CommandID.CHECKPOINT_SET, buffer.array());
 		// update the checkpoint with the ID of the request that created it
@@ -189,39 +197,52 @@ public class VICEDebugTarget extends VICEDebugElement
 			MonitorLogger.error(consoleStream, MonitorLogger.USER, "Unhandled skip all breakpoint");
 			return;
 		}
+		VICECheckpoint cp = (VICECheckpoint) breakpoint;
+		// If the number is not set it may or may not exist in the emulator state, so we
+		// fix that by registering it.
+		if (cp.getNumber()<=0) {
+			MonitorLogger.error(consoleStream, MonitorLogger.USER, "Unknown checkpoint " + breakpoint);
+			return;
+		}
+		// The monitor does not have the capability to alter the CPU operation flag of
+		// the checkpoint. It appears the only way to change this is to delete the
+		// checkpoint and re-add it as a new checkpoint.
+
 		// We only deal with the breakpoint if the delta has actually changed.
 		// Otherwise breakpointAdded and breakpointRemoved should be sufficient.
 		if (delta != null && delta.getKind() == IResourceDelta.CHANGED) {
-			MonitorLogger.info(consoleStream, MonitorLogger.USER, "Breakpoint changed " + breakpoint);
-			// Toggle the checkpoint if this is the attribute that has changed
-			if (delta.getAttribute(IBreakpoint.ENABLED) != null) {
-				Checkpoint cp = (Checkpoint) breakpoint;
-				try {
-					// If the number is not set, this checkpoint was disabled
-					// when the emulator started. So we will have to add it now.
-					// The *.vs file format / text based monitor does not have
-					// support for adding an initially disabled breakpoint.
-					if (cp.getNumber() > 0) {
-						ByteBuffer buffer = ByteBuffer.allocate(5);
-						buffer.order(ByteOrder.LITTLE_ENDIAN);
-						buffer.putInt(cp.getNumber());
-						buffer.put(breakpoint.isEnabled() ? (byte) 0x01 : (byte) 0x00);
-						sendCommand(CommandID.CHECKPOINT_TOGGLE, buffer.array());
-					} else {
-						registerBreakpoint(breakpoint);
-					}
-				} catch (CoreException e) {
-					e.printStackTrace();
+			MonitorLogger.info(consoleStream, MonitorLogger.USER, "Checkpoint changed " + breakpoint);
+			try {
+				// Toggle the checkpoint enabled state if this is the attribute that has changed
+				if (cp.isEnabled() != delta.getAttribute(IBreakpoint.ENABLED, true)) {
+					MonitorLogger.info(consoleStream, MonitorLogger.USER, "Toggling state " + cp.isEnabled());
+					ByteBuffer buffer = ByteBuffer.allocate(5);
+					buffer.order(ByteOrder.LITTLE_ENDIAN);
+					buffer.putInt(cp.getNumber());
+					buffer.put(cp.isEnabled() ? (byte) 0x01 : (byte) 0x00);
+					sendCommand(CommandID.CHECKPOINT_TOGGLE, buffer.array());
 				}
-			} else {
-				MonitorLogger.error(consoleStream, MonitorLogger.USER, "Unhandled breakpoint delta change " + delta);
+//				else {
+//					MonitorLogger.info(consoleStream, MonitorLogger.USER, "Re-adding checkpoint");
+//					ByteBuffer buffer = ByteBuffer.allocate(4);
+//					buffer.order(ByteOrder.LITTLE_ENDIAN);
+//					buffer.putInt(cp.getNumber());
+//					sendCommand(CommandID.CHECKPOINT_DELETE, buffer.array());
+//					cp.setNumber(0);
+//					registerBreakpoint(breakpoint);
+//
+//				}
+				// operating mode
+			} catch (CoreException e) {
+				e.printStackTrace();
 			}
 		}
 	}
 
 	@Override
 	public void breakpointRemoved(IBreakpoint breakpoint, IMarkerDelta delta) {
-		Checkpoint cp = (Checkpoint) breakpoint;
+		MonitorLogger.info(consoleStream, MonitorLogger.USER, "Checkpoint removed " + breakpoint);
+		VICECheckpoint cp = (VICECheckpoint) breakpoint;
 		ByteBuffer buffer = ByteBuffer.allocate(4);
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
 		buffer.putInt(cp.getNumber());
@@ -344,7 +365,7 @@ public class VICEDebugTarget extends VICEDebugElement
 
 	@Override
 	public boolean supportsBreakpoint(IBreakpoint breakpoint) {
-		return breakpoint instanceof Checkpoint;
+		return breakpoint instanceof VICECheckpoint;
 	}
 
 	@Override
@@ -401,6 +422,10 @@ public class VICEDebugTarget extends VICEDebugElement
 					// get all the register names, if we don't have them
 					if (!iRegisterGroup.hasRegisters()) {
 						sendCommand(CommandID.REGISTERS_AVAILABLE, new byte[] { 0x00 });
+						// update the list of breakpoints, some may have been
+						// set by code or even another manually connected
+						// monitor
+						sendCommand(CommandID.CHECKPOINT_LIST, new byte[] {});
 					}
 					// the result from the command does NOT include the
 					// start address of the data included, so it's hard to
@@ -416,10 +441,6 @@ public class VICEDebugTarget extends VICEDebugElement
 							0x00, // bank ID LSB
 							0x00 // bank ID MSB
 					});
-					// update the list of breakpoints, some may have been
-					// set by code or even another manually connected
-					// monitor
-					// sendCommand(CommandID.CHECKPOINT_LIST, new byte[] {});
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -442,8 +463,8 @@ public class VICEDebugTarget extends VICEDebugElement
 				DebugPlugin.getDefault().getBreakpointManager().removeBreakpointListener(this);
 				IBreakpoint[] breakpoints = getBreakpointManager().getBreakpoints(DEBUG_MODEL_ID);
 				for (IBreakpoint b : breakpoints) {
-					if (b instanceof Checkpoint) {
-						((Checkpoint) b).setNumber(0);
+					if (b instanceof VICECheckpoint) {
+						((VICECheckpoint) b).setNumber(0);
 					}
 				}
 			}
@@ -465,8 +486,8 @@ public class VICEDebugTarget extends VICEDebugElement
 		return id;
 	}
 
-	private void updateAdresses(IBreakpoint iBreakpoint) {
-		Checkpoint cp = (Checkpoint) iBreakpoint;
+	private void updateAdresses(IBreakpoint iBreakpoint) throws CoreException {
+		VICECheckpoint cp = (VICECheckpoint) iBreakpoint;
 		if (cp.getSource() != Source.CODE) {
 			IResource br = iBreakpoint.getMarker().getResource();
 			// see if the checkpoint is in one of the assembled files

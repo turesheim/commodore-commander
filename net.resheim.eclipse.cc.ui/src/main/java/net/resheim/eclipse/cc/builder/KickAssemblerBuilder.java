@@ -24,15 +24,12 @@ import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceDelta;
-import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.IResourceVisitor;
-import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.model.IBreakpoint;
@@ -44,28 +41,36 @@ import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
 import kickass.common.diagnostics.DiagnosticType;
 import kickass.common.diagnostics.IDiagnostic;
-import net.resheim.eclipse.cc.builder.model.Breakpoint;
-import net.resheim.eclipse.cc.builder.model.Label;
-import net.resheim.eclipse.cc.builder.model.DataLabel;
-import net.resheim.eclipse.cc.builder.model.LineMapping;
 import net.resheim.eclipse.cc.builder.model.Assembly;
+import net.resheim.eclipse.cc.builder.model.Breakpoint;
+import net.resheim.eclipse.cc.builder.model.DataLabel;
+import net.resheim.eclipse.cc.builder.model.Label;
+import net.resheim.eclipse.cc.builder.model.LineMapping;
 import net.resheim.eclipse.cc.builder.model.SourceFile;
+import net.resheim.eclipse.cc.builder.model.Watchpoint;
 import net.resheim.eclipse.cc.kickassembler.KickAssemblerWrapper;
 import net.resheim.eclipse.cc.ui.ConsoleFactory;
-import net.resheim.eclipse.cc.vice.debug.model.Checkpoint;
-import net.resheim.eclipse.cc.vice.debug.model.Checkpoint.Source;
+import net.resheim.eclipse.cc.vice.debug.model.VICEBreakpoint;
+import net.resheim.eclipse.cc.vice.debug.model.VICECheckpoint;
+import net.resheim.eclipse.cc.vice.debug.model.VICECheckpoint.Source;
 import net.resheim.eclipse.cc.vice.debug.model.VICEDebugElement;
+import net.resheim.eclipse.cc.vice.debug.model.VICEWatchpoint;
 
 /**
  * A project builder that uses the embedded Kick Assembler to compile a
  * Commodore program file.
  *
+ * <h1>Caveats</h1>
  * <ul>
  * <li>Output is hard coded to <code>./out</code></li>
  * <li>Assembly source code files must end with <code>.asm</code></li>
  * </ul>
  */
 public class KickAssemblerBuilder extends IncrementalProjectBuilder {
+
+	public static final String BUILDER_ID = "net.resheim.eclipse.cc.ui.kickassemblerBuilder";
+
+	private static final String MARKER_TYPE = "net.resheim.eclipse.cc.ui.kickAssemblerProblem";
 
 	private HashMap<String, DataLabel> labeledData;
 
@@ -124,10 +129,6 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 
 	}
-
-	public static final String BUILDER_ID = "net.resheim.eclipse.cc.ui.kickassemblerBuilder";
-
-	private static final String MARKER_TYPE = "net.resheim.eclipse.cc.ui.kickAssemblerProblem";
 
 	private void addMarker(IFile file, String message, int lineNumber, int severity) {
 		try {
@@ -215,7 +216,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
 	protected void clean(IProgressMonitor monitor) throws CoreException {
 		System.out.println("KickAssemblerBuilder.clean()");
-		// TODO: IMplement this
+		// TODO: Implement this
 	}
 
 	private void assemble(AssemblyFile assemblyFile) throws CoreException {
@@ -261,7 +262,7 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 
 	/**
 	 * Parses the debug file that is resulting from compiling the root assembly file
-	 * and generates {@link Checkpoint}s corresponding to the use of
+	 * and generates {@link VICECheckpoint}s corresponding to the use of
 	 * <code>.break</code> and <code>.watch</code> commands. Any existing
 	 * checkpoints also origination from using these commands are first removed.
 	 *
@@ -295,25 +296,56 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			IResource programFile = output.findMember(prgPath.lastSegment());
 			Assemblies.getDefault().setAssembly((IFile) programFile, assembly);
 
-			clearOldCompiledCheckpoints(assembly);
+			clearOldCompiledBreakpoints(assembly);
+			clearOldCompiledWatchpoints(assembly);
 
-			// TODO: Also add watchpoints
-			List<Breakpoint> breakpoints = assembly.getBreakpoints();
 
-			// iterate over the parsed breakpoints, which only have a segment
+			// Iterate over the parsed checkpoint, which only have a segment
 			// and an address, use this to determine the actual location in the
-			// file and create a debug model version of each breakpoint – this will be shown
+			// file and create a debug model version of each checkpoint – this will be shown
 			// in the user interface once the build has completed.
+
+			List<Breakpoint> breakpoints = assembly.getBreakpoints();
 			for (Breakpoint breakpoint : breakpoints) {
 				int address = breakpoint.getStartAddress();
-				// determine the position in the file for the given address.
+				// determine the position in the file for the given addres.
 				LineMapping lineMapping = assembly.getLineMapping(address);
 				int fileIndex = lineMapping.getFileIndex();
 				IPath checkpointFile = getFile(assembly, fileIndex);
 				IFile fileForLocation = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(checkpointFile);
-				Checkpoint lineBreakpoint = new Checkpoint(fileForLocation, lineMapping.getStartLine(), Source.CODE);
+				VICEBreakpoint lineBreakpoint = new VICEBreakpoint(fileForLocation, lineMapping.getStartLine(),
+						Source.CODE, 4 /* exec */);
 				lineBreakpoint.setStartAddress(address);
 				DebugPlugin.getDefault().getBreakpointManager().addBreakpoint(lineBreakpoint);
+			}
+
+			List<Watchpoint> watchpoints = assembly.getWatchpoints();
+			for (Watchpoint watchpoint : watchpoints) {
+				int address = watchpoint.getStartAddress();
+				// determine the position in the file for the given address
+				LineMapping lineMapping = assembly.getLineMapping(address);
+				int fileIndex = lineMapping.getFileIndex();
+				IPath checkpointFile = getFile(assembly, fileIndex);
+				int bitmask = 0;
+				// the operations below are those supported by VICE
+				if (watchpoint.getArgument() != null) {
+					if (watchpoint.getArgument().contains("load")) {
+						bitmask |= (1 << 0);
+					}
+					if (watchpoint.getArgument().contains("store")) {
+						bitmask |= (1 << 1);
+					}
+					if (watchpoint.getArgument().contains("exec")) {
+						bitmask |= (1 << 2);
+					}
+				} else {
+					bitmask = 3;
+				}
+				IFile fileForLocation = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(checkpointFile);
+				VICEWatchpoint lineWatchpoint = new VICEWatchpoint(fileForLocation, lineMapping.getStartLine(),
+						Source.CODE, bitmask);
+				lineWatchpoint.setStartAddress(address);
+				DebugPlugin.getDefault().getBreakpointManager().addBreakpoint(lineWatchpoint);
 			}
 
 			return assembly;
@@ -323,23 +355,35 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
-	private void clearOldCompiledCheckpoints(Assembly debug) throws CoreException {
+	private void clearOldCompiledBreakpoints(Assembly debug) throws CoreException {
 		List<Breakpoint> breakpoints = debug.getBreakpoints();
 		for (Breakpoint breakpoint : breakpoints) {
 			int address = breakpoint.getStartAddress();
-			LineMapping lineMapping = debug.getLineMapping(address);
-			int fileIndex = lineMapping.getFileIndex();
-			IPath checkpointFile = getFile(debug, fileIndex);
-			IFile fileForLocation = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(checkpointFile);
-			IBreakpoint[] existing = DebugPlugin.getDefault().getBreakpointManager()
-					.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
-			for (int i = 0; i < existing.length; i++) {
-				IBreakpoint bp = existing[i];
-				if (bp.getMarker().getResource().equals(fileForLocation)) {
-					String attribute = (String) bp.getMarker().getAttribute("source");
-					if (attribute != null && attribute.equals("CODE")) {
-						DebugPlugin.getDefault().getBreakpointManager().removeBreakpoint(bp, true);
-					}
+			removeBreakpoint(debug, address);
+		}
+	}
+
+	private void clearOldCompiledWatchpoints(Assembly debug) throws CoreException {
+		List<Watchpoint> watchpoints = debug.getWatchpoints();
+		for (Watchpoint watchpoint : watchpoints) {
+			int address = watchpoint.getStartAddress();
+			removeBreakpoint(debug, address);
+		}
+	}
+
+	private void removeBreakpoint(Assembly debug, int address) throws CoreException {
+		LineMapping lineMapping = debug.getLineMapping(address);
+		int fileIndex = lineMapping.getFileIndex();
+		IPath checkpointFile = getFile(debug, fileIndex);
+		IFile fileForLocation = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(checkpointFile);
+		IBreakpoint[] existing = DebugPlugin.getDefault().getBreakpointManager()
+				.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
+		for (int i = 0; i < existing.length; i++) {
+			IBreakpoint bp = existing[i];
+			if (bp.getMarker().getResource().equals(fileForLocation)) {
+				String attribute = (String) bp.getMarker().getAttribute("source");
+				if (attribute != null && attribute.equals(Source.CODE.toString())) {
+					DebugPlugin.getDefault().getBreakpointManager().removeBreakpoint(bp, true);
 				}
 			}
 		}
