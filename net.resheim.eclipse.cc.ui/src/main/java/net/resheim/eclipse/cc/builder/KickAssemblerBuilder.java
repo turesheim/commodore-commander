@@ -252,9 +252,11 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		Assembly metadataFile = parseMetadataFile(file);
 
 		// Add data section descriptions to the labels
-		for (Label label : metadataFile.getLabels().getLabels()) {
-			if (labeledData.containsKey(label.getName())) {
-				label.setData(labeledData.get(label.getName()));
+		if (metadataFile != null) { // will be null for a newly added file
+			for (Label label : metadataFile.getLabels().getLabels()) {
+				if (labeledData.containsKey(label.getName())) {
+					label.setData(labeledData.get(label.getName()));
+				}
 			}
 		}
 
@@ -296,8 +298,8 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 			IResource programFile = output.findMember(prgPath.lastSegment());
 			Assemblies.getDefault().setAssembly((IFile) programFile, assembly);
 
-			clearOldCompiledBreakpoints(assembly);
-			clearOldCompiledWatchpoints(assembly);
+			clearOldCompiledBreakpoints();
+//			clearOldCompiledWatchpoints(assembly);
 
 
 			// Iterate over the parsed checkpoint, which only have a segment
@@ -355,21 +357,15 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
-	private void clearOldCompiledBreakpoints(Assembly debug) throws CoreException {
-		List<Breakpoint> breakpoints = debug.getBreakpoints();
-		for (Breakpoint breakpoint : breakpoints) {
-			int address = breakpoint.getStartAddress();
-			removeBreakpoint(debug, address);
+	private void clearOldCompiledBreakpoints() throws CoreException {
+		// XXX: Only remove the breakpoints belonging to the project
+		IBreakpoint[] breakpoints2 = DebugPlugin.getDefault().getBreakpointManager()
+				.getBreakpoints(VICEDebugElement.DEBUG_MODEL_ID);
+		for (IBreakpoint iBreakpoint : breakpoints2) {
+			DebugPlugin.getDefault().getBreakpointManager().removeBreakpoint(iBreakpoint, true);
 		}
 	}
 
-	private void clearOldCompiledWatchpoints(Assembly debug) throws CoreException {
-		List<Watchpoint> watchpoints = debug.getWatchpoints();
-		for (Watchpoint watchpoint : watchpoints) {
-			int address = watchpoint.getStartAddress();
-			removeBreakpoint(debug, address);
-		}
-	}
 
 	private void removeBreakpoint(Assembly debug, int address) throws CoreException {
 		LineMapping lineMapping = debug.getLineMapping(address);
