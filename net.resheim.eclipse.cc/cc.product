@@ -38,7 +38,6 @@
    <vm>
    </vm>
 
-
    <plugins>
       <plugin id="bcpg"/>
       <plugin id="bcprov"/>
@@ -163,6 +162,7 @@
       <feature id="org.eclipse.jgit.http.apache" installMode="root"/>
       <feature id="org.eclipse.jgit" installMode="root"/>
       <feature id="org.eclipse.jgit.gpg.bc" installMode="root"/>
+      <feature id="org.eclipse.equinox.p2.discovery.feature" installMode="root"/>
    </features>
 
    <configurations>
