@@ -46,6 +46,26 @@
          id="org.eclipse.jgit.http.apache"
          version="0.0.0"/>
 
+   <includes
+         id="org.eclipse.equinox.p2.core.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="org.eclipse.equinox.p2.discovery.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="org.eclipse.equinox.p2.extras.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="org.eclipse.equinox.p2.rcp.feature"
+         version="0.0.0"/>
+
+   <includes
+         id="org.eclipse.equinox.p2.user.ui"
+         version="0.0.0"/>
+
    <requires>
       <import feature="org.eclipse.tm4e.feature" version="0.6.1.202308132047" match="compatible"/>
       <import plugin="org.eclipse.core.runtime" version="3.12.0" match="compatible"/>

@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Commodore Commander" uid="commodore-commander" id="net.resheim.eclipse.cc.product" application="org.eclipse.ui.ide.workbench" version="1.0.0.qualifier" type="features" includeLaunchers="false" autoIncludeRequirements="true">
+<product name="Commodore Commander" uid="commodore-commander" id="net.resheim.eclipse.cc.product" application="org.eclipse.ui.ide.workbench" version="1.0.0.qualifier" type="features" includeLaunchers="true" autoIncludeRequirements="true">
 
    <aboutInfo>
-      <image path="eclipse_lg.png"/>
       <text>
          %productBlurb
       </text>
@@ -24,8 +23,8 @@
 
    <splash
       location="net.resheim.eclipse.cc"
-      startupProgressRect="7,280,440,10"
-      startupMessageRect="7,265,320,25"
+      startupProgressRect="10,280,480,10"
+      startupMessageRect="10,265,480,25"
       startupForegroundColor="ffffff" />
    <launcher name="Commodore Commander">
       <macosx icon="/net.resheim.eclipse.cc/cc.icns"/>
@@ -38,7 +37,6 @@
 
    <vm>
    </vm>
-
 
    <plugins>
       <plugin id="bcpg"/>
@@ -164,6 +162,7 @@
       <feature id="org.eclipse.jgit.http.apache" installMode="root"/>
       <feature id="org.eclipse.jgit" installMode="root"/>
       <feature id="org.eclipse.jgit.gpg.bc" installMode="root"/>
+      <feature id="org.eclipse.equinox.p2.discovery.feature" installMode="root"/>
    </features>
 
    <configurations>
