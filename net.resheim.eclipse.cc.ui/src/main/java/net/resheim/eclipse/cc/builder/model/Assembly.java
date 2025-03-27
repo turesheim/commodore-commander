@@ -35,7 +35,8 @@ import jakarta.xml.bind.annotation.XmlRootElement;
  *
  * <p>
  * This type represents the root element of the file, but also attempts to
- * remove the intricacies of the original file format.
+ * remove the intricacies of the original file format. So various enhancements
+ * have been added.
  * </p>
  *
  */
