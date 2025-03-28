@@ -1,22 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry exported="true" kind="lib" path="lib/angus-activation.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jakarta.activation-api.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jakarta.xml.bind-api.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/purejavacomm-0.0.11.1.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+		<attributes>
+			<attribute name="module" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
+	<classpathentry kind="src" output="target/classes" path="src/main/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry exported="true" kind="lib" path="reference" sourcepath="reference"/>
 	<classpathentry exported="true" kind="lib" path="lib/jaxb-core.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jaxb-impl.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jaxb-jxc.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jaxb-xjc.jar"/>
-	<classpathentry exported="true" kind="lib" path="reference" sourcepath="reference"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21"/>
-	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
-	<classpathentry kind="src" path="src/main/java"/>
-	<classpathentry kind="src" path="src/test/resources"/>
-	<classpathentry kind="src" output="bin/test" path="src/test/java">
+	<classpathentry exported="true" kind="lib" path="lib/angus-activation.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jakarta.activation-api.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jakarta.xml.bind-api.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/purejavacomm-0.0.11.1.jar"/>
+	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
 		<attributes>
-			<attribute name="test" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="output" path="bin/main"/>
+	<classpathentry kind="output" path="target/classes"/>
 </classpath>

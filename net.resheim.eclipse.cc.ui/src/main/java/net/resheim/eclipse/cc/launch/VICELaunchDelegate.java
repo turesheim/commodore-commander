@@ -163,8 +163,8 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 				// https://sourceforge.net/p/vice-emu/bugs/2083/
 				// Appears to have been fixed in 3.9, but we need it to set breakpoints as early
 				// as possible
-//				args.add("-initbreak");
-//				args.add("ready");
+				args.add("-initbreak");
+				args.add("ready");
 			}
 
 			// We're looking for a viceconfig somewhere in the
@@ -179,12 +179,9 @@ public class VICELaunchDelegate extends LaunchConfigurationDelegate {
 			// Add the path to the program file
 			args.add(file.getRawLocation().toPath().toString());
 
-			Map<String, String> env = new HashMap<>(System.getenv());
 			// The VICE script can use the PROGRAM environment variable to
 			// determine which emulator to launch. If not specified a dialog
 			// will ask you to select.
-			env.put("PROGRAM", target);
-			env.put("TERM", "dumb");
 			String workdir = file.getParent().getRawLocation().toOSString();
 			ProcessBuilder pb = new ProcessBuilder()
 					.directory(new File(workdir))
