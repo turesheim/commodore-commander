@@ -404,8 +404,8 @@ public class KickAssemblerBuilder extends IncrementalProjectBuilder {
 		}
 	}
 
-	/**
-	 * Clear KickAssembler problem markers for the file and all it's included files.
+        /**
+         * Clear KickAssembler problem markers for the file and all its included files.
 	 *
 	 * @param file the root file
 	 */
