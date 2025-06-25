@@ -1,8 +1,0 @@
-requires.1.namespace = org.eclipse.equinox.p2.iu
-requires.1.name = net.sourceforge.vice.cocoa.macosx.aarch64
-requires.1.range = [$version$,$version$]
-requires.1.filter = (&(osgi.os=macosx)(osgi.ws=cocoa)(osgi.arch=aarch64)(!(org.eclipse.swt.buildtime=true)))
-requires.2.namespace = org.eclipse.equinox.p2.iu
-requires.2.name = net.sourceforge.vice.cocoa.macosx.x86_64
-requires.2.range = [$version$,$version$]
-requires.2.filter = (&(osgi.os=macosx)(osgi.ws=cocoa)(osgi.arch=x86_64)(!(org.eclipse.swt.buildtime=true)))

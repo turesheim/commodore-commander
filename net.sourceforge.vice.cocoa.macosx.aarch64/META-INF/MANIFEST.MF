@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-Fragment-Host: net.sourceforge.vice;bundle-version="[3.8.0,4.0.0)"
+Fragment-Host: net.sourceforge.vice;bundle-version="[3.9.0,4.0.0)"
 Bundle-ManifestVersion: 2
 Bundle-Name: Versatile Commodore Emulator
 Bundle-SymbolicName: net.sourceforge.vice.cocoa.macosx.aarch64
