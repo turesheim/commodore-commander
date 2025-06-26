@@ -36,6 +36,7 @@
   </extension>
   <extension point="org.eclipse.ui.editors">
     <editor
+          contributorClass="org.eclipse.ui.texteditor.BasicTextEditorActionContributor"
           class="net.resheim.eclipse.cc.editor.AssemblyEditor"
           default="true"
           extensions="asm,inc,s,a,lib,kick,ka,src"
