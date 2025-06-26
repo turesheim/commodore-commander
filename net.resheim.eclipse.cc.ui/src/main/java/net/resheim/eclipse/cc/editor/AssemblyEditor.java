@@ -23,13 +23,16 @@ public class AssemblyEditor extends TextEditor {
 
 	ITextHover fTextHover;
 
-	public AssemblyEditor() {
-		super();
-	}
-
 	public void initializeEditor() {
 		super.initializeEditor();
 		setSourceViewerConfiguration(new AssemblyViewerConfiguration());
 	}
 
+	protected boolean isTabsToSpacesConversionEnabled() {
+		return true;
+	}
+
+	protected boolean isSpacesAsTabsDeletionEnabled() {
+		return true;
+	}
 }
