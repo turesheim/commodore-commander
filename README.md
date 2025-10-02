@@ -23,7 +23,7 @@ This project provides a set of features for the Eclipse IDE that can be built an
   * Bookmarks, and much more
  * Tooltips for 6510 mnemonics
  * Tooltips for the Commodore 64 memory map
-* Built-in [Kick Assembler](http://theweb.dk/KickAssembler/Main.html#frontpage) 
+* Built-in [Kick Assembler](http://theweb.dk/KickAssembler/Main.html#frontpage)
 * Built-in [VICE](https://vice-emu.sourceforge.io) based debugger with support for stepping, memory view, variables view, live editing etc.
 
 ## Compiling
@@ -112,6 +112,7 @@ Support for providing VICE installations other than the ones built in is not yet
 These resources are only some of those consulted when building this IDE. You may find them useful:
 
 - [The Kick Assembler](http://theweb.dk/KickAssembler)
+	- [Kick Assembler announcement](https://csdb.dk/forums/?roomid=11&topicid=26156&showallposts=1)
 - [VICE, the Versatile Commodore Emulator](http://vice-emu.sourceforge.net)
 - [Cycle-accurate 6502 emulator in Javascript](https://github.com/Torlus/6502.js)
 - [Tuned Simon's BASIC](https://github.com/godot64/TSB)
