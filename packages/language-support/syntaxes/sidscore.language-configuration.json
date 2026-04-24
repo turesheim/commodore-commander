@@ -1,0 +1,25 @@
+{
+  "comments": {
+    "lineComment": ";"
+  },
+  "brackets": [
+    ["{", "}"],
+    ["(", ")"]
+  ],
+  "autoClosingPairs": [
+    ["{", "}"],
+    ["(", ")"],
+    ["\"", "\""]
+  ],
+  "surroundingPairs": [
+    ["{", "}"],
+    ["(", ")"],
+    ["\"", "\""]
+  ],
+  "folding": {
+    "markers": {
+      "start": "^\\s*(TUNE\\s+\\d+\\s*\\{|TABLE\\s+(wave|pw|gate|pitch|filter)\\s+[A-Za-z_][A-Za-z0-9_]*\\s*\\{|\\(leg\\)|\\()",
+      "end": "^\\s*(\\}|\\(end\\)|\\)x\\d+)"
+    }
+  }
+}

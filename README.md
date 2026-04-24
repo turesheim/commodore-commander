@@ -1,120 +1,173 @@
 ![Commodore Commander](docs/banner.png)
+
 The Commodore 64, an iconic 8-bit home computer from the 1980s, has experienced a vibrant renaissance in the retro computing world. Renowned for its affordability, robust hardware, and expansive software library, the C64 continues to captivate enthusiasts worldwide. Modern resources such as FPGA-based replicas, enhanced peripherals, and thriving online communities have made it easier than ever to explore and develop for this classic machine. Essential tools like cross-assemblers, emulators like VICE, and comprehensive documentation for its 6502 architecture have become indispensable for both newcomers and seasoned developers.
 
 Programming for the Commodore 64 is an enjoyable experience, thanks to its simplicity, constraints, and direct interaction with hardware. The 6502 assembly language offers a rewarding challenge that inspires creativity, while the well-documented architecture and active retro community make problem-solving an engaging process. Whether pushing graphical limits, composing SID chip music, or crafting efficient code within tight memory constraints, developing for the C64 is a nostalgic journey that combines technical mastery with pure joy.
 
 The _Commodore Commander_ aims to be a useful addition to this ecosystem of tools.
 
-# Features
+## Kick Assembler editor support
 
-This project provides a set of features for the Eclipse IDE that can be built and added into an existing Eclipse installation. It also comes with _product builds_ which are standalone applications. However these require that Java 21 is installed and in the system PATH.
+![Theia 6502 mnemonic reference hover](docs/theia-mnemonic-hover.png)
 
-## Editing
+Supported editor features:
 
-![](docs/editor.png)
+- syntax highlighting and language configuration for Kick Assembler source files
+- symbol completion for labels, constants, variables, namespaces, macros, functions, structs, enums, and generated structural symbols
+- directive completion for `.byte`, `.const`, `.macro`, `.segment`, `#import`, `#importonce`, and related Kick Assembler directives
+- include-path completion from the current folder and workspace Kick Assembler files
+- 6502 mnemonic completion plus addressing-mode snippets such as `#$00`, `$0000,x`, and `($00),y`
+- hover, go to definition, and find references for project symbols, 6502 mnemonics, and C64 I/O reference symbols
+- rename symbol across the current workspace scan
+- document symbols, workspace symbols, semantic highlighting, folding, document formatting, and quick fixes
+- Kick Assembler builds with project configuration for named programs, build profiles, library roots, output folders, debug/symbol switches, generated assets, discovered standalone assembly files, and headless CI use
 
-* Git support
-  * "Quick diff" and revision information in editor
-* Editor with 6502 opcode syntax coloring
-  * Task and bookmarks
-  * Search and navigation
-  * Block selection
-  * `TODO` and `FIXME` markers
-  * Bookmarks, and much more
- * Tooltips for 6510 mnemonics
- * Tooltips for the Commodore 64 memory map
-* Built-in [Kick Assembler](http://theweb.dk/KickAssembler/Main.html#frontpage)
-* Built-in [VICE](https://vice-emu.sourceforge.io) based debugger with support for stepping, memory view, variables view, live editing etc.
+Using the editor features:
 
-## Compiling
+- Content assist is available with **Ctrl+Space** and also appears while typing common Kick Assembler triggers such as `.`, `#`, `"`, `/`, and 6502 mnemonic operands. It suggests directives, labels, constants, variables, macros, include paths, 6502 mnemonics, and only the addressing modes valid for the selected mnemonic when the bundled 6502 reference is loaded.
+- Mnemonic content assist is backed by `packages/language-support/reference/6502.xml`. The details panel includes the mnemonic description, affected flags, legal addressing modes, example syntax, and opcode values from that reference.
+- Cmd-click a symbol or 6502 mnemonic on macOS, or Ctrl-click on Windows/Linux, to jump to its definition/reference entry. The same lookup is available from the context menu with **Go to Definition**.
+- **Find References** lists project uses for labels and symbols, plus reference occurrences for known 6502 mnemonics and C64 I/O symbols.
+- Hover a 6502 mnemonic or C64 I/O symbol to see the reference entry inline. Mnemonic hovers include opcode tables and diagrams where the bundled reference provides them.
+- **Rename Symbol** updates labels and supported Kick Assembler symbols across the current workspace scan. It intentionally does not rewrite text inside comments or string literals.
+- The outline and workspace symbol commands expose labels, constants, variables, namespaces, macros, functions, structs, enums, segments, and other structural symbols.
+- Document formatting normalizes indentation inside blocks and spacing around common declarations while preserving source order and comments.
+- Folding groups namespaces, macros, functions, structs, enums, conditional blocks, block comments, and import runs.
+- Quick fixes currently focus on structural source repairs such as converting unquoted import paths to canonical quoted `#import "..."` form.
 
-Compilation is done automatically with the built-in [Kick Assembler](http://theweb.dk/KickAssembler/Main.html#frontpage) compiler whenever a source file has been changed.
+Build configuration:
 
-* Problem markers when a compilation produces errors.
-* Compilation output to the _Commodore Commander_ console view.
+- The Theia build service and the headless CLI read `commodore-commander.build.json`, `.commodore-commander.build.json`, or `.commodore-commander/build.json` from the workspace root.
+- The config supports named programs, profiles, optional runs, configurable KickAss and Java runtimes, multiple library roots, output folders, run-program paths, symbol/debug flags, custom assembler arguments, explicit root programs, optional program machine sections, and generated-asset rebuild triggers.
+- Missing workspace configs, explicit default profiles, and standalone programs are created on demand by the Theia backend; the status bar exposes the active build profile picker.
+- Running and debugging now use Theia's native Start Debugging and Start Without Debugging commands with `commodore-vice` launch configurations.
+- From an active assembler source, F5/Ctrl+F5 can offer to create or append a matching `.theia/launch.json` entry and then start it through Theia's debug session manager.
+- Generated launch entries use a program or run `machine` override when one is configured. Without one, the debug adapter falls back to the default C64 profile; wiring the workspace Active Machine into generated launch entries is still future task/launch work.
+- The right toolbar exposes Active Machine selection for reference filtering and machine-profile UI.
 
-## Running
+## Character set editor
 
-* Launches the VICE emulator when double clicking a `*.prg` file.
-* Launches will automatically pick up VICE configuration files found either in the same folder as the program, or in any of it's parent folders.
+![Theia character set editor](docs/theia-character-set-editor.png)
 
-## Debugging
+Commodore Commander includes a character set editor for C64-style 8x8
+character data. Character sets are saved as `.charset` JSON files with the
+display name derived from the filename, while raw imports and exports use the
+2048-byte C64 character data layout.
 
-The debugger implements a [VICE Binary Monitor](https://vice-emu.sourceforge.io/vice_12.html) interface and is currently fairly basic but still useful. It currently supports the following features:
+The editor provides:
 
-* [Breakpoints and watchpoints](#breakpoints-and-watchpoints) along with associated commands: **Step Over** ![](docs/commands/stepover_co.png), **Step Into** ![](docs/commands/stepinto_co.png), **Step Return** ![](docs/commands/stepreturn_co.png), **Suspend** ![](docs/commands/suspend_co.png), **Resume** ![](docs/commands/resume_co.png) and **Terminate** ![](docs/commands/terminate_co.png)
-* [Registers](#registers) view showing the CPU registers with values
-* [Variables](#variables) view showing and editing labeled data
-* [Memory Monitor](memory-monitor) for displaying and editing memory areas
-* Built in [VICE](https://vice-emu.sourceforge.io) emulator
-  * macOS GTK version on aarch64 and x86_64
-  * Windows GTK x86_64 version (planned)
-  * Linux GTK x86_64 version (planned)
-* Configurable run and debug launch shortcuts
+- a 256-character screen-code table with live previews
+- an 8x8 pixel editor for the selected glyph
+- single-color and multi-color rendering modes
+- C64 palette controls for background, foreground, and multi-color registers
+- import/export for `.64C`, `.bin`, and `.chr` character data
+- KickAssembler `.asm` export for embedding character sets in source
 
-### Breakpoints and watchpoints
+Raw `.64C`, `.bin`, and `.chr` imports can include a two-byte C64 load address,
+such as `$3800`; the importer skips that prefix so glyph row data stays aligned.
 
-![](docs/breakpoints.png)
+## Music and sound effects
 
-VICE supports three types of _checkpoints_; _breakpoints_, _watchpoints_ and _tracepoints_. Only the two prior is supported by this IDE. Breakpoints can be created by adding the statement `.break` to your code, or by double clicking on a line in the leftmost part of the editor. Double clicking on an existing breakpoint will remove it, unless added by code.
+Commodore Commander supports [SIDScore](https://github.com/turesheim/SIDScore) which is a DSL and toolchain for composing Commodore 64 SID music and sound effects. It has realtime auditioning and export to ASM, PRG, SID, and WAV. It focuses on playback fidelity by aligning the built-in `sidscore` driver with a realtime player timing while keeping output compatible with PSID players like VICE/VSID. SIDScore playback uses the dedicated instrument panel. And even has support for MIDI instruments.
 
-Currently, the only way to add a _watchpoint_ is by code. Use the statement `.watch <label name>` to add a watchpoint that is triggered both by reading and writing to the named data area. Use `.watch <label name>,,"load"` to trigger when the data is read and replace `"load"` with `"store"` to trigger when the data is written.
+![Theia SIDScore player with SID instrument controls](docs/theia-sidscore-player.png)
 
-Breakpoints can be individually disabled and enabled, and as be grouped by; types, projects, files, working custom working sets etc. They can also be exported and imported for sharing between developers or stored in a project folder.
+Note that export to SID/ASM is not a very efficient format. If you need to optimise for size, hand-coding the music and sound effects is a better option.
 
-### Registers
+## VICE debugging
 
-![](docs/registers.png)
+![Theia debugging a Kick Assembler program through VICE](docs/theia-vice-debugging.png)
 
-The **Registers** view show all of the CPU's registers and their values as the CPU is suspended. The yellow coloring indicates that the value was changed since the previous suspension.
+Commodore Commander contributes a Theia-native `commodore-vice` Debug Adapter Protocol adapter for launching PRG files in VICE. Launch configurations can be provided in `.theia/launch.json`, generated from the active Kick Assembler file, or discovered from `commodore-commander.build.json`.
 
-### Variables
+The screenshot above starts a named `.theia/launch.json` configuration, stops on a source breakpoint after the BASIC ready screen is painted, and shows C64 screen RAM rendered through the Memory view.
 
-When building your application, the IDE will automatically detect sections of code that are labelled and that contains data. For example:
+Implemented debugger features:
 
-```asy
-ClearTable:
-    .byte %11111110
-    .byte %11111101
-    .byte %11111011
+- launch and terminate VICE from Theia's built-in Run and Debug commands
+- Start Without Debugging through DAP `noDebug`, which starts VICE without the binary monitor
+- Kick Assembler `.dbg` source mapping for source breakpoints, breakpoint locations, loaded sources, labels, and source-backed stack frame locations
+- source breakpoints and memory data breakpoints/watchpoints through VICE binary-monitor checkpoints
+- continue, pause, step in, step over, and step out controls
+- register and Kick Assembler label scopes in Theia's Variables view
+- editing CPU registers through DAP `setVariable`
+- Debug Console evaluation of registers, labels, numeric addresses, and memory references
+- DAP `readMemory`, `writeMemory`, loaded-sources, and first-pass 6502 disassembly support
+- a Theia Memory view that reads and writes through the active stopped `commodore-vice` debug session, with address/range expressions, label
+  resolution, C64 screen and color RAM presets, configurable row widths, memory space and bank controls, changed-byte highlighting, and ASCII/PETSCII/screen renderings
+
+The current stack trace reports the active CPU frame. Full 6502 call-stack reconstruction, complete illegal-opcode disassembly coverage, non-macOS embedded VICE payload discovery, and Theia build-before-debug task-provider integration remain future work.
+
+Short examples:
+
+```asm
+#import "lib/shared.asm"   // include path completion inside quotes
+
+.const SCREEN = $0400      // directive completion after ".c"
+
+Draw:
+    lda #$00               // mnemonic completion after "ld"
+    sta SCREEN             // go to definition on SCREEN
+
+Entry:
+    jsr Draw               // rename Draw updates this reference too
 ```
 
-The parser will also determine which format was used to declare the values and this information is used when presenting the value in the IDE, so that it looks the same.
+Formatting normalizes indentation and simple declaration spacing:
 
-![](docs/variables.png)
+```asm
+.namespace Game {
+    .const SCREEN = $0400
+    Entry:
+        jsr Draw
+}
+```
 
-The **Variables** view is updated whenever the CPU is suspended. Values that are shown using the diamond icon are editable. Simply click on the value cell and specify a new value. Make sure the value is within the range of the data type. A byte value is for example between 0 and 255.
+Quick fixes cover the current structural diagnostics. For example, an unquoted import path can be fixed to the canonical form:
 
-### Memory monitor
+```asm
+#import lib/shared.asm
+```
 
-The memory monitor is used to observe and edit the main computer memory.
+becomes:
 
-Using the **New Memory View** ![](docs/new_con.png) command you can create a view that is able to display one single area of memory at the time (**Add Memory Monitor** ![](docs/monitorexpression_tsk.png)). This will bring up a prompt where you can specify the from and optionally to-address in either hexadecimal (prefix with `0x` or `$`). Use `-` to specify a range, and `,` to create multiple monitors.
+```asm
+#import "lib/shared.asm"
+```
 
-Each monitor can be presented using different _renderings_. Each rendering is a visualization of the memory area and may or may not be editable. The table renderings are typically editable, while the screen rendering shown below is not.
+Known limits: this is useful editor scaffolding, not full Kick Assembler compiler parity. Macro expansion, conditional assembly evaluation, include-graph-precise scoping, and compiler-accurate rename/completion remain future work.
 
-![](docs/memory.png)
+# Developer resources
 
-Note that monitors are only updated when the CPU has stopped because of i.e. a breakpoint and any changes to the memory will only take effect when the CPU has resumed operation.
+## macOS app bundle
 
-By selecting _Custom_ **Character set** and specifying it's location one can see the memory monitor rendered using this character set.
+Build a distributable macOS app bundle with:
 
-![](docs/font.png)
+```sh
+npm run package:mac
+```
 
-# Installing
+The command builds the Theia Electron application and writes a single app bundle to `dist/mac/Commodore Commander.app`. The bundle includes the Theia frontend and backend, downloaded local plugins, bundled docs, Kick Assembler, SIDScore, and the embedded Apple Silicon VICE payload.
 
-Currently only macOS builds are downloadable from the project site. These are not notarized and must be taken out _quarantine_ in order to work. Execute `xattr -d com.apple.quarantine ~/Downloads/Commodore\ Commander.app` after downloading and unpacking the archive.
+By default the bundle is ad-hoc signed. Set `CC_CODESIGN_IDENTITY` to use a Developer ID identity and `CC_BUNDLE_ID` to override the bundle identifier. Notarization and a DMG/zip installer are still manual release steps.
 
-Support for providing VICE installations other than the ones built in is not yet supported. So this IDE will only work on macOS until this is remedied.
+## Screenshots
 
-# Related resources
+Regenerate these Theia screenshots with:
+
+```sh
+npm run theia:build
+npm run screenshots:theia
+```
+
+The capture script launches the Electron app with a temporary screen-capture configuration and writes the screenshots under `docs/`. The generated screen-capture workspace lives under `.theia/screen-capture` so the capture pass does not edit the checked-in test fixtures or trigger the Kick Assembler build watcher.
+
+
 
 These resources are only some of those consulted when building this IDE. You may find them useful:
 
 - [The Kick Assembler](http://theweb.dk/KickAssembler)
 	- [Kick Assembler announcement](https://csdb.dk/forums/?roomid=11&topicid=26156&showallposts=1)
-- [VICE, the Versatile Commodore Emulator](http://vice-emu.sourceforge.net)
-- [Cycle-accurate 6502 emulator in Javascript](https://github.com/Torlus/6502.js)
 - [Tuned Simon's BASIC](https://github.com/godot64/TSB)
 - [SpritePad C64 Pro](https://subchristsoftware.itch.io/spritepad-c64-pro)
 - [CharPad C64 Pro](https://subchristsoftware.itch.io/charpad-c64-pro)
@@ -122,9 +175,22 @@ These resources are only some of those consulted when building this IDE. You may
 - [GoatTracker2](https://sourceforge.net/projects/goattracker2)
 - [Colordore](https://www.pepto.de/projects/colorvic/)
 - [PETSCII, A nice web-based editor for sprites, character maps and screens](http://petscii.krissz.hu)
-- [JustJ, a Java Runtime for Eclipse](https://eclipse.dev/justj/?page=documentation)
-- [Inside the Memory View: A Guide for Debug Providers](https://www.eclipse.org/articles/Article-MemoryView)
 - The 1965-1984 [Commodore logo](https://en.wikipedia.org/wiki/Commodore_International#/media/File:Commodore196x.svg) [font](https://www.myfonts.com/products/d-bold-extended-microgramma-330289) (Microgramma D)
-- https://www.eclipse.org/articles/Article-Debugger/how-to.html
 - [64Tass](https://sourceforge.net/projects/tass64/)
 - [65xx Debugger](https://marketplace.visualstudio.com/items?itemName=TRobertson.db65xx)
+
+## Emulators
+
+* [VICE, the Versatile Commodore Emulator](http://vice-emu.sourceforge.net)
+* [Cycle-accurate 6502 emulator in Javascript](https://github.com/Torlus/6502.js)
+
+## Other Commodore IDEs
+
+* [Retro C64](https://retroc64.github.io) – RetroC64 is a modern Commodore 64 development environment built around C# and .NET, using VS Code and the VICE emulator as its front end. Instead of writing raw assembly, you generate 6502 code programmatically via a C# DSL, with full build, run, and debug integration. It provides a tight “live coding” loop and advanced debugging (CPU, memory, VIC-II, SID), effectively acting as a high-level toolchain for low-level C64 development.
+* [C64 IDE for macOS](https://gopherbrokesoftware.com) – is a free, macOS-based development environment for the Commodore 64 that combines modern IDE features with authentic retro programming workflows. The C64 IDE provides syntax-aware editing for BASIC and 6502 assembly, integrated build and debug tooling via the VICE emulator, and conveniences like one-click build/run, inline documentation, and direct deployment to real hardware. The overall approach is to modernize C64 development—bringing features like source-level debugging, Git integration, and multi-file projects—while preserving low-level control and fidelity to the original platform.
+* [VS64](https://marketplace.visualstudio.com/items?itemName=rosc.vs64) – The VS64 extension makes it easy to develop software for the C64 using Visual Studio Code. It provides in-depth support for 6502 assemblers, C and C++ compilers and the BASIC programming language. It comes with a project and build system, compilers and converters for BASIC and resource files, and it integrates well with all the advanced features of Visual Studio Code, such as the task and launch system, debugging and introspection and language grammar and semantics support.
+* [CBM .prg Studio](https://www.ajordison.co.uk) – CBM prg Studio is a Windows IDE which allows you to type a BASIC or machine code program and convert it to a '.prg' file, which you can then run in an emulator or on real hardware. It also includes character, sprite and screen editors and a fully featured 6510/65816 debugger.
+
+## Theia development resources
+
+* [ VS Code Codicons](https://microsoft.github.io/vscode-codicons/dist/codicon.html)

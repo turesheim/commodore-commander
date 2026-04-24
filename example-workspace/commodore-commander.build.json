@@ -1,0 +1,58 @@
+{
+  "profiles": {
+    "debug": {
+      "javaRuntime": "java",
+      "javaArgs": [],
+      "libraryRoots": [
+        "library"
+      ],
+      "outputFolder": "out",
+      "showMemory": true,
+      "debug": false,
+      "viceSymbols": true,
+      "debugDump": true,
+      "symbolFile": true,
+      "assemblerArgs": [],
+      "generatedAssets": []
+    }
+  },
+  "defaultProfile": "debug",
+  "programs": [
+    {
+      "name": "hello",
+      "root": "kickassembler/hello.asm",
+      "profile": "debug",
+      "runProgram": "out/hello.prg"
+    },
+    {
+      "name": "martin-galway-arkadrum",
+      "root": "music/MartinGalway/arkadrum.asm",
+      "profile": "debug",
+      "runProgram": "out/arkadrum.prg"
+    },
+    {
+      "name": "martin-galway-arkanoid",
+      "root": "music/MartinGalway/arkanoid.asm",
+      "profile": "debug",
+      "runProgram": "out/arkanoid.prg"
+    },
+    {
+      "name": "martin-galway-gameover",
+      "root": "music/MartinGalway/gameover.asm",
+      "profile": "debug",
+      "runProgram": "out/gameover.prg"
+    },
+    {
+      "name": "martin-galway-rambload",
+      "root": "music/MartinGalway/rambload.asm",
+      "profile": "debug",
+      "runProgram": "out/rambload.prg"
+    },
+    {
+      "name": "martin-galway-wizball",
+      "root": "music/MartinGalway/wizball.asm",
+      "profile": "debug",
+      "runProgram": "out/wizball.prg"
+    }
+  ]
+}

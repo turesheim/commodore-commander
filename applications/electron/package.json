@@ -1,0 +1,74 @@
+{
+  "private": true,
+  "name": "@commodore-commander/electron-app",
+  "version": "0.1.0",
+  "main": "lib/backend/electron-main.js",
+  "dependencies": {
+    "@theia/core": "1.66.2",
+    "@theia/debug": "1.66.2",
+    "@theia/editor": "1.66.2",
+    "@theia/electron": "1.66.2",
+    "@theia/filesystem": "1.66.2",
+    "@theia/getting-started": "1.66.2",
+    "@commodore-commander/theia-extension": "0.1.0",
+    "@theia/markers": "1.66.2",
+    "@theia/messages": "1.66.2",
+    "@theia/monaco": "1.66.2",
+    "@theia/navigator": "1.66.2",
+    "@theia/plugin-ext-vscode": "1.66.2",
+    "@theia/preferences": "1.66.2",
+    "@theia/process": "1.66.2",
+    "@theia/terminal": "1.66.2",
+    "@theia/toolbar": "1.66.2",
+    "@theia/workspace": "1.66.2"
+  },
+  "devDependencies": {
+    "@theia/cli": "1.66.2",
+    "electron": "38.4.0",
+    "rimraf": "^6.0.1"
+  },
+  "scripts": {
+    "clean": "rimraf lib src-gen gen-webpack.config.js gen-webpack.node.config.js",
+    "bundle": "npm run rebuild && npm run download:plugins && theia build --mode development",
+    "download:plugins": "node ../../tools/download-theia-plugins.mjs",
+    "package:mac": "node ../../tools/package-macos-app.mjs",
+    "rebuild": "theia rebuild:electron --cacheRoot ../../.theia",
+    "start": "theia start ../../ --plugins=local-dir:plugins",
+    "watch": "npm run rebuild && npm run download:plugins && theia build --watch --mode development"
+  },
+  "theiaPluginsDir": "plugins",
+  "theiaPlugins": {
+    "vscode.markdown": "https://open-vsx.org/api/vscode/markdown/1.95.3/file/vscode.markdown-1.95.3.vsix",
+    "vscode.markdown-language-features": "https://open-vsx.org/api/vscode/markdown-language-features/1.95.3/file/vscode.markdown-language-features-1.95.3.vsix"
+  },
+  "theia": {
+    "target": "electron",
+    "frontend": {
+      "config": {
+        "applicationName": "Commodore Commander",
+        "defaultTheme": "vic20",
+        "preferences": {
+          "toolbar.showToolbar": true
+        },
+        "electron": {
+          "disallowReloadKeybinding": true,
+          "splashScreenOptions": {
+            "content": "./assets/splash.html",
+            "width": 500,
+            "height": 300,
+            "maxDuration": 30000
+          },
+          "windowOptions": {
+            "title": "Commodore Commander",
+            "icon": "./assets/cc_256.png",
+            "width": 1440,
+            "height": 900,
+            "minWidth": 1024,
+            "minHeight": 720,
+            "autoHideMenuBar": false
+          }
+        }
+      }
+    }
+  }
+}

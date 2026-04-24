@@ -1,0 +1,51 @@
+{
+  "name": "@commodore-commander/language-support",
+  "private": true,
+  "version": "0.1.0",
+  "description": "TypeScript-first language support foundations for Commodore Commander.",
+  "type": "module",
+  "types": "./dist/src/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "runtime": [
+        "dist/src/runtime/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist",
+    "reference",
+    "syntaxes",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "require": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/src/runtime/index.d.ts",
+      "import": "./dist/src/runtime/index.js",
+      "require": "./dist/src/runtime/index.js",
+      "default": "./dist/src/runtime/index.js"
+    },
+    "./reference/*": "./reference/*",
+    "./syntaxes/*": "./syntaxes/*"
+  },
+  "scripts": {
+    "langium:generate": "langium generate",
+    "build": "npm run langium:generate && tsc -p tsconfig.json && node ./scripts/sync-dist-assets.mjs",
+    "typecheck": "npm run langium:generate && tsc -p tsconfig.json --noEmit",
+    "test": "node --experimental-strip-types --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "langium": "^4.2.2",
+    "langium-cli": "^4.2.1"
+  }
+}

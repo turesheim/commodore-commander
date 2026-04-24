@@ -1,0 +1,53 @@
+{
+  "private": true,
+  "name": "@commodore-commander/theia-extension",
+  "version": "0.1.0",
+  "keywords": [
+    "theia-extension"
+  ],
+  "bin": {
+    "cc-kickass-build": "lib/node/kick-assembler-headless-build.js"
+  },
+  "files": [
+    "assets",
+    "lib",
+    "src",
+    "README.md"
+  ],
+  "dependencies": {
+    "@commodore-commander/debug-adapter": "0.1.0",
+    "@commodore-commander/language-support": "0.1.0",
+    "@theia/core": "1.66.2",
+    "@theia/debug": "1.66.2",
+    "@theia/editor": "1.66.2",
+    "@theia/filesystem": "1.66.2",
+    "@theia/getting-started": "1.66.2",
+    "@theia/markers": "1.66.2",
+    "@theia/mini-browser": "1.66.2",
+    "@theia/monaco": "1.66.2",
+    "@theia/monaco-editor-core": "1.96.302",
+    "@theia/navigator": "1.66.2",
+    "@theia/preview": "1.66.2",
+    "@theia/toolbar": "1.66.2",
+    "@theia/workspace": "1.66.2",
+    "jsonc-parser": "^2.3.1"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.0"
+  },
+  "scripts": {
+    "prepare": "npm run clean && npm run build",
+    "clean": "rimraf lib",
+    "sync:vice-assets": "node ./scripts/sync-vice-assets.mjs",
+    "build": "npm run sync:vice-assets && tsc -p tsconfig.json",
+    "watch": "tsc -w -p tsconfig.json"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/commodore-commander-frontend-module",
+      "backend": "lib/node/commodore-commander-backend-module",
+      "electronMain": "lib/electron-main/commodore-commander-electron-main-module"
+    }
+  ]
+}

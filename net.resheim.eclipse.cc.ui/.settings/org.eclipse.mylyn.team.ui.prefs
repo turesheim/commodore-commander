@@ -1,2 +1,0 @@
-commit.comment.template=GH-${task.id}}\: ${task.description}\n
-eclipse.preferences.version=1

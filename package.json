@@ -1,0 +1,23 @@
+{
+  "private": true,
+  "name": "commodore-commander-theia-workspace",
+  "version": "0.1.0",
+  "scripts": {
+    "theia:build": "npm run build --workspace @commodore-commander/language-support && npm run build --workspace @commodore-commander/debug-adapter && npm run build --workspace @commodore-commander/theia-extension && npm run bundle --workspace @commodore-commander/electron-app",
+    "theia:build:electron": "npm run theia:build",
+    "theia:start": "npm run start --workspace @commodore-commander/electron-app",
+    "theia:start:electron": "npm run theia:start",
+    "theia:dev": "npm run theia:build && npm run theia:start",
+    "theia:clean": "npm run clean --workspace @commodore-commander/theia-extension && npm run clean --workspace @commodore-commander/electron-app",
+    "package:mac": "npm run theia:build && npm run package:mac --workspace @commodore-commander/electron-app",
+    "theia:watch:extension": "npm run watch --workspace @commodore-commander/theia-extension",
+    "kickass:build": "npm run build --workspace @commodore-commander/language-support && npm run build --workspace @commodore-commander/debug-adapter && npm run build --workspace @commodore-commander/theia-extension && node packages/theia-extension/lib/node/kick-assembler-headless-build.js",
+    "screenshots:theia": "node tools/capture-theia-screenshots.mjs"
+  },
+  "workspaces": [
+    "applications/electron",
+    "packages/language-support",
+    "packages/debug-adapter",
+    "packages/theia-extension"
+  ]
+}

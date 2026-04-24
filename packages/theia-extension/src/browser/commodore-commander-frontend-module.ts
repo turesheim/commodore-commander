@@ -1,0 +1,331 @@
+import {
+  FrontendApplicationContribution,
+  WebSocketConnectionProvider,
+  WidgetFactory
+} from '@theia/core/lib/browser';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
+import {
+  OpenHandler
+} from '@theia/core/lib/browser/opener-service';
+import { StylingParticipant } from '@theia/core/lib/browser/styling-service';
+import {
+  CommandContribution,
+  MenuContribution,
+  ResourceResolver
+} from '@theia/core/lib/common';
+import URI from '@theia/core/lib/common/uri';
+import {
+  PreferenceContribution
+} from '@theia/core/lib/common/preferences';
+import { bindViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import {
+  ToolbarAlignment,
+  ToolbarContribution
+} from '@theia/toolbar/lib/browser/toolbar-interfaces';
+import {
+  ToolbarDefaults,
+  ToolbarDefaultsFactory
+} from '@theia/toolbar/lib/browser/toolbar-defaults';
+import { GettingStartedWidget } from '@theia/getting-started/lib/browser/getting-started-widget';
+import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-service';
+import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate/textmate-contribution';
+import { PreviewHandler } from '@theia/preview/lib/browser/preview-handler';
+import { PreviewLinkNormalizer } from '@theia/preview/lib/browser/preview-link-normalizer';
+
+import {
+  KickAssemblerBuildService,
+  KickAssemblerBuildServicePath
+} from '../common/kick-assembler-build-service';
+import {
+  CommodorePrgService,
+  CommodorePrgServicePath
+} from '../common/commodore-prg-service';
+import { CommodoreCommanderFrontendContribution } from './commodore-commander-frontend-contribution';
+import { CommodoreCommanderGettingStartedWidget } from './commodore-commander-getting-started-widget';
+import {
+  CommodoreCommanderThemeStyleParticipant,
+  CommodoreCommanderThemingService
+} from './commodore-commander-theme';
+import {
+  CommodoreCommanderBundledDocumentationContribution,
+  CommodoreCommanderBundledDocumentationEditorContribution,
+  CommodoreCommanderBundledDocumentationImagePreviewHandler,
+  CommodoreCommanderBundledDocumentationLinkNormalizer,
+  CommodoreCommanderBundledDocumentationOpenHandler,
+  CommodoreCommanderBundledDocumentationPreviewHandler,
+  CommodoreCommanderBundledDocumentationResourceResolver
+} from './commodore-commander-bundled-docs';
+import {
+  COMMODORE_MACHINE_PROFILE_PREFERENCE_BINDING,
+  CommodoreMachineProfileContribution,
+  COMMODORE_MACHINE_PROFILE_WIDGET_ID,
+  CommodoreMachineProfileSelectionService
+} from './commodore-machine-profile-selection';
+import {
+  CommodoreMachineProfileWidget
+} from './commodore-machine-profile-widget';
+import { CommodoreCommanderScreenCaptureContribution } from './commodore-commander-screen-capture-contribution';
+import {
+  CommodoreCharacterSetContribution
+} from './commodore-character-set-contribution';
+import {
+  COMMODORE_CHARACTER_SET_WIDGET_FACTORY_ID,
+  CommodoreCharacterSetWidget,
+  type CommodoreCharacterSetWidgetOptions
+} from './commodore-character-set-widget';
+import { CommodorePrgContribution } from './commodore-prg-contribution';
+import { CommodoreViceLaunchConfigurationContribution } from './commodore-vice-launch-configuration-contribution';
+import { CommodoreCommanderWelcomeContribution } from './commodore-commander-welcome-contribution';
+import { ViceMemoryContribution } from './vice-memory-contribution';
+import {
+  VICE_MEMORY_WIDGET_ID,
+  ViceMemoryWidget
+} from './vice-memory-widget';
+import {
+  KICK_ASSEMBLER_BUILD_CONSOLE_WIDGET_ID,
+  KickAssemblerBuildConsoleWidget
+} from './kick-assembler-build-console-widget';
+import { KickAssemblerBuilderContribution } from './kick-assembler-builder-contribution';
+import { KickAssemblerEditorLookupContribution } from './kick-assembler-editor-lookup-contribution';
+import { KickAssemblerLanguageContribution } from './kick-assembler-language-contribution';
+import { KickAssemblerOutlineContribution } from './kick-assembler-outline-contribution';
+import { SidScoreLanguageContribution } from './sidscore-language-contribution';
+import {
+  SID_SCORE_EXPORT_TOOLBAR_ID,
+  SidScoreRuntimeContribution
+} from './sidscore-runtime-contribution';
+import { SidScoreProtocolLogContribution } from './sidscore-protocol-log-contribution';
+import {
+  SID_SCORE_PROTOCOL_LOG_WIDGET_ID,
+  SidScoreProtocolLogWidget
+} from './sidscore-protocol-log-widget';
+import {
+  SID_SCORE_WAVEFORM_WIDGET_ID,
+  SidScoreWaveformWidget
+} from './sidscore-waveform-widget';
+import {
+  SID_INSTRUMENT_CONTROL_WIDGET_ID,
+  SidInstrumentControlWidget
+} from './sid-instrument-control-widget';
+import {
+  SidScoreRuntimeService,
+  SidScoreRuntimeServicePath
+} from '../common/sidscore-runtime-service';
+
+const commodoreCommanderToolbarDefaults: typeof ToolbarDefaults = () => {
+  const defaults = ToolbarDefaults();
+  return {
+    items: {
+      ...defaults.items,
+      [ToolbarAlignment.LEFT]: [
+        ...defaults.items[ToolbarAlignment.LEFT],
+        [
+          {
+            id: SID_SCORE_EXPORT_TOOLBAR_ID,
+            group: 'contributed'
+          }
+        ]
+      ]
+    }
+  };
+};
+
+export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
+  rebind(MonacoThemingService)
+    .to(CommodoreCommanderThemingService)
+    .inSingletonScope();
+  bind(CommodoreCommanderThemeStyleParticipant).toSelf().inSingletonScope();
+  bind(ColorContribution).toService(CommodoreCommanderThemeStyleParticipant);
+  bind(StylingParticipant).toService(CommodoreCommanderThemeStyleParticipant);
+  bind(CommodoreCommanderFrontendContribution).toSelf().inSingletonScope();
+  bind(FrontendApplicationContribution).toService(CommodoreCommanderFrontendContribution);
+  bind(CommodoreCommanderBundledDocumentationResourceResolver)
+    .toSelf()
+    .inSingletonScope();
+  bind(ResourceResolver).toService(
+    CommodoreCommanderBundledDocumentationResourceResolver
+  );
+  rebind(PreviewLinkNormalizer)
+    .to(CommodoreCommanderBundledDocumentationLinkNormalizer)
+    .inSingletonScope();
+  bind(CommodoreCommanderBundledDocumentationContribution)
+    .toSelf()
+    .inSingletonScope();
+  bind(CommandContribution).toService(
+    CommodoreCommanderBundledDocumentationContribution
+  );
+  bind(MenuContribution).toService(
+    CommodoreCommanderBundledDocumentationContribution
+  );
+  bind(CommodoreCommanderBundledDocumentationPreviewHandler)
+    .toSelf()
+    .inSingletonScope();
+  bind(PreviewHandler).toService(
+    CommodoreCommanderBundledDocumentationPreviewHandler
+  );
+  bind(CommodoreCommanderBundledDocumentationImagePreviewHandler)
+    .toSelf()
+    .inSingletonScope();
+  bind(PreviewHandler).toService(
+    CommodoreCommanderBundledDocumentationImagePreviewHandler
+  );
+  bind(CommodoreCommanderBundledDocumentationOpenHandler)
+    .toSelf()
+    .inSingletonScope();
+  bind(OpenHandler).toService(
+    CommodoreCommanderBundledDocumentationOpenHandler
+  );
+  bind(CommodoreCommanderBundledDocumentationEditorContribution)
+    .toSelf()
+    .inSingletonScope();
+  bind(FrontendApplicationContribution).toService(
+    CommodoreCommanderBundledDocumentationEditorContribution
+  );
+  bind(CommodoreCommanderGettingStartedWidget).toSelf();
+  rebind(GettingStartedWidget).toService(CommodoreCommanderGettingStartedWidget);
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: GettingStartedWidget.ID,
+      createWidget: () => context.container.get(CommodoreCommanderGettingStartedWidget)
+    }))
+    .inSingletonScope();
+  bind(CommodoreCommanderWelcomeContribution).toSelf().inSingletonScope();
+  bind(CommandContribution).toService(CommodoreCommanderWelcomeContribution);
+  bind(PreferenceContribution).toConstantValue(
+    COMMODORE_MACHINE_PROFILE_PREFERENCE_BINDING
+  );
+  bind(CommodoreMachineProfileSelectionService).toSelf().inSingletonScope();
+  bind(CommodoreMachineProfileWidget).toSelf();
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: COMMODORE_MACHINE_PROFILE_WIDGET_ID,
+      createWidget: () => context.container.get(CommodoreMachineProfileWidget)
+    }))
+    .inSingletonScope();
+  bind(CommodoreMachineProfileContribution).toSelf().inSingletonScope();
+  bind(CommandContribution).toService(CommodoreMachineProfileContribution);
+  bind(TabBarToolbarContribution).toService(
+    CommodoreMachineProfileContribution
+  );
+  bind(FrontendApplicationContribution).toService(
+    CommodoreMachineProfileContribution
+  );
+  bind(CommodoreCommanderScreenCaptureContribution).toSelf().inSingletonScope();
+  bind(FrontendApplicationContribution).toService(
+    CommodoreCommanderScreenCaptureContribution
+  );
+  bind(CommodoreCharacterSetWidget).toSelf();
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: COMMODORE_CHARACTER_SET_WIDGET_FACTORY_ID,
+      createWidget: async (options?: CommodoreCharacterSetWidgetOptions) => {
+        const widget = context.container.get(CommodoreCharacterSetWidget);
+        if (!options?.uri) {
+          throw new Error('Character set editor requires a resource URI.');
+        }
+        await widget.initialize(new URI(options.uri));
+        return widget;
+      }
+    }))
+    .inSingletonScope();
+  bind(CommodoreCharacterSetContribution).toSelf().inSingletonScope();
+  bind(CommandContribution).toService(CommodoreCharacterSetContribution);
+  bind(MenuContribution).toService(CommodoreCharacterSetContribution);
+  bind(OpenHandler).toService(CommodoreCharacterSetContribution);
+  bind(CommodorePrgService)
+    .toDynamicValue((context) =>
+      WebSocketConnectionProvider.createProxy(
+        context.container,
+        CommodorePrgServicePath
+      )
+    )
+    .inSingletonScope();
+  bind(CommodorePrgContribution).toSelf().inSingletonScope();
+  bind(CommandContribution).toService(CommodorePrgContribution);
+  bind(MenuContribution).toService(CommodorePrgContribution);
+  bind(OpenHandler).toService(CommodorePrgContribution);
+  bind(ResourceResolver).toService(CommodorePrgContribution);
+  bind(CommodoreViceLaunchConfigurationContribution)
+    .toSelf()
+    .inSingletonScope();
+  bind(CommandContribution).toService(
+    CommodoreViceLaunchConfigurationContribution
+  );
+  bind(ViceMemoryWidget).toSelf();
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: VICE_MEMORY_WIDGET_ID,
+      createWidget: () => context.container.get(ViceMemoryWidget)
+    }))
+    .inSingletonScope();
+  bindViewContribution(bind, ViceMemoryContribution);
+  bind(KickAssemblerLanguageContribution).toSelf().inSingletonScope();
+  bind(FrontendApplicationContribution).toService(KickAssemblerLanguageContribution);
+  bind(LanguageGrammarDefinitionContribution).toService(KickAssemblerLanguageContribution);
+  bind(SidScoreLanguageContribution).toSelf().inSingletonScope();
+  bind(FrontendApplicationContribution).toService(SidScoreLanguageContribution);
+  bind(LanguageGrammarDefinitionContribution).toService(SidScoreLanguageContribution);
+  bind(SidScoreRuntimeService)
+    .toDynamicValue((context) =>
+      WebSocketConnectionProvider.createProxy(
+        context.container,
+        SidScoreRuntimeServicePath
+      )
+    )
+    .inSingletonScope();
+  bind(SidScoreRuntimeContribution).toSelf().inSingletonScope();
+  bind(CommandContribution).toService(SidScoreRuntimeContribution);
+  bind(MenuContribution).toService(SidScoreRuntimeContribution);
+  bind(TabBarToolbarContribution).toService(SidScoreRuntimeContribution);
+  bind(FrontendApplicationContribution).toService(SidScoreRuntimeContribution);
+  bind(ToolbarContribution).toService(SidScoreRuntimeContribution);
+  rebind(ToolbarDefaultsFactory).toConstantValue(
+    commodoreCommanderToolbarDefaults
+  );
+  bind(SidScoreWaveformWidget).toSelf();
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: SID_SCORE_WAVEFORM_WIDGET_ID,
+      createWidget: () => context.container.get(SidScoreWaveformWidget)
+    }))
+    .inSingletonScope();
+  bind(SidInstrumentControlWidget).toSelf();
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: SID_INSTRUMENT_CONTROL_WIDGET_ID,
+      createWidget: () => context.container.get(SidInstrumentControlWidget)
+    }))
+    .inSingletonScope();
+  bind(SidScoreProtocolLogWidget).toSelf();
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: SID_SCORE_PROTOCOL_LOG_WIDGET_ID,
+      createWidget: () => context.container.get(SidScoreProtocolLogWidget)
+    }))
+    .inSingletonScope();
+  bindViewContribution(bind, SidScoreProtocolLogContribution);
+  bind(FrontendApplicationContribution).toService(SidScoreProtocolLogContribution);
+  bind(KickAssemblerEditorLookupContribution).toSelf().inSingletonScope();
+  bind(FrontendApplicationContribution).toService(KickAssemblerEditorLookupContribution);
+  bind(KickAssemblerOutlineContribution).toSelf().inSingletonScope();
+  bind(FrontendApplicationContribution).toService(KickAssemblerOutlineContribution);
+  bind(KickAssemblerBuildService)
+    .toDynamicValue((context) =>
+      WebSocketConnectionProvider.createProxy(
+        context.container,
+        KickAssemblerBuildServicePath
+      )
+    )
+    .inSingletonScope();
+  bind(KickAssemblerBuildConsoleWidget).toSelf().inSingletonScope();
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: KICK_ASSEMBLER_BUILD_CONSOLE_WIDGET_ID,
+      createWidget: () => context.container.get(KickAssemblerBuildConsoleWidget)
+    }))
+    .inSingletonScope();
+  bindViewContribution(bind, KickAssemblerBuilderContribution);
+  bind(FrontendApplicationContribution).toService(KickAssemblerBuilderContribution);
+});

@@ -1,0 +1,41 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "commodore-vice",
+      "request": "launch",
+      "name": "Debug hello in VICE",
+      "program": "${workspaceFolder}/out/hello.prg",
+      "debugInfo": "${workspaceFolder}/out/hello.dbg",
+      "stopOnEntry": true
+    },
+    {
+      "type": "commodore-vice",
+      "request": "launch",
+      "name": "Debug screencolors in VICE",
+      "program": "${workspaceFolder}/out/screencolors.prg",
+      "debugInfo": "${workspaceFolder}/out/screencolors.dbg",
+      "stopOnEntry": true
+    },
+    {
+      "type": "commodore-vice",
+      "request": "launch",
+      "name": "Debug debug-demo in VICE",
+      "program": "${workspaceFolder}/out/debug-demo.prg",
+      "debugInfo": "${workspaceFolder}/out/debug-demo.dbg",
+      "sourceRoot": "${workspaceFolder}",
+      "stopOnEntry": true
+    },
+    {
+      "type": "commodore-vice",
+      "request": "launch",
+      "name": "Debug arkanoid in VICE",
+      "program": "${workspaceFolder}/out/arkanoid.prg",
+      "debugInfo": "${workspaceFolder}/out/arkanoid.dbg",
+      "sourceRoot": "${workspaceFolder}",
+      "stopOnEntry": true
+    }
+  ]
+}

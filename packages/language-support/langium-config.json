@@ -1,0 +1,26 @@
+{
+  "projectName": "KickAssemblerOutline",
+  "languages": [
+    {
+      "id": "kickassembler-outline",
+      "grammar": "src/langium/kick-assembler-outline.langium",
+      "fileExtensions": [
+        ".asm",
+        ".inc",
+        ".s",
+        ".a",
+        ".lib",
+        ".kick",
+        ".ka",
+        ".src"
+      ],
+      "caseInsensitive": true
+    }
+  ],
+  "out": "src/langium/generated",
+  "importExtension": ".ts",
+  "chevrotainParserConfig": {
+    "recoveryEnabled": true,
+    "nodeLocationTracking": "full"
+  }
+}
