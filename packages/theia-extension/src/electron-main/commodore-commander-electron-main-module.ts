@@ -65,6 +65,10 @@ type ElectronScreenCaptureStep =
       readonly commandId: string;
       readonly args?: readonly unknown[];
     }
+  | {
+      readonly type: 'continueDebugSession';
+      readonly reason?: string;
+    }
   | { readonly type: 'openSourceFile'; readonly filePath: string }
   | { readonly type: 'runEditorAction'; readonly actionId: string }
   | { readonly type: 'showMnemonicHover' }
@@ -103,6 +107,11 @@ type ElectronScreenCaptureStep =
   | {
       readonly type: 'waitForBodyText';
       readonly text: string;
+      readonly timeoutMs?: number;
+    }
+  | {
+      readonly type: 'waitForDebugStopped';
+      readonly reason?: string;
       readonly timeoutMs?: number;
     }
   | { readonly type: 'wait'; readonly ms: number };
@@ -260,6 +269,19 @@ async function runScreenCaptureStep(
       );
       if (!executed) {
         throw new Error(`Unable to execute command: ${step.commandId}`);
+      }
+      return;
+    }
+    case 'continueDebugSession': {
+      const continued = await callScreenCaptureApi<boolean>(
+        window,
+        'continueDebugSession',
+        [step.reason],
+        false,
+        timeoutMs
+      );
+      if (!continued) {
+        throw new Error('Unable to continue debug session.');
       }
       return;
     }
@@ -438,6 +460,24 @@ async function runScreenCaptureStep(
     case 'waitForBodyText':
       await waitForBodyText(window, step.text, step.timeoutMs ?? timeoutMs);
       return;
+    case 'waitForDebugStopped': {
+      const waitTimeoutMs = step.timeoutMs ?? timeoutMs;
+      const stopped = await callScreenCaptureApi<boolean>(
+        window,
+        'waitForDebugStopped',
+        [step.reason, waitTimeoutMs],
+        false,
+        waitTimeoutMs + 1000
+      );
+      if (!stopped) {
+        throw new Error(
+          step.reason
+            ? `Timed out waiting for debug stop reason: ${step.reason}`
+            : 'Timed out waiting for debug stop.'
+        );
+      }
+      return;
+    }
     case 'wait':
       await delay(step.ms);
       return;

@@ -39,10 +39,17 @@ import {
 import {
   CommodoreMachineProfileSelectionService
 } from './commodore-machine-profile-selection';
+import {
+  createKickAssemblerBuildPreLaunchTask,
+  KICK_ASSEMBLER_BUILD_TASK_NAME,
+  KICK_ASSEMBLER_BUILD_TASK_TYPE
+} from './kick-assembler-build-task-contribution';
 import { isKickAssemblerFileExtension } from './kick-assembler-file-associations';
 
 const LAUNCH_JSON_SECTION = 'launch';
+const TASKS_JSON_SECTION = 'tasks';
 const DEFAULT_LAUNCH_VERSION = '0.2.0';
+const DEFAULT_TASKS_VERSION = '2.0.0';
 
 @injectable()
 export class CommodoreViceLaunchConfigurationContribution
@@ -101,6 +108,10 @@ export class CommodoreViceLaunchConfigurationContribution
         workspaceRootUri: context.workspaceRootUri.toString(),
         resourceUri: context.resourceUri.toString()
       });
+      await this.writeBuildTaskConfiguration(
+        this.getTasksJsonUri(context.workspaceRootUri),
+        runProgram
+      );
       const existing = await this.findExistingLaunchConfiguration(
         runProgram,
         context.workspaceRootUri
@@ -117,7 +128,10 @@ export class CommodoreViceLaunchConfigurationContribution
       }
 
       await this.debugSessionManager.start(
-        this.withNoDebug(options, noDebug)
+        this.withNoDebug(
+          this.withBuildPreLaunchTask(options, runProgram),
+          noDebug
+        )
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -243,6 +257,7 @@ export class CommodoreViceLaunchConfigurationContribution
       program,
       debugInfo: replaceExtension(program, '.dbg'),
       sourceRoot: '${workspaceFolder}',
+      preLaunchTask: createKickAssemblerBuildPreLaunchTask(runProgram),
       ...(runProgram.machineConfiguration
         ? { machine: runProgram.machineConfiguration }
         : {}),
@@ -288,6 +303,23 @@ export class CommodoreViceLaunchConfigurationContribution
     await this.fileService.write(launchUri, nextContent);
   }
 
+  protected async writeBuildTaskConfiguration(
+    tasksUri: URI,
+    runProgram: KickAssemblerRunProgramSummary
+  ): Promise<void> {
+    const exists = await this.fileService.exists(tasksUri);
+    const currentContent = exists
+      ? (await this.fileService.read(tasksUri, { acceptTextOnly: true })).value
+      : '';
+    const nextContent = this.withBuildTaskConfiguration(
+      currentContent,
+      runProgram
+    );
+
+    await this.fileService.createFolder(tasksUri.parent);
+    await this.fileService.write(tasksUri, nextContent);
+  }
+
   protected withLaunchConfiguration(
     content: string,
     configuration: CommodoreViceDebugConfiguration
@@ -323,12 +355,78 @@ export class CommodoreViceLaunchConfigurationContribution
     return updated.endsWith('\n') ? updated : `${updated}\n`;
   }
 
+  protected withBuildTaskConfiguration(
+    content: string,
+    runProgram: KickAssemblerRunProgramSummary
+  ): string {
+    const task = this.createBuildTaskConfiguration(runProgram);
+    if (!content.trim()) {
+      return `${JSON.stringify({
+        version: DEFAULT_TASKS_VERSION,
+        tasks: [task]
+      }, null, 2)}\n`;
+    }
+
+    const errors: ParseError[] = [];
+    const parsed = parse(content, errors, { allowTrailingComma: true });
+    if (errors.length > 0 || !isRecord(parsed)) {
+      throw new Error('tasks.json is not a valid JSON object.');
+    }
+
+    const existingTasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
+    const existingTaskIndex = existingTasks.findIndex((candidate) =>
+      isMatchingBuildTask(candidate, runProgram.programName)
+    );
+    const targetPath = Array.isArray(parsed.tasks)
+      ? ['tasks', existingTaskIndex >= 0 ? existingTaskIndex : -1]
+      : ['tasks'];
+    const value = Array.isArray(parsed.tasks) ? task : [task];
+    const edits = modify(content, targetPath, value, {
+      formattingOptions: {
+        insertSpaces: true,
+        tabSize: 2,
+        eol: '\n'
+      },
+      isArrayInsertion: Array.isArray(parsed.tasks) && existingTaskIndex < 0
+    });
+    const updated = applyEdits(content, edits);
+    return updated.endsWith('\n') ? updated : `${updated}\n`;
+  }
+
+  protected createBuildTaskConfiguration(
+    runProgram: KickAssemblerRunProgramSummary
+  ): Record<string, unknown> {
+    return {
+      label: createKickAssemblerBuildPreLaunchTask(runProgram),
+      type: KICK_ASSEMBLER_BUILD_TASK_TYPE,
+      task: KICK_ASSEMBLER_BUILD_TASK_NAME,
+      executionType: 'customExecution',
+      programName: runProgram.programName,
+      ...(runProgram.profileName ? { profileName: runProgram.profileName } : {}),
+      group: 'build',
+      problemMatcher: [],
+      presentation: {
+        reveal: 'silent',
+        panel: 'dedicated',
+        showReuseMessage: false
+      }
+    };
+  }
+
   protected getLaunchJsonUri(workspaceRootUri: URI): URI {
     return this.preferenceService.getConfigUri(
       PreferenceScope.Folder,
       workspaceRootUri.toString(),
       LAUNCH_JSON_SECTION
     ) ?? workspaceRootUri.resolve('.theia').resolve('launch.json');
+  }
+
+  protected getTasksJsonUri(workspaceRootUri: URI): URI {
+    return this.preferenceService.getConfigUri(
+      PreferenceScope.Folder,
+      workspaceRootUri.toString(),
+      TASKS_JSON_SECTION
+    ) ?? workspaceRootUri.resolve('.theia').resolve('tasks.json');
   }
 
   protected toWorkspaceLaunchPath(resourceUri: URI, workspaceRootUri: URI): string {
@@ -398,6 +496,43 @@ export class CommodoreViceLaunchConfigurationContribution
       }
     };
   }
+
+  protected withBuildPreLaunchTask(
+    options: DebugConfigurationSessionOptions,
+    runProgram: KickAssemblerRunProgramSummary
+  ): DebugConfigurationSessionOptions {
+    if (
+      options.configuration.preLaunchTask &&
+      !isKickAssemblerBuildPreLaunchTask(options.configuration.preLaunchTask)
+    ) {
+      return options;
+    }
+
+    return {
+      ...options,
+      configuration: {
+        ...options.configuration,
+        preLaunchTask: createKickAssemblerBuildPreLaunchTask(runProgram)
+      }
+    };
+  }
+}
+
+function isKickAssemblerBuildPreLaunchTask(value: unknown): boolean {
+  return Boolean(value) &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    (value as Record<string, unknown>).type === KICK_ASSEMBLER_BUILD_TASK_TYPE &&
+    (value as Record<string, unknown>).task === KICK_ASSEMBLER_BUILD_TASK_NAME;
+}
+
+function isMatchingBuildTask(value: unknown, programName: string): boolean {
+  return Boolean(value) &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    (value as Record<string, unknown>).type === KICK_ASSEMBLER_BUILD_TASK_TYPE &&
+    (value as Record<string, unknown>).task === KICK_ASSEMBLER_BUILD_TASK_NAME &&
+    (value as Record<string, unknown>).programName === programName;
 }
 
 function replaceExtension(filePath: string, extension: string): string {

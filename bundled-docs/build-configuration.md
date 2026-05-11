@@ -223,10 +223,15 @@ Theia follows the usual VS Code-style workflow:
   active workspace profile
 - save-triggered builds are requested for changed Kick Assembler files and
   routed through the workspace build planner
+- Kick Assembler build tasks are provided to Theia's task system, so launch
+  configurations can use them as `preLaunchTask` entries
 - Theia's native Start Debugging and Start Without Debugging commands create or
   use `commodore-vice` launch configurations
 - from an active assembler source, F5/Ctrl+F5 can offer to create or append a
   matching `.theia/launch.json` entry and then start that entry
+- generated launch entries include a Kick Assembler `preLaunchTask`, and
+  existing entries get the same task in memory when launched from an active
+  assembler source unless they already define their own `preLaunchTask`
 - generated launch entries use the selected program's machine section when
   present; otherwise the debug adapter falls back to the default C64 profile
 - the right toolbar exposes Commodore machine selection for reference filtering

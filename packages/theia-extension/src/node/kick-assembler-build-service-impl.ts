@@ -24,6 +24,7 @@ import type {
   KickAssemblerBuildClient,
   KickAssemblerBuildConfigurationRequest,
   KickAssemblerBuildEvent,
+  KickAssemblerBuildExecutionResult,
   KickAssemblerBuildRequest,
   KickAssemblerBuildRequestResult,
   KickAssemblerRunBuildPolicy,
@@ -94,6 +95,29 @@ export class KickAssemblerBuildServiceImpl implements KickAssemblerBuildService 
 
     this.ensureDrainLoop();
     return { queued };
+  }
+
+  async buildAndWait(
+    request: KickAssemblerBuildRequest
+  ): Promise<KickAssemblerBuildExecutionResult> {
+    const queued = Boolean(this.drainLoop);
+    if (queued) {
+      this.emit({
+        type: 'build-queued',
+        workspaceRootUri: request.workspaceRootUri,
+        resourceUri: request.resourceUri
+      });
+    }
+    while (this.drainLoop) {
+      await this.drainLoop;
+    }
+
+    const result = await this.executeBuild(request);
+    return {
+      queued,
+      succeeded: result.succeeded,
+      builtProgramUris: result.builtProgramUris
+    };
   }
 
   async getWorkspaceBuildConfiguration(
@@ -230,7 +254,9 @@ export class KickAssemblerBuildServiceImpl implements KickAssemblerBuildService 
     })();
   }
 
-  private async executeBuild(request: KickAssemblerBuildRequest): Promise<void> {
+  private async executeBuild(
+    request: KickAssemblerBuildRequest
+  ): Promise<Omit<KickAssemblerBuildExecutionResult, 'queued'>> {
     const buildId = randomUUID();
     const startedAt = Date.now();
     const builtProgramUris: string[] = [];
@@ -290,7 +316,10 @@ export class KickAssemblerBuildServiceImpl implements KickAssemblerBuildService 
           programCount: 0,
           builtProgramUris
         });
-        return;
+        return {
+          succeeded: true,
+          builtProgramUris
+        };
       }
 
       if (configuration.configPath) {
@@ -355,6 +384,10 @@ export class KickAssemblerBuildServiceImpl implements KickAssemblerBuildService 
         programCount: programs.length,
         builtProgramUris
       });
+      return {
+        succeeded,
+        builtProgramUris
+      };
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unknown build failure.';
@@ -375,6 +408,10 @@ export class KickAssemblerBuildServiceImpl implements KickAssemblerBuildService 
         programCount: 0,
         builtProgramUris
       });
+      return {
+        succeeded: false,
+        builtProgramUris
+      };
     }
   }
 

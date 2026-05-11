@@ -12,6 +12,7 @@ import {
   type CommandService as CommandServiceType
 } from '@theia/core/lib/common/command';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
+import { DebugState } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import type { DebugConfigurationSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
 import type { DebugConfiguration } from '@theia/debug/lib/common/debug-common';
@@ -40,6 +41,7 @@ interface ScreenCaptureState {
 
 export interface CommodoreCommanderScreenCaptureApi {
   collapseBottomPanel?: () => Promise<boolean>;
+  continueDebugSession?: (reason?: string) => Promise<boolean>;
   executeCommand?: (
     commandId: string,
     args?: readonly unknown[]
@@ -68,6 +70,10 @@ export interface CommodoreCommanderScreenCaptureApi {
   ) => Promise<boolean>;
   showMnemonicHover?: () => Promise<boolean>;
   showReferences?: () => Promise<boolean>;
+  waitForDebugStopped?: (
+    reason?: string,
+    timeoutMs?: number
+  ) => Promise<boolean>;
 }
 
 type ScreenCaptureWindow = Window & {
@@ -111,6 +117,8 @@ export class CommodoreCommanderScreenCaptureContribution
     captureWindow[SCREEN_CAPTURE_API_KEY] = {
       ...captureWindow[SCREEN_CAPTURE_API_KEY],
       collapseBottomPanel: async () => this.collapseBottomPanelForScreenCapture(),
+      continueDebugSession: async (reason) =>
+        this.continueDebugSessionForScreenCapture(reason),
       executeCommand: async (commandId, args) =>
         this.executeCommandForScreenCapture(commandId, args),
       openDebugView: async () => this.openWidgetForScreenCapture(
@@ -136,7 +144,9 @@ export class CommodoreCommanderScreenCaptureContribution
           name,
           configuration,
           workspaceFolderUri
-        )
+        ),
+      waitForDebugStopped: async (reason, timeoutMs) =>
+        this.waitForDebugStoppedForScreenCapture(reason, timeoutMs)
     };
   }
 
@@ -170,6 +180,42 @@ export class CommodoreCommanderScreenCaptureContribution
   ): Promise<boolean> {
     await this.commandService.executeCommand(commandId, ...args);
     return true;
+  }
+
+  protected async continueDebugSessionForScreenCapture(
+    reason?: string
+  ): Promise<boolean> {
+    const thread = this.debugSessionManager.currentThread;
+    if (!thread) {
+      return false;
+    }
+    if (this.debugSessionManager.state !== DebugState.Stopped) {
+      return true;
+    }
+    if (reason && thread.stoppedDetails?.reason !== reason) {
+      return true;
+    }
+    await thread.continue();
+    return true;
+  }
+
+  protected async waitForDebugStoppedForScreenCapture(
+    reason: string | undefined,
+    timeoutMs = 10000
+  ): Promise<boolean> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() <= deadline) {
+      const thread = this.debugSessionManager.currentThread;
+      if (
+        thread &&
+        this.debugSessionManager.state === DebugState.Stopped &&
+        (!reason || thread.stoppedDetails?.reason === reason)
+      ) {
+        return true;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return false;
   }
 
   protected async startLaunchConfigurationForScreenCapture(

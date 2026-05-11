@@ -67,18 +67,18 @@ export const C64_COLOR_PALETTE = Object.freeze([
   { index: 0, name: 'Black', hex: '#000000' },
   { index: 1, name: 'White', hex: '#FFFFFF' },
   { index: 2, name: 'Red', hex: '#68372B' },
-  { index: 3, name: 'Light Blue', hex: '#70A4B2' },
+  { index: 3, name: 'Cyan', hex: '#70A4B2' },
   { index: 4, name: 'Purple', hex: '#6F3D86' },
   { index: 5, name: 'Green', hex: '#588D43' },
-  { index: 6, name: 'Dark Blue', hex: '#352879' },
+  { index: 6, name: 'Blue', hex: '#352879' },
   { index: 7, name: 'Yellow', hex: '#B8C76F' },
-  { index: 8, name: 'Brown', hex: '#6F4F25' },
-  { index: 9, name: 'Dark Brown', hex: '#433900' },
+  { index: 8, name: 'Orange', hex: '#6F4F25' },
+  { index: 9, name: 'Brown', hex: '#433900' },
   { index: 10, name: 'Light Red', hex: '#9A6759' },
   { index: 11, name: 'Dark Grey', hex: '#444444' },
-  { index: 12, name: 'Mid Grey', hex: '#6C6C6C' },
+  { index: 12, name: 'Medium Grey', hex: '#6C6C6C' },
   { index: 13, name: 'Light Green', hex: '#9AD284' },
-  { index: 14, name: 'Mid Blue', hex: '#6C5EB5' },
+  { index: 14, name: 'Light Blue', hex: '#6C5EB5' },
   { index: 15, name: 'Light Grey', hex: '#959595' }
 ]);
 
@@ -125,8 +125,8 @@ export function createDefaultCharacterSetDocument(
     colorMode: 'hires',
     colors: {
       background: 6,
-      foreground: 14,
-      multicolor1: 1,
+      foreground: 1,
+      multicolor1: 14,
       multicolor2: 2
     },
     glyphs: Array.from(

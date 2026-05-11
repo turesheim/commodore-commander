@@ -28,6 +28,7 @@ import {
   ToolbarDefaults,
   ToolbarDefaultsFactory
 } from '@theia/toolbar/lib/browser/toolbar-defaults';
+import { TaskContribution } from '@theia/task/lib/browser/task-contribution';
 import { GettingStartedWidget } from '@theia/getting-started/lib/browser/getting-started-widget';
 import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-service';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate/textmate-contribution';
@@ -88,6 +89,9 @@ import {
   KickAssemblerBuildConsoleWidget
 } from './kick-assembler-build-console-widget';
 import { KickAssemblerBuilderContribution } from './kick-assembler-builder-contribution';
+import {
+  KickAssemblerBuildTaskContribution
+} from './kick-assembler-build-task-contribution';
 import { KickAssemblerEditorLookupContribution } from './kick-assembler-editor-lookup-contribution';
 import { KickAssemblerLanguageContribution } from './kick-assembler-language-contribution';
 import { KickAssemblerOutlineContribution } from './kick-assembler-outline-contribution';
@@ -328,4 +332,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     .inSingletonScope();
   bindViewContribution(bind, KickAssemblerBuilderContribution);
   bind(FrontendApplicationContribution).toService(KickAssemblerBuilderContribution);
+  bind(KickAssemblerBuildTaskContribution).toSelf().inSingletonScope();
+  bind(TaskContribution).toService(KickAssemblerBuildTaskContribution);
+  bind(FrontendApplicationContribution).toService(KickAssemblerBuildTaskContribution);
 });

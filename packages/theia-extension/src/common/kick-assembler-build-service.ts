@@ -88,6 +88,12 @@ export interface KickAssemblerBuildRequestResult {
   queued: boolean;
 }
 
+export interface KickAssemblerBuildExecutionResult
+  extends KickAssemblerBuildRequestResult {
+  succeeded: boolean;
+  builtProgramUris: readonly string[];
+}
+
 export interface KickAssemblerBuildStartedEvent {
   type: 'build-started';
   buildId: string;
@@ -159,6 +165,9 @@ export interface KickAssemblerBuildService
   build(
     request: KickAssemblerBuildRequest
   ): Promise<KickAssemblerBuildRequestResult>;
+  buildAndWait(
+    request: KickAssemblerBuildRequest
+  ): Promise<KickAssemblerBuildExecutionResult>;
   getWorkspaceBuildConfiguration(
     request: KickAssemblerBuildConfigurationRequest
   ): Promise<KickAssemblerWorkspaceBuildConfigurationSummary>;

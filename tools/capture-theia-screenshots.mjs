@@ -12,6 +12,7 @@ const defaultCaptureWorkspacePath = path.join(repoRoot, '.theia', 'screen-captur
 const screenCaptureConfigEnv = 'COMMODORE_COMMANDER_SCREEN_CAPTURE_CONFIG';
 const debugLaunchName = 'Debug debug-demo in VICE';
 const defaults = {
+  characterSetPath: path.join(defaultCaptureWorkspacePath, 'c64-lower-upper.charset'),
   outputDir: path.join(repoRoot, 'docs'),
   debugSourcePath: path.join(defaultCaptureWorkspacePath, 'debug-demo.asm'),
   sidScorePath: path.join(defaultCaptureWorkspacePath, 'player.sidscore'),
@@ -114,6 +115,7 @@ async function main() {
 function parseArgs(args) {
   const options = {
     outputDir: defaults.outputDir,
+    characterSetPath: defaults.characterSetPath,
     debugSourcePath: defaults.debugSourcePath,
     sidScorePath: defaults.sidScorePath,
     sourcePath: defaults.sourcePath,
@@ -139,6 +141,10 @@ function parseArgs(args) {
         options.workspacePath = resolvePathArg(valueArg(args, ++index, arg));
         if (!options.sourcePathProvided) {
           options.sourcePath = path.join(options.workspacePath, 'main.asm');
+          options.characterSetPath = path.join(
+            options.workspacePath,
+            'c64-lower-upper.charset'
+          );
           options.sidScorePath = path.join(options.workspacePath, 'player.sidscore');
           options.debugSourcePath = path.join(options.workspacePath, 'debug-demo.asm');
         }
@@ -172,6 +178,11 @@ async function prepareDefaultCaptureSource(options) {
   await mkdir(path.join(sourceDirectory, 'lib'), { recursive: true });
   await mkdir(path.join(sourceDirectory, '.theia'), { recursive: true });
   await writeFile(options.sourcePath, `${overviewSource}\n`, 'utf8');
+  await writeFile(
+    options.characterSetPath,
+    createCharacterSetFixtureContent(),
+    'utf8'
+  );
   await writeFile(options.sidScorePath, `${sidScorePlayerSource}\n`, 'utf8');
   await copyFile(
     path.join(repoRoot, 'example-workspace/kickassembler/debug-demo.asm'),
@@ -195,6 +206,11 @@ async function prepareDefaultCaptureSource(options) {
   await writeFile(
     path.join(sourceDirectory, '.theia', 'launch.json'),
     `${JSON.stringify(createDefaultDebugLaunchConfig(options), null, 2)}\n`,
+    'utf8'
+  );
+  await writeFile(
+    path.join(sourceDirectory, '.theia', 'tasks.json'),
+    `${JSON.stringify(createDefaultDebugTasksConfig(), null, 2)}\n`,
     'utf8'
   );
 }
@@ -262,6 +278,13 @@ function createDefaultDebugLaunchConfig(options) {
   };
 }
 
+function createDefaultDebugTasksConfig() {
+  return {
+    version: '2.0.0',
+    tasks: [createDebugBuildTaskConfiguration()]
+  };
+}
+
 async function installWorkspaceRootDebugLaunchConfig(options) {
   const launchPath = path.join(repoRoot, '.theia', 'launch.json');
   const originalContent = existsSync(launchPath)
@@ -276,12 +299,26 @@ async function installWorkspaceRootDebugLaunchConfig(options) {
     }, null, 2)}\n`,
     'utf8'
   );
+  const tasksPath = path.join(repoRoot, '.theia', 'tasks.json');
+  const originalTasksContent = existsSync(tasksPath)
+    ? await readFile(tasksPath, 'utf8')
+    : undefined;
+  await writeFile(
+    tasksPath,
+    `${JSON.stringify(createDefaultDebugTasksConfig(), null, 2)}\n`,
+    'utf8'
+  );
 
   return async () => {
     if (originalContent !== undefined) {
       await writeFile(launchPath, originalContent, 'utf8');
     } else {
       await rm(launchPath, { force: true });
+    }
+    if (originalTasksContent !== undefined) {
+      await writeFile(tasksPath, originalTasksContent, 'utf8');
+    } else {
+      await rm(tasksPath, { force: true });
     }
   };
 }
@@ -294,6 +331,7 @@ function createDebugLaunchConfiguration(options) {
     program: 'out/debug-demo.prg',
     debugInfo: 'out/debug-demo.dbg',
     sourceRoot: '.',
+    preLaunchTask: 'Commodore Commander: Build debug-demo',
     machine: {
       profile: 'c64',
       model: 'c64',
@@ -316,6 +354,24 @@ function createWorkspaceRootDebugLaunchConfiguration(options) {
   };
 }
 
+function createDebugBuildTaskConfiguration() {
+  return {
+    label: 'Commodore Commander: Build debug-demo',
+    type: 'commodore-kickassembler-build',
+    task: 'build',
+    executionType: 'customExecution',
+    programName: 'debug-demo',
+    profileName: 'debug',
+    group: 'build',
+    problemMatcher: [],
+    presentation: {
+      reveal: 'silent',
+      panel: 'dedicated',
+      showReuseMessage: false
+    }
+  };
+}
+
 function createCaptureConfig(options) {
   return {
     outputDir: options.outputDir,
@@ -335,6 +391,23 @@ function createCaptureConfig(options) {
           { type: 'showMnemonicHover' },
           { type: 'waitForBodyText', text: 'ASL (Arithmetic Shift Left)' },
           { type: 'wait', ms: 250 }
+        ]
+      },
+      {
+        outputPath: path.join(options.outputDir, 'theia-character-set-editor.png'),
+        sourcePath: options.characterSetPath,
+        steps: [
+          {
+            type: 'executeCommand',
+            commandId: 'core.collapse.all.tabs'
+          },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-character-set-editor',
+            text: 'Import .64C',
+            timeoutMs: options.timeoutMs
+          },
+          { type: 'wait', ms: 500 }
         ]
       },
       {
@@ -404,6 +477,22 @@ function createCaptureConfig(options) {
             timeoutMs: options.timeoutMs
           },
           {
+            type: 'waitForDebugStopped',
+            timeoutMs: options.timeoutMs
+          },
+          {
+            type: 'continueDebugSession',
+            reason: 'entry'
+          },
+          {
+            type: 'waitForDebugStopped',
+            reason: 'breakpoint',
+            timeoutMs: options.timeoutMs
+          },
+          { type: 'openMemoryView' },
+          { type: 'wait', ms: 250 },
+          { type: 'showScreenMemory' },
+          {
             type: 'waitForVisibleText',
             selector: '.cc-vice-memory-widget',
             text: 'Read 1000 byte(s)',
@@ -434,6 +523,25 @@ function createCaptureConfig(options) {
       }
     ]
   };
+}
+
+function createCharacterSetFixtureContent() {
+  const requireFromRepo = createRequire(import.meta.url);
+  const {
+    createCharacterSetDocumentFromTemplate,
+    serializeCharacterSetDocument
+  } = requireFromRepo(
+    path.join(
+      repoRoot,
+      'packages/theia-extension/lib/common/commodore-character-set-format.js'
+    )
+  );
+  return serializeCharacterSetDocument(
+    createCharacterSetDocumentFromTemplate(
+      'c64-lower-upper',
+      'c64-lower-upper'
+    )
+  );
 }
 
 function assertElectronAppBuilt() {

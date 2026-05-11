@@ -96,7 +96,7 @@ Implemented debugger features:
 - a Theia Memory view that reads and writes through the active stopped `commodore-vice` debug session, with address/range expressions, label
   resolution, C64 screen and color RAM presets, configurable row widths, memory space and bank controls, changed-byte highlighting, and ASCII/PETSCII/screen renderings
 
-The current stack trace reports the active CPU frame. Full 6502 call-stack reconstruction, complete illegal-opcode disassembly coverage, non-macOS embedded VICE payload discovery, and Theia build-before-debug task-provider integration remain future work.
+The current stack trace reports the active CPU frame. Full 6502 call-stack reconstruction, complete illegal-opcode disassembly coverage, and non-macOS embedded VICE payload discovery remain future work.
 
 Short examples:
 
