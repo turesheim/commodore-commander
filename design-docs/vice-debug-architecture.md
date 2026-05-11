@@ -24,7 +24,7 @@ The current Theia debug path does not attempt to:
 - preserve the Eclipse class graph in a new framework
 - provide Linux, Windows, or Intel macOS embedded VICE payloads yet
 - provide a Java runtime abstraction package for Theia
-- reconstruct a complete 6502 call stack or emulate Eclipse memory-rendering APIs
+- emulate Eclipse memory-rendering APIs
 
 ## What Was Added
 
@@ -37,7 +37,7 @@ The active TypeScript package now provides:
 - `ViceMonitorConnection`
 - `ViceMonitorRequests`
 - `loadKickAssemblerDebugInfo`
-- first-pass `disassemble6502`
+- complete NMOS 6502 `disassemble6502`
 
 This layer owns:
 
@@ -80,10 +80,10 @@ The Theia extension now contributes:
 - DAP adapter startup through Theia's backend debug adapter contribution
 
 Breakpoints, data breakpoints, stack frames, variables, stepping controls,
-memory reads/writes, register writes, loaded sources, first-pass disassembly,
-start/stop lifecycle, and launch/snippet authoring are surfaced through Theia's
-existing debug views and configuration paths rather than new custom run/debug
-UI. The Memory view uses the active `commodore-vice` debug session's DAP
+memory reads/writes, register writes, loaded sources, complete NMOS 6502
+disassembly, start/stop lifecycle, and launch/snippet authoring are surfaced
+through Theia's existing debug views and configuration paths rather than new
+custom run/debug UI. The Memory view uses the active `commodore-vice` debug session's DAP
 `readMemory` and `writeMemory` requests and only refreshes while the target CPU
 is stopped, matching the Eclipse memory-view model without bringing forward the
 Eclipse debug UI APIs.
@@ -156,7 +156,9 @@ From `MonitorEventDispatcher`:
 
 From `VICEStackFrame`:
 
-- a single CPU frame named from the program counter
+- a current CPU frame named from the program counter
+- caller frames reconstructed from page-$01 stack entries that validate against
+  real `JSR` instructions in memory
 - mapping PC values back to Kick Assembler source lines
 - exposing registers and debug labels as debug variables
 
@@ -176,32 +178,31 @@ runtime seams are TypeScript-only:
 
 The TypeScript seams are easier to test because:
 
-- `.dbg` parsing can be exercised against committed Kick Assembler fixtures
+- `.dbg` parsing can be exercised against inline Kick Assembler fixtures
 - `ViceMonitorRequests` centralizes request-body encoding
 - `ViceMonitorConnection` keeps response waiting and event mapping separate
   from DAP request handling
 - `ViceDebugSession` can evolve independently from Theia UI code
 
-Current automated coverage is intentionally focused on `.dbg` parsing and
-first-pass disassembly plus VICE binary monitor request encoding for register
-reads/writes, memory writes, checkpoint creation, and data breakpoints. Live
-VICE monitor fixtures should be added next.
+Current automated coverage is intentionally focused on `.dbg` parsing, full
+NMOS 6502 disassembly, stack-frame reconstruction, and VICE binary monitor
+request encoding for register reads/writes, memory writes, checkpoint creation,
+and data breakpoints. Live VICE monitor fixtures should be added next.
 
 ## Current Limitations
 
 This pass still does not include:
 
 - live-session automated tests against a real VICE binary monitor
-- true call stack reconstruction beyond the single CPU frame
+- cycle-accurate execution-history stack reconstruction for non-`JSR` or
+  asynchronous interrupt provenance
 - non-macOS embedded VICE payloads
 - Intel macOS embedded VICE payloads
-- complete illegal-opcode disassembly coverage
 - Theia task-provider integration for build-before-debug workflows
 
 ## Recommended Next Steps
 
 1. Exercise the DAP adapter against live VICE sessions and capture monitor
    protocol fixtures for automated session tests.
-2. Improve disassembly with complete illegal-opcode coverage and richer symbol
-   rendering.
+2. Improve disassembly with richer symbol rendering.
 3. Extend embedded VICE discovery to Linux, Windows, and Intel macOS payloads.

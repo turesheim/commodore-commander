@@ -130,6 +130,37 @@ export function findLineMappingForAddress(
   );
 }
 
+export function findNearestLineMappingForAddress(
+  debugInfo: KickAssemblerDebugInfo | undefined,
+  address: number,
+  maxDistance = 0x20
+): KickAssemblerLineMapping | undefined {
+  if (!debugInfo) {
+    return undefined;
+  }
+  const exact = findLineMappingForAddress(debugInfo, address);
+  if (exact) {
+    return exact;
+  }
+
+  return debugInfo.lineMappings
+    .map((mapping) => ({
+      mapping,
+      distance: address < mapping.startAddress
+        ? mapping.startAddress - address
+        : address - mapping.endAddress,
+      // When two source rows are equally close, the preceding row is usually
+      // a better call-stack landing point than the following instruction.
+      afterAddress: mapping.startAddress > address
+    }))
+    .filter((candidate) => candidate.distance <= maxDistance)
+    .sort((left, right) =>
+      left.distance - right.distance ||
+      Number(left.afterAddress) - Number(right.afterAddress) ||
+      left.mapping.startAddress - right.mapping.startAddress
+    )[0]?.mapping;
+}
+
 export function findSourceForMapping(
   debugInfo: KickAssemblerDebugInfo | undefined,
   mapping: KickAssemblerLineMapping | undefined
@@ -137,7 +168,13 @@ export function findSourceForMapping(
   if (!debugInfo || !mapping) {
     return undefined;
   }
-  return debugInfo.sources.find((source) => source.index === mapping.fileIndex);
+  const source = debugInfo.sources.find((entry) => entry.index === mapping.fileIndex);
+  return source
+    ? {
+        ...source,
+        path: resolveDebugSourcePath(source.path, debugInfo.sourceRoots)
+      }
+    : undefined;
 }
 
 export function findLabelByName(
@@ -153,6 +190,30 @@ export function findLabelByAddress(
   address: number
 ): KickAssemblerDebugLabel | undefined {
   return debugInfo?.labels.find((label) => label.address === address);
+}
+
+export function findNearestLabelBeforeAddress(
+  debugInfo: KickAssemblerDebugInfo | undefined,
+  address: number,
+  maxDistance = 0x1000
+): KickAssemblerDebugLabel | undefined {
+  if (!debugInfo) {
+    return undefined;
+  }
+  const normalized = address & 0xffff;
+  return debugInfo.labels
+    .map((label) => ({
+      label,
+      distance: normalized - label.address
+    }))
+    .filter((candidate) =>
+      candidate.distance >= 0 &&
+      candidate.distance <= maxDistance
+    )
+    .sort((left, right) =>
+      left.distance - right.distance ||
+      left.label.name.localeCompare(right.label.name)
+    )[0]?.label;
 }
 
 function parseSources(body: string): KickAssemblerSourceEntry[] {
@@ -264,6 +325,16 @@ function sourcePathCandidates(
     }
   }
   return uniquePaths(candidates);
+}
+
+function resolveDebugSourcePath(
+  sourcePath: string,
+  sourceRoots: readonly string[] | undefined
+): string {
+  if (!sourcePath || hasUriScheme(sourcePath) || path.isAbsolute(sourcePath)) {
+    return sourcePath;
+  }
+  return path.resolve(sourceRoots?.[0] ?? process.cwd(), sourcePath);
 }
 
 function normalizePath(sourcePath: string): string {

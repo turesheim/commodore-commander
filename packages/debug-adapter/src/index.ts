@@ -7,6 +7,8 @@ export {
   loadKickAssemblerDebugInfo,
   findLineMappingForSourceLine,
   findLineMappingsForSourceRange,
+  findNearestLineMappingForAddress,
+  findNearestLabelBeforeAddress,
   type KickAssemblerDebugInfo,
   type KickAssemblerDebugInfoOptions,
   type KickAssemblerDebugLabel,
@@ -22,3 +24,26 @@ export {
   disassemble6502,
   type Disassembled6502Instruction
 } from './disassemble6502';
+export {
+  reconstruct6502CallStack,
+  type Reconstruct6502CallStackOptions,
+  type Reconstructed6502CallFrame
+} from './call-stack6502';
+export {
+  createPrgDisassemblySource,
+  findPrgDisassemblyLine,
+  loadPrgImage,
+  prgContainsAddress,
+  type PrgDisassemblySource,
+  type PrgImage,
+  type PrgInstructionLine
+} from './prg-image';
+export {
+  findNearestRomSymbol,
+  findRomSourceForAddress,
+  findRomSourceLine,
+  loadC64RomSources,
+  loadViceSymbolFile,
+  type RomSource,
+  type RomSymbol
+} from './rom-source';

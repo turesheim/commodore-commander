@@ -36,7 +36,8 @@ server or preserve Java as a language-support runtime dependency.
 - `packages/debug-adapter` is the TypeScript VICE DAP adapter. It owns DAP
   framing, VICE binary monitor communication, `.dbg` mapping, breakpoints,
   data breakpoints, register/label variables, memory read/write, stepping,
-  loaded sources, evaluation, and first-pass disassembly.
+  loaded sources, evaluation, hardware-stack call-frame reconstruction, and
+  complete NMOS 6502 disassembly.
 - `applications/electron` is the runnable Theia Electron application package.
 - `packages/core` is a Java debug-info extraction/reference package. It is not
   a language-support runtime target.
@@ -107,9 +108,9 @@ server or preserve Java as a language-support runtime dependency.
 | Project model | Eclipse resources, project nature, automatic builder | File/path based workspace planner and `commodore-commander.build.json` | No Eclipse workspace emulation by design; needs stronger validation and Theia task integration |
 | Build execution | Eclipse incremental builder, console, problem markers | Theia backend build service, save-triggered builds, console widget, problem markers, headless CLI | Build-before-debug tasks, richer KickAss diagnostic attribution, form/schema UX |
 | Run workflow | Eclipse launch shortcuts and direct PRG launch behavior | Theia Start Debugging / Start Without Debugging with generated or existing `launch.json` | No separate run picker; Active Machine default is not yet written into generated launch entries |
-| Debug protocol | Eclipse debug model over VICE binary monitor | TypeScript DAP adapter over VICE binary monitor | Live monitor fixtures, full illegal-opcode disassembly, better data/trace UX, no full 6502 call stack |
+| Debug protocol | Eclipse debug model over VICE binary monitor | TypeScript DAP adapter over VICE binary monitor | Live monitor fixtures, better data/trace UX, cycle-accurate execution-history stack provenance |
 | Memory UI | Eclipse memory monitors and renderings | Theia Memory view via DAP `readMemory`/`writeMemory` | More faithful C64 charset/ROM rendering and deeper parity with Eclipse renderings |
-| Disassembly | Eclipse disassembly view and label parsing | First-pass DAP disassemble support | Complete opcode coverage and richer symbol rendering |
+| Disassembly | Eclipse disassembly view and label parsing | Complete NMOS 6502 DAP disassemble support | Richer symbol rendering |
 | Machine/runtime selection | Eclipse launch configuration tabs and bundled VICE assumptions | Machine profiles in TypeScript; macOS Apple Silicon embedded VICE path | Cross-platform VICE payloads, runtime-package extraction if reuse requires it |
 | SIDScore | Not an Eclipse parity feature in this repository's Java code path | Theia syntax registration plus external SIDScoreCLI player-server integration | TypeScript SIDScore language intelligence, diagnostics, export workflow, and richer controls |
 | Packaging | Tycho/PDE product build | Local Theia Electron app package | Distributable packaging, signing/notarization, platform payload matrix |

@@ -86,17 +86,35 @@ Implemented debugger features:
 
 - launch and terminate VICE from Theia's built-in Run and Debug commands
 - Start Without Debugging through DAP `noDebug`, which starts VICE without the binary monitor
-- Kick Assembler `.dbg` source mapping for source breakpoints, breakpoint locations, loaded sources, labels, and source-backed stack frame locations
+- Kick Assembler `.dbg` source mapping for source breakpoints, breakpoint locations, loaded sources, labels, and source-backed stack frame locations with nearest-line fallback and generated PRG-disassembly fallback
 - source breakpoints and memory data breakpoints/watchpoints through VICE binary-monitor checkpoints
 - continue, pause, step in, step over, and step out controls
 - register and Kick Assembler label scopes in Theia's Variables view
 - editing CPU registers through DAP `setVariable`
 - Debug Console evaluation of registers, labels, numeric addresses, and memory references
-- DAP `readMemory`, `writeMemory`, loaded-sources, and first-pass 6502 disassembly support
+- hardware-stack call trace reconstruction from validated 6502 `JSR` return addresses
+- DAP `readMemory`, `writeMemory`, `source`, loaded-sources, and complete NMOS 6502 disassembly support, including undocumented opcodes
+- generated C64 BASIC/KERNAL ROM disassembly sources using bundled VICE ROM
+  images and labels parsed from VICE's `share/vice/C64/c64mem.sym`
 - a Theia Memory view that reads and writes through the active stopped `commodore-vice` debug session, with address/range expressions, label
   resolution, C64 screen and color RAM presets, configurable row widths, memory space and bank controls, changed-byte highlighting, and ASCII/PETSCII/screen renderings
 
-The current stack trace reports the active CPU frame. Full 6502 call-stack reconstruction, complete illegal-opcode disassembly coverage, and non-macOS embedded VICE payload discovery remain future work.
+Stack reconstruction is based on the live page-$01 CPU stack and validates caller
+frames against matching `JSR` instructions in memory. When a stack address does
+not map to original source, the adapter indexes the launched PRG and exposes a
+generated disassembly source so the stack frame still has an address-accurate
+landing point. If the address is outside the launched PRG range, it falls back
+to a live VICE memory disassembly for that address. Branches such as `BNE` and
+plain `JMP` do not create call-stack frames because they do not push return
+addresses; the stack frame name includes the nearest containing label for that
+kind of loop context. Non-macOS embedded VICE payload discovery remains future
+work.
+
+ROM stack frames are generated from the VICE C64 ROM assets bundled with the
+application. `c64mem.sym` is VICE monitor symbol metadata, copied from
+`share/vice/C64/c64mem.sym` into the packaged runtime; it provides labels such
+as `bGONE`, `kCHROUT`, and I/O aliases. These generated ROM sources are
+address-accurate disassembly with VICE labels, not original Commodore source.
 
 Short examples:
 

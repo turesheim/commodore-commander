@@ -23,6 +23,19 @@ binary monitor.
 - Kick Assembler `.dbg` files are parsed by the adapter to map source lines,
   labels, loaded sources, stack frame locations, breakpoint locations, and
   source breakpoints.
+- Debug launches prefer the configured `.dbg` file but also search the PRG
+  directory and nearby output folders for debug dumps whose address ranges
+  overlap the launched PRG.
+- For C64 launches, the adapter loads bundled VICE BASIC/KERNAL ROM images and
+  parses VICE monitor aliases from `share/vice/C64/c64mem.sym` to expose
+  generated ROM disassembly sources for OS addresses. `c64mem.sym` is VICE
+  metadata copied into the packaged runtime, not original Commodore source.
+- Stack-frame source locations prefer exact address mappings and otherwise use
+  a bounded nearest-line fallback for call-stack navigation. If no source line
+  can be correlated, the adapter falls back to a generated sourceReference
+  document built by disassembling the launched PRG image, then to a generated
+  sourceReference document disassembled from live VICE memory at the frame
+  address.
 
 The implementation follows the VICE binary monitor command format: memory
 reads/writes carry side-effect, memory-space, and bank fields; register writes
@@ -47,7 +60,14 @@ Protocol reference: [VICE Manual, Binary monitor](https://vice-emu.sourceforge.i
 - Memory reads and writes through DAP `readMemory` and `writeMemory`.
 - DAP memory events after debugger-originated memory writes when the client
   declares memory-event support.
-- Loaded sources and first-pass disassembly.
+- Loaded sources and complete NMOS 6502 disassembly, including undocumented
+  opcodes.
+- Generated PRG disassembly sources for stack-frame addresses that cannot be
+  mapped back to original source.
+- Generated C64 BASIC/KERNAL ROM disassembly sources for stack-frame addresses
+  in bundled ROM ranges.
+- Generated live-memory disassembly sources for stack-frame addresses outside
+  the launched PRG image.
 
 ## Memory View
 
@@ -86,12 +106,17 @@ emulator is running.
 
 - Full PETSCII/charset rendering can be made more faithful by loading real C64
   character ROM data instead of using text approximations.
-- The current stack trace intentionally reports the current CPU frame only.
-  Reconstructing a reliable call stack on 6502 requires more than stack bytes,
-  because arbitrary pushes and interrupts are indistinguishable without richer
-  execution metadata.
-- Disassembly currently covers the maintained first-pass opcode table. Illegal
-  opcode parity remains future work.
+- Stack traces reconstruct caller frames from page-$01 stack entries that
+  validate against real `JSR` instructions in memory. Arbitrary pushes and
+  asynchronous interrupt provenance still require richer execution metadata.
+  Unmapped stack-frame addresses can still open in generated PRG disassembly,
+  or in live-memory disassembly for addresses outside the PRG image, but
+  returning from that disassembly to original source requires `.dbg` mappings
+  for the address.
+- Conditional branches such as `BNE` and plain `JMP` do not create stack frames
+  because they do not push a return address. Stack-frame names include nearest
+  containing label context so loops are still visible without misrepresenting
+  branch targets as calls.
 - Live Theia plus VICE UI automation is still missing. Current coverage is
   unit-level protocol/build verification plus manual live-session testing.
 - Build-before-debug still needs proper Theia task integration. Today the

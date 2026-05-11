@@ -1,13 +1,18 @@
 import path from 'node:path';
 import type { ChildProcess } from 'node:child_process';
+import { readdir } from 'node:fs/promises';
 
 import type { DebugProtocol } from '@vscode/debugprotocol';
 
+import { reconstruct6502CallStack, type Reconstructed6502CallFrame } from './call-stack6502';
 import { DapConnection, type DapRequest } from './dap-connection';
 import { disassemble6502 } from './disassemble6502';
 import {
+  findLabelByAddress,
   findLabelByName,
   findLineMappingForAddress,
+  findNearestLineMappingForAddress,
+  findNearestLabelBeforeAddress,
   findLineMappingForSourceLine,
   findLineMappingsForSourceRange,
   findSourceForMapping,
@@ -25,12 +30,32 @@ import {
   type ViceMonitorRegisterDescriptor,
   type ViceMonitorRegisterValue
 } from './vice-monitor';
+import {
+  createPrgDisassemblySource,
+  findPrgDisassemblyLine,
+  loadPrgImage,
+  prgContainsAddress,
+  type PrgDisassemblySource,
+  type PrgImage
+} from './prg-image';
+import {
+  findNearestRomSymbol,
+  findRomSourceForAddress,
+  findRomSourceLine,
+  loadC64RomSources,
+  type RomSource
+} from './rom-source';
 import { launchViceProcess, terminateViceProcess } from './vice-runtime';
 
 const THREAD_ID = 1;
 const STACK_FRAME_ID = 1;
 const REGISTERS_REFERENCE = 1;
 const LABELS_REFERENCE = 2;
+const PRG_DISASSEMBLY_SOURCE_REFERENCE = 650201;
+const ROM_SOURCE_REFERENCE_BASE = 650300;
+const MEMORY_DISASSEMBLY_SOURCE_REFERENCE_BASE = 650500;
+const MEMORY_DISASSEMBLY_TARGET_LINE = 6;
+const MEMORY_DISASSEMBLY_INSTRUCTION_COUNT = 32;
 const DEFAULT_MEMORY_READ_TIMEOUT_MS = 5000;
 
 export interface ViceDebugLaunchArguments
@@ -69,10 +94,21 @@ interface InstalledDataBreakpoint {
 
 type StopReason = 'entry' | 'step' | 'pause' | 'breakpoint' | 'data breakpoint';
 
+interface MemoryDisassemblySource {
+  address: number;
+  name: string;
+  sourceReference: number;
+}
+
 export class ViceDebugSession {
   private monitor: ViceMonitorConnection | undefined;
   private child: ChildProcess | undefined;
   private debugInfo: KickAssemblerDebugInfo | undefined;
+  private programImage: PrgImage | undefined;
+  private programDisassembly: PrgDisassemblySource | undefined;
+  private romSources: RomSource[] = [];
+  private memoryDisassemblySources = new Map<number, MemoryDisassemblySource>();
+  private nextSourceReference = MEMORY_DISASSEMBLY_SOURCE_REFERENCE_BASE;
   private launchArguments: ViceDebugLaunchArguments | undefined;
   private registerDescriptors = new Map<number, ViceMonitorRegisterDescriptor>();
   private registers = new Map<number, ViceMonitorRegisterValue>();
@@ -158,6 +194,9 @@ export class ViceDebugSession {
         case 'disassemble':
           await this.disassemble(request);
           break;
+        case 'source':
+          await this.source(request);
+          break;
         case 'loadedSources':
           this.loadedSources(request);
           break;
@@ -211,26 +250,37 @@ export class ViceDebugSession {
     const useMonitor = !args.noDebug;
     const program = path.resolve(args.program);
     const cwd = path.resolve(args.cwd ?? path.dirname(program));
-    const debugInfoPath = args.debugInfo ? path.resolve(args.debugInfo) : undefined;
-    const sourceRoot = args.sourceRoot
-      ? path.resolve(args.sourceRoot)
+    const debugInfoPath = args.debugInfo
+      ? resolveLaunchPath(args.debugInfo, cwd)
       : undefined;
+    const sourceRoot = args.sourceRoot
+      ? resolveLaunchPath(args.sourceRoot, cwd)
+      : undefined;
+    this.debugInfo = undefined;
+    this.programImage = undefined;
+    this.programDisassembly = undefined;
+    this.romSources = [];
+    this.memoryDisassemblySources.clear();
+    this.nextSourceReference = MEMORY_DISASSEMBLY_SOURCE_REFERENCE_BASE;
 
-    if (useMonitor && debugInfoPath) {
+    if (path.extname(program).toLowerCase() === '.prg') {
       try {
-        this.debugInfo = await loadKickAssemblerDebugInfo(debugInfoPath, {
-          sourceRoots: [
-            ...(sourceRoot ? [sourceRoot] : []),
-            cwd,
-            path.dirname(program)
-          ]
-        });
+        this.programImage = await loadPrgImage(program);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         this.connection.sendOutput(
-          `Could not read Kick Assembler debug info ${debugInfoPath}: ${message}\n`
+          `Could not index PRG image ${program}: ${message}\n`
         );
       }
+    }
+    if (useMonitor) {
+      this.romSources = await this.loadRomSources(path.resolve(args.viceResourcesPath));
+      this.debugInfo = await this.loadDebugInfoForLaunch(
+        debugInfoPath,
+        program,
+        cwd,
+        sourceRoot
+      );
     }
 
     const launch = await launchViceProcess({
@@ -267,6 +317,100 @@ export class ViceDebugSession {
 
     this.connection.sendEvent('initialized');
     this.connection.sendResponse(request);
+  }
+
+  private async loadDebugInfoForLaunch(
+    configuredDebugInfoPath: string | undefined,
+    program: string,
+    cwd: string,
+    sourceRoot: string | undefined
+  ): Promise<KickAssemblerDebugInfo | undefined> {
+    const sourceRoots = [
+      ...(sourceRoot ? [sourceRoot] : []),
+      cwd,
+      path.dirname(program)
+    ];
+    const candidates = await discoverDebugInfoCandidates(
+      configuredDebugInfoPath,
+      program,
+      cwd,
+      sourceRoot
+    );
+    let best: {
+      path: string;
+      info: KickAssemblerDebugInfo;
+      overlap: number;
+      configured: boolean;
+    } | undefined;
+    const failures: string[] = [];
+
+    for (const candidate of candidates) {
+      try {
+        const info = await loadKickAssemblerDebugInfo(candidate, { sourceRoots });
+        const overlap = debugInfoProgramOverlap(info, this.programImage);
+        const configured = configuredDebugInfoPath !== undefined &&
+          samePath(candidate, configuredDebugInfoPath);
+        if (
+          !best ||
+          overlap > best.overlap ||
+          (overlap === best.overlap && configured && !best.configured)
+        ) {
+          best = { path: candidate, info, overlap, configured };
+        }
+      } catch (error) {
+        if (
+          configuredDebugInfoPath !== undefined &&
+          samePath(candidate, configuredDebugInfoPath)
+        ) {
+          const message = error instanceof Error ? error.message : String(error);
+          failures.push(`${candidate}: ${message}`);
+        }
+      }
+    }
+
+    if (best) {
+      if (!configuredDebugInfoPath || !samePath(best.path, configuredDebugInfoPath)) {
+        this.connection.sendOutput(
+          `Using Kick Assembler debug info ${best.path}\n`
+        );
+      }
+      if (this.programImage && best.overlap === 0) {
+        this.connection.sendOutput(
+          `Kick Assembler debug info ${best.path} has no address ranges overlapping ` +
+            `${path.basename(program)} ($${hexWord(this.programImage.loadAddress)}-$${hexWord(this.programImage.endAddress)}); ` +
+            'stack frames will use disassembly where source cannot be mapped.\n',
+          'stderr'
+        );
+      }
+      return best.info;
+    }
+
+    if (failures.length > 0) {
+      this.connection.sendOutput(
+        `Could not read Kick Assembler debug info: ${failures.join('; ')}\n`,
+        'stderr'
+      );
+    } else if (configuredDebugInfoPath) {
+      this.connection.sendOutput(
+        `Could not find Kick Assembler debug info near ${configuredDebugInfoPath}; ` +
+          'stack frames will use disassembly where source cannot be mapped.\n',
+        'stderr'
+      );
+    }
+    return undefined;
+  }
+
+  private async loadRomSources(viceResourcesPath: string): Promise<RomSource[]> {
+    try {
+      return await loadC64RomSources(viceResourcesPath, ROM_SOURCE_REFERENCE_BASE);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.connection.sendOutput(
+        `Could not load C64 ROM symbols/disassembly from ${viceResourcesPath}: ${message}\n`,
+        'stderr'
+      );
+      return [];
+    }
   }
 
   private async configurationDoneRequest(request: DapRequest): Promise<void> {
@@ -389,26 +533,29 @@ export class ViceDebugSession {
   }
 
   private async stackTrace(request: DapRequest): Promise<void> {
+    const args = request.arguments as DebugProtocol.StackTraceArguments | undefined;
     await this.refreshRegisterDescriptors();
     await this.refreshRegisters();
     const pc = this.programCounter();
-    const mapping = findLineMappingForAddress(this.debugInfo, pc);
-    const source = findSourceForMapping(this.debugInfo, mapping);
-    const sourceObject = source ? sourceForPath(source.path) : undefined;
-    const frame: DebugProtocol.StackFrame = {
-      id: STACK_FRAME_ID,
-      name: source && mapping
-        ? `${path.basename(source.path)}:${mapping.startLine} $${hexWord(pc)}`
-        : `PC $${hexWord(pc)}`,
-      ...(sourceObject ? { source: sourceObject } : {}),
-      line: mapping?.startLine ?? 0,
-      column: mapping?.startColumn ?? 0,
-      ...(mapping ? { endLine: mapping.endLine, endColumn: mapping.endColumn } : {}),
-      instructionPointerReference: memoryReference(pc)
-    };
+    const reconstructedFrames = await this.reconstructCallFrames();
+    const frames = [
+      this.toDapStackFrame(pc, STACK_FRAME_ID, `PC $${hexWord(pc)}`),
+      ...reconstructedFrames.map((frame, index) =>
+        this.toDapStackFrame(
+          frame.callSiteAddress,
+          STACK_FRAME_ID + index + 1,
+          `JSR $${hexWord(frame.callSiteAddress)} -> ${this.addressName(frame.targetAddress)}`,
+          ` -> ${this.addressName(frame.targetAddress)}`
+        )
+      )
+    ];
+    const startFrame = Math.max(0, args?.startFrame ?? 0);
+    const levels = args?.levels === undefined
+      ? frames.length
+      : Math.max(0, args.levels);
     this.connection.sendResponse(request, {
-      stackFrames: [frame],
-      totalFrames: 1
+      stackFrames: frames.slice(startFrame, startFrame + levels),
+      totalFrames: frames.length
     } satisfies DebugProtocol.StackTraceResponse['body']);
   }
 
@@ -598,11 +745,54 @@ export class ViceDebugSession {
     } satisfies DebugProtocol.DisassembleResponse['body']);
   }
 
-  private loadedSources(request: DapRequest): void {
+  private async source(request: DapRequest): Promise<void> {
+    const args = request.arguments as DebugProtocol.SourceArguments;
+    if (args.sourceReference === PRG_DISASSEMBLY_SOURCE_REFERENCE) {
+      const disassembly = this.getPrgDisassemblySource();
+      if (!disassembly) {
+        throw new Error('No PRG disassembly source is available.');
+      }
+
+      this.connection.sendResponse(request, {
+        content: disassembly.content,
+        mimeType: 'text/x-asm'
+      } satisfies DebugProtocol.SourceResponse['body']);
+      return;
+    }
+
+    const romSource = this.romSources.find((source) =>
+      source.sourceReference === args.sourceReference
+    );
+    if (romSource) {
+      this.connection.sendResponse(request, {
+        content: romSource.content,
+        mimeType: 'text/x-asm'
+      } satisfies DebugProtocol.SourceResponse['body']);
+      return;
+    }
+
+    const memoryDisassembly = this.memoryDisassemblySources.get(args.sourceReference);
+    if (!memoryDisassembly) {
+      throw new Error(`Unknown source reference: ${args.sourceReference}`);
+    }
     this.connection.sendResponse(request, {
-      sources: (this.debugInfo?.sources ?? [])
-        .filter((source) => !/^[A-Za-z0-9+.-]+:/u.test(source.path))
-        .map((source) => sourceForPath(source.path))
+      content: await this.createMemoryDisassemblyContent(memoryDisassembly),
+      mimeType: 'text/x-asm'
+    } satisfies DebugProtocol.SourceResponse['body']);
+  }
+
+  private loadedSources(request: DapRequest): void {
+    const sources = (this.debugInfo?.sources ?? [])
+      .filter((source) => !/^[A-Za-z0-9+.-]+:/u.test(source.path))
+      .map((source) => sourceForPath(source.path));
+    const disassembly = this.getPrgDisassemblySource();
+    if (disassembly) {
+      sources.push(sourceForPrgDisassembly(disassembly));
+    }
+    sources.push(...this.romSources.map(sourceForRomDisassembly));
+    sources.push(...[...this.memoryDisassemblySources.values()].map(sourceForMemoryDisassembly));
+    this.connection.sendResponse(request, {
+      sources
     } satisfies DebugProtocol.LoadedSourcesResponse['body']);
   }
 
@@ -964,6 +1154,202 @@ export class ViceDebugSession {
     return 0;
   }
 
+  private stackPointer(): number | undefined {
+    for (const descriptor of this.registerDescriptors.values()) {
+      const name = descriptor.name.toUpperCase();
+      if (name === 'SP' || name === 'S') {
+        const value = this.registers.get(descriptor.id)?.value;
+        return value === undefined ? undefined : value & 0xff;
+      }
+    }
+    return undefined;
+  }
+
+  private async reconstructCallFrames(): Promise<Reconstructed6502CallFrame[]> {
+    const stackPointer = this.stackPointer();
+    if (stackPointer === undefined || !this.monitor) {
+      return [];
+    }
+    try {
+      const stackPage = await this.readMemoryBytes(0x0100, 0x0100, {
+        sideEffects: false
+      });
+      return await reconstruct6502CallStack({
+        stackPointer,
+        stackPage,
+        readMemory: (startAddress, byteCount) =>
+          this.readMemoryBytes(startAddress, byteCount, { sideEffects: false })
+      });
+    } catch {
+      return [];
+    }
+  }
+
+  private toDapStackFrame(
+    address: number,
+    id: number,
+    fallbackName: string,
+    mappedNameSuffix = ''
+  ): DebugProtocol.StackFrame {
+    const mapping = findNearestLineMappingForAddress(this.debugInfo, address);
+    const source = findSourceForMapping(this.debugInfo, mapping);
+    const sourceObject = source ? sourceForPath(source.path) : undefined;
+    const disassemblyLine = sourceObject ? undefined : this.prgDisassemblyLine(address);
+    const disassemblySource = disassemblyLine
+      ? this.getPrgDisassemblySource()
+      : undefined;
+    const romSource = sourceObject || disassemblySource
+      ? undefined
+      : findRomSourceForAddress(this.romSources, address);
+    const romLine = romSource ? findRomSourceLine(romSource, address) : undefined;
+    const memoryDisassemblySource = sourceObject || disassemblySource || romSource
+      ? undefined
+      : this.getMemoryDisassemblySource(address);
+    const frameName = this.stackFrameDisplayName(address, fallbackName, mappedNameSuffix);
+    return {
+      id,
+      name: frameName,
+      ...(sourceObject
+        ? { source: sourceObject }
+        : disassemblySource
+          ? { source: sourceForPrgDisassembly(disassemblySource) }
+          : romSource
+            ? { source: sourceForRomDisassembly(romSource) }
+            : memoryDisassemblySource
+              ? { source: sourceForMemoryDisassembly(memoryDisassemblySource) }
+              : {}),
+      line: mapping?.startLine ??
+        disassemblyLine ??
+        romLine ??
+        (memoryDisassemblySource ? MEMORY_DISASSEMBLY_TARGET_LINE : 0),
+      column: mapping?.startColumn ??
+        (disassemblyLine || romLine || memoryDisassemblySource ? 1 : 0),
+      ...(mapping ? { endLine: mapping.endLine, endColumn: mapping.endColumn } : {}),
+      instructionPointerReference: memoryReference(address)
+    };
+  }
+
+  private prgDisassemblyLine(address: number): number | undefined {
+    if (!prgContainsAddress(this.programImage, address)) {
+      return undefined;
+    }
+    return findPrgDisassemblyLine(this.getPrgDisassemblySource(), address);
+  }
+
+  private getPrgDisassemblySource(): PrgDisassemblySource | undefined {
+    if (!this.programDisassembly && this.programImage) {
+      this.programDisassembly = createPrgDisassemblySource(
+        this.programImage,
+        PRG_DISASSEMBLY_SOURCE_REFERENCE,
+        this.debugInfo
+      );
+    }
+    return this.programDisassembly;
+  }
+
+  private getMemoryDisassemblySource(address: number): MemoryDisassemblySource | undefined {
+    if (!this.monitor) {
+      return undefined;
+    }
+    const normalized = normalizeAddress(address);
+    for (const source of this.memoryDisassemblySources.values()) {
+      if (source.address === normalized) {
+        return source;
+      }
+    }
+    const source: MemoryDisassemblySource = {
+      address: normalized,
+      name: `$${hexWord(normalized)}.memory-disassembly.asm`,
+      sourceReference: this.nextSourceReference
+    };
+    this.nextSourceReference += 1;
+    this.memoryDisassemblySources.set(source.sourceReference, source);
+    return source;
+  }
+
+  private async createMemoryDisassemblyContent(
+    source: MemoryDisassemblySource
+  ): Promise<string> {
+    const byteCount = Math.min(
+      0x10000 - source.address,
+      MEMORY_DISASSEMBLY_INSTRUCTION_COUNT * 3
+    );
+    const bytes = await this.readMemoryBytes(source.address, byteCount, {
+      sideEffects: false
+    });
+    const labels = new Map(
+      (this.debugInfo?.labels ?? []).map((label) => [label.address, label.name])
+    );
+    const instructions = disassemble6502(
+      bytes,
+      source.address,
+      MEMORY_DISASSEMBLY_INSTRUCTION_COUNT,
+      labels
+    );
+    const lines = [
+      `// Live memory disassembly at $${hexWord(source.address)}`,
+      '// Generated from VICE monitor memory because no source mapping was available.',
+      '',
+      `* = $${hexWord(source.address)}`,
+      ''
+    ];
+    for (const instruction of instructions) {
+      if (instruction.symbol) {
+        lines.push(`${instruction.symbol}:`);
+      }
+      lines.push(
+        `    ${instruction.instruction.padEnd(18)} // ` +
+          `$${hexWord(instruction.address)}  ${instruction.instructionBytes}` +
+          `${instruction.undocumented ? '  undocumented' : ''}`
+      );
+    }
+    return `${lines.join('\n')}\n`;
+  }
+
+  private addressName(address: number): string {
+    const normalized = normalizeAddress(address);
+    const debugLabel = findLabelByAddress(this.debugInfo, normalized);
+    if (debugLabel) {
+      return debugLabel.name;
+    }
+    const romSymbol = findNearestRomSymbol(this.romSources, normalized);
+    if (romSymbol?.address === normalized) {
+      return romSymbol.name;
+    }
+    return `$${hexWord(normalized)}`;
+  }
+
+  private stackFrameDisplayName(
+    address: number,
+    fallbackName: string,
+    mappedNameSuffix: string
+  ): string {
+    const normalized = normalizeAddress(address);
+    const contextName = this.addressContextName(address);
+    return contextName
+      ? `${contextName} $${hexWord(normalized)}${mappedNameSuffix}`
+      : fallbackName;
+  }
+
+  private addressContextName(address: number): string | undefined {
+    const normalized = normalizeAddress(address);
+    const label = findNearestLabelBeforeAddress(this.debugInfo, normalized);
+    if (label) {
+      const offset = normalized - label.address;
+      return offset === 0
+        ? label.name
+        : `${label.name}+$${hexOffset(offset)}`;
+    }
+    const romSymbol = findNearestRomSymbol(this.romSources, normalized);
+    if (!romSymbol) {
+      return undefined;
+    }
+    const offset = normalized - romSymbol.address;
+    return offset === 0
+      ? romSymbol.name
+      : `${romSymbol.name}+$${hexOffset(offset)}`;
+  }
+
   private async evaluateExpression(expression: string): Promise<{
     value: string;
     type?: string;
@@ -1162,6 +1548,127 @@ function sourceForPath(sourcePath: string): DebugProtocol.Source {
   };
 }
 
+function sourceForPrgDisassembly(
+  disassembly: PrgDisassemblySource
+): DebugProtocol.Source {
+  return {
+    name: disassembly.name,
+    sourceReference: disassembly.sourceReference,
+    origin: 'PRG disassembly'
+  };
+}
+
+function sourceForRomDisassembly(disassembly: RomSource): DebugProtocol.Source {
+  return {
+    name: disassembly.name,
+    sourceReference: disassembly.sourceReference,
+    origin: 'VICE C64 ROM disassembly'
+  };
+}
+
+function sourceForMemoryDisassembly(
+  disassembly: MemoryDisassemblySource
+): DebugProtocol.Source {
+  return {
+    name: disassembly.name,
+    sourceReference: disassembly.sourceReference,
+    origin: 'VICE memory disassembly'
+  };
+}
+
+async function discoverDebugInfoCandidates(
+  configuredDebugInfoPath: string | undefined,
+  program: string,
+  cwd: string,
+  sourceRoot: string | undefined
+): Promise<string[]> {
+  const programDirectory = path.dirname(program);
+  const programDebugInfoPath = replaceExtension(program, '.dbg');
+  const staticCandidates = uniquePathList([
+    configuredDebugInfoPath,
+    programDebugInfoPath,
+    path.join(programDirectory, `${path.basename(program, path.extname(program))}.dbg`),
+    path.join(cwd, `${path.basename(program, path.extname(program))}.dbg`),
+    path.join(cwd, 'out', `${path.basename(program, path.extname(program))}.dbg`),
+    sourceRoot
+      ? path.join(sourceRoot, 'out', `${path.basename(program, path.extname(program))}.dbg`)
+      : undefined
+  ]);
+  const searchDirectories = uniquePathList([
+    programDirectory,
+    cwd,
+    path.join(cwd, 'out'),
+    sourceRoot,
+    sourceRoot ? path.join(sourceRoot, 'out') : undefined
+  ]);
+  const discovered = (
+    await Promise.all(searchDirectories.map((directory) => listDebugInfoFiles(directory)))
+  ).flat();
+  return uniquePathList([...staticCandidates, ...discovered]);
+}
+
+async function listDebugInfoFiles(directory: string): Promise<string[]> {
+  try {
+    const entries = await readdir(directory, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isFile() && path.extname(entry.name).toLowerCase() === '.dbg')
+      .map((entry) => path.join(directory, entry.name));
+  } catch {
+    return [];
+  }
+}
+
+function debugInfoProgramOverlap(
+  debugInfo: KickAssemblerDebugInfo,
+  image: PrgImage | undefined
+): number {
+  if (!image || image.bytes.length === 0) {
+    return debugInfo.lineMappings.length;
+  }
+  return debugInfo.lineMappings.filter((mapping) =>
+    mapping.endAddress >= image.loadAddress &&
+    mapping.startAddress <= image.endAddress
+  ).length;
+}
+
+function replaceExtension(filePath: string, extension: string): string {
+  return path.join(
+    path.dirname(filePath),
+    `${path.basename(filePath, path.extname(filePath))}${extension}`
+  );
+}
+
+function resolveLaunchPath(filePath: string, cwd: string): string {
+  return path.isAbsolute(filePath) ? filePath : path.resolve(cwd, filePath);
+}
+
+function samePath(left: string, right: string): boolean {
+  const normalizedLeft = path.normalize(left);
+  const normalizedRight = path.normalize(right);
+  return process.platform === 'win32'
+    ? normalizedLeft.toLowerCase() === normalizedRight.toLowerCase()
+    : normalizedLeft === normalizedRight;
+}
+
+function uniquePathList(paths: readonly (string | undefined)[]): string[] {
+  const result: string[] = [];
+  const seen = new Set<string>();
+  for (const candidate of paths) {
+    if (!candidate) {
+      continue;
+    }
+    const normalized = process.platform === 'win32'
+      ? path.normalize(candidate).toLowerCase()
+      : path.normalize(candidate);
+    if (seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    result.push(candidate);
+  }
+  return result;
+}
+
 function normalizeSourceKey(sourcePath: string): string {
   const normalized = path.normalize(sourcePath);
   return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
@@ -1266,6 +1773,10 @@ function hexByte(value: number): string {
 
 function hexWord(value: number): string {
   return hex(value, 4);
+}
+
+function hexOffset(value: number): string {
+  return hex(value, value <= 0xff ? 2 : 4);
 }
 
 function hex(value: number, width: number): string {
