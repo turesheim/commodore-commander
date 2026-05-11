@@ -4,6 +4,9 @@ import net from 'node:net';
 import path from 'node:path';
 import { spawn, type ChildProcess } from 'node:child_process';
 
+const DEFAULT_TERMINATION_TIMEOUT_MS = 1500;
+const DEFAULT_FORCE_KILL_TIMEOUT_MS = 1000;
+
 export interface ViceProcessLaunchOptions {
   program: string;
   cwd: string;
@@ -23,6 +26,12 @@ export interface ViceProcessLaunchResult {
   args: readonly string[];
 }
 
+export interface ViceProcessTerminateOptions {
+  signal?: NodeJS.Signals;
+  timeoutMs?: number;
+  forceKillTimeoutMs?: number;
+}
+
 export interface ViceProcessArgsOptions {
   program: string;
   viceArgs: readonly string[];
@@ -36,18 +45,19 @@ export async function launchViceProcess(
   options: ViceProcessLaunchOptions
 ): Promise<ViceProcessLaunchResult> {
   await assertReadable(options.program, 'PRG file');
-  await assertExecutable(path.join(options.viceResourcesPath, 'script'), 'VICE launcher');
-  await assertExecutable(
-    path.join(options.viceResourcesPath, 'bin', options.viceExecutable),
-    `VICE emulator ${options.viceExecutable}`
+  // Signal the emulator itself on shutdown, not the macOS wrapper shell.
+  const command = path.join(
+    options.viceResourcesPath,
+    'bin',
+    options.viceExecutable
   );
+  await assertExecutable(command, `VICE emulator ${options.viceExecutable}`);
 
   const enableMonitor = options.enableMonitor ?? true;
   const monitorHost = enableMonitor ? options.monitorHost ?? '127.0.0.1' : undefined;
   const monitorPort = enableMonitor
     ? options.monitorPort ?? await findAvailablePort(monitorHost!)
     : undefined;
-  const command = path.join(options.viceResourcesPath, 'script');
   const args = createViceProcessArgs({
     program: options.program,
     viceArgs: options.viceArgs,
@@ -60,7 +70,6 @@ export async function launchViceProcess(
     cwd: options.cwd,
     env: {
       ...process.env,
-      PROGRAM: options.viceExecutable,
       VICE_INITIAL_CWD: options.cwd
     },
     stdio: ['ignore', 'pipe', 'pipe']
@@ -74,6 +83,26 @@ export async function launchViceProcess(
     command,
     args
   };
+}
+
+export async function terminateViceProcess(
+  child: ChildProcess,
+  options: ViceProcessTerminateOptions = {}
+): Promise<boolean> {
+  if (hasExited(child)) {
+    return true;
+  }
+
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TERMINATION_TIMEOUT_MS;
+  const forceKillTimeoutMs = options.forceKillTimeoutMs ?? DEFAULT_FORCE_KILL_TIMEOUT_MS;
+  const signal = options.signal ?? 'SIGTERM';
+  child.kill(signal);
+  if (await waitForClose(child, timeoutMs)) {
+    return true;
+  }
+
+  child.kill('SIGKILL');
+  return waitForClose(child, forceKillTimeoutMs);
 }
 
 export function createViceProcessArgs(
@@ -151,6 +180,28 @@ function waitForSpawn(
       reject(new Error(`Failed to start embedded VICE: ${command}. ${error.message}`));
     });
   });
+}
+
+function waitForClose(child: ChildProcess, timeoutMs: number): Promise<boolean> {
+  if (hasExited(child)) {
+    return Promise.resolve(true);
+  }
+
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      child.off('close', closeListener);
+      resolve(false);
+    }, timeoutMs);
+    const closeListener = (): void => {
+      clearTimeout(timeout);
+      resolve(true);
+    };
+    child.once('close', closeListener);
+  });
+}
+
+function hasExited(child: ChildProcess): boolean {
+  return child.exitCode !== null || child.signalCode !== null;
 }
 
 function findAvailablePort(host: string): Promise<number> {

@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import { test } from 'node:test';
 
-import { createViceProcessArgs } from '../vice-runtime';
+import { createViceProcessArgs, terminateViceProcess } from '../vice-runtime';
 
 test('createViceProcessArgs omits binary monitor arguments when monitor is disabled', () => {
   const args = createViceProcessArgs({
@@ -39,4 +41,72 @@ test('createViceProcessArgs includes binary monitor arguments for debug launches
     'ready',
     '/workspace/out/main.prg'
   ]);
+});
+
+test('terminateViceProcess sends SIGTERM and waits for process exit', async () => {
+  const child = spawn(
+    process.execPath,
+    ['-e', 'setInterval(() => {}, 1000);'],
+    { stdio: 'ignore' }
+  );
+  await once(child, 'spawn');
+
+  try {
+    const terminated = await terminateViceProcess(child, {
+      timeoutMs: 1000,
+      forceKillTimeoutMs: 1000
+    });
+
+    assert.equal(terminated, true);
+    assert.equal(child.signalCode, 'SIGTERM');
+  } finally {
+    child.kill('SIGKILL');
+  }
+});
+
+test('terminateViceProcess force-kills a process that ignores SIGTERM', async () => {
+  const ignoreSigtermScript = [
+    "process.on('SIGTERM', () => {});",
+    "process.send?.('ready');",
+    'setInterval(() => {}, 1000);'
+  ].join(' ');
+  const child = spawn(
+    process.execPath,
+    ['-e', ignoreSigtermScript],
+    { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }
+  );
+  await once(child, 'message');
+
+  try {
+    const terminated = await terminateViceProcess(child, {
+      timeoutMs: 25,
+      forceKillTimeoutMs: 1000
+    });
+
+    assert.equal(terminated, true);
+    assert.equal(child.signalCode, 'SIGKILL');
+  } finally {
+    child.kill('SIGKILL');
+  }
+});
+
+test('terminateViceProcess can use SIGKILL immediately', async () => {
+  const child = spawn(
+    process.execPath,
+    ['-e', 'setInterval(() => {}, 1000);'],
+    { stdio: 'ignore' }
+  );
+  await once(child, 'spawn');
+
+  try {
+    const terminated = await terminateViceProcess(child, {
+      signal: 'SIGKILL',
+      timeoutMs: 1000
+    });
+
+    assert.equal(terminated, true);
+    assert.equal(child.signalCode, 'SIGKILL');
+  } finally {
+    child.kill('SIGKILL');
+  }
 });

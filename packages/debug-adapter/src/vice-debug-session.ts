@@ -16,16 +16,16 @@ import {
   type KickAssemblerLineMapping
 } from './kick-assembler-debug-info';
 import {
-  monitorErrorMessage,
   ViceMonitorConnection,
   ViceMonitorRequests,
+  monitorErrorMessage,
   type ViceMonitorCheckpoint,
   type ViceMonitorEvent,
   type ViceMonitorMemoryOptions,
   type ViceMonitorRegisterDescriptor,
   type ViceMonitorRegisterValue
 } from './vice-monitor';
-import { launchViceProcess } from './vice-runtime';
+import { launchViceProcess, terminateViceProcess } from './vice-runtime';
 
 const THREAD_ID = 1;
 const STACK_FRAME_ID = 1;
@@ -607,18 +607,35 @@ export class ViceDebugSession {
   }
 
   private async terminate(request: DapRequest): Promise<void> {
+    const child = this.child;
     const monitor = this.monitor;
-    if (monitor) {
-      try {
-        const [command, body] = ViceMonitorRequests.quit();
-        monitor.send(command, body);
-      } catch {
-        // The process close handler will finish cleanup.
+    const terminateDebuggee = this.shouldTerminateDebuggee(request);
+    this.monitor = undefined;
+
+    if (terminateDebuggee && child) {
+      // Avoid VICE's graceful shutdown paths here; macOS x64sc can crash during exit cleanup.
+      const terminated = await terminateViceProcess(child, {
+        signal: 'SIGKILL'
+      });
+      if (!terminated) {
+        this.connection.sendOutput(
+          'Timed out waiting for VICE to exit after SIGKILL.\n',
+          'stderr'
+        );
       }
     }
-    this.child?.kill();
+
+    monitor?.dispose();
     this.endSession();
     this.connection.sendResponse(request);
+  }
+
+  private shouldTerminateDebuggee(request: DapRequest): boolean {
+    if (request.command === 'terminate') {
+      return true;
+    }
+    const args = request.arguments as DebugProtocol.DisconnectArguments | undefined;
+    return args?.terminateDebuggee !== false;
   }
 
   private async installSourceBreakpoint(

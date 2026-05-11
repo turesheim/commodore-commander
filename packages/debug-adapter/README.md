@@ -28,3 +28,12 @@ What is not here yet:
 - non-macOS embedded VICE payload discovery
 - complete illegal-opcode disassembly coverage
 - complete replacement of every Eclipse debug view
+
+Shutdown behavior:
+
+Stopping a debug-owned VICE process intentionally avoids a clean emulator
+shutdown. The macOS Apple Silicon `x64sc` build can crash while running its
+normal exit cleanup, including when termination is requested through the binary
+monitor. The adapter therefore kills the emulator process directly when the
+debuggee should be terminated. This trades VICE runtime setting persistence for
+a stop action that does not surface a crash report to the user.
