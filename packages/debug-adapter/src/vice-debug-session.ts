@@ -18,10 +18,12 @@ import {
   findSourceForMapping,
   loadKickAssemblerDebugInfo,
   type KickAssemblerDebugInfo,
+  type KickAssemblerDebugWatch,
   type KickAssemblerLineMapping
 } from './kick-assembler-debug-info';
 import {
   ViceMonitorConnection,
+  ViceMonitorCommandId,
   ViceMonitorRequests,
   monitorErrorMessage,
   type ViceMonitorCheckpoint,
@@ -51,12 +53,14 @@ const THREAD_ID = 1;
 const STACK_FRAME_ID = 1;
 const REGISTERS_REFERENCE = 1;
 const LABELS_REFERENCE = 2;
+const WATCHES_REFERENCE = 3;
 const PRG_DISASSEMBLY_SOURCE_REFERENCE = 650201;
 const ROM_SOURCE_REFERENCE_BASE = 650300;
 const MEMORY_DISASSEMBLY_SOURCE_REFERENCE_BASE = 650500;
 const MEMORY_DISASSEMBLY_TARGET_LINE = 6;
 const MEMORY_DISASSEMBLY_INSTRUCTION_COUNT = 32;
 const DEFAULT_MEMORY_READ_TIMEOUT_MS = 5000;
+const WATCH_MEMORY_PREVIEW_BYTES = 64;
 
 export interface ViceDebugLaunchArguments
   extends DebugProtocol.LaunchRequestArguments {
@@ -77,6 +81,10 @@ interface InstalledBreakpoint {
   line: number;
   mapping?: KickAssemblerLineMapping;
   checkpointNumber?: number;
+  condition?: string;
+  hitCondition?: HitCondition;
+  logMessage?: string;
+  hitCount: number;
   verified: boolean;
   message?: string;
 }
@@ -87,12 +95,22 @@ interface InstalledDataBreakpoint {
   startAddress: number;
   length: number;
   accessType: DebugProtocol.DataBreakpointAccessType;
-  checkpointNumber?: number;
+  checkpointNumbers: number[];
+  condition?: string;
+  hitCondition?: HitCondition;
+  hitCount: number;
   verified: boolean;
   message?: string;
 }
 
 type StopReason = 'entry' | 'step' | 'pause' | 'breakpoint' | 'data breakpoint';
+
+type HitConditionOperator = '==' | '!=' | '<' | '<=' | '>' | '>=' | '%';
+
+interface HitCondition {
+  operator: HitConditionOperator;
+  value: number;
+}
 
 interface MemoryDisassemblySource {
   address: number;
@@ -116,12 +134,16 @@ export class ViceDebugSession {
   private checkpointToBreakpoint = new Map<number, InstalledBreakpoint>();
   private dataBreakpoints: InstalledDataBreakpoint[] = [];
   private checkpointToDataBreakpoint = new Map<number, InstalledDataBreakpoint>();
+  private checkpointToDataBreakpointAccess =
+    new Map<number, DebugProtocol.DataBreakpointAccessType>();
   private nextBreakpointId = 1;
   private initialStopSeen = false;
   private configurationDone = false;
   private stopped = false;
   private pendingStopReason: StopReason = 'entry';
   private lastHitCheckpoint: ViceMonitorCheckpoint | undefined;
+  private lastHitShouldResume = false;
+  private lastHitShouldLog = false;
   private terminated = false;
   private clientSupportsMemoryEvent = false;
   private clientSupportsInvalidatedEvent = false;
@@ -162,7 +184,7 @@ export class ViceDebugSession {
           this.scopes(request);
           break;
         case 'variables':
-          this.variables(request);
+          await this.variables(request);
           break;
         case 'setVariable':
           await this.setVariable(request);
@@ -226,6 +248,9 @@ export class ViceDebugSession {
       supportsDisassembleRequest: true,
       supportsBreakpointLocationsRequest: true,
       supportsSetVariable: true,
+      supportsConditionalBreakpoints: true,
+      supportsHitConditionalBreakpoints: true,
+      supportsLogPoints: true,
       supportsDataBreakpoints: true,
       supportsDataBreakpointBytes: true,
       supportsSteppingGranularity: true,
@@ -425,7 +450,7 @@ export class ViceDebugSession {
       if (this.launchArguments?.stopOnEntry === false) {
         this.resumeMonitor();
       } else {
-        this.emitStopped('entry');
+        await this.emitStopped('entry');
       }
     }
   }
@@ -574,12 +599,18 @@ export class ViceDebugSession {
           variablesReference: LABELS_REFERENCE,
           namedVariables: this.debugInfo?.labels.length ?? 0,
           expensive: false
+        },
+        {
+          name: 'Kick Assembler Watches',
+          variablesReference: WATCHES_REFERENCE,
+          namedVariables: this.debugInfo?.watches.length ?? 0,
+          expensive: true
         }
       ]
     } satisfies DebugProtocol.ScopesResponse['body']);
   }
 
-  private variables(request: DapRequest): void {
+  private async variables(request: DapRequest): Promise<void> {
     const args = request.arguments as DebugProtocol.VariablesArguments;
     if (args.variablesReference === REGISTERS_REFERENCE) {
       this.connection.sendResponse(request, {
@@ -611,6 +642,17 @@ export class ViceDebugSession {
       return;
     }
 
+    if (args.variablesReference === WATCHES_REFERENCE) {
+      this.connection.sendResponse(request, {
+        variables: await Promise.all(
+          (this.debugInfo?.watches ?? []).map((watch) =>
+            this.toDapWatchVariable(watch)
+          )
+        )
+      } satisfies DebugProtocol.VariablesResponse['body']);
+      return;
+    }
+
     this.connection.sendResponse(request, { variables: [] });
   }
 
@@ -636,6 +678,8 @@ export class ViceDebugSession {
   private continue(request: DapRequest): void {
     this.pendingStopReason = 'breakpoint';
     this.lastHitCheckpoint = undefined;
+    this.lastHitShouldResume = false;
+    this.lastHitShouldLog = false;
     this.resumeMonitor();
     this.connection.sendResponse(request, {
       allThreadsContinued: true
@@ -645,6 +689,8 @@ export class ViceDebugSession {
   private step(request: DapRequest, stepOverSubroutines: boolean): void {
     this.pendingStopReason = 'step';
     this.lastHitCheckpoint = undefined;
+    this.lastHitShouldResume = false;
+    this.lastHitShouldLog = false;
     const [command, body] = ViceMonitorRequests.advanceInstructions(1, stepOverSubroutines);
     this.monitor?.send(command, body);
     this.connection.sendResponse(request);
@@ -653,6 +699,8 @@ export class ViceDebugSession {
   private stepOut(request: DapRequest): void {
     this.pendingStopReason = 'step';
     this.lastHitCheckpoint = undefined;
+    this.lastHitShouldResume = false;
+    this.lastHitShouldLog = false;
     const [command, body] = ViceMonitorRequests.executeUntilReturn();
     this.monitor?.send(command, body);
     this.connection.sendResponse(request);
@@ -661,6 +709,8 @@ export class ViceDebugSession {
   private pause(request: DapRequest): void {
     this.pendingStopReason = 'pause';
     this.lastHitCheckpoint = undefined;
+    this.lastHitShouldResume = false;
+    this.lastHitShouldLog = false;
     const [command, body] = ViceMonitorRequests.suspend();
     this.monitor?.send(command, body);
     this.connection.sendResponse(request);
@@ -668,7 +718,7 @@ export class ViceDebugSession {
 
   private async evaluate(request: DapRequest): Promise<void> {
     const args = request.arguments as DebugProtocol.EvaluateArguments;
-    const result = await this.evaluateExpression(args.expression);
+    const result = await this.evaluateExpression(args.expression, args.context);
     this.connection.sendResponse(request, {
       result: result.value,
       type: result.type,
@@ -834,12 +884,22 @@ export class ViceDebugSession {
   ): Promise<InstalledBreakpoint> {
     const line = breakpointSpec.line;
     const mapping = findLineMappingForSourceLine(this.debugInfo, sourcePath, line);
-    const unsupportedMessage = unsupportedBreakpointMessage(breakpointSpec);
+    const condition = normalizeViceCondition(breakpointSpec.condition);
+    const hitCondition = parseHitCondition(breakpointSpec.hitCondition);
+    const unsupportedMessage = unsupportedBreakpointMessage(
+      breakpointSpec,
+      condition,
+      hitCondition
+    );
     const breakpoint: InstalledBreakpoint = {
       id: this.nextBreakpointId,
       sourcePath,
       line,
       ...(mapping ? { mapping } : {}),
+      ...(condition ? { condition } : {}),
+      ...(hitCondition ? { hitCondition } : {}),
+      ...(breakpointSpec.logMessage ? { logMessage: breakpointSpec.logMessage } : {}),
+      hitCount: 0,
       verified: Boolean(mapping) && !unsupportedMessage,
       ...(unsupportedMessage
         ? { message: unsupportedMessage }
@@ -851,12 +911,14 @@ export class ViceDebugSession {
 
     if (mapping && this.monitor && !unsupportedMessage) {
       try {
+        const stopWhenHit = !breakpointSpec.logMessage ||
+          this.logpointNeedsStoppedState(breakpointSpec.logMessage);
         const [command, body] = ViceMonitorRequests.setCheckpoint({
           startAddress: mapping.startAddress,
           endAddress: mapping.endAddress,
           exec: true,
           enabled: true,
-          stopWhenHit: true
+          stopWhenHit
         });
         const response = await this.monitor.sendAndWait(
           command,
@@ -867,6 +929,9 @@ export class ViceDebugSession {
         if (response.type === 'checkpoint') {
           breakpoint.checkpointNumber = response.checkpoint.number;
           this.checkpointToBreakpoint.set(response.checkpoint.number, breakpoint);
+          if (condition) {
+            await this.setCheckpointCondition(response.checkpoint.number, condition);
+          }
         }
       } catch (error) {
         breakpoint.verified = false;
@@ -882,22 +947,29 @@ export class ViceDebugSession {
   ): Promise<InstalledDataBreakpoint> {
     const range = decodeDataBreakpointId(dataBreakpoint.dataId);
     const accessType = dataBreakpoint.accessType ?? 'write';
+    const condition = normalizeViceCondition(dataBreakpoint.condition);
+    const hitCondition = parseHitCondition(dataBreakpoint.hitCondition);
     const breakpoint: InstalledDataBreakpoint = {
       id: this.nextBreakpointId,
       dataId: dataBreakpoint.dataId,
       startAddress: range.startAddress,
       length: range.length,
       accessType,
-      verified: !dataBreakpoint.condition && !dataBreakpoint.hitCondition
+      checkpointNumbers: [],
+      ...(condition ? { condition } : {}),
+      ...(hitCondition ? { hitCondition } : {}),
+      hitCount: 0,
+      verified: Boolean(hitCondition || !dataBreakpoint.hitCondition) &&
+        Boolean(condition || !dataBreakpoint.condition)
     };
     this.nextBreakpointId += 1;
 
-    if (dataBreakpoint.condition) {
-      breakpoint.message = 'Conditional data breakpoints are not supported yet.';
+    if (dataBreakpoint.condition && !condition) {
+      breakpoint.message = 'Data breakpoint conditions must be 255 bytes or shorter.';
       return breakpoint;
     }
-    if (dataBreakpoint.hitCondition) {
-      breakpoint.message = 'Hit-count data breakpoints are not supported yet.';
+    if (dataBreakpoint.hitCondition && !hitCondition) {
+      breakpoint.message = `Unsupported hit condition: ${dataBreakpoint.hitCondition}`;
       return breakpoint;
     }
     if (!this.monitor) {
@@ -907,26 +979,36 @@ export class ViceDebugSession {
     }
 
     try {
-      const [command, body] = ViceMonitorRequests.setCheckpoint({
-        startAddress: range.startAddress,
-        endAddress: range.startAddress + range.length - 1,
-        load: accessType === 'read' || accessType === 'readWrite',
-        store: accessType === 'write' || accessType === 'readWrite',
-        exec: false,
-        enabled: true,
-        stopWhenHit: true
-      });
-      const response = await this.monitor.sendAndWait(
-        command,
-        body,
-        (event) => event.type === 'checkpoint',
-        3000
-      );
-      if (response.type === 'checkpoint') {
-        breakpoint.checkpointNumber = response.checkpoint.number;
-        this.checkpointToDataBreakpoint.set(response.checkpoint.number, breakpoint);
+      for (const breakpointAccessType of dataBreakpointCheckpointAccessTypes(accessType)) {
+        const [command, body] = ViceMonitorRequests.setCheckpoint({
+          startAddress: range.startAddress,
+          endAddress: range.startAddress + range.length - 1,
+          load: breakpointAccessType === 'read',
+          store: breakpointAccessType === 'write',
+          exec: false,
+          enabled: true,
+          stopWhenHit: true
+        });
+        const response = await this.monitor.sendAndWait(
+          command,
+          body,
+          (event) => event.type === 'checkpoint',
+          3000
+        );
+        if (response.type === 'checkpoint') {
+          breakpoint.checkpointNumbers.push(response.checkpoint.number);
+          this.checkpointToDataBreakpoint.set(response.checkpoint.number, breakpoint);
+          this.checkpointToDataBreakpointAccess.set(
+            response.checkpoint.number,
+            breakpointAccessType
+          );
+          if (condition) {
+            await this.setCheckpointCondition(response.checkpoint.number, condition);
+          }
+        }
       }
     } catch (error) {
+      await this.deleteDataBreakpointCheckpoints(breakpoint);
       breakpoint.verified = false;
       breakpoint.message = error instanceof Error ? error.message : String(error);
     }
@@ -979,15 +1061,46 @@ export class ViceDebugSession {
     const existing = this.dataBreakpoints;
     this.dataBreakpoints = [];
     for (const breakpoint of existing) {
-      if (!breakpoint.checkpointNumber || !this.monitor) {
+      await this.deleteDataBreakpointCheckpoints(breakpoint);
+    }
+  }
+
+  private async deleteDataBreakpointCheckpoints(
+    breakpoint: InstalledDataBreakpoint
+  ): Promise<void> {
+    for (const checkpointNumber of breakpoint.checkpointNumbers) {
+      this.checkpointToDataBreakpoint.delete(checkpointNumber);
+      this.checkpointToDataBreakpointAccess.delete(checkpointNumber);
+      if (!this.monitor) {
         continue;
       }
       const [command, body] = ViceMonitorRequests.deleteCheckpoint(
-        breakpoint.checkpointNumber
+        checkpointNumber
       );
       this.monitor.send(command, body);
-      this.checkpointToDataBreakpoint.delete(breakpoint.checkpointNumber);
     }
+    breakpoint.checkpointNumbers = [];
+  }
+
+  private async setCheckpointCondition(
+    checkpointNumber: number,
+    condition: string
+  ): Promise<void> {
+    if (!this.monitor) {
+      throw new Error('VICE monitor is not connected.');
+    }
+    const [command, body] = ViceMonitorRequests.setCheckpointCondition(
+      checkpointNumber,
+      condition
+    );
+    await this.monitor.sendAndWait(
+      command,
+      body,
+      (event) =>
+        event.type === 'ack' &&
+        event.commandId === ViceMonitorCommandId.CHECKPOINT_CONDITION_SET,
+      3000
+    );
   }
 
   private toDapBreakpoint(
@@ -1005,6 +1118,33 @@ export class ViceDebugSession {
     };
   }
 
+  private async toDapWatchVariable(
+    watch: KickAssemblerDebugWatch
+  ): Promise<DebugProtocol.Variable> {
+    const startAddress = normalizeAddress(watch.startAddress);
+    const length = watchByteLength(watch);
+    const readableLength = Math.min(
+      length,
+      WATCH_MEMORY_PREVIEW_BYTES,
+      0x10000 - startAddress
+    );
+    const bytes = await this.readMemoryBytes(startAddress, readableLength, {
+      sideEffects: false
+    });
+    const truncated = length > bytes.length;
+    const label = findLabelByAddress(this.debugInfo, startAddress);
+    return {
+      name: watchDisplayName(watch, label?.name),
+      value: bytes.length > 0
+        ? `${formatWatchValue(bytes, watch.argument)}${truncated ? ' ...' : ''}`
+        : 'unavailable',
+      type: `${length} byte${length === 1 ? '' : 's'} watch`,
+      evaluateName: label?.name ?? memoryReference(startAddress),
+      memoryReference: memoryReference(startAddress),
+      variablesReference: 0
+    };
+  }
+
   private async handleMonitorEvent(event: ViceMonitorEvent): Promise<void> {
     switch (event.type) {
       case 'stopped':
@@ -1015,8 +1155,16 @@ export class ViceDebugSession {
           await this.refreshStoppedState();
           if (firstStop && this.launchArguments?.stopOnEntry === false) {
             this.resumeMonitor();
+          } else if (this.lastHitShouldResume) {
+            if (this.lastHitShouldLog) {
+              this.logLastSourceBreakpointHit();
+            }
+            this.lastHitShouldResume = false;
+            this.lastHitShouldLog = false;
+            this.lastHitCheckpoint = undefined;
+            this.resumeMonitor();
           } else {
-            this.emitStopped(this.stopReason());
+            await this.emitStopped(this.stopReason());
           }
         }
         break;
@@ -1030,24 +1178,14 @@ export class ViceDebugSession {
       case 'checkpoint':
         if (event.checkpoint.hit) {
           this.lastHitCheckpoint = event.checkpoint;
-        }
-        if (event.checkpoint.number) {
-          const dataBreakpoint = this.dataBreakpoints.find((candidate) =>
-            candidate.startAddress === event.checkpoint.startAddress &&
-            candidate.length === event.checkpoint.endAddress - event.checkpoint.startAddress + 1
-          );
-          if (dataBreakpoint) {
-            dataBreakpoint.checkpointNumber = event.checkpoint.number;
-            this.checkpointToDataBreakpoint.set(event.checkpoint.number, dataBreakpoint);
-          }
-          const breakpoint = [...this.breakpointsBySource.values()]
-            .flat()
-            .find((candidate) =>
-              candidate.mapping?.startAddress === event.checkpoint.startAddress
-            );
-          if (breakpoint) {
-            breakpoint.checkpointNumber = event.checkpoint.number;
-            this.checkpointToBreakpoint.set(event.checkpoint.number, breakpoint);
+          this.lastHitShouldResume = this.handleCheckpointHit(event.checkpoint);
+          if (!event.checkpoint.stop) {
+            if (this.lastHitShouldLog) {
+              this.logLastSourceBreakpointHit();
+            }
+            this.lastHitShouldResume = false;
+            this.lastHitShouldLog = false;
+            this.lastHitCheckpoint = undefined;
           }
         }
         break;
@@ -1113,9 +1251,44 @@ export class ViceDebugSession {
     this.monitor?.send(command, body);
   }
 
-  private emitStopped(reason: StopReason): void {
+  private handleCheckpointHit(checkpoint: ViceMonitorCheckpoint): boolean {
+    const sourceBreakpoint = this.checkpointToBreakpoint.get(checkpoint.number);
+    const dataBreakpoint = this.checkpointToDataBreakpoint.get(checkpoint.number);
+    let shouldResume = false;
+    this.lastHitShouldLog = false;
+
+    if (sourceBreakpoint) {
+      sourceBreakpoint.hitCount += 1;
+      const hitSatisfied = hitConditionSatisfied(
+        sourceBreakpoint.hitCondition,
+        sourceBreakpoint.hitCount
+      );
+      if (sourceBreakpoint.logMessage) {
+        this.lastHitShouldLog = hitSatisfied;
+        shouldResume = true;
+      } else if (!hitSatisfied) {
+        shouldResume = true;
+      }
+    }
+
+    if (dataBreakpoint) {
+      dataBreakpoint.hitCount += 1;
+      if (!hitConditionSatisfied(dataBreakpoint.hitCondition, dataBreakpoint.hitCount)) {
+        shouldResume = true;
+      }
+    }
+
+    return shouldResume;
+  }
+
+  private async emitStopped(reason: StopReason): Promise<void> {
+    const description = await this.stopDescription(reason);
+    if (description) {
+      this.connection.sendOutput(`${description}\n`);
+    }
     this.connection.sendEvent('stopped', {
       reason,
+      ...(description ? { description, text: description } : {}),
       threadId: THREAD_ID,
       allThreadsStopped: true,
       ...(this.breakpointIdsForLastStop().length > 0
@@ -1134,9 +1307,61 @@ export class ViceDebugSession {
     return this.pendingStopReason;
   }
 
+  private async stopDescription(reason: StopReason): Promise<string | undefined> {
+    if (reason !== 'data breakpoint' || !this.lastHitCheckpoint) {
+      return undefined;
+    }
+    const dataBreakpoint = this.checkpointToDataBreakpoint.get(
+      this.lastHitCheckpoint.number
+    );
+    if (!dataBreakpoint) {
+      return undefined;
+    }
+    const pc = this.programCounter();
+    const value = await this.describeWatchpointValue(dataBreakpoint);
+    const accessType = this.checkpointToDataBreakpointAccess.get(
+      this.lastHitCheckpoint.number
+    ) ?? dataBreakpoint.accessType;
+    return [
+      `VICE ${watchpointAccessLabel(accessType)} watchpoint`,
+      watchpointRangeLabel(dataBreakpoint),
+      `PC $${hexWord(pc)}`,
+      value
+    ].filter(Boolean).join(', ');
+  }
+
+  private async describeWatchpointValue(
+    breakpoint: InstalledDataBreakpoint
+  ): Promise<string | undefined> {
+    const count = Math.min(breakpoint.length, WATCH_MEMORY_PREVIEW_BYTES);
+    const bytes = await this.readMemoryBytes(breakpoint.startAddress, count, {
+      sideEffects: false
+    });
+    if (bytes.length === 0) {
+      return undefined;
+    }
+    const prefix = breakpoint.length === 1 ? 'value' : 'bytes';
+    const suffix = breakpoint.length > bytes.length ? ' ...' : '';
+    return `${prefix} ${[...bytes].map((byte) => `$${hexByte(byte)}`).join(' ')}${suffix}`;
+  }
+
+  private logLastSourceBreakpointHit(): void {
+    const checkpointNumber = this.lastHitCheckpoint?.number;
+    if (checkpointNumber === undefined) {
+      return;
+    }
+    const sourceBreakpoint = this.checkpointToBreakpoint.get(checkpointNumber);
+    if (!sourceBreakpoint?.logMessage) {
+      return;
+    }
+    this.connection.sendOutput(
+      `${this.formatLogpointMessage(sourceBreakpoint)}\n`
+    );
+  }
+
   private breakpointIdsForLastStop(): number[] {
     const checkpointNumber = this.lastHitCheckpoint?.number;
-    if (!checkpointNumber) {
+    if (checkpointNumber === undefined) {
       return [];
     }
     const sourceBreakpoint = this.checkpointToBreakpoint.get(checkpointNumber);
@@ -1319,6 +1544,46 @@ export class ViceDebugSession {
     return `$${hexWord(normalized)}`;
   }
 
+  private formatLogpointMessage(breakpoint: InstalledBreakpoint): string {
+    const message = breakpoint.logMessage ?? '';
+    const address = breakpoint.mapping?.startAddress;
+    return message.replace(/\{([^}]+)\}/gu, (_match, expression: string) => {
+      const trimmed = String(expression).trim();
+      if (trimmed.toLowerCase() === 'address' && address !== undefined) {
+        return `$${hexWord(address)}`;
+      }
+      if (trimmed.toLowerCase() === 'hitcount') {
+        return String(breakpoint.hitCount);
+      }
+      const register = this.findRegisterDescriptor(trimmed);
+      const value = register ? this.registers.get(register.id)?.value : undefined;
+      if (register && value !== undefined) {
+        return `$${hex(value, Math.max(2, register.bitSize / 4))}`;
+      }
+      const label = findLabelByName(this.debugInfo, trimmed);
+      if (label) {
+        return `$${hexWord(label.address)}`;
+      }
+      return 'unavailable';
+    });
+  }
+
+  private logpointNeedsStoppedState(message: string): boolean {
+    const expressions = message.matchAll(/\{([^}]+)\}/gu);
+    for (const match of expressions) {
+      const expression = String(match[1]).trim();
+      const lowerCase = expression.toLowerCase();
+      if (lowerCase === 'address' || lowerCase === 'hitcount') {
+        continue;
+      }
+      if (findLabelByName(this.debugInfo, expression)) {
+        continue;
+      }
+      return true;
+    }
+    return false;
+  }
+
   private stackFrameDisplayName(
     address: number,
     fallbackName: string,
@@ -1350,7 +1615,7 @@ export class ViceDebugSession {
       : `${romSymbol.name}+$${hexOffset(offset)}`;
   }
 
-  private async evaluateExpression(expression: string): Promise<{
+  private async evaluateExpression(expression: string, context?: string): Promise<{
     value: string;
     type?: string;
     memoryReference?: string;
@@ -1369,6 +1634,16 @@ export class ViceDebugSession {
 
     const label = findLabelByName(this.debugInfo, trimmed);
     if (label) {
+      if (context === 'watch') {
+        const bytes = await this.readMemoryBytes(label.address, 1, {
+          sideEffects: false
+        });
+        return {
+          value: `$${hexByte(bytes[0] ?? 0)}`,
+          type: 'byte',
+          memoryReference: memoryReference(label.address)
+        };
+      }
       return {
         value: `$${hexWord(label.address)}`,
         type: 'address',
@@ -1376,9 +1651,12 @@ export class ViceDebugSession {
       };
     }
 
-    const address = parseOptionalAddress(trimmed);
-    if (address !== undefined) {
-      const bytes = await this.readMemoryBytes(address, 1);
+    const resolvedAddress = resolveDebugAddressExpression(this.debugInfo, trimmed);
+    if (resolvedAddress !== undefined) {
+      const address = normalizeAddress(resolvedAddress);
+      const bytes = await this.readMemoryBytes(address, 1, {
+        sideEffects: context === 'watch' ? false : undefined
+      });
       return {
         value: `$${hexByte(bytes[0] ?? 0)}`,
         type: 'byte',
@@ -1394,8 +1672,6 @@ export class ViceDebugSession {
   private async evaluateAddressExpression(
     expression: string
   ): Promise<{ address: number; description: string } | undefined> {
-    await this.refreshRegisterDescriptors();
-    await this.refreshRegisters();
     const trimmed = expression.trim();
     const label = findLabelByName(this.debugInfo, trimmed);
     if (label) {
@@ -1404,13 +1680,17 @@ export class ViceDebugSession {
         description: `${label.name} at $${hexWord(label.address)}`
       };
     }
-    const address = parseOptionalAddress(trimmed);
+    const address = resolveDebugAddressExpression(this.debugInfo, trimmed);
     if (address !== undefined) {
       return {
-        address,
-        description: `$${hexWord(address)}`
+        address: normalizeAddress(address),
+        description: trimmed === `$${hexWord(address)}`
+          ? `$${hexWord(address)}`
+          : `${trimmed} -> $${hexWord(normalizeAddress(address))}`
       };
     }
+    await this.refreshRegisterDescriptors();
+    await this.refreshRegisters();
     const descriptor = this.findRegisterDescriptor(trimmed);
     if (descriptor) {
       const value = this.registers.get(descriptor.id)?.value;
@@ -1696,18 +1976,109 @@ function distinctBreakpointLocations(
 }
 
 function unsupportedBreakpointMessage(
-  breakpoint: DebugProtocol.SourceBreakpoint
+  breakpoint: DebugProtocol.SourceBreakpoint,
+  condition: string | undefined,
+  hitCondition: HitCondition | undefined
 ): string | undefined {
-  if (breakpoint.logMessage) {
-    return 'Logpoints are not supported by the VICE debugger yet.';
+  if (breakpoint.condition?.trim() && !condition) {
+    return 'Breakpoint conditions must be 255 bytes or shorter.';
   }
-  if (breakpoint.condition) {
-    return 'Conditional breakpoints are not supported by the VICE debugger yet.';
-  }
-  if (breakpoint.hitCondition) {
-    return 'Hit-count breakpoints are not supported by the VICE debugger yet.';
+  if (breakpoint.hitCondition?.trim() && !hitCondition) {
+    return `Unsupported hit condition: ${breakpoint.hitCondition}`;
   }
   return undefined;
+}
+
+function normalizeViceCondition(condition: string | undefined): string | undefined {
+  const trimmed = condition?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  const normalized = trimmed.replace(/^if\b\s*/iu, '').trim();
+  if (!normalized || Buffer.byteLength(normalized, 'utf8') > 0xff) {
+    return undefined;
+  }
+  return normalized;
+}
+
+function parseHitCondition(input: string | undefined): HitCondition | undefined {
+  const trimmed = input?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  let operator: HitConditionOperator = '==';
+  let valueText = trimmed;
+  const prefixMatch = /^(==|=|!=|<=|>=|<|>|%)\s*(.+)$/u.exec(trimmed);
+  if (prefixMatch) {
+    operator = prefixMatch[1] === '='
+      ? '=='
+      : prefixMatch[1] as HitConditionOperator;
+    valueText = prefixMatch[2].trim();
+  } else {
+    const moduloSuffixMatch = /^(.+?)\s*%$/u.exec(trimmed);
+    if (moduloSuffixMatch) {
+      operator = '%';
+      valueText = moduloSuffixMatch[1].trim();
+    }
+  }
+
+  const value = parseOptionalAddress(valueText);
+  if (value === undefined || (operator === '%' && value <= 0)) {
+    return undefined;
+  }
+  return { operator, value };
+}
+
+function hitConditionSatisfied(
+  condition: HitCondition | undefined,
+  hitCount: number
+): boolean {
+  if (!condition) {
+    return true;
+  }
+  switch (condition.operator) {
+    case '==':
+      return hitCount === condition.value;
+    case '!=':
+      return hitCount !== condition.value;
+    case '<':
+      return hitCount < condition.value;
+    case '<=':
+      return hitCount <= condition.value;
+    case '>':
+      return hitCount > condition.value;
+    case '>=':
+      return hitCount >= condition.value;
+    case '%':
+      return hitCount % condition.value === 0;
+  }
+}
+
+function dataBreakpointCheckpointAccessTypes(
+  accessType: DebugProtocol.DataBreakpointAccessType
+): DebugProtocol.DataBreakpointAccessType[] {
+  return accessType === 'readWrite' ? ['read', 'write'] : [accessType];
+}
+
+function watchpointAccessLabel(
+  accessType: DebugProtocol.DataBreakpointAccessType
+): string {
+  switch (accessType) {
+    case 'read':
+      return 'read';
+    case 'write':
+      return 'write';
+    case 'readWrite':
+      return 'read/write';
+  }
+}
+
+function watchpointRangeLabel(breakpoint: InstalledDataBreakpoint): string {
+  const endAddress = breakpoint.startAddress + breakpoint.length - 1;
+  return breakpoint.length === 1
+    ? `$${hexWord(breakpoint.startAddress)}`
+    : `$${hexWord(breakpoint.startAddress)}-$${hexWord(endAddress)}`;
 }
 
 function memoryReference(address: number): string {
@@ -1741,6 +2112,144 @@ function parseRequiredNumber(value: string): number {
     throw new Error(`Invalid numeric value: ${value}`);
   }
   return parsed;
+}
+
+function resolveDebugAddressExpression(
+  debugInfo: KickAssemblerDebugInfo | undefined,
+  expression: string
+): number | undefined {
+  const compact = expression.replace(/\s+/gu, '');
+  if (!compact) {
+    return undefined;
+  }
+  const tokens = compact.match(/[+-]?[^+-]+/gu);
+  if (!tokens || tokens.join('') !== compact) {
+    return undefined;
+  }
+
+  let value = 0;
+  let seenTerm = false;
+  for (const token of tokens) {
+    const sign = token.startsWith('-') ? -1 : 1;
+    const term = token.startsWith('-') || token.startsWith('+')
+      ? token.slice(1)
+      : token;
+    if (!term) {
+      return undefined;
+    }
+    const termValue =
+      parseOptionalAddress(term) ??
+      findLabelByName(debugInfo, term)?.address;
+    if (termValue === undefined) {
+      return undefined;
+    }
+    value += sign * termValue;
+    seenTerm = true;
+  }
+  return seenTerm ? value : undefined;
+}
+
+function watchByteLength(watch: KickAssemblerDebugWatch): number {
+  if (watch.endAddress === undefined) {
+    return 1;
+  }
+  return Math.max(1, watch.endAddress - watch.startAddress + 1);
+}
+
+function watchDisplayName(
+  watch: KickAssemblerDebugWatch,
+  labelName: string | undefined
+): string {
+  const range = watch.endAddress === undefined || watch.endAddress === watch.startAddress
+    ? `$${hexWord(watch.startAddress)}`
+    : `$${hexWord(watch.startAddress)}-$${hexWord(watch.endAddress)}`;
+  const name = labelName
+    ? watch.endAddress === undefined || watch.endAddress === watch.startAddress
+      ? labelName
+      : `${labelName} (${range})`
+    : range;
+  return watch.argument ? `${name} [${watch.argument}]` : name;
+}
+
+function formatWatchValue(bytes: Buffer, argument: string | undefined): string {
+  const presentation = watchPresentation(argument);
+  if (presentation.kind === 'text') {
+    return `"${[...bytes].map(printableCharacter).join('')}"`;
+  }
+
+  const values: string[] = [];
+  for (let offset = 0; offset < bytes.length; offset += presentation.byteLength) {
+    const chunk = bytes.subarray(offset, offset + presentation.byteLength);
+    if (chunk.length < presentation.byteLength) {
+      values.push(...[...chunk].map((byte) => `$${hexByte(byte)}`));
+      break;
+    }
+    const value = readLittleEndianBuffer(chunk);
+    switch (presentation.kind) {
+      case 'signed':
+        values.push(String(toSignedInteger(value, presentation.byteLength)));
+        break;
+      case 'unsigned':
+        values.push(String(value));
+        break;
+      case 'hex':
+        values.push(`$${hex(value, presentation.byteLength * 2)}`);
+        break;
+    }
+  }
+  return values.join(' ');
+}
+
+function watchPresentation(argument: string | undefined): {
+  kind: 'hex' | 'signed' | 'unsigned' | 'text';
+  byteLength: 1 | 2 | 4;
+} {
+  const tokens = (argument ?? '')
+    .toLowerCase()
+    .split(/[,\s]+/u)
+    .map((token) => token.trim())
+    .filter(Boolean);
+  for (const token of tokens) {
+    if (token === 'text') {
+      return { kind: 'text', byteLength: 1 };
+    }
+    const match = /^(hex|h|signed|s|unsigned|u)(8|16|32)?$/u.exec(token);
+    if (!match) {
+      continue;
+    }
+    const byteLength = match[2] === '32'
+      ? 4
+      : match[2] === '16'
+        ? 2
+        : 1;
+    if (match[1] === 'signed' || match[1] === 's') {
+      return { kind: 'signed', byteLength };
+    }
+    if (match[1] === 'unsigned' || match[1] === 'u') {
+      return { kind: 'unsigned', byteLength };
+    }
+    return { kind: 'hex', byteLength };
+  }
+  return { kind: 'hex', byteLength: 1 };
+}
+
+function readLittleEndianBuffer(bytes: Buffer): number {
+  let value = 0;
+  for (let index = 0; index < bytes.length; index += 1) {
+    value += bytes[index] << (index * 8);
+  }
+  return value >>> 0;
+}
+
+function toSignedInteger(value: number, byteLength: number): number {
+  const bits = byteLength * 8;
+  const signBit = 2 ** (bits - 1);
+  const mask = 2 ** bits;
+  return value >= signBit ? value - mask : value;
+}
+
+function printableCharacter(value: number): string {
+  return value >= 0x20 && value <= 0x7e ? String.fromCharCode(value) : '.';
 }
 
 function encodeDataBreakpointId(startAddress: number, length: number): string {

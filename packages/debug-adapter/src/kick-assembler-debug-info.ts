@@ -27,10 +27,18 @@ export interface KickAssemblerDebugLabel {
   endColumn: number;
 }
 
+export interface KickAssemblerDebugWatch {
+  segment: string;
+  startAddress: number;
+  endAddress?: number;
+  argument?: string;
+}
+
 export interface KickAssemblerDebugInfo {
   sources: readonly KickAssemblerSourceEntry[];
   lineMappings: readonly KickAssemblerLineMapping[];
   labels: readonly KickAssemblerDebugLabel[];
+  watches: readonly KickAssemblerDebugWatch[];
   sourceRoots?: readonly string[];
 }
 
@@ -62,6 +70,7 @@ export function parseKickAssemblerDebugInfo(
     sources: parseSources(extractTagBody(text, 'Sources')),
     lineMappings: parseLineMappings(text),
     labels: parseLabels(extractTagBody(text, 'Labels')),
+    watches: parseWatches(text),
     ...(sourceRoots.length > 0 ? { sourceRoots } : {})
   };
 }
@@ -286,6 +295,66 @@ function parseLabels(body: string): KickAssemblerDebugLabel[] {
     });
   }
   return labels;
+}
+
+function parseWatches(text: string): KickAssemblerDebugWatch[] {
+  const bodies = [
+    extractTagBody(text, 'Watchpoints'),
+    extractTagBody(text, 'Watches')
+  ].filter(Boolean);
+  const watches: KickAssemblerDebugWatch[] = [];
+  for (const body of bodies) {
+    for (const rawLine of body.split(/\r?\n/u)) {
+      const line = rawLine.trim();
+      if (!line) {
+        continue;
+      }
+      const columns = splitDebugInfoColumns(line).map((column) => column.trim());
+      if (columns.length < 2 || !columns[1].startsWith('$')) {
+        continue;
+      }
+      const startAddress = parseAddress(columns[1]);
+      const thirdColumn = columns[2]?.trim();
+      const endAddress = thirdColumn?.startsWith('$')
+        ? parseAddress(thirdColumn)
+        : undefined;
+      const argumentColumns = endAddress === undefined
+        ? columns.slice(2)
+        : columns.slice(3);
+      const argument = argumentColumns
+        .filter((column) => column.length > 0)
+        .join(',')
+        .trim();
+      watches.push({
+        segment: columns[0],
+        startAddress,
+        ...(endAddress !== undefined ? { endAddress } : {}),
+        ...(argument ? { argument } : {})
+      });
+    }
+  }
+  return watches;
+}
+
+function splitDebugInfoColumns(line: string): string[] {
+  const columns: string[] = [];
+  let current = '';
+  let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '"') {
+      quoted = !quoted;
+      continue;
+    }
+    if (character === ',' && !quoted) {
+      columns.push(current);
+      current = '';
+      continue;
+    }
+    current += character;
+  }
+  columns.push(current);
+  return columns;
 }
 
 function sourceEntryForPath(

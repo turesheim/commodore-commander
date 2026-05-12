@@ -49,6 +49,16 @@ test('data checkpoint creation can stop on loads and stores without exec', () =>
   assert.equal(body.toString('hex'), '00c000c00101030000');
 });
 
+test('checkpoint conditions encode checkpoint number and expression', () => {
+  const [command, body] = ViceMonitorRequests.setCheckpointCondition(
+    0x1234,
+    'A == $01'
+  );
+
+  assert.equal(command, ViceMonitorCommandId.CHECKPOINT_CONDITION_SET);
+  assert.equal(body.toString('hex'), '341200000841203d3d20243031');
+});
+
 test('memory writes encode VICE memory-set body with side effects', () => {
   const [command, body] = ViceMonitorRequests.memorySet(
     0x0400,

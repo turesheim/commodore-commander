@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Commodore Commander: Build debug-demo",
+      "type": "commodore-kickassembler-build",
+      "task": "build",
+      "executionType": "customExecution",
+      "programName": "debug-demo",
+      "profileName": "debug",
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      }
+    }
+  ]
+}

@@ -1,58 +1,64 @@
 {
+  "defaultProfile": "debug",
   "profiles": {
     "debug": {
       "javaRuntime": "java",
-      "javaArgs": [],
-      "libraryRoots": [
-        "library"
-      ],
       "outputFolder": "out",
       "showMemory": true,
       "debug": false,
       "viceSymbols": true,
       "debugDump": true,
       "symbolFile": true,
+      "javaArgs": [],
+      "libraryRoots": [
+        "library"
+      ],
       "assemblerArgs": [],
       "generatedAssets": []
     }
   },
-  "defaultProfile": "debug",
   "programs": [
     {
+      "runProgram": "out/hello.prg",
       "name": "hello",
       "root": "kickassembler/hello.asm",
-      "profile": "debug",
-      "runProgram": "out/hello.prg"
+      "profile": "debug"
     },
     {
+      "runProgram": "out/arkadrum.prg",
       "name": "martin-galway-arkadrum",
       "root": "music/MartinGalway/arkadrum.asm",
-      "profile": "debug",
-      "runProgram": "out/arkadrum.prg"
+      "profile": "debug"
     },
     {
+      "runProgram": "out/arkanoid.prg",
       "name": "martin-galway-arkanoid",
       "root": "music/MartinGalway/arkanoid.asm",
-      "profile": "debug",
-      "runProgram": "out/arkanoid.prg"
+      "profile": "debug"
     },
     {
+      "runProgram": "out/gameover.prg",
       "name": "martin-galway-gameover",
       "root": "music/MartinGalway/gameover.asm",
-      "profile": "debug",
-      "runProgram": "out/gameover.prg"
+      "profile": "debug"
     },
     {
+      "runProgram": "out/rambload.prg",
       "name": "martin-galway-rambload",
       "root": "music/MartinGalway/rambload.asm",
-      "profile": "debug",
-      "runProgram": "out/rambload.prg"
+      "profile": "debug"
     },
     {
+      "runProgram": "out/wizball.prg",
       "name": "martin-galway-wizball",
       "root": "music/MartinGalway/wizball.asm",
+      "profile": "debug"
+    },
+    {
+      "name": "debug-demo",
+      "root": "kickassembler/debug-demo.asm",
       "profile": "debug",
-      "runProgram": "out/wizball.prg"
+      "runProgram": "out/debug-demo.prg"
     }
   ]
 }

@@ -42,6 +42,12 @@ Current responsibility:
   and bank combobox controls, persisted settings, 40-column screen rows, and
   ASCII, custom text, or bitmap C64 PETSCII/screen-code rendering with
   upper/graphics and lower/upper charset selection plus labeled control bytes
+- add commands for sending editor expressions to Theia's Watch view and for
+  installing persistent VICE memory watchpoints through DAP data breakpoints
+- provide a memory watchpoint manager in the Debug breakpoints menu with add,
+  enable/disable, edit, delete, clear, and reinstall actions; watchpoints can
+  include byte count, read/write access, VICE condition text, and DAP-style hit
+  conditions
 - filter editor reference lookup against the selected machine profile so
   machine-specific I/O, ROM, memory-map, and zero-page symbols do not bleed
   into unrelated machines

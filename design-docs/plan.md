@@ -70,8 +70,8 @@ server or preserve Java as a language-support runtime dependency.
    - Wire generated launch entries to build tasks and the workspace Active
      Machine preference where appropriate.
    - Add live VICE monitor fixtures and automated session tests.
-   - Improve disassembly, monitor-console coverage, data breakpoint UX, and
-     source/label presentation.
+   - Improve disassembly, monitor-console coverage, deeper live watchpoint
+     telemetry, and source/label presentation.
    - Extract `packages/vice-runtime` only when VICE process discovery,
      packaging, and argument construction become shared outside the current
      Theia/debug-adapter seams.

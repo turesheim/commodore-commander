@@ -87,7 +87,17 @@ Implemented debugger features:
 - launch and terminate VICE from Theia's built-in Run and Debug commands
 - Start Without Debugging through DAP `noDebug`, which starts VICE without the binary monitor
 - Kick Assembler `.dbg` source mapping for source breakpoints, breakpoint locations, loaded sources, labels, and source-backed stack frame locations with nearest-line fallback and generated PRG-disassembly fallback
-- source breakpoints and memory data breakpoints/watchpoints through VICE binary-monitor checkpoints
+- source breakpoints and memory data breakpoints/watchpoints through VICE
+  binary-monitor checkpoints, including VICE checkpoint conditions and
+  DAP-style hit conditions
+- logpoints/tracepoints for source lines, using non-stopping VICE checkpoints
+  when the log message only needs static values and adapter-managed
+  stop/log/resume when live register values are needed
+- persistent memory watchpoint management from the Debug breakpoints menu, with
+  add, enable/disable, edit, delete, clear, and reinstall actions
+- watchpoint stop descriptions that include the configured range, actual
+  read/write access type, current PC, and current watched byte values
+- Watch view evaluation for registers, labels, and address expressions such as `label+1`, plus Kick Assembler `.watch` entries exposed as live memory values in the Variables view
 - continue, pause, step in, step over, and step out controls
 - register and Kick Assembler label scopes in Theia's Variables view
 - editing CPU registers through DAP `setVariable`

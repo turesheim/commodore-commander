@@ -3,6 +3,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 
 import {
+  findLabelByName,
   findLineMappingForAddress,
   findLineMappingForSourceLine,
   findLineMappingsForSourceRange,
@@ -28,12 +29,30 @@ test('parseKickAssemblerDebugInfo reads sources, line mappings, and labels', () 
       <Labels values="SEGMENT,ADDRESS,NAME,FILE_IDX,LINE1,COL1,LINE2,COL2">
         Default,$1018,Done,1,65,1,65,4
       </Labels>
+      <Watchpoints values="SEGMENT,START,END,ARGUMENT">
+        Default,$D018,,hex8
+        Default,$D000,$D00F,store
+      </Watchpoints>
     </C64debugger>`,
     { sourceRoots: [workspaceRoot] }
   );
 
   assert.equal(debugInfo.sources.length, 2);
   assert.equal(debugInfo.labels.find((label) => label.name === 'Done')?.address, 0x1018);
+  assert.equal(findLabelByName(debugInfo, 'done')?.address, 0x1018);
+  assert.deepEqual(debugInfo.watches, [
+    {
+      segment: 'Default',
+      startAddress: 0xd018,
+      argument: 'hex8'
+    },
+    {
+      segment: 'Default',
+      startAddress: 0xd000,
+      endAddress: 0xd00f,
+      argument: 'store'
+    }
+  ]);
   assert.equal(findNearestLabelBeforeAddress(debugInfo, 0x101a)?.name, 'Done');
   assert.equal(findNearestLabelBeforeAddress(debugInfo, 0x1100, 0x20), undefined);
   assert.equal(findLineMappingForAddress(debugInfo, 0x1000)?.startLine, 50);

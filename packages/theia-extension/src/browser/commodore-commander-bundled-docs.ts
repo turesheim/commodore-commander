@@ -65,6 +65,11 @@ export const BUNDLED_DOCUMENTS: readonly BundledDocumentationEntry[] = [
     details: 'How to configure profiles, targets and launching'
   },
   {
+    path: 'debugger-user-guide.md',
+    label: 'Debugger User Guide',
+    details: 'Step-by-step VICE debugger workflow and watchpoints'
+  },
+  {
     path: 'character-set-format.md',
     label: 'Character Set Format',
     details: 'Native charset JSON layout and export formats'

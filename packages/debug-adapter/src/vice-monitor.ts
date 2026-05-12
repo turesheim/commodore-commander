@@ -403,6 +403,20 @@ export const ViceMonitorRequests = {
     const body = Buffer.alloc(4);
     body.writeUInt32LE(checkpointNumber, 0);
     return [ViceMonitorCommandId.CHECKPOINT_DELETE, body];
+  },
+  setCheckpointCondition: (
+    checkpointNumber: number,
+    expression: string
+  ): [ViceMonitorCommandId, ViceMonitorBytes] => {
+    const condition = Buffer.from(expression, 'utf8');
+    if (condition.length > 0xff) {
+      throw new Error('VICE checkpoint conditions must be 255 bytes or shorter.');
+    }
+    const body = Buffer.alloc(5 + condition.length);
+    body.writeUInt32LE(checkpointNumber, 0);
+    body.writeUInt8(condition.length, 4);
+    condition.copy(body, 5);
+    return [ViceMonitorCommandId.CHECKPOINT_CONDITION_SET, body];
   }
 };
 

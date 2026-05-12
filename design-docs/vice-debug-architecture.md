@@ -50,8 +50,9 @@ This layer owns:
 - VICE process launch with `-binarymonitor`, `-binarymonitoraddress`, and
   `-initbreak ready` for debugging; `noDebug` launches omit the monitor and
   initial break
-- DAP request handling for launch, source breakpoints, data breakpoints,
-  continue, pause, step in, step over, step out, stack frames,
+- DAP request handling for launch, source breakpoints, conditional
+  breakpoints, hit conditions, logpoints/tracepoints, data breakpoints,
+  conditional watchpoints, continue, pause, step in, step over, step out, stack frames,
   scopes/variables, register writes, evaluation, loaded sources, readMemory,
   writeMemory, and disassemble
 - DAP breakpoint-location discovery backed by Kick Assembler `.dbg` line
@@ -77,9 +78,13 @@ The Theia extension now contributes:
   memory-space dropdown and bank combobox controls, persisted settings, and
   ASCII, custom text, or bitmap C64 PETSCII/screen-code renderings with
   upper/graphics and lower/upper charset selection plus labeled control bytes
+- a Debug breakpoints menu action for managing persistent memory watchpoints,
+  including add, enable/disable, edit, delete, clear, and active-session
+  reinstall operations
 - DAP adapter startup through Theia's backend debug adapter contribution
 
-Breakpoints, data breakpoints, stack frames, variables, stepping controls,
+Breakpoints, data breakpoints, conditional breakpoints/watchpoints, logpoints,
+stack frames, variables, stepping controls,
 memory reads/writes, register writes, loaded sources, complete NMOS 6502
 disassembly, start/stop lifecycle, and launch/snippet authoring are surfaced
 through Theia's existing debug views and configuration paths rather than new
@@ -187,7 +192,8 @@ The TypeScript seams are easier to test because:
 Current automated coverage is intentionally focused on `.dbg` parsing, full
 NMOS 6502 disassembly, stack-frame reconstruction, and VICE binary monitor
 request encoding for register reads/writes, memory writes, checkpoint creation,
-and data breakpoints. Live VICE monitor fixtures should be added next.
+checkpoint conditions, and data breakpoints. Live VICE monitor fixtures should
+be added next.
 
 ## Current Limitations
 
@@ -196,6 +202,8 @@ This pass still does not include:
 - live-session automated tests against a real VICE binary monitor
 - cycle-accurate execution-history stack reconstruction for non-`JSR` or
   asynchronous interrupt provenance
+- arbitrary textual monitor checkpoint action commands; the binary monitor path
+  supports conditions, while logpoints are adapter-managed
 - non-macOS embedded VICE payloads
 - Intel macOS embedded VICE payloads
 - Theia task-provider integration for build-before-debug workflows

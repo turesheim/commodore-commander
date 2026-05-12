@@ -40,7 +40,8 @@ binary monitor.
 The implementation follows the VICE binary monitor command format: memory
 reads/writes carry side-effect, memory-space, and bank fields; register writes
 use the `REGISTERS_SET` command; source breakpoints and data breakpoints both
-use VICE checkpoints with different CPU-operation masks.
+use VICE checkpoints with different CPU-operation masks; conditional source and
+data breakpoints use the VICE checkpoint condition command.
 
 Protocol reference: [VICE Manual, Binary monitor](https://vice-emu.sourceforge.io/vice_13.html).
 
@@ -49,9 +50,29 @@ Protocol reference: [VICE Manual, Binary monitor](https://vice-emu.sourceforge.i
 - Launch and terminate VICE through Theia.
 - Start Without Debugging through DAP `noDebug`, without `-binarymonitor`.
 - Source breakpoints backed by Kick Assembler `.dbg` line mappings.
+- Conditional source breakpoints through VICE checkpoint conditions.
+- Hit-count source breakpoints interpreted by the adapter before surfacing a
+  stop to the DAP client.
+- Source logpoints/tracepoints. Static logpoints use non-stopping VICE
+  checkpoints; logpoints that need live register values stop briefly so the
+  adapter can refresh registers, emit the log message, and resume.
 - Breakpoint-location discovery for valid assembled instruction lines.
 - Data breakpoints/watchpoints for C64 memory labels or addresses, using VICE
   load/store checkpoints.
+- Conditional data breakpoints/watchpoints through VICE checkpoint conditions.
+- Hit-count data breakpoints/watchpoints interpreted by the adapter.
+- Read/write watchpoints are installed as separate VICE load and store
+  checkpoints so a hit can report the actual access type.
+- Watchpoint stops include the watched range, actual read/write access type,
+  current PC, and current watched byte values in the stopped-event description
+  and Debug Console output.
+- A persistent Theia watchpoint manager supports add, enable/disable, edit,
+  delete, clear, and reinstall actions without requiring a custom debug view.
+- Watch expressions for registers, labels, and address expressions. In Watch
+  context, labels and addresses show the current byte value and keep a DAP
+  memory reference for Memory view navigation.
+- Kick Assembler `.watch` entries from debug dumps appear as a live memory
+  scope in the Variables view.
 - Continue, pause, step in, step over, and step out.
 - Stack frame for the current CPU PC, with source mapping where available.
 - Register and Kick Assembler label scopes.
@@ -122,3 +143,7 @@ emulator is running.
 - Build-before-debug still needs proper Theia task integration. Today the
   launch bridge can create debug configurations from build-plan data, but debug
   launch and build execution are not a complete task pipeline.
+- VICE textual monitor `command <checknum> ...` actions are not exposed through
+  the binary monitor protocol used here. Logpoints are therefore implemented in
+  the adapter with VICE stop/non-stop checkpoints rather than arbitrary VICE
+  action commands.

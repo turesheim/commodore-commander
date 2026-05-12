@@ -17,14 +17,25 @@ What is here:
   starting VICE without the binary monitor or `-initbreak`
 - VICE monitor protocol IDs, request builders, frame decoding, and response
   correlation
-- DAP support for launch, source breakpoints, data breakpoints/watchpoints,
+- DAP support for launch, source breakpoints, conditional source breakpoints,
+  source hit conditions, source logpoints/tracepoints, data
+  breakpoints/watchpoints, conditional data breakpoints, data hit conditions,
   continue, pause, step in, step over, step out, stack frames, register
-  variables, register writes, label variables, memory reads/writes, loaded
-  sources, generated source content, evaluation, hardware-stack call-frame
+  variables, register writes, label variables, Kick Assembler `.watch`
+  variables, memory reads/writes, loaded sources, generated source content,
+  Watch-view evaluation, hardware-stack call-frame
   reconstruction, and complete NMOS 6502 disassembly including undocumented
   opcodes. The Theia extension's
   Memory view consumes `readMemory` and `writeMemory`; memory UI state remains
   outside the adapter.
+- Source and data breakpoint conditions are forwarded to VICE checkpoint
+  conditions. Hit conditions are interpreted by the adapter. Logpoints use
+  non-stopping checkpoints when possible and a stop/log/resume path when the log
+  message needs live register values.
+- Read/write watchpoints are split into separate VICE load and store
+  checkpoints so stop descriptions can report the actual access type. A
+  watchpoint stop description also includes the watched range, current PC, and
+  current watched byte values.
 - Stack-frame source locations use exact `.dbg` mappings where possible and a
   bounded nearest-line fallback for call-stack navigation. If no source mapping
   can be used, the adapter exposes a generated disassembly source for the
@@ -54,6 +65,8 @@ What is not here yet:
 
 - cycle-accurate execution-history stack reconstruction for non-`JSR` or
   asynchronous interrupt provenance
+- arbitrary VICE textual monitor action commands for checkpoints; VICE binary
+  monitor conditions are supported, but logpoint actions are adapter-managed
 - non-macOS embedded VICE payload discovery
 - complete replacement of every Eclipse debug view
 

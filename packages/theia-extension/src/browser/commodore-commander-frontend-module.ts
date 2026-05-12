@@ -77,6 +77,7 @@ import {
   type CommodoreCharacterSetWidgetOptions
 } from './commodore-character-set-widget';
 import { CommodorePrgContribution } from './commodore-prg-contribution';
+import { CommodoreDebugWatchContribution } from './commodore-debug-watch-contribution';
 import { CommodoreViceLaunchConfigurationContribution } from './commodore-vice-launch-configuration-contribution';
 import { CommodoreCommanderWelcomeContribution } from './commodore-commander-welcome-contribution';
 import { ViceMemoryContribution } from './vice-memory-contribution';
@@ -256,6 +257,12 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     .inSingletonScope();
   bind(CommandContribution).toService(
     CommodoreViceLaunchConfigurationContribution
+  );
+  bind(CommodoreDebugWatchContribution).toSelf().inSingletonScope();
+  bind(CommandContribution).toService(CommodoreDebugWatchContribution);
+  bind(MenuContribution).toService(CommodoreDebugWatchContribution);
+  bind(FrontendApplicationContribution).toService(
+    CommodoreDebugWatchContribution
   );
   bind(ViceMemoryWidget).toSelf();
   bind(WidgetFactory)
