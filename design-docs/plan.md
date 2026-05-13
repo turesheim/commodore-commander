@@ -46,8 +46,9 @@ dependency.
 
 2. Make build integration Theia-native.
    - Keep `commodore-commander.build.json` as the project build model.
-   - Add Theia task integration for build, clean, build-before-debug, and
-     headless-equivalent execution.
+   - Harden the existing Theia task integration for build and
+     build-before-debug, and add clean/headless-equivalent task coverage where
+     it is still missing.
    - Improve build-config validation, source attribution, generated-asset
      handling, and marker ranges from KickAss output.
    - Add a configuration editor only after the schema and validation behavior
@@ -58,7 +59,8 @@ dependency.
      adapter instead of rebuilding previous launch tabs.
    - Wire generated launch entries to build tasks and the workspace Active
      Machine preference where appropriate.
-   - Add live VICE monitor fixtures and automated session tests.
+   - Keep expanding the opt-in real VICE e2e session tests and make them
+     repeatable in CI where a VICE runtime is available.
    - Improve disassembly, monitor-console coverage, deeper live watchpoint
      telemetry, and source/label presentation.
    - Extract `packages/vice-runtime` only when VICE process discovery,
@@ -94,10 +96,10 @@ dependency.
 | Area | Previous IDE baseline | Current Theia plan/status | Remaining gap |
 | --- | --- | --- | --- |
 | Source editing | Workbench-integrated editor, TM4E syntax, hovers, annotations, and outline | Monaco language registration, TextMate syntax, hovers, completions, definition/reference, rename, symbols, semantic tokens, folding, formatting, quick fixes | Compiler-accurate semantics, incremental index, deeper diagnostics, and richer reference coverage |
-| Project model | Resource-backed project model, project nature, automatic builder | File/path based workspace planner and `commodore-commander.build.json` | Stronger validation and Theia task integration |
+| Project model | Resource-backed project model, project nature, automatic builder | File/path based workspace planner, `commodore-commander.build.json`, and Theia build-task provider | Stronger validation, clean-task coverage, and richer task UX |
 | Build execution | Incremental builder, console, problem markers | Theia backend build service, save-triggered builds, console widget, problem markers, headless CLI | Build-before-debug tasks, richer KickAss diagnostic attribution, form/schema UX |
-| Run workflow | Launch shortcuts and direct PRG launch behavior | Theia Start Debugging / Start Without Debugging with generated or existing `launch.json` | No separate run picker; Active Machine default is not yet written into generated launch entries |
-| Debug protocol | VICE binary monitor debugger | TypeScript DAP adapter over VICE binary monitor | Live monitor fixtures, better data/trace UX, cycle-accurate execution-history stack provenance |
+| Run workflow | Launch shortcuts and direct PRG launch behavior | Theia Start Debugging / Start Without Debugging with generated or existing `launch.json`, plus Kick Assembler `preLaunchTask` wiring | No separate run picker; configured-run build policies are not fully surfaced; Active Machine default is not yet written into generated source launch entries |
+| Debug protocol | VICE binary monitor debugger | TypeScript DAP adapter over VICE binary monitor with opt-in real VICE e2e coverage | Broader e2e/CI coverage, better data/trace UX, cycle-accurate execution-history stack provenance |
 | Memory UI | Memory monitors and renderings | Theia Memory view via DAP `readMemory`/`writeMemory` | More faithful C64 charset/ROM rendering and deeper rendering parity |
 | Disassembly | Disassembly view and label parsing | Complete NMOS 6502 DAP disassemble support | Richer symbol rendering |
 | Machine/runtime selection | Launch configuration tabs and bundled VICE assumptions | Machine profiles in TypeScript; macOS Apple Silicon embedded VICE path | Cross-platform VICE payloads, runtime-package extraction if reuse requires it |

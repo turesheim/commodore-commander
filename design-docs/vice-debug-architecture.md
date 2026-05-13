@@ -112,28 +112,38 @@ The TypeScript seams are easier to test because:
   from DAP request handling
 - `ViceDebugSession` can evolve independently from Theia UI code
 
-Current automated coverage is intentionally focused on `.dbg` parsing, full
-NMOS 6502 disassembly, stack-frame reconstruction, and VICE binary monitor
-request encoding for register reads/writes, memory writes, checkpoint creation,
-checkpoint conditions, and data breakpoints. Live VICE monitor fixtures should
-be added next.
+Current automated coverage includes `.dbg` parsing, full NMOS 6502
+disassembly, stack-frame reconstruction, VICE binary monitor request encoding,
+and an opt-in real VICE end-to-end suite under
+`packages/debug-adapter/src/test/e2e`. The real VICE lane launches the adapter
+over stdio, starts VICE through the production launch path, and verifies DAP
+behavior for launch, entry stops, source breakpoints, stepping, data
+breakpoints, memory reads/writes, trace-history last-write provenance,
+logpoints, ROM source fallback, and visual-debugger memory snapshots.
 
 ## Current Limitations
 
 This pass still does not include:
 
-- live-session automated tests against a real VICE binary monitor
+- a mandatory CI lane for real VICE end-to-end tests; they remain opt-in via
+  `VICE_E2E=1` and skip when the runtime is unavailable
+- live Theia UI automation for debug views, memory rendering, and visual
+  debugger React output
 - cycle-accurate execution-history stack reconstruction for non-`JSR` or
   asynchronous interrupt provenance
 - arbitrary textual monitor checkpoint action commands; the binary monitor path
   supports conditions, while logpoints are adapter-managed
 - non-macOS embedded VICE payloads
 - Intel macOS embedded VICE payloads
-- Theia task-provider integration for build-before-debug workflows
+- complete build-policy handling for configured runs; generated and existing
+  launch entries can use Kick Assembler `preLaunchTask` wiring, but there is
+  still no run picker or full `ifStale`/`always`/`never` policy flow
 
 ## Recommended Next Steps
 
-1. Exercise the DAP adapter against live VICE sessions and capture monitor
-   protocol fixtures for automated session tests.
-2. Improve disassembly with richer symbol rendering.
-3. Extend embedded VICE discovery to Linux, Windows, and Intel macOS payloads.
+1. Make the opt-in real VICE e2e lane repeatable in CI where a compatible VICE
+   runtime is available, and broaden it with additional regression scenarios.
+2. Add live Theia UI automation around debug startup, Memory view rendering,
+   and the C64 Visual Debugger.
+3. Improve disassembly with richer symbol rendering.
+4. Extend embedded VICE discovery to Linux, Windows, and Intel macOS payloads.

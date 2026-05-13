@@ -62,11 +62,13 @@ The custom `Run Kick Assembler Program...` command has been removed. Launching
 now goes through Theia's native Run and Debug commands and `launch.json`
 configuration. From an active assembler source, F5/Ctrl+F5 can offer to create a
 matching `commodore-vice` entry in `.theia/launch.json` and start that entry.
-Configured runs remain part of the build model and are retained for future
-Theia task/launch integration. The current debug-start bridge asks the build
-service for the active source's runnable program and writes a matching
-`commodore-vice` launch configuration when none exists; it does not expose a
-separate run picker.
+The debug-start bridge asks the build service for the active source's runnable
+program, writes or updates the matching Kick Assembler build task in
+`.theia/tasks.json`, and starts the debug configuration with a Kick Assembler
+`preLaunchTask` unless an existing configuration already defines one.
+Configured runs remain part of the build model, but there is still no separate
+run picker and the `ifStale`/`always`/`never` build-policy flow is not fully
+surfaced in the Theia launch path.
 
 ## Active Machine
 

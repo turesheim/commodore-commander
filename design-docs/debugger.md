@@ -143,11 +143,13 @@ emulator is running.
   because they do not push a return address. Stack-frame names include nearest
   containing label context so loops are still visible without misrepresenting
   branch targets as calls.
-- Live Theia plus VICE UI automation is still missing. Current coverage is
-  unit-level protocol/build verification plus manual live-session testing.
-- Build-before-debug still needs proper Theia task integration. Today the
-  launch bridge can create debug configurations from build-plan data, but debug
-  launch and build execution are not a complete task pipeline.
+- Live Theia plus VICE UI automation is still missing. Current automated
+  coverage includes unit/protocol tests plus opt-in real VICE DAP e2e sessions;
+  React/Theia debug-view behavior still needs UI automation or manual checks.
+- Build-before-debug has Theia task-provider and generated `preLaunchTask`
+  wiring for Kick Assembler builds. Remaining work is run-picker and
+  build-policy behavior for configured runs, plus any clean-task workflow that
+  should be exposed through Theia tasks.
 - VICE textual monitor `command <checknum> ...` actions are not exposed through
   the binary monitor protocol used here. Logpoints are therefore implemented in
   the adapter with VICE stop/non-stop checkpoints rather than arbitrary VICE
