@@ -27,6 +27,14 @@ profile creates debug information:
 See [Build Configuration](build-configuration.md) for project and launch
 configuration details.
 
+If your platform does not have a bundled VICE runtime, set these preferences
+before launching:
+
+- `commodoreCommander.tools.viceExecutable`: VICE executable command or path,
+  such as `x64sc` or an absolute path to it.
+- `commodoreCommander.tools.viceResourcesPath`: VICE resources root containing
+  `share/vice`, used for bundled ROM images and monitor symbols.
+
 ## Start A Debug Session
 
 1. Open the main Kick Assembler source file for the program.

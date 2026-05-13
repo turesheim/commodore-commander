@@ -8,6 +8,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import type { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { ILogger } from '@theia/core/lib/common/logger';
+import {
+  PreferenceService
+} from '@theia/core/lib/common/preferences';
 
 import type {
   SidScoreGateModeName,
@@ -46,6 +49,9 @@ import {
 import {
   getBundledKickAssemblerJarPath
 } from './kick-assembler-build-runner';
+import {
+  getCommodoreCommanderToolPreferences
+} from '../common/commodore-commander-tool-preferences';
 
 export const SID_SCORE_CLI_JAR_FILENAME = 'sidscore-cli-0.6.0.jar';
 
@@ -136,6 +142,9 @@ export class SidScoreRuntimeServiceImpl
   implements SidScoreRuntimeService, BackendApplicationContribution {
   @inject(ILogger)
   protected readonly logger!: ILogger;
+
+  @inject(PreferenceService)
+  protected readonly preferenceService!: PreferenceService;
 
   protected client: SidScoreRuntimeClient | undefined;
   protected serverProcess: ReturnType<typeof spawn> | undefined;
@@ -495,7 +504,7 @@ export class SidScoreRuntimeServiceImpl
     const kickAssemblerJarPath = getBundledKickAssemblerJarPath();
     await assertReadable(kickAssemblerJarPath, 'KickAssembler jar');
 
-    const command = javaCommand ?? getJavaCommand();
+    const command = javaCommand ?? await this.resolveJavaCommand();
     const args = [
       // The Theia instrument panel expects live MIDI to be audible immediately
       // after settings changes. Waiting for a pre-audio note can miss input
@@ -587,6 +596,12 @@ export class SidScoreRuntimeServiceImpl
 
     this.readyServer = readyEvent;
     await this.connectToReadyServer(readyEvent);
+  }
+
+  protected async resolveJavaCommand(): Promise<string> {
+    await this.preferenceService.ready;
+    return getCommodoreCommanderToolPreferences(this.preferenceService)
+      .javaRuntime ?? getJavaCommand();
   }
 
   protected emitServerOutput(
@@ -1241,7 +1256,11 @@ async function assertReadable(
 
 function getJavaCommand(): string {
   if (process.env.JAVA_HOME) {
-    return path.join(process.env.JAVA_HOME, 'bin', 'java');
+    return path.join(
+      process.env.JAVA_HOME,
+      'bin',
+      process.platform === 'win32' ? 'java.exe' : 'java'
+    );
   }
   return 'java';
 }

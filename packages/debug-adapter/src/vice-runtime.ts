@@ -45,13 +45,10 @@ export async function launchViceProcess(
   options: ViceProcessLaunchOptions
 ): Promise<ViceProcessLaunchResult> {
   await assertReadable(options.program, 'PRG file');
-  // Signal the emulator itself on shutdown, not the macOS wrapper shell.
-  const command = path.join(
+  const command = await resolveViceCommand(
     options.viceResourcesPath,
-    'bin',
     options.viceExecutable
   );
-  await assertExecutable(command, `VICE emulator ${options.viceExecutable}`);
 
   const enableMonitor = options.enableMonitor ?? true;
   const monitorHost = enableMonitor ? options.monitorHost ?? '127.0.0.1' : undefined;
@@ -177,7 +174,7 @@ function waitForSpawn(
   return new Promise((resolve, reject) => {
     child.once('spawn', resolve);
     child.once('error', (error) => {
-      reject(new Error(`Failed to start embedded VICE: ${command}. ${error.message}`));
+      reject(new Error(`Failed to start VICE: ${command}. ${error.message}`));
     });
   });
 }
@@ -219,4 +216,55 @@ function findAvailablePort(host: string): Promise<number> {
       server.close(() => resolve(port));
     });
   });
+}
+
+export async function resolveViceCommand(
+  viceResourcesPath: string,
+  viceExecutable: string
+): Promise<string> {
+  const executable = normalizedExecutableName(viceExecutable);
+  if (isPathLike(executable)) {
+    const command = path.resolve(executable);
+    await assertExecutable(command, `VICE emulator ${viceExecutable}`);
+    return command;
+  }
+
+  for (const candidate of viceCommandCandidates(viceResourcesPath, executable)) {
+    if (await isExecutable(candidate)) {
+      return candidate;
+    }
+  }
+
+  return executable;
+}
+
+function viceCommandCandidates(
+  viceResourcesPath: string,
+  viceExecutable: string
+): string[] {
+  const executableNames = process.platform === 'win32' &&
+    !viceExecutable.toLowerCase().endsWith('.exe')
+    ? [viceExecutable, `${viceExecutable}.exe`]
+    : [viceExecutable];
+  return executableNames.flatMap((executableName) => [
+    path.join(viceResourcesPath, 'bin', executableName),
+    path.join(viceResourcesPath, executableName)
+  ]);
+}
+
+async function isExecutable(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function normalizedExecutableName(viceExecutable: string): string {
+  return viceExecutable.trim() || 'x64sc';
+}
+
+function isPathLike(value: string): boolean {
+  return path.isAbsolute(value) || /[\\/]/u.test(value);
 }

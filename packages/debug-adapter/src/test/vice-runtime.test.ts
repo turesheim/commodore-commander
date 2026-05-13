@@ -1,9 +1,16 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
+import { chmod, cp, mkdir, mkdtemp, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { test } from 'node:test';
 
-import { createViceProcessArgs, terminateViceProcess } from '../vice-runtime';
+import {
+  createViceProcessArgs,
+  resolveViceCommand,
+  terminateViceProcess
+} from '../vice-runtime';
 
 test('createViceProcessArgs omits binary monitor arguments when monitor is disabled', () => {
   const args = createViceProcessArgs({
@@ -108,5 +115,30 @@ test('terminateViceProcess can use SIGKILL immediately', async () => {
     assert.equal(child.signalCode, 'SIGKILL');
   } finally {
     child.kill('SIGKILL');
+  }
+});
+
+test('resolveViceCommand accepts an absolute executable path', async () => {
+  assert.equal(
+    await resolveViceCommand('/missing/vice/resources', process.execPath),
+    process.execPath
+  );
+});
+
+test('resolveViceCommand finds an executable under the VICE resources bin directory', async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'cc-vice-runtime-'));
+  try {
+    const executableName = process.platform === 'win32' ? 'x64sc.exe' : 'x64sc';
+    const executablePath = path.join(tempRoot, 'bin', executableName);
+    await mkdir(path.dirname(executablePath), { recursive: true });
+    await cp(process.execPath, executablePath);
+    await chmod(executablePath, 0o755);
+
+    assert.equal(
+      await resolveViceCommand(tempRoot, 'x64sc'),
+      executablePath
+    );
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
   }
 });

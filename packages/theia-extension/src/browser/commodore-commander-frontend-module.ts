@@ -40,6 +40,9 @@ import {
   KickAssemblerBuildServicePath
 } from '../common/kick-assembler-build-service';
 import {
+  COMMODORE_COMMANDER_TOOL_PREFERENCE_BINDING
+} from '../common/commodore-commander-tool-preferences';
+import {
   CommodorePrgService,
   CommodorePrgServicePath
 } from '../common/commodore-prg-service';
@@ -205,6 +208,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
   bind(CommandContribution).toService(CommodoreCommanderWelcomeContribution);
   bind(PreferenceContribution).toConstantValue(
     COMMODORE_MACHINE_PROFILE_PREFERENCE_BINDING
+  );
+  bind(PreferenceContribution).toConstantValue(
+    COMMODORE_COMMANDER_TOOL_PREFERENCE_BINDING
   );
   bind(CommodoreMachineProfileSelectionService).toSelf().inSingletonScope();
   bind(CommodoreMachineProfileWidget).toSelf();

@@ -189,6 +189,17 @@ CI can override the toolchain without editing the project file:
 - `COMMODORE_COMMANDER_BUILD_PROFILE`
 - `COMMODORE_COMMANDER_BUILD_CONFIG`
 
+User or workspace preferences can point Commodore Commander at local external
+tools without changing shared project files:
+
+- `commodoreCommander.tools.javaRuntime`: Java command or path for Kick
+  Assembler and SIDScore. `COMMODORE_COMMANDER_JAVA_RUNTIME` still takes
+  precedence.
+- `commodoreCommander.tools.viceExecutable`: VICE executable command or path.
+  Launch configurations can still override this with `viceExecutable`.
+- `commodoreCommander.tools.viceResourcesPath`: VICE resources root containing
+  `share/vice`. Bundled runtimes use the same root for `bin`.
+
 ## Headless Build
 
 After building the TypeScript packages, use the same planner and command

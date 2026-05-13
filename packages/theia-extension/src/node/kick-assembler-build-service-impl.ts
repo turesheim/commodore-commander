@@ -3,7 +3,10 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-import { injectable } from '@theia/core/shared/inversify';
+import {
+  PreferenceService
+} from '@theia/core/lib/common/preferences';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import {
   KickAssemblerWorkspaceBuildPlanner,
   findKickAssemblerBuildConfigurationPath,
@@ -12,6 +15,7 @@ import {
   pathToDocumentUri,
   resolveKickAssemblerBuildConfiguration,
   type KickAssemblerBuildConfiguration,
+  type KickAssemblerBuildConfigurationEnvironment,
   type KickAssemblerBuildProgram,
   type KickAssemblerBuildSettingsConfiguration,
   type KickAssemblerBuildProfileConfiguration,
@@ -39,6 +43,9 @@ import {
   getBundledKickAssemblerJarPath,
   runKickAssemblerProgram
 } from './kick-assembler-build-runner';
+import {
+  getCommodoreCommanderToolPreferences
+} from '../common/commodore-commander-tool-preferences';
 
 const DEFAULT_BUILD_CONFIG_FILE = 'commodore-commander.build.json';
 const DEFAULT_PROFILE_NAME = 'debug';
@@ -64,6 +71,9 @@ interface SelectedRunProgram {
 
 @injectable()
 export class KickAssemblerBuildServiceImpl implements KickAssemblerBuildService {
+  @inject(PreferenceService)
+  protected readonly preferenceService!: PreferenceService;
+
   private readonly planner = new KickAssemblerWorkspaceBuildPlanner();
   private client: KickAssemblerBuildClient | undefined;
   private pendingRequest: KickAssemblerBuildRequest | undefined;
@@ -144,12 +154,16 @@ export class KickAssemblerBuildServiceImpl implements KickAssemblerBuildService 
     const changedPath = request.resourceUri
       ? fileURLToPath(request.resourceUri)
       : undefined;
+    const environment = await this.getBuildEnvironment(
+      request.resourceUri ?? request.workspaceRootUri
+    );
     const activeProfileName =
       request.profileName ?? configurationSummary.activeProfileName;
     let configuration = await loadKickAssemblerBuildConfiguration(
       workspaceRootPath,
       {
         defaultKickAssemblerJar: getBundledKickAssemblerJarPath(),
+        environment,
         profileName: activeProfileName
       }
     );
@@ -166,6 +180,7 @@ export class KickAssemblerBuildServiceImpl implements KickAssemblerBuildService 
         workspaceRootPath,
         {
           defaultKickAssemblerJar: getBundledKickAssemblerJarPath(),
+          environment,
           profileName: selectedProfileName
         }
       );
@@ -275,10 +290,14 @@ export class KickAssemblerBuildServiceImpl implements KickAssemblerBuildService 
       );
       const activeProfileName =
         request.profileName ?? configurationSummary.activeProfileName;
+      const environment = await this.getBuildEnvironment(
+        request.resourceUri ?? request.workspaceRootUri
+      );
       const configuration = await loadKickAssemblerBuildConfiguration(
         workspaceRootPath,
         {
           defaultKickAssemblerJar: getBundledKickAssemblerJarPath(),
+          environment,
           profileName: activeProfileName
         }
       );
@@ -573,6 +592,9 @@ export class KickAssemblerBuildServiceImpl implements KickAssemblerBuildService 
       },
       {
         defaultKickAssemblerJar: getBundledKickAssemblerJarPath(),
+        environment: await this.getBuildEnvironment(
+          pathToDocumentUri(workspaceRootPath)
+        ),
         profileName: activeProfileName
       }
     );
@@ -766,6 +788,9 @@ export class KickAssemblerBuildServiceImpl implements KickAssemblerBuildService 
       {
         configPath,
         defaultKickAssemblerJar: getBundledKickAssemblerJarPath(),
+        environment: await this.getBuildEnvironment(
+          pathToDocumentUri(workspaceRootPath)
+        ),
         profileName: activeProfileName
       }
     );
@@ -851,6 +876,23 @@ export class KickAssemblerBuildServiceImpl implements KickAssemblerBuildService 
 
   private emit(event: KickAssemblerBuildEvent): void {
     this.client?.onBuildEvent(event);
+  }
+
+  private async getBuildEnvironment(
+    resourceUri?: string
+  ): Promise<KickAssemblerBuildConfigurationEnvironment> {
+    await this.preferenceService.ready;
+    const environment: KickAssemblerBuildConfigurationEnvironment = {
+      ...process.env
+    };
+    const javaRuntime = getCommodoreCommanderToolPreferences(
+      this.preferenceService,
+      resourceUri
+    ).javaRuntime;
+    if (javaRuntime && !environment.COMMODORE_COMMANDER_JAVA_RUNTIME) {
+      environment.COMMODORE_COMMANDER_JAVA_RUNTIME = javaRuntime;
+    }
+    return environment;
   }
 }
 

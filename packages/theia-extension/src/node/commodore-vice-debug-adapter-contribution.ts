@@ -2,12 +2,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
+import {
+  PreferenceService
+} from '@theia/core/lib/common/preferences';
 import type { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 import type {
   DebugAdapterContribution,
   DebugAdapterExecutable
 } from '@theia/debug/lib/common/debug-model';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import {
   KickAssemblerWorkspaceBuildPlanner,
   loadKickAssemblerBuildConfiguration,
@@ -17,13 +20,16 @@ import {
 import { getBundledKickAssemblerJarPath } from './kick-assembler-build-runner';
 import {
   createViceArgs,
-  getViceResourcesPath,
+  resolveViceRuntime,
   resolveViceMachineProfile
 } from './vice-runtime-resolver';
 import {
   COMMODORE_VICE_DEBUG_TYPE,
   type CommodoreViceDebugConfiguration
 } from '../common/commodore-vice-debug';
+import {
+  getCommodoreCommanderToolPreferences
+} from '../common/commodore-commander-tool-preferences';
 
 @injectable()
 export class CommodoreViceDebugAdapterContribution
@@ -32,6 +38,9 @@ export class CommodoreViceDebugAdapterContribution
   readonly type = COMMODORE_VICE_DEBUG_TYPE;
   readonly label = 'Commodore VICE';
   readonly languages = ['kickassembler'];
+
+  @inject(PreferenceService)
+  protected readonly preferenceService!: PreferenceService;
 
   private readonly planner = new KickAssemblerWorkspaceBuildPlanner();
 
@@ -52,10 +61,22 @@ export class CommodoreViceDebugAdapterContribution
 
     try {
       const workspaceRootPath = fileURLToPath(workspaceFolderUri);
+      await this.preferenceService.ready;
+      const toolPreferences = getCommodoreCommanderToolPreferences(
+        this.preferenceService,
+        workspaceFolderUri
+      );
+      const environment = {
+        ...process.env
+      };
+      if (toolPreferences.javaRuntime && !environment.COMMODORE_COMMANDER_JAVA_RUNTIME) {
+        environment.COMMODORE_COMMANDER_JAVA_RUNTIME = toolPreferences.javaRuntime;
+      }
       const configuration = await loadKickAssemblerBuildConfiguration(
         workspaceRootPath,
         {
-          defaultKickAssemblerJar: getBundledKickAssemblerJarPath()
+          defaultKickAssemblerJar: getBundledKickAssemblerJarPath(),
+          environment
         }
       );
       const plan = await this.planner.planWorkspaceBuild(workspaceRootPath, undefined, {
@@ -116,6 +137,21 @@ export class CommodoreViceDebugAdapterContribution
           cwd: {
             type: 'string',
             description: 'Working directory for VICE.'
+          },
+          viceExecutable: {
+            type: 'string',
+            description: 'VICE executable command or path. Overrides the Commodore Commander VICE executable preference.'
+          },
+          viceResourcesPath: {
+            type: 'string',
+            description: 'VICE runtime resources root containing share/vice. Overrides the Commodore Commander VICE resources preference.'
+          },
+          viceArgs: {
+            type: 'array',
+            items: {
+              type: 'string'
+            },
+            description: 'Complete VICE command-line arguments. Overrides machine profile defaults and machine.viceArgs.'
           },
           stopOnEntry: {
             type: 'boolean',
@@ -178,7 +214,19 @@ export class CommodoreViceDebugAdapterContribution
     }
 
     const { profile, launch } = resolveViceMachineProfile(config.machine);
-    const viceResourcesPath = config.viceResourcesPath ?? await getViceResourcesPath();
+    await this.preferenceService.ready;
+    const toolPreferences = getCommodoreCommanderToolPreferences(
+      this.preferenceService,
+      workspaceFolderUri
+    );
+    const viceRuntime = await resolveViceRuntime({
+      resourcesPath: config.viceResourcesPath
+        ? resolveWorkspacePath(workspaceRootPath, config.viceResourcesPath)
+        : toolPreferences.viceResourcesPath,
+      executable: config.viceExecutable
+        ? resolveToolPath(workspaceRootPath, config.viceExecutable)
+        : toolPreferences.viceExecutable
+    });
     const debugInfo = config.debugInfo
       ? path.resolve(workspaceRootPath, config.debugInfo)
       : replaceExtension(program, '.dbg');
@@ -195,8 +243,8 @@ export class CommodoreViceDebugAdapterContribution
       cwd: config.cwd
         ? path.resolve(workspaceRootPath, config.cwd)
         : path.dirname(program),
-      viceResourcesPath,
-      viceExecutable: config.viceExecutable ?? profile.vice.executable,
+      viceResourcesPath: viceRuntime.resourcesPath,
+      viceExecutable: viceRuntime.executable ?? profile.vice.executable,
       viceArgs: config.viceArgs ?? createViceArgs(profile, launch),
       machineName: profile.displayName,
       stopOnEntry: config.stopOnEntry ?? true
@@ -249,4 +297,16 @@ function relativeOrAbsolute(rootPath: string, filePath: string): string {
   return relative && !relative.startsWith('..') && !path.isAbsolute(relative)
     ? relative
     : filePath;
+}
+
+function resolveWorkspacePath(rootPath: string, filePath: string): string {
+  return path.isAbsolute(filePath)
+    ? filePath
+    : path.resolve(rootPath, filePath);
+}
+
+function resolveToolPath(rootPath: string, commandOrPath: string): string {
+  return path.isAbsolute(commandOrPath) || /[\\/]/u.test(commandOrPath)
+    ? path.resolve(rootPath, commandOrPath)
+    : commandOrPath;
 }
