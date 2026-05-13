@@ -2,26 +2,15 @@
 
 ## Direction
 
-Commodore Commander is moving toward a Theia-based variant through additive,
-reviewable extraction. The Eclipse/PDE product remains the working baseline and
-must stay buildable while Theia support matures.
+Commodore Commander is now organized around the Theia-based application and
+TypeScript-first language/debug packages. Keep changes additive and reviewable
+while the remaining shared services mature.
 
-The current migration is TypeScript-first for language support. Existing Java
-language-related code is reference material only; do not design a Java language
-server or preserve Java as a language-support runtime dependency.
+The current architecture is TypeScript-first for language support. Do not
+design a Java language server or preserve Java as a language-support runtime
+dependency.
 
 ## Current Baseline
-
-### Eclipse Product Still Present
-
-- `net.resheim.eclipse.cc.ui` contains the active Eclipse editor, builder,
-  launch, VICE debug model, memory/rendering views, product workbench, and
-  command/UI integration.
-- `net.resheim.eclipse.cc.kickassembler.parser` contains the generated Java
-  Kick Assembler parser bundle and tests.
-- The root Maven/Tycho build remains the Eclipse product build.
-
-### Theia Variant In Progress
 
 - `packages/language-support` is the TypeScript language logic package. It owns
   syntax assets, text/location models, include resolution, semantic parsing,
@@ -66,7 +55,7 @@ server or preserve Java as a language-support runtime dependency.
 
 3. Close the run/debug workflow gap.
    - Continue using Theia launch configurations and the `commodore-vice` DAP
-     adapter instead of rebuilding Eclipse launch tabs.
+     adapter instead of rebuilding previous launch tabs.
    - Wire generated launch entries to build tasks and the workspace Active
      Machine preference where appropriate.
    - Add live VICE monitor fixtures and automated session tests.
@@ -100,26 +89,26 @@ server or preserve Java as a language-support runtime dependency.
    - Treat real signing, notarization, installers, and app-bundle polish as
      distribution work, not language/debug foundation work.
 
-## Eclipse-To-Theia Gap
+## Migration Gap
 
-| Area | Eclipse IDE baseline | Current Theia plan/status | Remaining gap |
+| Area | Previous IDE baseline | Current Theia plan/status | Remaining gap |
 | --- | --- | --- | --- |
-| Source editing | Eclipse editor, TM4E syntax, hovers, annotations, outline, workbench integration | Monaco language registration, TextMate syntax, hovers, completions, definition/reference, rename, symbols, semantic tokens, folding, formatting, quick fixes | Compiler-accurate semantics, incremental index, deeper diagnostics, and richer reference coverage |
-| Project model | Eclipse resources, project nature, automatic builder | File/path based workspace planner and `commodore-commander.build.json` | No Eclipse workspace emulation by design; needs stronger validation and Theia task integration |
-| Build execution | Eclipse incremental builder, console, problem markers | Theia backend build service, save-triggered builds, console widget, problem markers, headless CLI | Build-before-debug tasks, richer KickAss diagnostic attribution, form/schema UX |
-| Run workflow | Eclipse launch shortcuts and direct PRG launch behavior | Theia Start Debugging / Start Without Debugging with generated or existing `launch.json` | No separate run picker; Active Machine default is not yet written into generated launch entries |
-| Debug protocol | Eclipse debug model over VICE binary monitor | TypeScript DAP adapter over VICE binary monitor | Live monitor fixtures, better data/trace UX, cycle-accurate execution-history stack provenance |
-| Memory UI | Eclipse memory monitors and renderings | Theia Memory view via DAP `readMemory`/`writeMemory` | More faithful C64 charset/ROM rendering and deeper parity with Eclipse renderings |
-| Disassembly | Eclipse disassembly view and label parsing | Complete NMOS 6502 DAP disassemble support | Richer symbol rendering |
-| Machine/runtime selection | Eclipse launch configuration tabs and bundled VICE assumptions | Machine profiles in TypeScript; macOS Apple Silicon embedded VICE path | Cross-platform VICE payloads, runtime-package extraction if reuse requires it |
-| SIDScore | Not an Eclipse parity feature in this repository's Java code path | Theia syntax registration plus external SIDScoreCLI player-server integration | TypeScript SIDScore language intelligence, diagnostics, export workflow, and richer controls |
-| Packaging | Tycho/PDE product build | Local Theia Electron app package | Distributable packaging, signing/notarization, platform payload matrix |
-| Documentation | Eclipse/product docs and repository docs | Bundled docs registered in welcome/help plus design docs | Keep design docs, bundled docs manifest, and product help links synchronized |
+| Source editing | Workbench-integrated editor, TM4E syntax, hovers, annotations, and outline | Monaco language registration, TextMate syntax, hovers, completions, definition/reference, rename, symbols, semantic tokens, folding, formatting, quick fixes | Compiler-accurate semantics, incremental index, deeper diagnostics, and richer reference coverage |
+| Project model | Resource-backed project model, project nature, automatic builder | File/path based workspace planner and `commodore-commander.build.json` | Stronger validation and Theia task integration |
+| Build execution | Incremental builder, console, problem markers | Theia backend build service, save-triggered builds, console widget, problem markers, headless CLI | Build-before-debug tasks, richer KickAss diagnostic attribution, form/schema UX |
+| Run workflow | Launch shortcuts and direct PRG launch behavior | Theia Start Debugging / Start Without Debugging with generated or existing `launch.json` | No separate run picker; Active Machine default is not yet written into generated launch entries |
+| Debug protocol | VICE binary monitor debugger | TypeScript DAP adapter over VICE binary monitor | Live monitor fixtures, better data/trace UX, cycle-accurate execution-history stack provenance |
+| Memory UI | Memory monitors and renderings | Theia Memory view via DAP `readMemory`/`writeMemory` | More faithful C64 charset/ROM rendering and deeper rendering parity |
+| Disassembly | Disassembly view and label parsing | Complete NMOS 6502 DAP disassemble support | Richer symbol rendering |
+| Machine/runtime selection | Launch configuration tabs and bundled VICE assumptions | Machine profiles in TypeScript; macOS Apple Silicon embedded VICE path | Cross-platform VICE payloads, runtime-package extraction if reuse requires it |
+| SIDScore | Separate external toolchain integration | Theia syntax registration plus external SIDScoreCLI player-server integration | TypeScript SIDScore language intelligence, diagnostics, export workflow, and richer controls |
+| Packaging | Historical product build | Local Theia Electron app package | Distributable packaging, signing/notarization, platform payload matrix |
+| Documentation | Product docs and repository docs | Bundled docs registered in welcome/help plus design docs | Keep design docs, bundled docs manifest, and product help links synchronized |
 
 ## Non-Goals For The Current Passes
 
-- Do not attempt a blind Eclipse-to-Theia framework conversion.
-- Do not emulate Eclipse workspace resources, launch tabs, or debug model
+- Do not attempt a blind framework conversion.
+- Do not emulate previous workspace resources, launch tabs, or debug model
   classes in TypeScript.
 - Do not introduce a Java language server.
 - Do not claim feature parity while the Theia variant is still scaffolded.
@@ -134,6 +123,6 @@ server or preserve Java as a language-support runtime dependency.
 - Debug adapter protocol behavior has focused tests under
   `packages/debug-adapter/src/test`.
 - The design docs state what is implemented, what is reference-only, and what
-  remains a gap against the Eclipse IDE.
+  remains a gap against the previous IDE.
 - Any migration report or porting matrix uses `portable`, `refactorable`, and
   `rewrite` categories consistently.

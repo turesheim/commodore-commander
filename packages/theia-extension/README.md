@@ -67,7 +67,7 @@ Current non-goals:
 - custom editors
 - custom run/debug UI outside Theia's native Run and Debug flow
 - full task integration for build-before-run/debug
-- full Eclipse memory-rendering API parity
+- full specialized memory-rendering parity
 - finished native desktop packaging and app-bundle branding
 - deep language features beyond syntax plus lookup/service wiring
 

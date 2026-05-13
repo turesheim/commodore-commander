@@ -1,6 +1,6 @@
 # Current Task Priorities
 
-The implementation plan and Eclipse-to-Theia gap are tracked in
+The implementation plan and migration gap are tracked in
 `design-docs/plan.md`. This file is a short priority index.
 
 1. Add an incremental TypeScript workspace index for Kick Assembler lookup,

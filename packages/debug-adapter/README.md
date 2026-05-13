@@ -6,7 +6,7 @@ Theia product.
 What is here:
 
 - Kick Assembler `.dbg` source-to-address parsing
-- source breakpoint mapping that no longer depends on Eclipse markers or `IFile`
+- source breakpoint mapping through DAP sources and Kick Assembler line mappings
 - breakpoint-location discovery and `sourceRoot` handling for relative `.dbg`
   source paths
 - launch-time `.dbg` discovery that falls back from the configured debug-info
@@ -71,7 +71,7 @@ What is not here yet:
 - arbitrary VICE textual monitor action commands for checkpoints; VICE binary
   monitor conditions are supported, but logpoint actions are adapter-managed
 - non-macOS embedded VICE payload discovery
-- complete replacement of every Eclipse debug view
+- complete replacement of every specialized debug view
 
 Shutdown behavior:
 

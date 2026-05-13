@@ -3,9 +3,8 @@
 ## Scope
 
 The current Theia debug path uses a TypeScript-first VICE DAP adapter wired
-into Theia's debug contribution points. The older Java debugger remains
-reference material; the active Theia debug path does not emulate Eclipse debug
-APIs.
+into Theia's debug contribution points. The active Theia debug path does not
+emulate the previous IDE debug APIs.
 
 The Theia app contributes the `commodore-vice` debugger to Theia's native Run
 and Debug infrastructure. Custom PRG run/debug commands, status-bar actions,
@@ -20,11 +19,10 @@ Debugging sets DAP `noDebug` and starts VICE without `-binarymonitor` or
 
 The current Theia debug path does not attempt to:
 
-- port the Eclipse debug model
-- preserve the Eclipse class graph in a new framework
+- port the previous debug model
+- preserve the previous class graph in a new framework
 - provide Linux, Windows, or Intel macOS embedded VICE payloads yet
-- provide a Java runtime abstraction package for Theia
-- emulate Eclipse memory-rendering APIs
+- emulate previous memory-rendering APIs
 
 ## What Was Added
 
@@ -90,82 +88,7 @@ disassembly, start/stop lifecycle, and launch/snippet authoring are surfaced
 through Theia's existing debug views and configuration paths rather than new
 custom run/debug UI. The Memory view uses the active `commodore-vice` debug session's DAP
 `readMemory` and `writeMemory` requests and only refreshes while the target CPU
-is stopped, matching the Eclipse memory-view model without bringing forward the
-Eclipse debug UI APIs.
-
-## Reference Material Preserved
-
-The Java monitor protocol extraction under
-`packages/debug-adapter/src/main/java/net/resheim/cc/debugadapter/monitor/protocol`
-remains as reference material:
-
-- `ViceBinaryMonitorProtocol`
-- `ViceMonitorCommandId`
-- `ViceMonitorResponseId`
-- `ViceMonitorCommand`
-- `ViceMonitorRequest`
-- `ViceMonitorRequests`
-- `ViceMonitorResponseHeader`
-- `ViceMonitorResponseFrame`
-- `ViceMonitorResponseDecoder`
-- `ViceMonitorFrameCodec`
-- `ViceMonitorProtocolException`
-- `ViceMonitorCheckpointSpec`
-- `ViceMonitorMemoryType`
-
-The Eclipse debugger classes also remain as reference-only sources for behavior:
-
-- `VICELaunchDelegate`
-- `VICEDebugTarget`
-- `VICEThread`
-- `VICEStackFrame`
-- `VICERegisterGroup`
-- `VICEMemoryBlock` and `ExtendedVICEMemoryBlock`
-- `VICEBreakpoint`, `VICEWatchpoint`, and marker-backed checkpoint handling
-- `MonitorEventDispatcher`
-
-## Reused Semantics
-
-From `VICELaunchDelegate`:
-
-- selecting the VICE machine target
-- locating `vice.ini`
-- building debug launch arguments
-- starting the emulator process
-- representing the binary monitor endpoint
-
-From `IBinaryMonitor`, `Command`, and `Response`:
-
-- protocol constants
-- command IDs
-- response IDs
-- command encoding
-- frame decoding
-- request builders
-
-From `VICEDebugTarget` and `VICEThread`:
-
-- request ID allocation
-- framed command transmission
-- step/resume/suspend request encoding
-- checkpoint request encoding
-- register refresh after stops and register writes through `REGISTERS_SET`
-
-From `MonitorEventDispatcher`:
-
-- raw frame decoding
-- monitor response to domain-event mapping
-- register descriptor/value parsing
-- memory response parsing
-- debugger-originated memory writes through `MEMORY_SET`
-
-From `VICEStackFrame`:
-
-- a current CPU frame named from the program counter
-- caller frames reconstructed from page-$01 stack entries that validate against
-  real `JSR` instructions in memory
-- mapping PC values back to Kick Assembler source lines
-- exposing registers and debug labels as debug variables
+is stopped.
 
 ## Runtime Seams
 
