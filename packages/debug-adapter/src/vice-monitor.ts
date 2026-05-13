@@ -23,6 +23,7 @@ export enum ViceMonitorCommandId {
   ADVANCE_INSTRUCTIONS = 0x71,
   EXECUTE_UNTIL_RETURN = 0x73,
   PING = 0x81,
+  BANKS_AVAILABLE = 0x82,
   REGISTERS_AVAILABLE = 0x83,
   EXIT = 0xaa,
   QUIT = 0xbb
@@ -60,11 +61,17 @@ export interface ViceMonitorRegisterValue {
   byteLength: number;
 }
 
+export interface ViceMonitorBankDescriptor {
+  id: number;
+  name: string;
+}
+
 export type ViceMonitorEvent =
   | { type: 'stopped'; requestId: number }
   | { type: 'resumed'; requestId: number }
   | { type: 'terminated'; requestId: number }
   | { type: 'checkpoint'; requestId: number; checkpoint: ViceMonitorCheckpoint }
+  | { type: 'banks'; requestId: number; banks: ViceMonitorBankDescriptor[] }
   | { type: 'register-descriptors'; requestId: number; registers: ViceMonitorRegisterDescriptor[] }
   | { type: 'register-values'; requestId: number; registers: ViceMonitorRegisterValue[] }
   | { type: 'memory'; requestId: number; declaredByteCount: number; bytes: ViceMonitorBytes }
@@ -294,6 +301,10 @@ export const ViceMonitorRequests = {
     ViceMonitorCommandId.PING,
     Buffer.alloc(0)
   ],
+  banksAvailable: (): [ViceMonitorCommandId, ViceMonitorBytes] => [
+    ViceMonitorCommandId.BANKS_AVAILABLE,
+    Buffer.alloc(0)
+  ],
   quit: (): [ViceMonitorCommandId, ViceMonitorBytes] => [
     ViceMonitorCommandId.QUIT,
     Buffer.alloc(0)
@@ -493,6 +504,12 @@ function mapFrame(frame: {
         requestId: frame.requestId,
         registers: parseRegisterDescriptors(frame.body)
       };
+    case ViceMonitorCommandId.BANKS_AVAILABLE:
+      return {
+        type: 'banks',
+        requestId: frame.requestId,
+        banks: parseBankDescriptors(frame.body)
+      };
     case ViceMonitorCommandId.MEMORY_GET:
       return parseMemory(frame.requestId, frame.body);
     case ViceMonitorCommandId.QUIT:
@@ -550,6 +567,25 @@ function parseRegisterDescriptors(body: ViceMonitorBytes): ViceMonitorRegisterDe
     offset += 1 + itemSize;
   }
   return registers;
+}
+
+function parseBankDescriptors(body: ViceMonitorBytes): ViceMonitorBankDescriptor[] {
+  const banks: ViceMonitorBankDescriptor[] = [];
+  let offset = 2;
+  const count = body.length >= 2 ? body.readUInt16LE(0) : 0;
+  for (let index = 0; index < count && offset < body.length; index += 1) {
+    const itemSize = body.readUInt8(offset);
+    const id = body.readUInt16LE(offset + 1);
+    const nameLength = body.readUInt8(offset + 3);
+    const nameStart = offset + 4;
+    const nameEnd = Math.min(nameStart + nameLength, body.length);
+    banks.push({
+      id,
+      name: body.subarray(nameStart, nameEnd).toString('ascii')
+    });
+    offset += 1 + itemSize;
+  }
+  return banks;
 }
 
 function parseRegisterValues(body: ViceMonitorBytes): ViceMonitorRegisterValue[] {

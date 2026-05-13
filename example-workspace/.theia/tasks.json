@@ -15,6 +15,21 @@
         "panel": "dedicated",
         "showReuseMessage": false
       }
+    },
+    {
+      "label": "Commodore Commander: Build visual-debugger-demo",
+      "type": "commodore-kickassembler-build",
+      "task": "build",
+      "executionType": "customExecution",
+      "programName": "visual-debugger-demo",
+      "profileName": "debug",
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      }
     }
   ]
 }

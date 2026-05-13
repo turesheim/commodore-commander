@@ -6,7 +6,7 @@ Programming for the Commodore 64 is an enjoyable experience, thanks to its simpl
 
 The _Commodore Commander_ aims to be a useful addition to this ecosystem of tools.
 
-## Kick Assembler editor support
+## Editor support
 
 ![Theia 6502 mnemonic reference hover](docs/theia-mnemonic-hover.png)
 
@@ -74,32 +74,24 @@ Commodore Commander supports [SIDScore](https://github.com/turesheim/SIDScore) w
 
 Note that export to SID/ASM is not a very efficient format. If you need to optimise for size, hand-coding the music and sound effects is a better option.
 
-## VICE debugging
+## Debugging
+
+Commodore Commander contributes a Theia-native `commodore-vice` [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/) (DAP) adapter for launching PRG files in [VICE](https://vice-emu.sourceforge.io). Launch configurations can be provided in `.theia/launch.json`, generated from the active [Kick Assembler](https://theweb.dk/KickAssembler/Main.html#frontpage) file, or discovered from `commodore-commander.build.json`.
 
 ![Theia debugging a Kick Assembler program through VICE](docs/theia-vice-debugging.png)
 
-Commodore Commander contributes a Theia-native `commodore-vice` Debug Adapter Protocol adapter for launching PRG files in VICE. Launch configurations can be provided in `.theia/launch.json`, generated from the active Kick Assembler file, or discovered from `commodore-commander.build.json`.
+The screenshot above starts a named `.theia/launch.json` configuration, waits for VICE to stop after the BASIC ready screen is painted, and shows C64 screen RAM rendered through the Memory view.
 
-The screenshot above starts a named `.theia/launch.json` configuration, stops on a source breakpoint after the BASIC ready screen is painted, and shows C64 screen RAM rendered through the Memory view.
-
-Implemented debugger features:
+### Implemented debugger features:
 
 - launch and terminate VICE from Theia's built-in Run and Debug commands
 - Start Without Debugging through DAP `noDebug`, which starts VICE without the binary monitor
 - Kick Assembler `.dbg` source mapping for source breakpoints, breakpoint locations, loaded sources, labels, and source-backed stack frame locations with nearest-line fallback and generated PRG-disassembly fallback
-- source breakpoints and memory data breakpoints/watchpoints through VICE
-  binary-monitor checkpoints, including VICE checkpoint conditions and
-  DAP-style hit conditions
-- logpoints/tracepoints for source lines, using non-stopping VICE checkpoints
-  when the log message only needs static values and adapter-managed
-  stop/log/resume when live register values are needed
-- persistent memory watchpoint management from the Debug breakpoints menu, with
-  add, enable/disable, edit, delete, clear, and reinstall actions
-- watchpoint stop descriptions that include the configured range, actual
-  read/write access type, current PC, and current watched byte values
-- adapter-observed Trace History in the Variables view, with Debug Console
-  commands for recent PC samples, last observed watched writes, and register
-  changes
+- source breakpoints and memory data breakpoints/watchpoints through VICE binary-monitor checkpoints, including VICE checkpoint conditions and DAP-style hit conditions
+- logpoints/tracepoints for source lines, using non-stopping VICE checkpoints when the log message only needs static values and adapter-managed stop/log/resume when live register values are needed
+- persistent memory watchpoint management from the Debug breakpoints menu, with add, enable/disable, edit, delete, clear, and reinstall actions
+- watchpoint stop descriptions that include the configured range, actual read/write access type, current PC, and current watched byte values
+- adapter-observed Trace History in the Variables view, with Debug Console commands for recent PC samples, last observed watched writes, and register changes
 - Watch view evaluation for registers, labels, and address expressions such as `label+1`, plus Kick Assembler `.watch` entries exposed as live memory values in the Variables view
 - continue, pause, step in, step over, and step out controls
 - register and Kick Assembler label scopes in Theia's Variables view
@@ -107,66 +99,26 @@ Implemented debugger features:
 - Debug Console evaluation of registers, labels, numeric addresses, and memory references
 - hardware-stack call trace reconstruction from validated 6502 `JSR` return addresses
 - DAP `readMemory`, `writeMemory`, `source`, loaded-sources, and complete NMOS 6502 disassembly support, including undocumented opcodes
-- generated C64 BASIC/KERNAL ROM disassembly sources using bundled VICE ROM
-  images and labels parsed from VICE's `share/vice/C64/c64mem.sym`
-- a Theia Memory view that reads and writes through the active stopped `commodore-vice` debug session, with address/range expressions, label
-  resolution, C64 screen and color RAM presets, configurable row widths, memory space and bank controls, changed-byte highlighting, and ASCII/PETSCII/screen renderings
+- generated C64 BASIC/KERNAL ROM disassembly sources using bundled VICE ROM images and labels parsed from VICE's `share/vice/C64/c64mem.sym`
+- a Theia Memory view that reads and writes through the active stopped `commodore-vice` debug session, with address/range expressions, label resolution, C64 screen and color RAM presets, configurable row widths, memory space and bank controls, changed-byte highlighting, and ASCII/PETSCII/screen renderings
 
-Stack reconstruction is based on the live page-$01 CPU stack and validates caller
-frames against matching `JSR` instructions in memory. When a stack address does
-not map to original source, the adapter indexes the launched PRG and exposes a
-generated disassembly source so the stack frame still has an address-accurate
-landing point. If the address is outside the launched PRG range, it falls back
-to a live VICE memory disassembly for that address. Branches such as `BNE` and
-plain `JMP` do not create call-stack frames because they do not push return
-addresses; the stack frame name includes the nearest containing label for that
-kind of loop context. Non-macOS embedded VICE payload discovery remains future
-work.
+Stack reconstruction is based on the live page-$01 CPU stack and validates caller frames against matching `JSR` instructions in memory. When a stack address does not map to original source, the adapter indexes the launched PRG and exposes a generated disassembly source so the stack frame still has an address-accurate landing point. If the address is outside the launched PRG range, it falls back to a live VICE memory disassembly for that address. Branches such as `BNE` and plain `JMP` do not create call-stack frames because they do not push return addresses; the stack frame name includes the nearest containing label for that kind of loop context.
 
-ROM stack frames are generated from the VICE C64 ROM assets bundled with the
-application. `c64mem.sym` is VICE monitor symbol metadata, copied from
-`share/vice/C64/c64mem.sym` into the packaged runtime; it provides labels such
-as `bGONE`, `kCHROUT`, and I/O aliases. These generated ROM sources are
-address-accurate disassembly with VICE labels, not original Commodore source.
+ROM stack frames are generated from the VICE C64 ROM assets bundled with the application. `c64mem.sym` is VICE monitor symbol metadata, copied from `share/vice/C64/c64mem.sym` into the packaged runtime; it provides labels such as `bGONE`, `kCHROUT`, and I/O aliases. These generated ROM sources are address-accurate disassembly with VICE labels, not original Commodore source.
 
-Short examples:
+### C64 visual debugger
 
-```asm
-#import "lib/shared.asm"   // include path completion inside quotes
+The C64 Visual Debugger complements the DAP views with machine-specific state from a stopped VICE session. It decodes VIC-II registers, shows raster position and VIC bank selection, renders sprite patterns and sprite flags, and visualizes screen RAM, character memory, color RAM, CIA timers, IRQ sources, and keyboard matrix registers.
 
-.const SCREEN = $0400      // directive completion after ".c"
+| VIC-II state | Sprites |
+| --- | --- |
+| ![C64 Visual Debugger VIC-II register view](docs/theia-c64-visual-debugger-vic.png) | ![C64 Visual Debugger sprite view](docs/theia-c64-visual-debugger-sprites.png) |
 
-Draw:
-    lda #$00               // mnemonic completion after "ld"
-    sta SCREEN             // go to definition on SCREEN
+| Screen, character, and color RAM | CIA and keyboard state |
+| --- | --- |
+| ![C64 Visual Debugger screen, character, and color RAM view](docs/theia-c64-visual-debugger-screen.png) | ![C64 Visual Debugger CIA and keyboard view](docs/theia-c64-visual-debugger-cia.png) |
 
-Entry:
-    jsr Draw               // rename Draw updates this reference too
-```
 
-Formatting normalizes indentation and simple declaration spacing:
-
-```asm
-.namespace Game {
-    .const SCREEN = $0400
-    Entry:
-        jsr Draw
-}
-```
-
-Quick fixes cover the current structural diagnostics. For example, an unquoted import path can be fixed to the canonical form:
-
-```asm
-#import lib/shared.asm
-```
-
-becomes:
-
-```asm
-#import "lib/shared.asm"
-```
-
-Known limits: this is useful editor scaffolding, not full Kick Assembler compiler parity. Macro expansion, conditional assembly evaluation, include-graph-precise scoping, and compiler-accurate rename/completion remain future work.
 
 # Developer resources
 
@@ -192,6 +144,11 @@ npm run screenshots:theia
 ```
 
 The capture script launches the Electron app with a temporary screen-capture configuration and writes the screenshots under `docs/`. The generated screen-capture workspace lives under `.theia/screen-capture` so the capture pass does not edit the checked-in test fixtures or trigger the Kick Assembler build watcher.
+The visual-debugger capture builds and launches the `visual-debugger-demo`
+fixture, waits until BASIC has painted the ready screen, prepares sprite state
+through DAP memory writes without clearing screen RAM, and switches through the
+VIC-II, Sprites, Screen RAM, and CIA tabs so the README images can be refreshed
+after UI changes.
 
 
 

@@ -74,8 +74,10 @@ type ElectronScreenCaptureStep =
   | { readonly type: 'showMnemonicHover' }
   | { readonly type: 'showReferences' }
   | { readonly type: 'openDebugView' }
+  | { readonly type: 'openC64VisualDebugger' }
   | { readonly type: 'openMemoryView' }
   | { readonly type: 'openOutlineView' }
+  | { readonly type: 'prepareC64VisualDebuggerDemoState' }
   | { readonly type: 'revealMemoryTextColumn' }
   | {
       readonly type: 'setEditorMarker';
@@ -86,6 +88,10 @@ type ElectronScreenCaptureStep =
       readonly marker?: ScreenCaptureMarker;
     }
   | { readonly type: 'showScreenMemory' }
+  | {
+      readonly type: 'showC64VisualDebuggerView';
+      readonly view: string;
+    }
   | {
       readonly type: 'startLaunchConfiguration';
       readonly name: string;
@@ -112,6 +118,10 @@ type ElectronScreenCaptureStep =
   | {
       readonly type: 'waitForDebugStopped';
       readonly reason?: string;
+      readonly timeoutMs?: number;
+    }
+  | {
+      readonly type: 'waitForC64BasicReady';
       readonly timeoutMs?: number;
     }
   | { readonly type: 'wait'; readonly ms: number };
@@ -350,6 +360,19 @@ async function runScreenCaptureStep(
       }
       return;
     }
+    case 'openC64VisualDebugger': {
+      const opened = await callScreenCaptureApi<boolean>(
+        window,
+        'openC64VisualDebugger',
+        [],
+        false,
+        timeoutMs
+      );
+      if (!opened) {
+        throw new Error('Unable to open C64 Visual Debugger.');
+      }
+      return;
+    }
     case 'openMemoryView': {
       const opened = await callScreenCaptureApi<boolean>(
         window,
@@ -373,6 +396,19 @@ async function runScreenCaptureStep(
       );
       if (!opened) {
         throw new Error('Unable to open outline view.');
+      }
+      return;
+    }
+    case 'prepareC64VisualDebuggerDemoState': {
+      const prepared = await callScreenCaptureApi<boolean>(
+        window,
+        'prepareC64VisualDebuggerDemoState',
+        [],
+        false,
+        timeoutMs
+      );
+      if (!prepared) {
+        throw new Error('Unable to prepare C64 Visual Debugger demo state.');
       }
       return;
     }
@@ -428,6 +464,19 @@ async function runScreenCaptureStep(
       }
       return;
     }
+    case 'showC64VisualDebuggerView': {
+      const shown = await callScreenCaptureApi<boolean>(
+        window,
+        'showC64VisualDebuggerView',
+        [step.view],
+        false,
+        timeoutMs
+      );
+      if (!shown) {
+        throw new Error(`Unable to show C64 Visual Debugger view: ${step.view}`);
+      }
+      return;
+    }
     case 'startLaunchConfiguration': {
       const started = await callScreenCaptureApi<boolean>(
         window,
@@ -475,6 +524,20 @@ async function runScreenCaptureStep(
             ? `Timed out waiting for debug stop reason: ${step.reason}`
             : 'Timed out waiting for debug stop.'
         );
+      }
+      return;
+    }
+    case 'waitForC64BasicReady': {
+      const waitTimeoutMs = step.timeoutMs ?? timeoutMs;
+      const ready = await callScreenCaptureApi<boolean>(
+        window,
+        'waitForC64BasicReady',
+        [waitTimeoutMs],
+        false,
+        waitTimeoutMs + 1000
+      );
+      if (!ready) {
+        throw new Error('Timed out waiting for the C64 BASIC ready screen.');
       }
       return;
     }

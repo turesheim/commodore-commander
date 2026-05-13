@@ -27,6 +27,7 @@ import {
   ViceMonitorRequests,
   monitorErrorMessage,
   type ViceMonitorCheckpoint,
+  type ViceMonitorBankDescriptor,
   type ViceMonitorEvent,
   type ViceMonitorMemoryOptions,
   type ViceMonitorRegisterDescriptor,
@@ -228,6 +229,9 @@ export class ViceDebugSession {
           break;
         case 'writeMemory':
           await this.writeMemory(request);
+          break;
+        case 'commodore-vice/banksAvailable':
+          await this.banksAvailable(request);
           break;
         case 'disassemble':
           await this.disassemble(request);
@@ -812,6 +816,12 @@ export class ViceDebugSession {
       offset: args.offset ?? 0,
       bytesWritten: bytes.length
     } satisfies DebugProtocol.WriteMemoryResponse['body']);
+  }
+
+  private async banksAvailable(request: DapRequest): Promise<void> {
+    this.connection.sendResponse(request, {
+      banks: await this.readBanksAvailable()
+    });
   }
 
   private async disassemble(request: DapRequest): Promise<void> {
@@ -2056,6 +2066,20 @@ export class ViceDebugSession {
       DEFAULT_MEMORY_READ_TIMEOUT_MS
     );
     return event.type === 'memory' ? event.bytes.subarray(0, count) : Buffer.alloc(0);
+  }
+
+  private async readBanksAvailable(): Promise<ViceMonitorBankDescriptor[]> {
+    if (!this.monitor) {
+      throw new Error('VICE monitor is not connected.');
+    }
+    const [command, body] = ViceMonitorRequests.banksAvailable();
+    const event = await this.monitor.sendAndWait(
+      command,
+      body,
+      (candidate) => candidate.type === 'banks',
+      DEFAULT_MEMORY_READ_TIMEOUT_MS
+    );
+    return event.type === 'banks' ? event.banks : [];
   }
 
   private async writeMemoryBytes(

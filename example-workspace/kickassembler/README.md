@@ -1,6 +1,22 @@
-# Kick Assembler Debugging Demo
+# Kick Assembler Debugging Demos
+
+Use `visual-debugger-demo.asm` to exercise the C64 Visual Debugger. It writes
+screen codes and color RAM directly, installs sprite 0 bitmap data at `$2000`,
+sets the sprite pointer at `$07f8`, and moves sprite 0 around the screen.
+
+Useful labels to inspect while it runs include `sprite_x_lo`, `sprite_x_hi`,
+`sprite_y`, `sprite_dx`, `sprite_dy`, `frame_counter`, and `Sprite0Bitmap`.
 
 Use `debug-demo.asm` to exercise the Theia/Commodore Commander debugger.
+
+## Visual Debugger Fixture
+
+1. Open `example-workspace` in Commodore Commander.
+2. Build `visual-debugger-demo` or save `kickassembler/visual-debugger-demo.asm`.
+3. Start **Debug visual-debugger-demo in VICE**.
+4. Open **View > C64 Visual Debugger**.
+5. Inspect the Screen RAM, Character Memory, Color RAM, VIC-II registers, and
+   Sprites tabs while sprite 0 moves.
 
 ## Prepare
 

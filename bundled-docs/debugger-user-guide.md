@@ -291,6 +291,43 @@ The view can show hex bytes, ASCII, custom text-map output, PETSCII, and C64
 screen-code glyphs. It can also write bytes while the target is stopped if the
 debug session supports `writeMemory`.
 
+## C64 Visual Debugger
+
+The C64 Visual Debugger view turns the stopped VICE machine state into
+C64-specific panels instead of only generic CPU and memory state.
+
+1. Start a VICE debug session.
+2. Stop at a breakpoint, watchpoint, pause, or step.
+3. Open **View > C64 Visual Debugger**.
+4. Press refresh, or leave **Auto** enabled to refresh whenever execution stops.
+
+The **VIC-II** tab shows:
+
+- VIC-II registers from `$d000-$d02e`
+- decoded control bits for display mode, scrolling, raster high bit, screen
+  geometry, sprite flags, IRQ status, and IRQ mask
+- current raster line from `$d011/$d012`
+- current VIC bank, screen memory, character memory, and bitmap memory
+  addresses
+
+The **Sprites** tab shows all eight hardware sprites with coordinates, sprite
+pointer address, color, multicolor mode, expansion, priority, and collision
+flags. VIC and CIA registers are read through VICE's I/O bank, and the sprite
+preview is rendered from the sprite data in the current VIC bank as VIC-visible
+RAM. This keeps sprites correct when CPU-visible ROM or I/O mapping covers the
+same address range.
+
+The **Screen RAM** tab reads the full 1 KB screen matrix selected by `$d018`,
+including sprite pointers at `$03f8-$03ff`, and shows the visible 40x25
+screen-code grid, color RAM swatches, and the 2 KB character source in the
+current VIC bank. Screen and custom character bytes are read as VIC-visible RAM.
+In VIC banks 0 and 2, `$1000/$1800` use the C64 character ROM window; other
+character bases are read as RAM/custom character data.
+
+The **CIA / Keyboard** tab shows CIA #1 and CIA #2 ports, data-direction
+registers, timers, TOD fields, interrupt sources, timer control bits, and the
+raw CIA #1 keyboard matrix port state.
+
 ## Registers, Variables, And Stack
 
 When execution is stopped:
@@ -367,5 +404,9 @@ If the Memory view is read-only:
 - Multi-byte watchpoint hits report the watched range and the current bytes in
   that range. VICE does not report the exact sub-address inside the range in the
   checkpoint hit response.
-- Memory refresh intentionally happens only while the target is stopped to avoid
-  flooding VICE with monitor requests while the emulator is running.
+- Memory and C64 Visual Debugger refresh intentionally happen only while the
+  target is stopped to avoid flooding VICE with monitor requests while the
+  emulator is running.
+- Raster cycle is shown when the active VICE monitor register set exposes a
+  cycle register. Otherwise the C64 Visual Debugger still shows the raster line
+  from the VIC-II registers and reports the cycle as unavailable.

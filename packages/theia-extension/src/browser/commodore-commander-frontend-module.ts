@@ -85,6 +85,11 @@ import {
   VICE_MEMORY_WIDGET_ID,
   ViceMemoryWidget
 } from './vice-memory-widget';
+import { C64VisualDebuggerContribution } from './c64-visual-debugger-contribution';
+import {
+  C64_VISUAL_DEBUGGER_WIDGET_ID,
+  C64VisualDebuggerWidget
+} from './c64-visual-debugger-widget';
 import {
   KICK_ASSEMBLER_BUILD_CONSOLE_WIDGET_ID,
   KickAssemblerBuildConsoleWidget
@@ -272,6 +277,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     }))
     .inSingletonScope();
   bindViewContribution(bind, ViceMemoryContribution);
+  bind(C64VisualDebuggerWidget).toSelf();
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: C64_VISUAL_DEBUGGER_WIDGET_ID,
+      createWidget: () => context.container.get(C64VisualDebuggerWidget)
+    }))
+    .inSingletonScope();
+  bindViewContribution(bind, C64VisualDebuggerContribution);
   bind(KickAssemblerLanguageContribution).toSelf().inSingletonScope();
   bind(FrontendApplicationContribution).toService(KickAssemblerLanguageContribution);
   bind(LanguageGrammarDefinitionContribution).toService(KickAssemblerLanguageContribution);

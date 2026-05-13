@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
+import type { Socket } from 'node:net';
 import { test } from 'node:test';
 
 import {
+  ViceMonitorConnection,
   ViceMonitorCommandId,
   ViceMonitorRequests,
+  type ViceMonitorEvent,
   monitorErrorMessage
 } from '../vice-monitor';
 
@@ -85,6 +89,41 @@ test('pause ping uses an empty body', () => {
   assert.equal(body.length, 0);
 });
 
+test('bank discovery uses the binary monitor banks-available command', () => {
+  const [command, body] = ViceMonitorRequests.banksAvailable();
+
+  assert.equal(command, ViceMonitorCommandId.BANKS_AVAILABLE);
+  assert.equal(body.length, 0);
+});
+
+test('bank discovery decodes VICE bank descriptors', () => {
+  const socket = new FakeSocket();
+  const connection = new ViceMonitorConnection(socket as unknown as Socket);
+  const events: ViceMonitorEvent[] = [];
+  connection.onEvent((event) => events.push(event));
+
+  socket.emit('data', responseFrame(
+    ViceMonitorCommandId.BANKS_AVAILABLE,
+    7,
+    Buffer.from([
+      0x02, 0x00,
+      0x06, 0x00, 0x00, 0x03, 0x72, 0x61, 0x6d,
+      0x08, 0x05, 0x00, 0x05, 0x63, 0x6f, 0x6c, 0x6f, 0x72
+    ])
+  ));
+
+  assert.deepEqual(events, [
+    {
+      type: 'banks',
+      requestId: 7,
+      banks: [
+        { id: 0, name: 'ram' },
+        { id: 5, name: 'color' }
+      ]
+    }
+  ]);
+});
+
 test('monitor error messages include VICE error-code details', () => {
   const message = monitorErrorMessage({
     errorCode: 0x80,
@@ -98,3 +137,29 @@ test('monitor error messages include VICE error-code details', () => {
     'VICE monitor error 128 (command length is not correct) on response 0 for request 7.'
   );
 });
+
+class FakeSocket extends EventEmitter {
+  write(): boolean {
+    return true;
+  }
+
+  destroy(): void {
+    this.emit('close');
+  }
+}
+
+function responseFrame(
+  responseType: number,
+  requestId: number,
+  body: Buffer
+): Buffer {
+  const frame = Buffer.alloc(12 + body.length);
+  frame.writeUInt8(0x02, 0);
+  frame.writeUInt8(0x02, 1);
+  frame.writeUInt32LE(body.length, 2);
+  frame.writeUInt8(responseType, 6);
+  frame.writeUInt8(0, 7);
+  frame.writeUInt32LE(requestId, 8);
+  body.copy(frame, 12);
+  return frame;
+}

@@ -11,10 +11,15 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const defaultCaptureWorkspacePath = path.join(repoRoot, '.theia', 'screen-capture');
 const screenCaptureConfigEnv = 'COMMODORE_COMMANDER_SCREEN_CAPTURE_CONFIG';
 const debugLaunchName = 'Debug debug-demo in VICE';
+const visualDebugLaunchName = 'Debug visual-debugger-demo in VICE';
 const defaults = {
   characterSetPath: path.join(defaultCaptureWorkspacePath, 'c64-lower-upper.charset'),
   outputDir: path.join(repoRoot, 'docs'),
   debugSourcePath: path.join(defaultCaptureWorkspacePath, 'debug-demo.asm'),
+  visualDebugSourcePath: path.join(
+    defaultCaptureWorkspacePath,
+    'visual-debugger-demo.asm'
+  ),
   sidScorePath: path.join(defaultCaptureWorkspacePath, 'player.sidscore'),
   sourcePath: path.join(defaultCaptureWorkspacePath, 'main.asm'),
   workspacePath: defaultCaptureWorkspacePath,
@@ -117,6 +122,7 @@ function parseArgs(args) {
     outputDir: defaults.outputDir,
     characterSetPath: defaults.characterSetPath,
     debugSourcePath: defaults.debugSourcePath,
+    visualDebugSourcePath: defaults.visualDebugSourcePath,
     sidScorePath: defaults.sidScorePath,
     sourcePath: defaults.sourcePath,
     workspacePath: defaults.workspacePath,
@@ -147,6 +153,10 @@ function parseArgs(args) {
           );
           options.sidScorePath = path.join(options.workspacePath, 'player.sidscore');
           options.debugSourcePath = path.join(options.workspacePath, 'debug-demo.asm');
+          options.visualDebugSourcePath = path.join(
+            options.workspacePath,
+            'visual-debugger-demo.asm'
+          );
         }
         break;
       case '--timeout':
@@ -188,6 +198,13 @@ async function prepareDefaultCaptureSource(options) {
     path.join(repoRoot, 'example-workspace/kickassembler/debug-demo.asm'),
     options.debugSourcePath
   );
+  await copyFile(
+    path.join(
+      repoRoot,
+      'example-workspace/kickassembler/visual-debugger-demo.asm'
+    ),
+    options.visualDebugSourcePath
+  );
   await writeFile(
     path.join(sourceDirectory, 'lib', 'shared.asm'),
     [
@@ -220,6 +237,11 @@ async function buildDefaultDebugCaptureProgram(options) {
     repoRoot,
     'packages/theia-extension/lib/node/kick-assembler-headless-build.js'
   );
+  await buildCaptureProgram(options, buildCliPath, 'debug-demo');
+  await buildCaptureProgram(options, buildCliPath, 'visual-debugger-demo');
+}
+
+async function buildCaptureProgram(options, buildCliPath, programName) {
   await runCommand(
     process.execPath,
     [
@@ -227,12 +249,12 @@ async function buildDefaultDebugCaptureProgram(options) {
       '--workspace',
       options.workspacePath,
       '--program',
-      'debug-demo'
+      programName
     ],
     {
       cwd: repoRoot,
       verbose: options.verbose,
-      failureMessage: 'Unable to build the debug screen-capture fixture.'
+      failureMessage: `Unable to build the ${programName} screen-capture fixture.`
     }
   );
 }
@@ -266,6 +288,17 @@ function createDefaultDebugBuildConfig() {
           model: 'c64',
           viceArgs: []
         }
+      },
+      {
+        name: 'visual-debugger-demo',
+        root: 'visual-debugger-demo.asm',
+        profile: 'debug',
+        runProgram: 'out/visual-debugger-demo.prg',
+        machine: {
+          profile: 'c64',
+          model: 'c64',
+          viceArgs: []
+        }
       }
     ]
   };
@@ -274,14 +307,20 @@ function createDefaultDebugBuildConfig() {
 function createDefaultDebugLaunchConfig(options) {
   return {
     version: '0.2.0',
-    configurations: [createDebugLaunchConfiguration(options)]
+    configurations: [
+      createDebugLaunchConfiguration(options),
+      createVisualDebugLaunchConfiguration(options)
+    ]
   };
 }
 
 function createDefaultDebugTasksConfig() {
   return {
     version: '2.0.0',
-    tasks: [createDebugBuildTaskConfiguration()]
+    tasks: [
+      createDebugBuildTaskConfiguration(),
+      createVisualDebugBuildTaskConfiguration()
+    ]
   };
 }
 
@@ -295,7 +334,10 @@ async function installWorkspaceRootDebugLaunchConfig(options) {
     launchPath,
     `${JSON.stringify({
       version: '0.2.0',
-      configurations: [createWorkspaceRootDebugLaunchConfiguration(options)]
+      configurations: [
+        createWorkspaceRootDebugLaunchConfiguration(options),
+        createWorkspaceRootVisualDebugLaunchConfiguration(options)
+      ]
     }, null, 2)}\n`,
     'utf8'
   );
@@ -344,12 +386,47 @@ function createDebugLaunchConfiguration(options) {
   };
 }
 
+function createVisualDebugLaunchConfiguration(options) {
+  return {
+    type: 'commodore-vice',
+    request: 'launch',
+    name: visualDebugLaunchName,
+    program: 'out/visual-debugger-demo.prg',
+    debugInfo: 'out/visual-debugger-demo.dbg',
+    sourceRoot: '.',
+    preLaunchTask: 'Commodore Commander: Build visual-debugger-demo',
+    machine: {
+      profile: 'c64',
+      model: 'c64',
+      viceArgs: []
+    },
+    stopOnEntry: false,
+    suppressSaveBeforeStart: true,
+    openDebug: 'neverOpen',
+    internalConsoleOptions: 'neverOpen'
+  };
+}
+
 function createWorkspaceRootDebugLaunchConfiguration(options) {
   const fixtureRoot = normalizeLaunchPath(path.relative(repoRoot, options.workspacePath));
   return {
     ...createDebugLaunchConfiguration(options),
     program: normalizeLaunchPath(path.join(fixtureRoot, 'out/debug-demo.prg')),
     debugInfo: normalizeLaunchPath(path.join(fixtureRoot, 'out/debug-demo.dbg')),
+    sourceRoot: fixtureRoot || '.'
+  };
+}
+
+function createWorkspaceRootVisualDebugLaunchConfiguration(options) {
+  const fixtureRoot = normalizeLaunchPath(path.relative(repoRoot, options.workspacePath));
+  return {
+    ...createVisualDebugLaunchConfiguration(options),
+    program: normalizeLaunchPath(
+      path.join(fixtureRoot, 'out/visual-debugger-demo.prg')
+    ),
+    debugInfo: normalizeLaunchPath(
+      path.join(fixtureRoot, 'out/visual-debugger-demo.dbg')
+    ),
     sourceRoot: fixtureRoot || '.'
   };
 }
@@ -372,7 +449,30 @@ function createDebugBuildTaskConfiguration() {
   };
 }
 
+function createVisualDebugBuildTaskConfiguration() {
+  return {
+    label: 'Commodore Commander: Build visual-debugger-demo',
+    type: 'commodore-kickassembler-build',
+    task: 'build',
+    executionType: 'customExecution',
+    programName: 'visual-debugger-demo',
+    profileName: 'debug',
+    group: 'build',
+    problemMatcher: [],
+    presentation: {
+      reveal: 'silent',
+      panel: 'dedicated',
+      showReuseMessage: false
+    }
+  };
+}
+
 function createCaptureConfig(options) {
+  const debugBasicReadyBreakpoint = {
+    needle: '        jsr MarkStepTarget',
+    offset: 0
+  };
+
   return {
     outputDir: options.outputDir,
     sourcePath: options.sourcePath,
@@ -448,10 +548,7 @@ function createCaptureConfig(options) {
       {
         outputPath: path.join(options.outputDir, 'theia-vice-debugging.png'),
         sourcePath: options.debugSourcePath,
-        marker: {
-          needle: '        jsr MarkStepTarget',
-          offset: 0
-        },
+        marker: debugBasicReadyBreakpoint,
         steps: [
           { type: 'openDebugView' },
           { type: 'openMemoryView' },
@@ -459,10 +556,7 @@ function createCaptureConfig(options) {
           { type: 'showScreenMemory' },
           {
             type: 'setSourceBreakpoint',
-            marker: {
-              needle: '        jsr MarkStepTarget',
-              offset: 0
-            }
+            marker: debugBasicReadyBreakpoint
           },
           {
             type: 'startLaunchConfiguration',
@@ -477,16 +571,7 @@ function createCaptureConfig(options) {
             timeoutMs: options.timeoutMs
           },
           {
-            type: 'waitForDebugStopped',
-            timeoutMs: options.timeoutMs
-          },
-          {
-            type: 'continueDebugSession',
-            reason: 'entry'
-          },
-          {
-            type: 'waitForDebugStopped',
-            reason: 'breakpoint',
+            type: 'waitForC64BasicReady',
             timeoutMs: options.timeoutMs
           },
           { type: 'openMemoryView' },
@@ -512,6 +597,126 @@ function createCaptureConfig(options) {
           },
           { type: 'revealMemoryTextColumn' },
           { type: 'wait', ms: 1000 }
+        ],
+        afterSteps: [
+          {
+            type: 'executeCommand',
+            commandId: 'workbench.action.debug.stop'
+          },
+          { type: 'wait', ms: 500 }
+        ]
+      },
+      {
+        outputPath: path.join(
+          options.outputDir,
+          'theia-c64-visual-debugger-vic.png'
+        ),
+        sourcePath: options.visualDebugSourcePath,
+        steps: [
+          {
+            type: 'startLaunchConfiguration',
+            name: visualDebugLaunchName,
+            configuration: createVisualDebugLaunchConfiguration(options),
+            workspaceFolderUri: pathToFileURL(options.workspacePath).href
+          },
+          {
+            type: 'waitForC64BasicReady',
+            timeoutMs: options.timeoutMs
+          },
+          { type: 'prepareC64VisualDebuggerDemoState' },
+          { type: 'openC64VisualDebugger' },
+          {
+            type: 'showC64VisualDebuggerView',
+            view: 'overview'
+          },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-c64-visual-debugger-widget',
+            text: 'VIC-II Registers',
+            timeoutMs: options.timeoutMs
+          },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-c64-visual-debugger-widget',
+            text: 'C64 machine state refreshed.',
+            timeoutMs: options.timeoutMs
+          },
+          { type: 'wait', ms: 1000 }
+        ]
+      },
+      {
+        outputPath: path.join(
+          options.outputDir,
+          'theia-c64-visual-debugger-sprites.png'
+        ),
+        steps: [
+          {
+            type: 'showC64VisualDebuggerView',
+            view: 'sprites'
+          },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-c64-visual-debugger-widget',
+            text: 'Sprite 0',
+            timeoutMs: options.timeoutMs
+          },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-c64-visual-debugger-widget',
+            text: 'Pointer',
+            timeoutMs: options.timeoutMs
+          },
+          { type: 'wait', ms: 500 }
+        ]
+      },
+      {
+        outputPath: path.join(
+          options.outputDir,
+          'theia-c64-visual-debugger-screen.png'
+        ),
+        steps: [
+          {
+            type: 'showC64VisualDebuggerView',
+            view: 'screen'
+          },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-c64-visual-debugger-widget',
+            text: 'Screen codes at',
+            timeoutMs: options.timeoutMs
+          },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-c64-visual-debugger-widget',
+            text: 'Color RAM at $D800',
+            timeoutMs: options.timeoutMs
+          },
+          { type: 'wait', ms: 500 }
+        ]
+      },
+      {
+        outputPath: path.join(
+          options.outputDir,
+          'theia-c64-visual-debugger-cia.png'
+        ),
+        steps: [
+          {
+            type: 'showC64VisualDebuggerView',
+            view: 'cia'
+          },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-c64-visual-debugger-widget',
+            text: 'CIA #1',
+            timeoutMs: options.timeoutMs
+          },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-c64-visual-debugger-widget',
+            text: 'Keyboard Matrix',
+            timeoutMs: options.timeoutMs
+          },
+          { type: 'wait', ms: 500 }
         ],
         afterSteps: [
           {

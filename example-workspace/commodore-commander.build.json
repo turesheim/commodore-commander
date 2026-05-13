@@ -59,6 +59,12 @@
       "root": "kickassembler/debug-demo.asm",
       "profile": "debug",
       "runProgram": "out/debug-demo.prg"
+    },
+    {
+      "name": "visual-debugger-demo",
+      "root": "kickassembler/visual-debugger-demo.asm",
+      "profile": "debug",
+      "runProgram": "out/visual-debugger-demo.prg"
     }
   ]
 }

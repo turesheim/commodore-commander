@@ -14,7 +14,7 @@ import { COMMODORE_VICE_DEBUG_TYPE } from '../common/commodore-vice-debug';
 export const VICE_MEMORY_WIDGET_ID = 'commodore-commander.vice-memory';
 
 type MemoryTextMode = 'ascii' | 'petscii' | 'screen' | 'custom';
-type MemoryCharacterSet = 'upper' | 'lower';
+export type MemoryCharacterSet = 'upper' | 'lower';
 
 interface MemoryPreset {
   label: string;
@@ -1612,7 +1612,7 @@ function characterGlyphShadow(
     for (let x = 0; x < 8; x += 1) {
       if ((row & (0x80 >> x)) !== 0) {
         shadows.push(
-          `${x * C64_GLYPH_PIXEL_SIZE}px ${y * C64_GLYPH_PIXEL_SIZE}px 0 var(--theia-editor-foreground)`
+          `${x * C64_GLYPH_PIXEL_SIZE}px ${y * C64_GLYPH_PIXEL_SIZE}px 0 currentColor`
         );
       }
     }
@@ -1620,6 +1620,10 @@ function characterGlyphShadow(
   const shadow = shadows.join(', ');
   characterGlyphShadowCache.set(cacheKey, shadow);
   return shadow;
+}
+
+export function c64CharacterSetBytes(characterSet: MemoryCharacterSet): Uint8Array {
+  return C64_CHARACTER_BITMAPS[characterSet];
 }
 
 function decodeBase64(data: string): Uint8Array {

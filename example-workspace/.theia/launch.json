@@ -36,6 +36,15 @@
       "debugInfo": "${workspaceFolder}/out/arkanoid.dbg",
       "sourceRoot": "${workspaceFolder}",
       "stopOnEntry": true
+    },
+    {
+      "type": "commodore-vice",
+      "request": "launch",
+      "name": "Debug visual-debugger-demo in VICE",
+      "program": "${workspaceFolder}/out/visual-debugger-demo.prg",
+      "debugInfo": "${workspaceFolder}/out/visual-debugger-demo.dbg",
+      "sourceRoot": "${workspaceFolder}",
+      "stopOnEntry": true
     }
   ]
 }

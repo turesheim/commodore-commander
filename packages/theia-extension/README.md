@@ -42,6 +42,11 @@ Current responsibility:
   and bank combobox controls, persisted settings, 40-column screen rows, and
   ASCII, custom text, or bitmap C64 PETSCII/screen-code rendering with
   upper/graphics and lower/upper charset selection plus labeled control bytes
+- contribute a C64 Visual Debugger view for stopped `commodore-vice` sessions,
+  with decoded VIC-II registers, raster line display, current VIC bank memory
+  pointers, VIC-visible sprite/screen/character memory visualization,
+  I/O-bank register reads, screen-color RAM swatches, and CIA
+  timer/IRQ/keyboard matrix state
 - add commands for sending editor expressions to Theia's Watch view and for
   installing persistent VICE memory watchpoints through DAP data breakpoints
 - provide a memory watchpoint manager in the Debug breakpoints menu with add,
