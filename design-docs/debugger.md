@@ -73,6 +73,11 @@ Protocol reference: [VICE Manual, Binary monitor](https://vice-emu.sourceforge.i
   memory reference for Memory view navigation.
 - Kick Assembler `.watch` entries from debug dumps appear as a live memory
   scope in the Variables view.
+- Adapter-observed Trace History appears as a Variables scope and can also be
+  queried from the Debug Console with `.trace`, `.lastwrite`, and
+  `.regchanges`. It records stopped/logpoint PC samples, register snapshots,
+  register changes, watched memory accesses, and debugger-originated memory
+  writes.
 - Continue, pause, step in, step over, and step out.
 - Stack frame for the current CPU PC, with source mapping where available.
 - Register and Kick Assembler label scopes.
@@ -147,3 +152,7 @@ emulator is running.
   the binary monitor protocol used here. Logpoints are therefore implemented in
   the adapter with VICE stop/non-stop checkpoints rather than arbitrary VICE
   action commands.
+- Trace History is not full MAME-style PC history yet. It only contains states
+  observed through DAP stops, logpoint stop/resume, register edits, watched
+  memory writes, and Memory view writes; complete "who last wrote any byte"
+  provenance needs emulator-side execution and memory tracking.

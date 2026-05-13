@@ -6,7 +6,7 @@ import type { DebugProtocol } from '@vscode/debugprotocol';
 
 import { reconstruct6502CallStack, type Reconstructed6502CallFrame } from './call-stack6502';
 import { DapConnection, type DapRequest } from './dap-connection';
-import { disassemble6502 } from './disassemble6502';
+import { disassemble6502, type Disassembled6502Instruction } from './disassemble6502';
 import {
   findLabelByAddress,
   findLabelByName,
@@ -47,6 +47,18 @@ import {
   loadC64RomSources,
   type RomSource
 } from './rom-source';
+import {
+  TraceHistory,
+  formatBytePreview,
+  formatObservedWrite,
+  formatRegisterChangeHistory,
+  formatRegisterValue,
+  formatTraceEntrySummary,
+  formatTraceHistory,
+  type TraceMemoryAccess,
+  type TraceRegisterSnapshot,
+  type TraceSnapshot
+} from './trace-history';
 import { launchViceProcess, terminateViceProcess } from './vice-runtime';
 
 const THREAD_ID = 1;
@@ -54,13 +66,16 @@ const STACK_FRAME_ID = 1;
 const REGISTERS_REFERENCE = 1;
 const LABELS_REFERENCE = 2;
 const WATCHES_REFERENCE = 3;
+const TRACE_HISTORY_REFERENCE = 4;
 const PRG_DISASSEMBLY_SOURCE_REFERENCE = 650201;
 const ROM_SOURCE_REFERENCE_BASE = 650300;
 const MEMORY_DISASSEMBLY_SOURCE_REFERENCE_BASE = 650500;
+const TRACE_HISTORY_ENTRY_REFERENCE_BASE = 650700;
 const MEMORY_DISASSEMBLY_TARGET_LINE = 6;
 const MEMORY_DISASSEMBLY_INSTRUCTION_COUNT = 32;
 const DEFAULT_MEMORY_READ_TIMEOUT_MS = 5000;
 const WATCH_MEMORY_PREVIEW_BYTES = 64;
+const TRACE_HISTORY_CAPACITY = 200;
 
 export interface ViceDebugLaunchArguments
   extends DebugProtocol.LaunchRequestArguments {
@@ -130,6 +145,7 @@ export class ViceDebugSession {
   private launchArguments: ViceDebugLaunchArguments | undefined;
   private registerDescriptors = new Map<number, ViceMonitorRegisterDescriptor>();
   private registers = new Map<number, ViceMonitorRegisterValue>();
+  private readonly traceHistory = new TraceHistory(TRACE_HISTORY_CAPACITY);
   private breakpointsBySource = new Map<string, InstalledBreakpoint[]>();
   private checkpointToBreakpoint = new Map<number, InstalledBreakpoint>();
   private dataBreakpoints: InstalledDataBreakpoint[] = [];
@@ -287,6 +303,7 @@ export class ViceDebugSession {
     this.romSources = [];
     this.memoryDisassemblySources.clear();
     this.nextSourceReference = MEMORY_DISASSEMBLY_SOURCE_REFERENCE_BASE;
+    this.traceHistory.clear();
 
     if (path.extname(program).toLowerCase() === '.prg') {
       try {
@@ -605,6 +622,12 @@ export class ViceDebugSession {
           variablesReference: WATCHES_REFERENCE,
           namedVariables: this.debugInfo?.watches.length ?? 0,
           expensive: true
+        },
+        {
+          name: 'Trace History',
+          variablesReference: TRACE_HISTORY_REFERENCE,
+          namedVariables: this.traceHistory.entries().length,
+          expensive: false
         }
       ]
     } satisfies DebugProtocol.ScopesResponse['body']);
@@ -649,6 +672,21 @@ export class ViceDebugSession {
             this.toDapWatchVariable(watch)
           )
         )
+      } satisfies DebugProtocol.VariablesResponse['body']);
+      return;
+    }
+
+    if (args.variablesReference === TRACE_HISTORY_REFERENCE) {
+      this.connection.sendResponse(request, {
+        variables: this.toDapTraceHistoryVariables(args)
+      } satisfies DebugProtocol.VariablesResponse['body']);
+      return;
+    }
+
+    const traceSnapshot = this.traceSnapshotForVariablesReference(args.variablesReference);
+    if (traceSnapshot) {
+      this.connection.sendResponse(request, {
+        variables: this.toDapTraceSnapshotVariables(traceSnapshot)
       } satisfies DebugProtocol.VariablesResponse['body']);
       return;
     }
@@ -718,6 +756,15 @@ export class ViceDebugSession {
 
   private async evaluate(request: DapRequest): Promise<void> {
     const args = request.arguments as DebugProtocol.EvaluateArguments;
+    const traceCommand = await this.evaluateTraceCommand(args.expression, args.context);
+    if (traceCommand) {
+      this.connection.sendResponse(request, {
+        result: traceCommand.value,
+        type: traceCommand.type,
+        variablesReference: 0
+      } satisfies DebugProtocol.EvaluateResponse['body']);
+      return;
+    }
     const result = await this.evaluateExpression(args.expression, args.context);
     this.connection.sendResponse(request, {
       result: result.value,
@@ -752,6 +799,15 @@ export class ViceDebugSession {
       memspace: args.memspace,
       bankId: args.bankId
     });
+    if (bytes.length > 0) {
+      await this.recordStoppedTrace('memory write', {
+        accessType: 'write',
+        startAddress: normalizeAddress(startAddress),
+        endAddress: normalizeAddress(startAddress + bytes.length - 1),
+        valuePreview: [...bytes.subarray(0, WATCH_MEMORY_PREVIEW_BYTES)],
+        truncated: bytes.length > WATCH_MEMORY_PREVIEW_BYTES
+      });
+    }
     this.connection.sendResponse(request, {
       offset: args.offset ?? 0,
       bytesWritten: bytes.length
@@ -1145,6 +1201,109 @@ export class ViceDebugSession {
     };
   }
 
+  private toDapTraceHistoryVariables(
+    args: DebugProtocol.VariablesArguments
+  ): DebugProtocol.Variable[] {
+    const start = Math.max(0, args.start ?? 0);
+    const count = args.count === undefined
+      ? TRACE_HISTORY_CAPACITY
+      : Math.max(0, args.count);
+    return this.traceHistory.newest()
+      .slice(start, start + count)
+      .map((snapshot) => ({
+        name: `#${snapshot.sequence}`,
+        value: formatTraceEntrySummary(snapshot),
+        type: 'trace sample',
+        memoryReference: memoryReference(snapshot.pc),
+        variablesReference: encodeTraceHistoryEntryReference(snapshot.sequence)
+      }));
+  }
+
+  private traceSnapshotForVariablesReference(
+    variablesReference: number
+  ): TraceSnapshot | undefined {
+    const sequence = decodeTraceHistoryEntryReference(variablesReference);
+    return sequence === undefined ? undefined : this.traceHistory.find(sequence);
+  }
+
+  private toDapTraceSnapshotVariables(
+    snapshot: TraceSnapshot
+  ): DebugProtocol.Variable[] {
+    const source = snapshot.source
+      ? `${snapshot.source.path}:${snapshot.source.line}`
+      : undefined;
+    const variables: DebugProtocol.Variable[] = [
+      {
+        name: 'Reason',
+        value: snapshot.reason,
+        variablesReference: 0
+      },
+      {
+        name: 'PC',
+        value: `$${hexWord(snapshot.pc)}`,
+        type: 'address',
+        memoryReference: memoryReference(snapshot.pc),
+        variablesReference: 0
+      },
+      {
+        name: 'Instruction',
+        value: snapshot.instruction ?? 'unavailable',
+        variablesReference: 0
+      }
+    ];
+    if (snapshot.instructionBytes) {
+      variables.push({
+        name: 'Instruction Bytes',
+        value: snapshot.instructionBytes,
+        variablesReference: 0
+      });
+    }
+    if (source) {
+      variables.push({
+        name: 'Source',
+        value: source,
+        variablesReference: 0
+      });
+    }
+    if (snapshot.changedRegisters.length > 0) {
+      variables.push({
+        name: 'Changed Registers',
+        value: snapshot.changedRegisters
+          .map((register) =>
+            `${register.name} ${formatRegisterValue(register.previousValue, register.bitSize)} -> ${formatRegisterValue(register.value, register.bitSize)}`
+          )
+          .join(', '),
+        variablesReference: 0
+      });
+    }
+    if (snapshot.memoryAccess) {
+      variables.push({
+        name: 'Memory Access',
+        value: [
+          snapshot.memoryAccess.accessType,
+          snapshot.memoryAccess.startAddress === snapshot.memoryAccess.endAddress
+            ? `$${hexWord(snapshot.memoryAccess.startAddress)}`
+            : `$${hexWord(snapshot.memoryAccess.startAddress)}-$${hexWord(snapshot.memoryAccess.endAddress)}`,
+          formatBytePreview(
+            snapshot.memoryAccess.valuePreview,
+            snapshot.memoryAccess.truncated
+          )
+        ].filter(Boolean).join(' '),
+        variablesReference: 0
+      });
+    }
+    variables.push(
+      ...snapshot.registers.map((register) => ({
+        name: register.name,
+        value: formatRegisterValue(register.value, register.bitSize),
+        type: `${register.bitSize}-bit register`,
+        evaluateName: register.name,
+        variablesReference: 0
+      }))
+    );
+    return variables;
+  }
+
   private async handleMonitorEvent(event: ViceMonitorEvent): Promise<void> {
     switch (event.type) {
       case 'stopped':
@@ -1157,6 +1316,7 @@ export class ViceDebugSession {
             this.resumeMonitor();
           } else if (this.lastHitShouldResume) {
             if (this.lastHitShouldLog) {
+              await this.recordStoppedTrace('logpoint');
               this.logLastSourceBreakpointHit();
             }
             this.lastHitShouldResume = false;
@@ -1214,6 +1374,88 @@ export class ViceDebugSession {
   private async refreshStoppedState(): Promise<void> {
     await this.refreshRegisterDescriptors();
     await this.refreshRegisters();
+  }
+
+  private async recordStoppedTrace(
+    reason: string,
+    memoryAccess?: TraceMemoryAccess
+  ): Promise<void> {
+    await this.refreshRegisterDescriptors();
+    const pc = this.programCounter();
+    const instruction = await this.readInstructionAt(pc).catch(() => undefined);
+    const mapping = findLineMappingForAddress(this.debugInfo, pc);
+    const source = findSourceForMapping(this.debugInfo, mapping);
+    const checkpointAccess = memoryAccess ??
+      (await this.traceMemoryAccessForLastStop().catch(() => undefined));
+    this.traceHistory.record({
+      reason,
+      pc,
+      ...(instruction?.instruction ? { instruction: instruction.instruction } : {}),
+      ...(instruction?.instructionBytes ? { instructionBytes: instruction.instructionBytes } : {}),
+      ...(instruction?.symbol ? { symbol: instruction.symbol } : {}),
+      ...(source && mapping
+        ? {
+            source: {
+              path: source.path,
+              line: mapping.startLine,
+              column: mapping.startColumn
+            }
+          }
+        : {}),
+      registers: this.currentTraceRegisters(),
+      ...(checkpointAccess ? { memoryAccess: checkpointAccess } : {})
+    });
+  }
+
+  private async readInstructionAt(
+    address: number
+  ): Promise<Disassembled6502Instruction | undefined> {
+    if (!this.monitor) {
+      return undefined;
+    }
+    const normalized = normalizeAddress(address);
+    const byteCount = Math.min(3, 0x10000 - normalized);
+    if (byteCount <= 0) {
+      return undefined;
+    }
+    const bytes = await this.readMemoryBytes(normalized, byteCount, {
+      sideEffects: false
+    });
+    const labels = new Map(
+      (this.debugInfo?.labels ?? []).map((label) => [label.address, label.name])
+    );
+    return disassemble6502(bytes, normalized, 1, labels)[0];
+  }
+
+  private currentTraceRegisters(): TraceRegisterSnapshot[] {
+    return [...this.registerDescriptors.values()].map((descriptor) => ({
+      name: descriptor.name,
+      value: this.registers.get(descriptor.id)?.value ?? 0,
+      bitSize: descriptor.bitSize
+    }));
+  }
+
+  private async traceMemoryAccessForLastStop(): Promise<TraceMemoryAccess | undefined> {
+    const checkpointNumber = this.lastHitCheckpoint?.number;
+    if (checkpointNumber === undefined) {
+      return undefined;
+    }
+    const dataBreakpoint = this.checkpointToDataBreakpoint.get(checkpointNumber);
+    if (!dataBreakpoint) {
+      return undefined;
+    }
+    const count = Math.min(dataBreakpoint.length, WATCH_MEMORY_PREVIEW_BYTES);
+    const bytes = await this.readMemoryBytes(dataBreakpoint.startAddress, count, {
+      sideEffects: false
+    });
+    return {
+      accessType: this.checkpointToDataBreakpointAccess.get(checkpointNumber) ??
+        dataBreakpoint.accessType,
+      startAddress: dataBreakpoint.startAddress,
+      endAddress: dataBreakpoint.startAddress + dataBreakpoint.length - 1,
+      valuePreview: [...bytes],
+      truncated: dataBreakpoint.length > bytes.length
+    };
   }
 
   private async refreshRegisterDescriptors(): Promise<void> {
@@ -1282,6 +1524,7 @@ export class ViceDebugSession {
   }
 
   private async emitStopped(reason: StopReason): Promise<void> {
+    await this.recordStoppedTrace(reason);
     const description = await this.stopDescription(reason);
     if (description) {
       this.connection.sendOutput(`${description}\n`);
@@ -1669,6 +1912,94 @@ export class ViceDebugSession {
     };
   }
 
+  private async evaluateTraceCommand(
+    expression: string,
+    context?: string
+  ): Promise<{ value: string; type: string } | undefined> {
+    if (context && context !== 'repl') {
+      return undefined;
+    }
+    const trimmed = expression.trim();
+    if (!trimmed.startsWith('.')) {
+      return undefined;
+    }
+    const [command, ...rest] = trimmed.split(/\s+/u);
+    const argument = rest.join(' ').trim();
+    switch (command.toLowerCase()) {
+      case '.trace':
+      case '.history':
+        return {
+          value: this.evaluateTraceHistoryCommand(argument),
+          type: 'trace history'
+        };
+      case '.lastwrite':
+        return {
+          value: await this.evaluateLastWriteCommand(argument),
+          type: 'trace history'
+        };
+      case '.regchanges':
+        return {
+          value: this.evaluateRegisterChangesCommand(argument),
+          type: 'trace history'
+        };
+      default:
+        return undefined;
+    }
+  }
+
+  private evaluateTraceHistoryCommand(argument: string): string {
+    if (!argument || /^\d+$/u.test(argument)) {
+      return formatTraceHistory(
+        this.traceHistory.newest(),
+        argument ? Number.parseInt(argument, 10) : TRACE_HISTORY_CAPACITY
+      );
+    }
+    const lowerCase = argument.toLowerCase();
+    if (lowerCase === 'clear') {
+      this.traceHistory.clear();
+      return 'Trace history cleared.';
+    }
+    if (lowerCase === 'help') {
+      return [
+        '.trace [count]       show recent stopped PC samples',
+        '.history [count]     alias for .trace',
+        '.trace clear         clear trace history and observed writes',
+        '.lastwrite <address> show last observed write to a watched/written byte',
+        '.regchanges <name>   show observed changes for a CPU register'
+      ].join('\n');
+    }
+    return 'Usage: .trace [count], .trace clear, or .trace help.';
+  }
+
+  private async evaluateLastWriteCommand(argument: string): Promise<string> {
+    if (!argument) {
+      return 'Usage: .lastwrite <address-or-label>';
+    }
+    const resolved = await this.evaluateAddressExpression(argument);
+    if (!resolved) {
+      return `Could not resolve address: ${argument}`;
+    }
+    return formatObservedWrite(
+      this.traceHistory.lastObservedWrite(resolved.address)
+    );
+  }
+
+  private evaluateRegisterChangesCommand(argument: string): string {
+    const tokens = argument.split(/\s+/u).filter(Boolean);
+    const registerName = tokens[0];
+    if (!registerName) {
+      return 'Usage: .regchanges <register> [count]';
+    }
+    const count = tokens[1] && /^\d+$/u.test(tokens[1])
+      ? Number.parseInt(tokens[1], 10)
+      : TRACE_HISTORY_CAPACITY;
+    return formatRegisterChangeHistory(
+      registerName,
+      this.traceHistory.registerChanges(registerName, count),
+      count
+    );
+  }
+
   private async evaluateAddressExpression(
     expression: string
   ): Promise<{ address: number; description: string } | undefined> {
@@ -1784,6 +2115,7 @@ export class ViceDebugSession {
       byteLength
     });
     await this.refreshRegisters();
+    await this.recordStoppedTrace('register write');
     if (this.clientSupportsInvalidatedEvent) {
       this.connection.sendEvent('invalidated', {
         areas: ['variables'],
@@ -2083,6 +2415,16 @@ function watchpointRangeLabel(breakpoint: InstalledDataBreakpoint): string {
 
 function memoryReference(address: number): string {
   return `0x${hexWord(address)}`;
+}
+
+function encodeTraceHistoryEntryReference(sequence: number): number {
+  return TRACE_HISTORY_ENTRY_REFERENCE_BASE + sequence;
+}
+
+function decodeTraceHistoryEntryReference(reference: number): number | undefined {
+  return reference > TRACE_HISTORY_ENTRY_REFERENCE_BASE
+    ? reference - TRACE_HISTORY_ENTRY_REFERENCE_BASE
+    : undefined;
 }
 
 function parseMemoryReference(reference: string): number {

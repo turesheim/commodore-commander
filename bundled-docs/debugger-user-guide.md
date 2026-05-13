@@ -144,6 +144,36 @@ IRQ at {address}, A={A}, X={X}, hit={hitcount}
 Conditions and hit conditions can be combined with logpoints in the same way as
 regular source breakpoints.
 
+## Trace History
+
+Commodore Commander keeps an adapter-side trace history for the active debug
+session. It records the current PC, disassembled instruction, register values,
+register changes, source location when known, and watched memory access details
+whenever the debugger observes a stop, logpoint stop/resume, register edit, or
+Memory view write.
+
+When execution is stopped:
+
+1. Open Theia's Variables view.
+2. Expand **Trace History**.
+3. Expand a trace entry to inspect the PC, instruction, changed registers,
+   source location, memory access details, and register snapshot.
+
+The Debug Console also accepts trace commands:
+
+```text
+.trace              show the latest trace entries
+.trace 20           show the latest 20 trace entries
+.trace clear        clear trace history and observed writes
+.lastwrite $0400    show the last observed write to a byte
+.regchanges A       show recent observed changes for a register
+```
+
+Write provenance is based on observed debugger events. A CPU write is recorded
+when a matching write watchpoint stops the debugger; a debugger-originated
+Memory view write is also recorded. Bytes that were never watched or written
+through the debugger have no last-write record.
+
 ## Add A Watch Expression
 
 Watch expressions are regular Theia debugger watches. Commodore Commander can
@@ -330,6 +360,10 @@ If the Memory view is read-only:
 - VICE checkpoint conditions are supported through the binary monitor, but
   arbitrary textual monitor checkpoint action commands are not exposed through
   the binary monitor path used here. Logpoints are therefore adapter-managed.
+- Trace History is adapter-observed history, not full emulator PC history.
+  It records stopped/logpoint samples, register edits, watched memory writes,
+  and Memory view writes. Continuous "who last wrote any byte" provenance still
+  requires broader emulator-side execution and memory tracking.
 - Multi-byte watchpoint hits report the watched range and the current bytes in
   that range. VICE does not report the exact sub-address inside the range in the
   checkpoint hit response.

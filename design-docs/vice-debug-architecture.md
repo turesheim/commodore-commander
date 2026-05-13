@@ -52,9 +52,9 @@ This layer owns:
   initial break
 - DAP request handling for launch, source breakpoints, conditional
   breakpoints, hit conditions, logpoints/tracepoints, data breakpoints,
-  conditional watchpoints, continue, pause, step in, step over, step out, stack frames,
-  scopes/variables, register writes, evaluation, loaded sources, readMemory,
-  writeMemory, and disassemble
+  conditional watchpoints, continue, pause, step in, step over, step out, stack
+  frames, scopes/variables, register writes, evaluation, loaded sources,
+  readMemory, writeMemory, trace history, and disassemble
 - DAP breakpoint-location discovery backed by Kick Assembler `.dbg` line
   mappings, with `sourceRoot` support for relative source paths
 
@@ -84,8 +84,8 @@ The Theia extension now contributes:
 - DAP adapter startup through Theia's backend debug adapter contribution
 
 Breakpoints, data breakpoints, conditional breakpoints/watchpoints, logpoints,
-stack frames, variables, stepping controls,
-memory reads/writes, register writes, loaded sources, complete NMOS 6502
+stack frames, variables, stepping controls, memory reads/writes, register
+writes, adapter-observed trace history, loaded sources, complete NMOS 6502
 disassembly, start/stop lifecycle, and launch/snippet authoring are surfaced
 through Theia's existing debug views and configuration paths rather than new
 custom run/debug UI. The Memory view uses the active `commodore-vice` debug session's DAP

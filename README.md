@@ -97,6 +97,9 @@ Implemented debugger features:
   add, enable/disable, edit, delete, clear, and reinstall actions
 - watchpoint stop descriptions that include the configured range, actual
   read/write access type, current PC, and current watched byte values
+- adapter-observed Trace History in the Variables view, with Debug Console
+  commands for recent PC samples, last observed watched writes, and register
+  changes
 - Watch view evaluation for registers, labels, and address expressions such as `label+1`, plus Kick Assembler `.watch` entries exposed as live memory values in the Variables view
 - continue, pause, step in, step over, and step out controls
 - register and Kick Assembler label scopes in Theia's Variables view

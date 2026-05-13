@@ -22,12 +22,11 @@ What is here:
   breakpoints/watchpoints, conditional data breakpoints, data hit conditions,
   continue, pause, step in, step over, step out, stack frames, register
   variables, register writes, label variables, Kick Assembler `.watch`
-  variables, memory reads/writes, loaded sources, generated source content,
-  Watch-view evaluation, hardware-stack call-frame
-  reconstruction, and complete NMOS 6502 disassembly including undocumented
-  opcodes. The Theia extension's
-  Memory view consumes `readMemory` and `writeMemory`; memory UI state remains
-  outside the adapter.
+  variables, adapter-observed trace history, memory reads/writes, loaded
+  sources, generated source content, Watch-view evaluation, hardware-stack
+  call-frame reconstruction, and complete NMOS 6502 disassembly including
+  undocumented opcodes. The Theia extension's Memory view consumes
+  `readMemory` and `writeMemory`; memory UI state remains outside the adapter.
 - Source and data breakpoint conditions are forwarded to VICE checkpoint
   conditions. Hit conditions are interpreted by the adapter. Logpoints use
   non-stopping checkpoints when possible and a stop/log/resume path when the log
@@ -36,6 +35,10 @@ What is here:
   checkpoints so stop descriptions can report the actual access type. A
   watchpoint stop description also includes the watched range, current PC, and
   current watched byte values.
+- Trace history keeps the latest stopped/logpoint PC samples, register
+  snapshots, register changes, source locations, watched memory accesses, and
+  debugger-originated memory writes. The Variables view exposes it as a scope;
+  Debug Console commands `.trace`, `.lastwrite`, and `.regchanges` query it.
 - Stack-frame source locations use exact `.dbg` mappings where possible and a
   bounded nearest-line fallback for call-stack navigation. If no source mapping
   can be used, the adapter exposes a generated disassembly source for the

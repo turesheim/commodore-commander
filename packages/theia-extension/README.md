@@ -48,6 +48,9 @@ Current responsibility:
   enable/disable, edit, delete, clear, and reinstall actions; watchpoints can
   include byte count, read/write access, VICE condition text, and DAP-style hit
   conditions
+- surface the debug adapter's Trace History scope in Theia's Variables view,
+  with Debug Console commands for recent PC samples, observed watched writes,
+  and register-change history
 - filter editor reference lookup against the selected machine profile so
   machine-specific I/O, ROM, memory-map, and zero-page symbols do not bleed
   into unrelated machines
