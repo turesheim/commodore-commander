@@ -27,7 +27,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rimraf lib",
-    "test": "npm run build && node --test lib/test/*.test.js"
+    "test": "npm run build && node --test lib/test/*.test.js",
+    "test:e2e:vice": "npm run build && node --test lib/test/e2e/*.e2e.test.js"
   },
   "dependencies": {
     "@vscode/debugprotocol": "^1.68.0"

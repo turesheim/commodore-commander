@@ -12,7 +12,8 @@
     "package:mac": "npm run theia:build && npm run package:mac --workspace @commodore-commander/electron-app",
     "theia:watch:extension": "npm run watch --workspace @commodore-commander/theia-extension",
     "kickass:build": "npm run build --workspace @commodore-commander/language-support && npm run build --workspace @commodore-commander/debug-adapter && npm run build --workspace @commodore-commander/theia-extension && node packages/theia-extension/lib/node/kick-assembler-headless-build.js",
-    "screenshots:theia": "node tools/capture-theia-screenshots.mjs"
+    "screenshots:theia": "node tools/capture-theia-screenshots.mjs",
+    "test:e2e:vice": "npm run test:e2e:vice --workspace @commodore-commander/debug-adapter"
   },
   "workspaces": [
     "applications/electron",
