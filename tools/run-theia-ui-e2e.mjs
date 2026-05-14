@@ -295,6 +295,10 @@ function createAutomationConfig(fixtureWorkspace, options) {
             timeoutMs: options.timeoutMs
           },
           {
+            type: 'openSourceFile',
+            filePath: fixtureWorkspace.debug.sourcePath
+          },
+          {
             type: 'waitForVisibleText',
             selector: '#outline-view, .theia-outline-view',
             text: 'AfterBasicReady',

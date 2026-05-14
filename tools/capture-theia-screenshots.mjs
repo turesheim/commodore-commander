@@ -590,6 +590,10 @@ function createCaptureConfig(options) {
             timeoutMs: options.timeoutMs
           },
           {
+            type: 'openSourceFile',
+            filePath: options.debugSourcePath
+          },
+          {
             type: 'waitForVisibleText',
             selector: '#outline-view, .theia-outline-view',
             text: 'AfterBasicReady',
