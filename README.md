@@ -154,6 +154,22 @@ through DAP memory writes without clearing screen RAM, and switches through the
 VIC-II, Sprites, Screen RAM, and CIA tabs so the README images can be refreshed
 after UI changes.
 
+## Theia UI E2E
+
+Run focused debugger UI automation with:
+
+```sh
+npm run theia:build
+npm run test:e2e:theia:ui
+```
+
+The UI e2e runner launches the built Electron app against a temporary workspace,
+starts real VICE debug sessions, checks the Debug and Memory views, edits a
+memory byte through the Memory view, and switches through the C64 Visual
+Debugger views. The VICE GitHub Actions workflow runs the same lane on Linux
+under Xvfb. Use `--vice-executable`, `--vice-resources`, and `--vice-args` to
+test against an external VICE runtime.
+
 
 
 These resources are only some of those consulted when building this IDE. You may find them useful:

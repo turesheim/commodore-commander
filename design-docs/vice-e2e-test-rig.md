@@ -51,6 +51,11 @@ connection setup, event ordering, and teardown.
   C64 state that the Theia visual debugger depends on, without starting Theia
   or rendering React UI.
 
+- `tools/run-theia-ui-e2e.mjs`
+  Electron/Theia UI harness. It reuses the same fixture programs, starts real
+  VICE sessions through Theia launch configurations, asserts debugger UI state,
+  edits a Memory view byte, and switches through C64 Visual Debugger tabs.
+
 - `fixtures/debug-demo`
   Golden source, PRG, and DBG for debugger-session behavior: entry stops,
   source breakpoints, stepping, data breakpoints, memory writes, ROM fallback
@@ -88,6 +93,19 @@ npm run test:e2e:vice --workspace @commodore-commander/debug-adapter
 `VICE_ARGS` may be JSON string-array syntax for arguments containing spaces.
 For simple local runs it may also be a whitespace-separated string.
 
+The Theia UI e2e lane requires a built Electron app and a graphical desktop
+session:
+
+```text
+npm run theia:build
+npm run test:e2e:theia:ui
+```
+
+It accepts `--vice-executable`, `--vice-resources`, and `--vice-args`, plus the
+`THEIA_UI_E2E_VICE_EXECUTABLE`, `THEIA_UI_E2E_VICE_RESOURCES_PATH`, and
+`THEIA_UI_E2E_VICE_ARGS` environment variables. GitHub Actions runs it on Linux
+under Xvfb.
+
 ## Covered Behaviors
 
 The current suite covers:
@@ -106,6 +124,11 @@ The current suite covers:
   needed
 - visual-debugger memory snapshots for VIC bank, screen RAM, color RAM, sprite
   pointer, sprite position, and sprite color
+- Theia UI launch through the built Electron app
+- Debug view register scope visibility
+- Memory view rendering for a stopped VICE session
+- Memory view byte editing through DAP `writeMemory`
+- C64 Visual Debugger overview, sprite, screen RAM, and CIA tab rendering
 
 ## Synchronization Rules
 
@@ -144,6 +167,12 @@ The directory contains:
 `test-results/` is ignored by Git because these files are diagnostic outputs,
 not golden inputs.
 
+The Theia UI e2e runner writes screenshots for each UI scenario under:
+
+```text
+test-results/theia-ui-e2e/
+```
+
 ## Fixture Maintenance
 
 Golden fixture changes must keep source, PRG, and DBG files together. Do not
@@ -177,9 +206,8 @@ lane, not fail default package tests.
 
 ## Current Limits
 
-This rig does not yet automate Theia UI rendering. The visual-debugger coverage
-asserts the stopped C64 state consumed by the widget, not pixel output from the
-React view.
+The Electron UI harness requires a graphical desktop session locally and Xvfb in
+CI.
 
 It also does not cover non-macOS bundled runtime discovery yet. The environment
 resolver accepts external VICE paths so Linux, Windows, and Intel macOS jobs can

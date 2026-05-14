@@ -597,6 +597,25 @@ export class ViceMemoryWidget extends ReactWidget {
     }
   }
 
+  showRangeForScreenCapture(
+    expression: string,
+    length = '1',
+    bytesPerRow?: number,
+    textMode?: string
+  ): void {
+    this.expressionInput = expression;
+    this.lengthInput = length;
+    if (bytesPerRow !== undefined && isSupportedColumnCount(bytesPerRow)) {
+      this.bytesPerRow = bytesPerRow;
+    }
+    if (isMemoryTextMode(textMode)) {
+      this.textMode = textMode;
+    }
+    this.saveState();
+    this.update();
+    this.refreshIfReady();
+  }
+
   revealTextColumnForScreenCapture(): void {
     const table = this.node.querySelector('table');
     const scrollContainer = table?.parentElement;

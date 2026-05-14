@@ -83,6 +83,12 @@ export interface CommodoreCommanderScreenCaptureApi {
   prepareC64VisualDebuggerDemoState?: () => Promise<boolean>;
   openSourceFile?: (filePath: string) => Promise<boolean>;
   revealMemoryTextColumn?: () => Promise<boolean>;
+  showMemoryRange?: (
+    expression: string,
+    length?: string,
+    bytesPerRow?: number,
+    textMode?: string
+  ) => Promise<boolean>;
   runEditorAction?: (actionId: string) => Promise<boolean>;
   setEditorSource?: (
     source: string,
@@ -101,6 +107,7 @@ export interface CommodoreCommanderScreenCaptureApi {
     configuration?: DebugConfiguration,
     workspaceFolderUri?: string
   ) => Promise<boolean>;
+  stopDebugSession?: () => Promise<boolean>;
   showMnemonicHover?: () => Promise<boolean>;
   showReferences?: () => Promise<boolean>;
   waitForDebugStopped?: (
@@ -176,6 +183,13 @@ export class CommodoreCommanderScreenCaptureContribution
         this.openSourceFileForScreenCapture(filePath),
       revealMemoryTextColumn: async () =>
         this.revealMemoryTextColumnForScreenCapture(),
+      showMemoryRange: async (expression, length, bytesPerRow, textMode) =>
+        this.showMemoryRangeForScreenCapture(
+          expression,
+          length,
+          bytesPerRow,
+          textMode
+        ),
       showC64VisualDebuggerView: async (view) =>
         this.showC64VisualDebuggerViewForScreenCapture(view),
       showScreenMemory: async () => this.showScreenMemoryForScreenCapture(),
@@ -185,6 +199,7 @@ export class CommodoreCommanderScreenCaptureContribution
           configuration,
           workspaceFolderUri
         ),
+      stopDebugSession: async () => this.stopDebugSessionForScreenCapture(),
       waitForC64BasicReady: async (timeoutMs) =>
         this.waitForC64BasicReadyForScreenCapture(timeoutMs),
       waitForDebugStopped: async (reason, timeoutMs) =>
@@ -238,6 +253,15 @@ export class CommodoreCommanderScreenCaptureContribution
       return true;
     }
     await thread.continue();
+    return true;
+  }
+
+  protected async stopDebugSessionForScreenCapture(): Promise<boolean> {
+    const session = this.debugSessionManager.currentSession;
+    if (!session) {
+      return true;
+    }
+    await this.debugSessionManager.terminateSession(session);
     return true;
   }
 
@@ -400,6 +424,19 @@ export class CommodoreCommanderScreenCaptureContribution
       VICE_MEMORY_WIDGET_ID
     );
     widget.revealTextColumnForScreenCapture();
+    return true;
+  }
+
+  protected async showMemoryRangeForScreenCapture(
+    expression: string,
+    length?: string,
+    bytesPerRow?: number,
+    textMode?: string
+  ): Promise<boolean> {
+    const widget = await this.widgetManager.getOrCreateWidget<ViceMemoryWidget>(
+      VICE_MEMORY_WIDGET_ID
+    );
+    widget.showRangeForScreenCapture(expression, length, bytesPerRow, textMode);
     return true;
   }
 

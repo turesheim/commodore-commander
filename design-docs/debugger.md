@@ -143,9 +143,10 @@ emulator is running.
   because they do not push a return address. Stack-frame names include nearest
   containing label context so loops are still visible without misrepresenting
   branch targets as calls.
-- Live Theia plus VICE UI automation is still missing. Current automated
-  coverage includes unit/protocol tests plus opt-in real VICE DAP e2e sessions;
-  React/Theia debug-view behavior still needs UI automation or manual checks.
+- Theia plus VICE UI automation covers debug startup, Memory view rendering and
+  byte editing, and the C64 Visual Debugger overview, sprite, screen, and CIA
+  views. It runs locally through `npm run test:e2e:theia:ui` after the Electron
+  app is built and in GitHub Actions on Linux under Xvfb.
 - Build-before-debug has Theia task-provider and generated `preLaunchTask`
   wiring for Kick Assembler builds. Remaining work is run-picker and
   build-policy behavior for configured runs, plus any clean-task workflow that

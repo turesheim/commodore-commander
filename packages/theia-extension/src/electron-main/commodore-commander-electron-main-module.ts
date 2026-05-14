@@ -80,6 +80,13 @@ type ElectronScreenCaptureStep =
   | { readonly type: 'prepareC64VisualDebuggerDemoState' }
   | { readonly type: 'revealMemoryTextColumn' }
   | {
+      readonly type: 'editInputValue';
+      readonly selector: string;
+      readonly value: string;
+      readonly commit?: 'blur' | 'enter';
+      readonly timeoutMs?: number;
+    }
+  | {
       readonly type: 'setEditorMarker';
       readonly marker?: ScreenCaptureMarker;
     }
@@ -88,6 +95,13 @@ type ElectronScreenCaptureStep =
       readonly marker?: ScreenCaptureMarker;
     }
   | { readonly type: 'showScreenMemory' }
+  | {
+      readonly type: 'showMemoryRange';
+      readonly expression: string;
+      readonly length?: string;
+      readonly bytesPerRow?: number;
+      readonly textMode?: string;
+    }
   | {
       readonly type: 'showC64VisualDebuggerView';
       readonly view: string;
@@ -98,6 +112,7 @@ type ElectronScreenCaptureStep =
       readonly configuration?: unknown;
       readonly workspaceFolderUri?: string;
     }
+  | { readonly type: 'stopDebugSession' }
   | {
       readonly type: 'waitForVisibleText';
       readonly selector: string;
@@ -425,6 +440,16 @@ async function runScreenCaptureStep(
       }
       return;
     }
+    case 'editInputValue': {
+      await editInputValue(
+        window,
+        step.selector,
+        step.value,
+        step.commit ?? 'blur',
+        step.timeoutMs ?? timeoutMs
+      );
+      return;
+    }
     case 'setEditorMarker': {
       const marked = await callScreenCaptureApi<boolean>(
         window,
@@ -464,6 +489,19 @@ async function runScreenCaptureStep(
       }
       return;
     }
+    case 'showMemoryRange': {
+      const shown = await callScreenCaptureApi<boolean>(
+        window,
+        'showMemoryRange',
+        [step.expression, step.length, step.bytesPerRow, step.textMode],
+        false,
+        timeoutMs
+      );
+      if (!shown) {
+        throw new Error(`Unable to show memory range: ${step.expression}`);
+      }
+      return;
+    }
     case 'showC64VisualDebuggerView': {
       const shown = await callScreenCaptureApi<boolean>(
         window,
@@ -487,6 +525,19 @@ async function runScreenCaptureStep(
       );
       if (!started) {
         throw new Error(`Unable to start launch configuration: ${step.name}`);
+      }
+      return;
+    }
+    case 'stopDebugSession': {
+      const stopped = await callScreenCaptureApi<boolean>(
+        window,
+        'stopDebugSession',
+        [],
+        false,
+        timeoutMs
+      );
+      if (!stopped) {
+        throw new Error('Unable to stop debug session.');
       }
       return;
     }
@@ -564,6 +615,82 @@ async function setEditorSource(
     throw new Error('Unable to set screenshot editor source.');
   }
   await delay(300);
+}
+
+async function editInputValue(
+  window: BrowserWindow,
+  selector: string,
+  value: string,
+  commit: 'blur' | 'enter',
+  timeoutMs: number
+): Promise<void> {
+  await waitForCondition(
+    window,
+    `(() => {
+      const input = document.querySelector(${JSON.stringify(selector)});
+      if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)) {
+        return false;
+      }
+      const rect = input.getBoundingClientRect();
+      const style = window.getComputedStyle(input);
+      return rect.width > 0 &&
+        rect.height > 0 &&
+        style.display !== 'none' &&
+        style.visibility !== 'hidden' &&
+        !input.readOnly &&
+        !input.disabled;
+    })()`,
+    timeoutMs,
+    `Timed out waiting for editable input: ${selector}.`
+  );
+
+  const edited = await evaluateInWindow<boolean>(
+    window,
+    `(() => {
+      const input = document.querySelector(${JSON.stringify(selector)});
+      if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)) {
+        return false;
+      }
+      input.focus();
+      input.select?.();
+      input.value = ${JSON.stringify(value)};
+      input.dispatchEvent(new InputEvent('input', {
+        bubbles: true,
+        cancelable: true,
+        data: ${JSON.stringify(value)},
+        inputType: 'insertText'
+      }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      if (${JSON.stringify(commit)} === 'enter') {
+        const eventInit = {
+          key: 'Enter',
+          code: 'Enter',
+          keyCode: 13,
+          which: 13,
+          bubbles: true,
+          cancelable: true
+        };
+        input.dispatchEvent(new KeyboardEvent('keydown', eventInit));
+        input.dispatchEvent(new KeyboardEvent('keyup', eventInit));
+      } else {
+        input.blur();
+      }
+      input.dispatchEvent(new FocusEvent('blur', {
+        bubbles: false,
+        cancelable: false
+      }));
+      input.dispatchEvent(new FocusEvent('focusout', {
+        bubbles: true,
+        cancelable: false
+      }));
+      return true;
+    })()`,
+    false,
+    timeoutMs
+  );
+  if (!edited) {
+    throw new Error(`Unable to edit input: ${selector}`);
+  }
 }
 
 async function clearTransientUi(window: BrowserWindow): Promise<void> {

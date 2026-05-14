@@ -114,21 +114,26 @@ The TypeScript seams are easier to test because:
 
 Current automated coverage includes `.dbg` parsing, full NMOS 6502
 disassembly, stack-frame reconstruction, VICE binary monitor request encoding,
-and an opt-in real VICE end-to-end suite under
-`packages/debug-adapter/src/test/e2e`. The real VICE lane launches the adapter
-over stdio, starts VICE through the production launch path, and verifies DAP
-behavior for launch, entry stops, source breakpoints, stepping, data
-breakpoints, memory reads/writes, trace-history last-write provenance,
-logpoints, ROM source fallback, and visual-debugger memory snapshots.
+and a real VICE end-to-end suite under `packages/debug-adapter/src/test/e2e`.
+The real VICE lane launches the adapter over stdio, starts VICE through the
+production launch path, and verifies DAP behavior for launch, entry stops,
+source breakpoints, stepping, data breakpoints, memory reads/writes,
+trace-history last-write provenance, logpoints, ROM source fallback, and
+visual-debugger memory snapshots. A Linux GitHub Actions workflow and matching
+Docker rig run this suite against Debian's `/usr/bin/x64sc` with the repository
+bundled VICE resources.
+
+The built Electron app also has a Theia UI e2e harness in
+`tools/run-theia-ui-e2e.mjs`, wired into GitHub Actions on Linux under Xvfb. It
+prepares temporary debugger fixtures, launches real VICE sessions through
+Theia, asserts the Debug and Memory views, writes a byte through the Memory
+view, and checks the C64 Visual Debugger overview, sprites, screen, and CIA
+tabs.
 
 ## Current Limitations
 
 This pass still does not include:
 
-- a mandatory CI lane for real VICE end-to-end tests; they remain opt-in via
-  `VICE_E2E=1` and skip when the runtime is unavailable
-- live Theia UI automation for debug views, memory rendering, and visual
-  debugger React output
 - cycle-accurate execution-history stack reconstruction for non-`JSR` or
   asynchronous interrupt provenance
 - arbitrary textual monitor checkpoint action commands; the binary monitor path
@@ -141,9 +146,7 @@ This pass still does not include:
 
 ## Recommended Next Steps
 
-1. Make the opt-in real VICE e2e lane repeatable in CI where a compatible VICE
-   runtime is available, and broaden it with additional regression scenarios.
-2. Add live Theia UI automation around debug startup, Memory view rendering,
-   and the C64 Visual Debugger.
-3. Improve disassembly with richer symbol rendering.
-4. Extend embedded VICE discovery to Linux, Windows, and Intel macOS payloads.
+1. Broaden the real VICE and Theia UI e2e lanes with additional regression
+   scenarios.
+2. Improve disassembly with richer symbol rendering.
+3. Extend embedded VICE discovery to Linux, Windows, and Intel macOS payloads.
