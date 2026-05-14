@@ -75,6 +75,8 @@ const TRACE_HISTORY_ENTRY_REFERENCE_BASE = 650700;
 const MEMORY_DISASSEMBLY_TARGET_LINE = 6;
 const MEMORY_DISASSEMBLY_INSTRUCTION_COUNT = 32;
 const DEFAULT_MEMORY_READ_TIMEOUT_MS = 5000;
+const VICE_MONITOR_CONNECT_ATTEMPTS = 150;
+const VICE_MONITOR_CONNECT_DELAY_MS = 100;
 const WATCH_MEMORY_PREVIEW_BYTES = 64;
 const TRACE_HISTORY_CAPACITY = 200;
 
@@ -355,7 +357,11 @@ export class ViceDebugSession {
     }
     this.monitor = await ViceMonitorConnection.connect(
       launch.monitorHost,
-      launch.monitorPort
+      launch.monitorPort,
+      {
+        attempts: VICE_MONITOR_CONNECT_ATTEMPTS,
+        delayMs: VICE_MONITOR_CONNECT_DELAY_MS
+      }
     );
     this.monitor.onEvent((event) => {
       void this.handleMonitorEvent(event);

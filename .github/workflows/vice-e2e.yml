@@ -30,6 +30,9 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   vice-debugger-e2e:
     name: Real VICE DAP session tests
