@@ -1,0 +1,75 @@
+name: VICE Debugger E2E
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/vice-e2e.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/debug-adapter/**"
+      - "net.sourceforge.vice.cocoa.macosx.aarch64/vice/VICE.app/Contents/Resources/share/vice/**"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/vice-e2e.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/debug-adapter/**"
+      - "net.sourceforge.vice.cocoa.macosx.aarch64/vice/VICE.app/Contents/Resources/share/vice/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vice-debugger-e2e:
+    name: Real VICE DAP session tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      VICE_E2E: "1"
+      VICE_EXECUTABLE: /usr/bin/x64sc
+      VICE_RESOURCES_PATH: ${{ github.workspace }}/net.sourceforge.vice.cocoa.macosx.aarch64/vice/VICE.app/Contents/Resources
+      VICE_ARGS: '["-directory","${{ github.workspace }}/net.sourceforge.vice.cocoa.macosx.aarch64/vice/VICE.app/Contents/Resources/share/vice","-console","+sound"]'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci --workspace @commodore-commander/debug-adapter --include-workspace-root=false
+
+      - name: Install VICE
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository -y multiverse
+          sudo apt-get update
+          sudo apt-get install -y dbus-x11 vice xvfb
+
+      - name: Verify VICE runtime
+        run: |
+          test -d "$VICE_RESOURCES_PATH/share/vice"
+          test -f "$VICE_RESOURCES_PATH/share/vice/C64/basic-901226-01.bin"
+          test -f "$VICE_RESOURCES_PATH/share/vice/C64/kernal-901227-03.bin"
+          test -x "$VICE_EXECUTABLE"
+          file "$VICE_EXECUTABLE"
+
+      - name: Run real VICE debugger e2e tests
+        run: bash tools/run-vice-e2e-linux.sh
+
+      - name: Upload VICE e2e diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vice-e2e-diagnostics
+          path: test-results/vice-e2e/
+          if-no-files-found: ignore

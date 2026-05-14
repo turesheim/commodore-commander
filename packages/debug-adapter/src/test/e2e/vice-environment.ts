@@ -35,7 +35,7 @@ export function resolveViceE2eEnvironment(): {
       'Resources'
     );
   const viceExecutable = process.env.VICE_EXECUTABLE || 'x64sc';
-  const viceBinary = path.join(viceResourcesPath, 'bin', viceExecutable);
+  const viceBinary = resolveViceBinaryPath(viceResourcesPath, viceExecutable);
 
   if (!isReadableDirectory(viceResourcesPath)) {
     return {
@@ -79,6 +79,15 @@ function parseViceArgs(value: string | undefined): readonly string[] {
     // Fall through to whitespace splitting.
   }
   return value.split(/\s+/u).filter(Boolean);
+}
+
+function resolveViceBinaryPath(
+  viceResourcesPath: string,
+  viceExecutable: string
+): string {
+  return path.isAbsolute(viceExecutable) || /[\\/]/u.test(viceExecutable)
+    ? path.resolve(viceExecutable)
+    : path.join(viceResourcesPath, 'bin', viceExecutable);
 }
 
 function isReadableDirectory(filePath: string): boolean {
