@@ -107,7 +107,7 @@ dependency.
 | Disassembly | Disassembly view and label parsing | Complete NMOS 6502 DAP disassemble support | Richer symbol rendering |
 | Machine/runtime selection | Launch configuration tabs and bundled VICE assumptions | Machine profiles in TypeScript; macOS Apple Silicon embedded VICE path | Cross-platform VICE payloads, runtime-package extraction if reuse requires it |
 | SIDScore | Separate external toolchain integration | Theia syntax registration plus external SIDScoreCLI player-server integration | TypeScript SIDScore language intelligence, diagnostics, export workflow, and richer controls |
-| Packaging | Historical product build | Local Theia Electron app package | Distributable packaging, signing/notarization, platform payload matrix |
+| Packaging | Historical product build | Local Theia Electron app package plus nightly macOS, Windows, and Linux package workflow | Signing/notarization and installer-specific packaging |
 | Documentation | Product docs and repository docs | Bundled docs registered in welcome/help plus design docs | Keep design docs, bundled docs manifest, and product help links synchronized |
 
 ## Non-Goals For The Current Passes

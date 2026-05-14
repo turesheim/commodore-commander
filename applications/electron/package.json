@@ -31,6 +31,7 @@
     "clean": "rimraf lib src-gen gen-webpack.config.js gen-webpack.node.config.js",
     "bundle": "npm run rebuild && npm run download:plugins && theia build --mode development",
     "download:plugins": "node ../../tools/download-theia-plugins.mjs",
+    "package:current": "node ../../tools/package-electron-product.mjs",
     "package:mac": "node ../../tools/package-macos-app.mjs",
     "rebuild": "theia rebuild:electron --cacheRoot ../../.theia",
     "start": "theia start ../../ --plugins=local-dir:plugins",

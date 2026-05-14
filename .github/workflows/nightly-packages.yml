@@ -1,0 +1,130 @@
+name: Nightly Product Packages
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Package ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos
+            os: macos-latest
+            package-dir: Commodore Commander.app
+          - platform: windows
+            os: windows-latest
+            package-dir: commodore-commander-windows
+          - platform: linux
+            os: ubuntu-latest
+            package-dir: commodore-commander-linux
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Linux build packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libsecret-1-dev \
+            libx11-dev \
+            libxkbfile-dev \
+            pkg-config \
+            python3
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build Theia Electron app
+        run: npm run theia:build
+
+      - name: Package current platform
+        shell: bash
+        run: |
+          package_dir="dist/nightly/${{ matrix.package-dir }}"
+          package_archive="dist/nightly/commodore-commander-nightly-${{ matrix.platform }}-${{ runner.arch }}.tar.gz"
+          npm run package:current --workspace @commodore-commander/electron-app -- --output "$package_dir"
+          tar -czf "$package_archive" -C "$(dirname "$package_dir")" "$(basename "$package_dir")"
+          echo "Packaged $package_archive"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: commodore-commander-nightly-${{ matrix.platform }}-${{ runner.arch }}
+          path: dist/nightly/commodore-commander-nightly-${{ matrix.platform }}-${{ runner.arch }}.tar.gz
+          if-no-files-found: error
+          retention-days: 30
+
+  publish-nightly:
+    name: Publish nightly release
+    needs: package
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Download package artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download "$GITHUB_RUN_ID" --dir dist/nightly-artifacts
+
+      - name: Update nightly prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          release_notes="$RUNNER_TEMP/nightly-release-notes.md"
+          {
+            echo "Nightly product packages from the latest successful nightly packaging run."
+            echo
+            echo "- Commit: $GITHUB_SHA"
+            echo "- Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "- Built: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          } > "$release_notes"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --force nightly "$GITHUB_SHA"
+          git push --force origin refs/tags/nightly
+
+          if gh release view nightly >/dev/null 2>&1; then
+            gh release edit nightly \
+              --title "Commodore Commander Nightly" \
+              --notes-file "$release_notes" \
+              --prerelease
+          else
+            gh release create nightly \
+              --title "Commodore Commander Nightly" \
+              --notes-file "$release_notes" \
+              --prerelease
+          fi
+
+          while IFS= read -r -d '' asset; do
+            gh release upload nightly "$asset#$(basename "$asset")" --clobber
+          done < <(find dist/nightly-artifacts -type f -name '*.tar.gz' -print0 | sort -z)

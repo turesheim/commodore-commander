@@ -126,7 +126,7 @@ The C64 Visual Debugger complements the DAP views with machine-specific state fr
 
 # Developer resources
 
-## macOS app bundle
+## Product packages
 
 Build a distributable macOS app bundle with:
 
@@ -137,6 +137,17 @@ npm run package:mac
 The command builds the Theia Electron application and writes a single app bundle to `dist/mac/Commodore Commander.app`. The bundle includes the Theia frontend and backend, downloaded local plugins, bundled docs, Kick Assembler, SIDScore, and the embedded Apple Silicon VICE payload.
 
 By default the bundle is ad-hoc signed. Set `CC_CODESIGN_IDENTITY` to use a Developer ID identity and `CC_BUNDLE_ID` to override the bundle identifier. Notarization and a DMG/zip installer are still manual release steps.
+
+To build the current runner platform without the macOS-only bundle assumptions,
+run:
+
+```sh
+npm run package:current
+```
+
+Nightly product packages are built by GitHub Actions for macOS, Windows, and
+Linux. The scheduled workflow uploads run artifacts and refreshes the mutable
+`nightly` prerelease after all three platform packages build successfully.
 
 ## Screenshots
 
