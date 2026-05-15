@@ -144,6 +144,9 @@ jobs:
         run: npm ci
 
       - name: Build Theia Electron app
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+          THEIA_BUILD_MAX_OLD_SPACE_SIZE_MB: "4096"
         run: npm run theia:build
 
       - name: Verify VICE runtime

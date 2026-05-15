@@ -22,7 +22,9 @@ jobs:
             os: macos-latest
             package-dir: Commodore Commander.app
           - platform: windows
-            os: windows-latest
+            # windows-latest has moved to a Visual Studio version that the
+            # Electron node-gyp used by Theia 1.66 does not recognize yet.
+            os: windows-2022
             package-dir: commodore-commander-windows
           - platform: linux
             os: ubuntu-latest
@@ -65,6 +67,9 @@ jobs:
         run: npm ci
 
       - name: Build Theia Electron app
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+          THEIA_BUILD_MAX_OLD_SPACE_SIZE_MB: "4096"
         run: npm run theia:build
 
       - name: Package current platform
