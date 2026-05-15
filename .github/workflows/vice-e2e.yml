@@ -129,7 +129,18 @@ jobs:
             vice \
             xvfb
 
+      - name: Prepare @vscode/ripgrep download cache
+        env:
+          TMPDIR: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+          TEMP: ${{ runner.temp }}
+        run: node tools/prepare-vscode-ripgrep-cache.mjs
+
       - name: Install npm dependencies
+        env:
+          TMPDIR: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+          TEMP: ${{ runner.temp }}
         run: npm ci
 
       - name: Build Theia Electron app
