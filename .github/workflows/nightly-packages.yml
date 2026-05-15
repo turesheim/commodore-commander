@@ -51,6 +51,10 @@ jobs:
             python3
 
       - name: Install npm dependencies
+        env:
+          # @vscode/ripgrep downloads its binary through the GitHub API during
+          # postinstall. Authenticated requests avoid hosted-runner rate limits.
+          GITHUB_TOKEN: ${{ github.token }}
         run: npm ci
 
       - name: Build Theia Electron app
