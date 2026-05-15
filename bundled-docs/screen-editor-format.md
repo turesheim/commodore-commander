@@ -1,0 +1,110 @@
+# Screen Editor Format
+
+Commodore Commander screens are saved as `.screen` JSON files. The format is
+intended for PETSCII-style screen artwork and stores the screen codes, color
+RAM values, global VIC-II colors, and the character set needed to render the
+screen.
+
+## Structure
+
+```json
+{
+  "format": "commodore-commander.screen",
+  "version": 1,
+  "metadata": {
+    "machine": "c64"
+  },
+  "geometry": {
+    "columns": 40,
+    "rows": 25,
+    "characterWidth": 8,
+    "characterHeight": 8,
+    "characterOrder": "screen-code"
+  },
+  "colorMode": "hires",
+  "colors": {
+    "border": 14,
+    "background": 6,
+    "foreground": 1,
+    "multicolor1": 14,
+    "multicolor2": 2
+  },
+  "characterSet": {
+    "name": "C64 Lowercase Uppercase",
+    "glyphs": [
+      "0000000000000000"
+    ]
+  },
+  "cells": [
+    {
+      "character": 32,
+      "color": 1
+    }
+  ]
+}
+```
+
+The editor derives the screen name from the `.screen` filename. Legacy or
+hand-written files with `metadata.name` still load, but the field is not
+written when saving.
+
+## Screen Data
+
+`geometry.columns` and `geometry.rows` describe the visible screen grid. New C64
+screens default to 40 columns by 25 rows, but the format supports 1-160 columns
+and 1-100 rows for tooling and non-standard layouts.
+
+`cells` is always normalized to `columns * rows` entries. Each cell has:
+
+- `character`: a C64 screen code from 0-255.
+- `color`: a color RAM nibble from 0-15.
+
+The editor renders cells in row-major order.
+
+## Character Sets
+
+`characterSet.glyphs` embeds a full 256-character, screen-code ordered character
+set. Each glyph uses the same 16-digit hexadecimal row format as `.charset`
+files: 8 bytes per character, bit 7 leftmost.
+
+The screen editor can start from the bundled blank, C64 lower/upper, or PET
+lower/upper character sets. It can also replace the embedded character set with
+an existing `.charset` file.
+
+The embedded character set is editable from the screen editor. Pixel edits,
+flips, shifts, clears, and inversions update `characterSet.glyphs` directly, so
+screen artwork and custom glyphs stay in the same `.screen` file.
+
+## Import
+
+`.seq` imports are interpreted as screen-code byte sequences in row-major order.
+The imported bytes replace the cell `character` values from the top-left cell
+forward. Existing cell colors are preserved, excess bytes are ignored, and
+missing trailing cells are padded with screen code 32.
+
+## Color Modes
+
+`hires` interprets each character row byte as eight one-bit pixels. A set bit
+uses the cell color; a cleared bit uses the global background color.
+
+`multicolor` interprets each row byte as four two-bit pixels:
+
+```text
+00 background
+01 multicolor1
+10 multicolor2
+11 cell color
+```
+
+The color mode affects rendering and exports that consume the embedded glyphs.
+The screen-code and color RAM byte exports are unchanged.
+
+## Conversion
+
+The editor can export:
+
+- `.scr` screen-code bytes in row-major order.
+- `.col` color RAM bytes in row-major order.
+- KickAssembler `.asm` with separate character-code and color-code labels.
+
+For standard C64 screens, `.scr` and `.col` exports are 1000 bytes each.

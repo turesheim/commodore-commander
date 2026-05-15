@@ -79,6 +79,14 @@ import {
   CommodoreCharacterSetWidget,
   type CommodoreCharacterSetWidgetOptions
 } from './commodore-character-set-widget';
+import {
+  CommodoreScreenContribution
+} from './commodore-screen-contribution';
+import {
+  COMMODORE_SCREEN_WIDGET_FACTORY_ID,
+  CommodoreScreenWidget,
+  type CommodoreScreenWidgetOptions
+} from './commodore-screen-widget';
 import { CommodorePrgContribution } from './commodore-prg-contribution';
 import { CommodoreDebugWatchContribution } from './commodore-debug-watch-contribution';
 import { CommodoreViceLaunchConfigurationContribution } from './commodore-vice-launch-configuration-contribution';
@@ -250,6 +258,24 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
   bind(CommandContribution).toService(CommodoreCharacterSetContribution);
   bind(MenuContribution).toService(CommodoreCharacterSetContribution);
   bind(OpenHandler).toService(CommodoreCharacterSetContribution);
+  bind(CommodoreScreenWidget).toSelf();
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: COMMODORE_SCREEN_WIDGET_FACTORY_ID,
+      createWidget: async (options?: CommodoreScreenWidgetOptions) => {
+        const widget = context.container.get(CommodoreScreenWidget);
+        if (!options?.uri) {
+          throw new Error('Screen editor requires a resource URI.');
+        }
+        await widget.initialize(new URI(options.uri));
+        return widget;
+      }
+    }))
+    .inSingletonScope();
+  bind(CommodoreScreenContribution).toSelf().inSingletonScope();
+  bind(CommandContribution).toService(CommodoreScreenContribution);
+  bind(MenuContribution).toService(CommodoreScreenContribution);
+  bind(OpenHandler).toService(CommodoreScreenContribution);
   bind(CommodorePrgService)
     .toDynamicValue((context) =>
       WebSocketConnectionProvider.createProxy(

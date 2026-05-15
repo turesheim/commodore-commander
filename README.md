@@ -66,6 +66,24 @@ The editor provides:
 Raw `.64C`, `.bin`, and `.chr` imports can include a two-byte C64 load address,
 such as `$3800`; the importer skips that prefix so glyph row data stays aligned.
 
+## Screen editor
+
+Commodore Commander includes a PETSCII-style screen editor for C64 screen-code
+artwork. Screens are saved as `.screen` JSON files containing the screen cells,
+color RAM values, global VIC-II colors, and an embedded 256-character set.
+
+The editor provides:
+
+- a C64 screen canvas with border and background color rendering
+- a 256-character screen-code table for choosing the active glyph
+- an embedded bitmap editor for changing the selected character glyph
+- per-cell character and color painting
+- keyboard entry for common printable screen codes
+- single-color and multi-color character rendering modes
+- `.charset` import for replacing the embedded character set
+- `.seq` import for row-major screen-code sequences
+- `.scr`, `.col`, and KickAssembler `.asm` export
+
 ## Music and sound effects
 
 Commodore Commander supports [SIDScore](https://github.com/turesheim/SIDScore) which is a DSL and toolchain for composing Commodore 64 SID music and sound effects. It has realtime auditioning and export to ASM, PRG, SID, and WAV. It focuses on playback fidelity by aligning the built-in `sidscore` driver with a realtime player timing while keeping output compatible with PSID players like VICE/VSID. SIDScore playback uses the dedicated instrument panel. And even has support for MIDI instruments.

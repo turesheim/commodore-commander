@@ -64,22 +64,22 @@ export const COMMODORE_CHARACTER_SET_GEOMETRY: CommodoreCharacterSetGeometry = {
 };
 
 export const C64_COLOR_PALETTE = Object.freeze([
-  { index: 0, name: 'Black', hex: '#000000' },
-  { index: 1, name: 'White', hex: '#FFFFFF' },
-  { index: 2, name: 'Red', hex: '#68372B' },
-  { index: 3, name: 'Cyan', hex: '#70A4B2' },
-  { index: 4, name: 'Purple', hex: '#6F3D86' },
-  { index: 5, name: 'Green', hex: '#588D43' },
-  { index: 6, name: 'Blue', hex: '#352879' },
-  { index: 7, name: 'Yellow', hex: '#B8C76F' },
-  { index: 8, name: 'Orange', hex: '#6F4F25' },
-  { index: 9, name: 'Brown', hex: '#433900' },
-  { index: 10, name: 'Light Red', hex: '#9A6759' },
-  { index: 11, name: 'Dark Grey', hex: '#444444' },
-  { index: 12, name: 'Medium Grey', hex: '#6C6C6C' },
-  { index: 13, name: 'Light Green', hex: '#9AD284' },
-  { index: 14, name: 'Light Blue', hex: '#6C5EB5' },
-  { index: 15, name: 'Light Grey', hex: '#959595' }
+  { index: 0, name: 'Black', hex: '#000000', text: '#f2f2f2' },
+  { index: 1, name: 'White', hex: '#ffffff', text: '#111111' },
+  { index: 2, name: 'Red', hex: '#813338', text: '#ffffff' },
+  { index: 3, name: 'Cyan', hex: '#75cec8', text: '#111111' },
+  { index: 4, name: 'Purple', hex: '#8e3c97', text: '#ffffff' },
+  { index: 5, name: 'Green', hex: '#56ac4d', text: '#111111' },
+  { index: 6, name: 'Blue', hex: '#2e2c9b', text: '#ffffff' },
+  { index: 7, name: 'Yellow', hex: '#edf171', text: '#111111' },
+  { index: 8, name: 'Orange', hex: '#8e5029', text: '#ffffff' },
+  { index: 9, name: 'Brown', hex: '#553800', text: '#ffffff' },
+  { index: 10, name: 'Light Red', hex: '#c46c71', text: '#111111' },
+  { index: 11, name: 'Dark Grey', hex: '#4a4a4a', text: '#ffffff' },
+  { index: 12, name: 'Grey', hex: '#7b7b7b', text: '#111111' },
+  { index: 13, name: 'Light Green', hex: '#a9ff9f', text: '#111111' },
+  { index: 14, name: 'Light Blue', hex: '#706deb', text: '#ffffff' },
+  { index: 15, name: 'Light Grey', hex: '#b2b2b2', text: '#111111' }
 ]);
 
 export const COMMODORE_CHARACTER_SET_TEMPLATES: readonly CommodoreCharacterSetTemplate[] = [

@@ -9,6 +9,9 @@ import type { DebugRequestTypes } from '@theia/debug/lib/browser/debug-session-c
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 
+import {
+  C64_COLOR_PALETTE
+} from '../common/commodore-character-set-format';
 import { COMMODORE_VICE_DEBUG_TYPE } from '../common/commodore-vice-debug';
 import {
   c64CharacterSetBytes,
@@ -182,25 +185,6 @@ const COLOR_RAM_GRID_HEIGHT =
   SCREEN_ROWS * COLOR_RAM_CELL_SIZE +
   (SCREEN_ROWS - 1) * COLOR_RAM_GRID_GAP;
 const MIN_GRID_SCALE = 0.55;
-
-const C64_PALETTE = [
-  { name: 'Black', hex: '#000000', text: '#f2f2f2' },
-  { name: 'White', hex: '#ffffff', text: '#111111' },
-  { name: 'Red', hex: '#813338', text: '#ffffff' },
-  { name: 'Cyan', hex: '#75cec8', text: '#111111' },
-  { name: 'Purple', hex: '#8e3c97', text: '#ffffff' },
-  { name: 'Green', hex: '#56ac4d', text: '#111111' },
-  { name: 'Blue', hex: '#2e2c9b', text: '#ffffff' },
-  { name: 'Yellow', hex: '#edf171', text: '#111111' },
-  { name: 'Orange', hex: '#8e5029', text: '#ffffff' },
-  { name: 'Brown', hex: '#553800', text: '#ffffff' },
-  { name: 'Light Red', hex: '#c46c71', text: '#111111' },
-  { name: 'Dark Grey', hex: '#4a4a4a', text: '#ffffff' },
-  { name: 'Grey', hex: '#7b7b7b', text: '#111111' },
-  { name: 'Light Green', hex: '#a9ff9f', text: '#111111' },
-  { name: 'Light Blue', hex: '#706deb', text: '#ffffff' },
-  { name: 'Light Grey', hex: '#b2b2b2', text: '#111111' }
-] as const;
 
 const VIEW_OPTIONS: readonly {
   view: C64VisualDebuggerView;
@@ -1901,8 +1885,8 @@ function characterMemoryHeading(video: VideoSnapshot): string {
   return `${source} at ${formatAddress(video.characterBase)}`;
 }
 
-function paletteColor(value: number): typeof C64_PALETTE[number] {
-  return C64_PALETTE[value & 0x0f];
+function paletteColor(value: number): typeof C64_COLOR_PALETTE[number] {
+  return C64_COLOR_PALETTE[value & 0x0f];
 }
 
 function colorLabel(value: number): string {

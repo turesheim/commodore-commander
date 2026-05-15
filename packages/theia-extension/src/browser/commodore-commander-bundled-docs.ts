@@ -75,6 +75,11 @@ export const BUNDLED_DOCUMENTS: readonly BundledDocumentationEntry[] = [
     details: 'Native charset JSON layout and export formats'
   },
   {
+    path: 'screen-editor-format.md',
+    label: 'Screen Editor Format',
+    details: 'Native screen JSON layout and PETSCII export formats'
+  },
+  {
     path: 'introduction_to_sidscore.md',
     label: 'Introduction to SIDScore',
     details: 'Synthesizer and SID background for SIDScore instruments'

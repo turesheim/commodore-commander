@@ -47,6 +47,9 @@ Current responsibility:
   pointers, VIC-visible sprite/screen/character memory visualization,
   I/O-bank register reads, screen-color RAM swatches, and CIA
   timer/IRQ/keyboard matrix state
+- provide custom editors for `.charset` character sets and `.screen`
+  PETSCII-style screen artwork, including screen-code/color exports for C64
+  asset pipelines
 - add commands for sending editor expressions to Theia's Watch view and for
   installing persistent VICE memory watchpoints through DAP data breakpoints
 - provide a memory watchpoint manager in the Debug breakpoints menu with add,
@@ -64,7 +67,6 @@ Current responsibility:
 
 Current non-goals:
 
-- custom editors
 - custom run/debug UI outside Theia's native Run and Debug flow
 - full task integration for build-before-run/debug
 - full specialized memory-rendering parity

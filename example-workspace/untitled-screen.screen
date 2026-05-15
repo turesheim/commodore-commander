@@ -1,0 +1,4285 @@
+{
+  "format": "commodore-commander.screen",
+  "version": 1,
+  "metadata": {
+    "machine": "c64"
+  },
+  "geometry": {
+    "columns": 40,
+    "rows": 25,
+    "characterWidth": 8,
+    "characterHeight": 8,
+    "characterOrder": "screen-code"
+  },
+  "colorMode": "hires",
+  "colors": {
+    "border": 3,
+    "background": 6,
+    "foreground": 1,
+    "multicolor1": 14,
+    "multicolor2": 2
+  },
+  "characterSet": {
+    "name": "untitled-screen Character Set",
+    "glyphs": [
+      "3C666E6E60623C00",
+      "00003C063E663E00",
+      "0060607C66667C00",
+      "00003C6060603C00",
+      "0006063E66663E00",
+      "00003C667E603C00",
+      "FF8F99BE999999FF",
+      "00003E66663E067C",
+      "0060607C66666600",
+      "0018003818183C00",
+      "000600060606063C",
+      "0060606C786C6600",
+      "0038181818183C00",
+      "0000667F7F6B6300",
+      "00007C6666666600",
+      "00003C6666663C00",
+      "00007C66667C6060",
+      "00003E66663E0606",
+      "00007C6660606000",
+      "00003E603C067C00",
+      "00187E1818180E00",
+      "0000666666663E00",
+      "00006666663C1800",
+      "0000636B7F3E3600",
+      "0000663C183C6600",
+      "00006666663E0C78",
+      "00007E0C18307E00",
+      "3C30303030303C00",
+      "0C12307C3062FC00",
+      "3C0C0C0C0C0C3C00",
+      "00183C7E18181818",
+      "0010307F7F301000",
+      "0000000000000000",
+      "1818181800001800",
+      "6666660000000000",
+      "6666FF66FF666600",
+      "183E603C067C1800",
+      "62660C1830664600",
+      "3C663C3867663F00",
+      "060C180000000000",
+      "0C18303030180C00",
+      "30180C0C0C183000",
+      "00663CFF3C660000",
+      "0018187E18180000",
+      "0000000000181830",
+      "0000007E00000000",
+      "0000000000181800",
+      "0003060C18306000",
+      "3C666E7666663C00",
+      "1818381818187E00",
+      "3C66060C30607E00",
+      "3C66061C06663C00",
+      "060E1E667F060600",
+      "7E607C0606663C00",
+      "3C66607C66663C00",
+      "7E660C1818181800",
+      "3C66663C66663C00",
+      "3C66663E06663C00",
+      "0000180000180000",
+      "0000180000181830",
+      "0E18306030180E00",
+      "00007E007E000000",
+      "70180C060C187000",
+      "3C66060C18001800",
+      "000000FFFF000000",
+      "183C667E66666600",
+      "7C66667C66667C00",
+      "3C66606060663C00",
+      "786C6666666C7800",
+      "7E60607860607E00",
+      "7E60607860606000",
+      "3C66606E66663C00",
+      "6666667E66666600",
+      "3C18181818183C00",
+      "1E0C0C0C0C6C3800",
+      "666C7870786C6600",
+      "6060606060607E00",
+      "63777F6B63636300",
+      "66767E7E6E666600",
+      "3C66666666663C00",
+      "7C66667C60606000",
+      "3C666666663C0E00",
+      "7C66667C786C6600",
+      "3C66603C06663C00",
+      "7E18181818181800",
+      "6666666666663C00",
+      "66666666663C1800",
+      "6363636B7F776300",
+      "66663C183C666600",
+      "6666663C18181800",
+      "7E060C1830607E00",
+      "181818FFFF181818",
+      "C0C03030C0C03030",
+      "1818181818181818",
+      "3333CCCC3333CCCC",
+      "3399CC663399CC66",
+      "0000000000000000",
+      "F0F0F0F0F0F0F0F0",
+      "00000000FFFFFFFF",
+      "FF00000000000000",
+      "00000000000000FF",
+      "C0C0C0C0C0C0C0C0",
+      "CCCC3333CCCC3333",
+      "0303030303030303",
+      "00000000CCCC3333",
+      "CC993366CC993366",
+      "0303030303030303",
+      "1818181F1F181818",
+      "000000000F0F0F0F",
+      "1818181F1F000000",
+      "000000F8F8181818",
+      "000000000000FFFF",
+      "0000001F1F181818",
+      "181818FFFF000000",
+      "000000FFFF181818",
+      "181818F8F8181818",
+      "C0C0C0C0C0C0C0C0",
+      "E0E0E0E0E0E0E0E0",
+      "0707070707070707",
+      "FFFF000000000000",
+      "FFFFFF0000000000",
+      "0000000000FFFFFF",
+      "0103066C78706000",
+      "00000000F0F0F0F0",
+      "0F0F0F0F00000000",
+      "181818F8F8000000",
+      "F0F0F0F000000000",
+      "F0F0F0F00F0F0F0F",
+      "C39991919F99C3FF",
+      "FFFFC3F9C199C1FF",
+      "FF9F9F83999983FF",
+      "FFFFC39F9F9FC3FF",
+      "FFF9F9C19999C1FF",
+      "FFFFC399819FC3FF",
+      "FFF1E7C1E7E7E7FF",
+      "FFFFC19999C1F983",
+      "FF9F9F83999999FF",
+      "FFE7FFC7E7E7C3FF",
+      "FFF9FFF9F9F9F9C3",
+      "FF9F9F93879399FF",
+      "FFC7E7E7E7E7C3FF",
+      "FFFF998080949CFF",
+      "FFFF8399999999FF",
+      "FFFFC3999999C3FF",
+      "FFFF839999839F9F",
+      "FFFFC19999C1F9F9",
+      "FFFF83999F9F9FFF",
+      "FFFFC19FC3F983FF",
+      "FFE781E7E7E7F1FF",
+      "FFFF99999999C1FF",
+      "FFFF999999C3E7FF",
+      "FFFF9C9480C1C9FF",
+      "FFFF99C3E7C399FF",
+      "FFFF999999C1F387",
+      "FFFF81F3E7CF81FF",
+      "C3CFCFCFCFCFC3FF",
+      "F3EDCF83CF9D03FF",
+      "C3F3F3F3F3F3C3FF",
+      "FFE7C381E7E7E7E7",
+      "FFEFCF8080CFEFFF",
+      "FFFFFFFFFFFFFFFF",
+      "E7E7E7E7FFFFE7FF",
+      "999999FFFFFFFFFF",
+      "99990099009999FF",
+      "E7C19FC3F983E7FF",
+      "9D99F3E7CF99B9FF",
+      "C399C3C79899C0FF",
+      "F9F3E7FFFFFFFFFF",
+      "F3E7CFCFCFE7F3FF",
+      "CFE7F3F3F3E7CFFF",
+      "FF99C300C399FFFF",
+      "FFE7E781E7E7FFFF",
+      "FFFFFFFFFFE7E7CF",
+      "FFFFFF81FFFFFFFF",
+      "FFFFFFFFFFE7E7FF",
+      "FFFCF9F3E7CF9FFF",
+      "C39991899999C3FF",
+      "E7E7C7E7E7E781FF",
+      "C399F9F3CF9F81FF",
+      "C399F9E3F999C3FF",
+      "F9F1E19980F9F9FF",
+      "819F83F9F999C3FF",
+      "C3999F839999C3FF",
+      "8199F3E7E7E7E7FF",
+      "C39999C39999C3FF",
+      "C39999C1F999C3FF",
+      "FFFFE7FFFFE7FFFF",
+      "FFFFE7FFFFE7E7CF",
+      "F1E7CF9FCFE7F1FF",
+      "FFFF81FF81FFFFFF",
+      "8FE7F3F9F3E78FFF",
+      "C399F9F3E7FFE7FF",
+      "FFFFFF0000FFFFFF",
+      "E7C39981999999FF",
+      "83999983999983FF",
+      "C3999F9F9F99C3FF",
+      "87939999999387FF",
+      "819F9F879F9F81FF",
+      "819F9F879F9F9FFF",
+      "C3999F919999C3FF",
+      "99999981999999FF",
+      "C3E7E7E7E7E7C3FF",
+      "E1F3F3F3F393C7FF",
+      "9993878F879399FF",
+      "9F9F9F9F9F9F81FF",
+      "9C8880949C9C9CFF",
+      "99898181919999FF",
+      "C39999999999C3FF",
+      "839999839F9F9FFF",
+      "C399999999C3F1FF",
+      "83999983879399FF",
+      "C3999FC3F999C3FF",
+      "81E7E7E7E7E7E7FF",
+      "999999999999C3FF",
+      "9999999999C3E7FF",
+      "9C9C9C9480889CFF",
+      "9999C3E7C39999FF",
+      "999999C3E7E7E7FF",
+      "81F9F3E7CF9F81FF",
+      "E7E7E70000E7E7E7",
+      "3F3FCFCF3F3FCFCF",
+      "E7E7E7E7E7E7E7E7",
+      "CCCC3333CCCC3333",
+      "CC663399CC663399",
+      "FFFFFFFFFFFFFFFF",
+      "0F0F0F0F0F0F0F0F",
+      "FFFFFFFF00000000",
+      "00FFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFF00",
+      "3F3F3F3F3F3F3F3F",
+      "3333CCCC3333CCCC",
+      "FCFCFCFCFCFCFCFC",
+      "FFFFFFFF3333CCCC",
+      "3366CC993366CC99",
+      "FCFCFCFCFCFCFCFC",
+      "E7E7E7E0E0E7E7E7",
+      "FFFFFFFFF0F0F0F0",
+      "E7E7E7E0E0FFFFFF",
+      "FFFFFF0707E7E7E7",
+      "FFFFFFFFFFFF0000",
+      "FFFFFFE0E0E7E7E7",
+      "E7E7E70000FFFFFF",
+      "FFFFFF0000E7E7E7",
+      "E7E7E70707E7E7E7",
+      "3F3F3F3F3F3F3F3F",
+      "1F1F1F1F1F1F1F1F",
+      "F8F8F8F8F8F8F8F8",
+      "0000FFFFFFFFFFFF",
+      "000000FFFFFFFFFF",
+      "FFFFFFFFFF000000",
+      "FEFCF993878F9FFF",
+      "FFFFFFFF0F0F0F0F",
+      "F0F0F0F0FFFFFFFF",
+      "E7E7E70707FFFFFF",
+      "0F0F0F0FFFFFFFFF",
+      "0F0F0F0FF0F0F0F0"
+    ]
+  },
+  "cells": [
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 4,
+      "color": 1
+    },
+    {
+      "character": 5,
+      "color": 1
+    },
+    {
+      "character": 20,
+      "color": 1
+    },
+    {
+      "character": 20,
+      "color": 1
+    },
+    {
+      "character": 5,
+      "color": 1
+    },
+    {
+      "character": 5,
+      "color": 1
+    },
+    {
+      "character": 18,
+      "color": 1
+    },
+    {
+      "character": 5,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 3,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 6,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 1,
+      "color": 1
+    },
+    {
+      "character": 1,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 1,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 3,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 3,
+      "color": 1
+    },
+    {
+      "character": 1,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 1,
+      "color": 1
+    },
+    {
+      "character": 1,
+      "color": 1
+    },
+    {
+      "character": 1,
+      "color": 1
+    },
+    {
+      "character": 19,
+      "color": 1
+    },
+    {
+      "character": 4,
+      "color": 1
+    },
+    {
+      "character": 6,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 6,
+      "color": 1
+    },
+    {
+      "character": 19,
+      "color": 1
+    },
+    {
+      "character": 4,
+      "color": 1
+    },
+    {
+      "character": 6,
+      "color": 1
+    },
+    {
+      "character": 7,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 7,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 6,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 71,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 71,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    },
+    {
+      "character": 32,
+      "color": 1
+    }
+  ]
+}
