@@ -40,6 +40,21 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Verify Windows native build toolchain
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "ImageOS=$env:ImageOS"
+          Write-Host "ImageVersion=$env:ImageVersion"
+          if ($env:ImageOS -and $env:ImageOS -ne "win22") {
+            throw "Windows package builds must run on windows-2022. The Electron node-gyp used by Theia 1.66 does not recognize the Visual Studio 18 toolchain on newer Windows images."
+          }
+
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (Test-Path $vswhere) {
+            & $vswhere -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          }
+
       - name: Install Linux build packages
         if: runner.os == 'Linux'
         run: |
@@ -61,15 +76,19 @@ jobs:
 
       - name: Install npm dependencies
         env:
+          GYP_MSVS_VERSION: "2022"
           TMPDIR: ${{ runner.temp }}
           TMP: ${{ runner.temp }}
           TEMP: ${{ runner.temp }}
+          npm_config_msvs_version: "2022"
         run: npm ci
 
       - name: Build Theia Electron app
         env:
+          GYP_MSVS_VERSION: "2022"
           NODE_OPTIONS: --max-old-space-size=4096
           THEIA_BUILD_MAX_OLD_SPACE_SIZE_MB: "4096"
+          npm_config_msvs_version: "2022"
         run: npm run theia:build
 
       - name: Package current platform
