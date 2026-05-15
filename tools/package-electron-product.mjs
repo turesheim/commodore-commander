@@ -9,6 +9,7 @@ const macExecutableName = productName;
 const linuxExecutableName = 'commodore-commander';
 const windowsExecutableName = `${productName}.exe`;
 const defaultBundleId = 'net.resheim.commodore-commander';
+const vicePlatformDirectoryPattern = /^(darwin|linux|win32)-/u;
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..');
 const electronAppRoot = path.join(repoRoot, 'applications', 'electron');
@@ -188,9 +189,34 @@ async function installApplicationPayload(packageJson, appResourcesPath) {
       dereference: false,
       preserveTimestamps: true,
       verbatimSymlinks: true,
-      filter: source => path.basename(source) !== '.DS_Store'
+      filter: shouldPackagePayloadEntry
     });
   }
+}
+
+function shouldPackagePayloadEntry(source) {
+  if (path.basename(source) === '.DS_Store') {
+    return false;
+  }
+
+  return isCurrentPlatformViceAsset(source);
+}
+
+function isCurrentPlatformViceAsset(source) {
+  const relativeParts = path.relative(electronAppRoot, source).split(path.sep);
+  const viceAssetsIndex = relativeParts.findIndex(
+    (part, index) => part === 'assets' && relativeParts[index + 1] === 'vice'
+  );
+  if (viceAssetsIndex < 0) {
+    return true;
+  }
+
+  const platformDirectory = relativeParts[viceAssetsIndex + 2];
+  if (!platformDirectory || !vicePlatformDirectoryPattern.test(platformDirectory)) {
+    return true;
+  }
+
+  return platformDirectory === `${process.platform}-${process.arch}`;
 }
 
 function signApplication(appPath, identity) {
