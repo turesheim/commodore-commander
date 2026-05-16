@@ -186,6 +186,13 @@ export function findSourceForMapping(
     : undefined;
 }
 
+export function resolveSourceEntryPath(
+  debugInfo: KickAssemblerDebugInfo,
+  source: KickAssemblerSourceEntry
+): string {
+  return resolveDebugSourcePath(source.path, debugInfo.sourceRoots);
+}
+
 export function findLabelByName(
   debugInfo: KickAssemblerDebugInfo | undefined,
   name: string

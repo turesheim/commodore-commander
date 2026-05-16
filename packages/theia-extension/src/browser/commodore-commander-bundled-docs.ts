@@ -80,6 +80,11 @@ export const BUNDLED_DOCUMENTS: readonly BundledDocumentationEntry[] = [
     details: 'Native screen JSON layout and PETSCII export formats'
   },
   {
+    path: 'sprite-editor-format.md',
+    label: 'Sprite Editor Format',
+    details: 'Native VIC-II sprite JSON layout and export formats'
+  },
+  {
     path: 'introduction_to_sidscore.md',
     label: 'Introduction to SIDScore',
     details: 'Synthesizer and SID background for SIDScore instruments'

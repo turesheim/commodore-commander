@@ -1,6 +1,7 @@
 import path from 'node:path';
 import type { ChildProcess } from 'node:child_process';
 import { readdir } from 'node:fs/promises';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import type { DebugProtocol } from '@vscode/debugprotocol';
 
@@ -17,6 +18,7 @@ import {
   findLineMappingsForSourceRange,
   findSourceForMapping,
   loadKickAssemblerDebugInfo,
+  resolveSourceEntryPath,
   type KickAssemblerDebugInfo,
   type KickAssemblerDebugWatch,
   type KickAssemblerLineMapping
@@ -904,9 +906,9 @@ export class ViceDebugSession {
   }
 
   private loadedSources(request: DapRequest): void {
-    const sources = (this.debugInfo?.sources ?? [])
-      .filter((source) => !/^[A-Za-z0-9+.-]+:/u.test(source.path))
-      .map((source) => sourceForPath(source.path));
+    const sources = this.debugInfo
+      ? loadedDebugInfoSources(this.debugInfo)
+      : [];
     const disassembly = this.getPrgDisassemblySource();
     if (disassembly) {
       sources.push(sourceForPrgDisassembly(disassembly));
@@ -2184,10 +2186,44 @@ export class ViceDebugSession {
 }
 
 function sourceForPath(sourcePath: string): DebugProtocol.Source {
+  const uri = sourceUriForPath(sourcePath);
   return {
-    name: path.basename(sourcePath),
-    path: sourcePath
+    name: sourceNameForPath(sourcePath),
+    path: uri ?? sourcePath
   };
+}
+
+function loadedDebugInfoSources(
+  debugInfo: KickAssemblerDebugInfo
+): DebugProtocol.Source[] {
+  return debugInfo.sources
+    .filter((source) => shouldPublishLoadedSource(source.path))
+    .map((source) => sourceForPath(resolveSourceEntryPath(debugInfo, source)));
+}
+
+function shouldPublishLoadedSource(sourcePath: string): boolean {
+  return !hasUriScheme(sourcePath) || /^file:/u.test(sourcePath);
+}
+
+function sourceUriForPath(sourcePath: string): string | undefined {
+  if (hasUriScheme(sourcePath)) {
+    return sourcePath;
+  }
+  return path.isAbsolute(sourcePath)
+    ? pathToFileURL(path.normalize(sourcePath)).toString()
+    : undefined;
+}
+
+function sourceNameForPath(sourcePath: string): string {
+  if (/^file:/u.test(sourcePath)) {
+    return path.basename(fileURLToPath(sourcePath));
+  }
+  return path.basename(sourcePath);
+}
+
+function hasUriScheme(sourcePath: string): boolean {
+  return /^[A-Za-z][A-Za-z0-9+.-]*:/u.test(sourcePath) &&
+    !/^[A-Za-z]:[\\/]/u.test(sourcePath);
 }
 
 function sourceForPrgDisassembly(

@@ -47,9 +47,11 @@ Current responsibility:
   pointers, VIC-visible sprite/screen/character memory visualization,
   I/O-bank register reads, screen-color RAM swatches, and CIA
   timer/IRQ/keyboard matrix state
-- provide custom editors for `.charset` character sets and `.screen`
-  PETSCII-style screen artwork, including screen-code/color exports for C64
-  asset pipelines
+- provide custom editors for `.charset` character sets, `.screen`
+  PETSCII-style screen artwork, and `.sprite` VIC-II sprite assets, including
+  screen-code/color/sprite exports for C64 asset pipelines, multi-frame sprite
+  sheets, KickAssembler symbol import/export, and stopped-session VICE memory
+  read/write support
 - add commands for sending editor expressions to Theia's Watch view and for
   installing persistent VICE memory watchpoints through DAP data breakpoints
 - provide a memory watchpoint manager in the Debug breakpoints menu with add,

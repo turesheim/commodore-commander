@@ -10,7 +10,8 @@ import {
   findNearestLabelBeforeAddress,
   findNearestLineMappingForAddress,
   findSourceForMapping,
-  parseKickAssemblerDebugInfo
+  parseKickAssemblerDebugInfo,
+  resolveSourceEntryPath
 } from '../kick-assembler-debug-info';
 import { disassemble6502 } from '../disassemble6502';
 
@@ -100,6 +101,7 @@ test('source mappings resolve relative debug-info paths against source roots', (
     )?.path,
     sourcePath
   );
+  assert.equal(resolveSourceEntryPath(debugInfo, debugInfo.sources[0]!), sourcePath);
 });
 
 test('nearest source mapping resolves nearby unmapped addresses for stack frames', () => {

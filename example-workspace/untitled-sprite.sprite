@@ -1,0 +1,45 @@
+{
+  "format": "commodore-commander.sprite",
+  "version": 1,
+  "metadata": {
+    "machine": "c64"
+  },
+  "geometry": {
+    "width": 24,
+    "height": 21,
+    "multicolorWidth": 12,
+    "bytesPerRow": 3,
+    "dataBytes": 63,
+    "slotBytes": 64,
+    "bitOrder": "msb-left",
+    "byteOrder": "row-major",
+    "hardware": "vic-ii-sprite"
+  },
+  "colorMode": "hires",
+  "colors": {
+    "background": 6,
+    "foreground": 1,
+    "multicolor1": 14,
+    "multicolor2": 2
+  },
+  "data": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "frames": [
+    {
+      "name": "Frame 1",
+      "durationMs": 120,
+      "data": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "animation": {
+    "playback": "loop",
+    "defaultFrameDurationMs": 120
+  },
+  "target": {
+    "spriteDataAddress": 8192,
+    "spritePointerIndex": 0,
+    "screenAddress": 1024,
+    "vicBank": 0,
+    "c128VicMode": "c64-compatible",
+    "c64dtvExtendedPalette": false
+  }
+}
