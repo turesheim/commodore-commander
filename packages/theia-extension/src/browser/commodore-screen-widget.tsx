@@ -62,12 +62,21 @@ import {
   resolveViceAddress,
   writeViceMemory
 } from './commodore-vice-memory-transfer';
+import {
+  c64CharacterSetBytes,
+  type MemoryCharacterSet
+} from './vice-memory-widget';
 
 export const COMMODORE_SCREEN_WIDGET_FACTORY_ID =
   'commodore-commander.screen-editor';
 
 export interface CommodoreScreenWidgetOptions {
   readonly uri: string;
+}
+
+interface ViceMemoryBank {
+  readonly id: number;
+  readonly name: string;
 }
 
 type ScreenColorRole = keyof CommodoreScreenColors;
@@ -343,14 +352,15 @@ export class CommodoreScreenWidget extends ReactWidget {
     }
 
     if (scope === 'characterSet' || scope === 'all') {
-      const bytes = await readViceMemory(
+      const bytes = await readScreenCharacterSetMemory(
         session,
         target.characterDataAddress,
-        CHARACTER_SET_BYTE_COUNT,
-        { sideEffects: false }
+        CHARACTER_SET_BYTE_COUNT
       );
       next = replaceScreenCharacterSetBytes(next, bytes);
-      messages.push(`${bytes.length} character byte(s)`);
+      messages.push(
+        `${bytes.length} ${characterSetMemorySource(target.characterDataAddress)} byte(s)`
+      );
     }
 
     if (scope === 'colors' || scope === 'all') {
@@ -1726,6 +1736,106 @@ function getMulticolorValue(
   return (getScreenGlyphByte(document, glyphIndex, y) >> ((3 - x) * 2)) & 0x03;
 }
 
+async function readScreenCharacterSetMemory(
+  session: DebugSession,
+  startAddress: number,
+  count: number
+): Promise<Uint8Array> {
+  const ramBankId = await resolveViceRamBankId(session);
+  const bytes = new Uint8Array(count);
+  let offset = 0;
+
+  while (offset < count) {
+    const address = startAddress + offset;
+    const romByte = c64VicCharacterRomByte(address);
+    if (romByte !== undefined) {
+      bytes[offset] = romByte;
+      offset += 1;
+      continue;
+    }
+
+    let length = 1;
+    while (
+      offset + length < count &&
+      c64VicCharacterRomByte(startAddress + offset + length) === undefined
+    ) {
+      length += 1;
+    }
+
+    const ramBytes = await readViceMemory(
+      session,
+      address,
+      length,
+      {
+        sideEffects: false,
+        ...(ramBankId === undefined ? {} : { bankId: ramBankId })
+      }
+    );
+    bytes.set(ramBytes.subarray(0, length), offset);
+    offset += length;
+  }
+
+  return bytes;
+}
+
+async function resolveViceRamBankId(
+  session: DebugSession
+): Promise<number | undefined> {
+  try {
+    const response = await session.sendCustomRequest(
+      'commodore-vice/banksAvailable',
+      {}
+    );
+    const body = response.body as { banks?: ViceMemoryBank[] } | undefined;
+    return findMemoryBankId(body?.banks ?? [], 'ram') ?? C64_RAM_BANK;
+  } catch (_error) {
+    return C64_RAM_BANK;
+  }
+}
+
+function c64VicCharacterRomByte(address: number): number | undefined {
+  const offset = c64VicCharacterRomOffset(address);
+  if (offset === undefined) {
+    return undefined;
+  }
+  const characterSet = c64VicCharacterRomSetFromOffset(offset);
+  return c64CharacterSetBytes(characterSet)[offset % CHARACTER_SET_BYTE_COUNT];
+}
+
+function characterSetMemorySource(address: number): string {
+  return c64VicCharacterRomOffset(address) === undefined
+    ? 'character'
+    : 'C64 character ROM';
+}
+
+function c64VicCharacterRomOffset(address: number): number | undefined {
+  const normalized = address & 0xffff;
+  if (normalized >= 0x1000 && normalized < 0x2000) {
+    return normalized - 0x1000;
+  }
+  if (normalized >= 0x9000 && normalized < 0xa000) {
+    return normalized - 0x9000;
+  }
+  return undefined;
+}
+
+function c64VicCharacterRomSetFromOffset(
+  offset: number
+): MemoryCharacterSet {
+  return offset < CHARACTER_SET_BYTE_COUNT ? 'upper' : 'lower';
+}
+
+function findMemoryBankId(
+  banks: readonly ViceMemoryBank[],
+  name: string
+): number | undefined {
+  return banks.find((bank) => normalizeBankName(bank.name) === name)?.id;
+}
+
+function normalizeBankName(name: string): string {
+  return name.replace(/^\*+/u, '').trim().toLowerCase();
+}
+
 function reverseBits(value: number): number {
   let result = 0;
   for (let bit = 0; bit < 8; bit += 1) {
@@ -1792,6 +1902,7 @@ function toErrorMessage(error: unknown): string {
 const CHARACTER_WIDTH = 8;
 const CHARACTER_HEIGHT = 8;
 const CHARACTER_SET_BYTE_COUNT = 2048;
+const C64_RAM_BANK = 1;
 const VIC_COLOR_REGISTER_ADDRESS = 0xd020;
 const VIC_COLOR_REGISTER_COUNT = 4;
 const SCREEN_BORDER_X = 8;
