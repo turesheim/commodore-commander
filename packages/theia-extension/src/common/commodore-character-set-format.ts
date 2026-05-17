@@ -30,6 +30,10 @@ export interface CommodoreCharacterSetMetadata {
   description?: string;
 }
 
+export interface CommodoreCharacterSetTarget {
+  characterDataAddress: number;
+}
+
 export interface CommodoreCharacterSetDocument {
   format: typeof COMMODORE_CHARACTER_SET_FORMAT;
   version: typeof COMMODORE_CHARACTER_SET_VERSION;
@@ -37,6 +41,7 @@ export interface CommodoreCharacterSetDocument {
   geometry: CommodoreCharacterSetGeometry;
   colorMode: CommodoreCharacterColorMode;
   colors: CommodoreCharacterSetColors;
+  target: CommodoreCharacterSetTarget;
   glyphs: string[];
 }
 
@@ -129,6 +134,7 @@ export function createDefaultCharacterSetDocument(
       multicolor1: 14,
       multicolor2: 2
     },
+    target: createDefaultCharacterSetTarget(),
     glyphs: Array.from(
       { length: COMMODORE_CHARACTER_SET_GEOMETRY.glyphCount },
       () => EMPTY_GLYPH
@@ -230,6 +236,7 @@ export function normalizeCharacterSetDocument(
       multicolor1: normalizeColorIndex(colors.multicolor1, fallback.colors.multicolor1),
       multicolor2: normalizeColorIndex(colors.multicolor2, fallback.colors.multicolor2)
     },
+    target: normalizeCharacterSetTarget(object.target),
     glyphs: Array.from(
       { length: COMMODORE_CHARACTER_SET_GEOMETRY.glyphCount },
       (_, index) => glyphs[index] ?? EMPTY_GLYPH
@@ -394,6 +401,23 @@ export function transformGlyph(
   return next;
 }
 
+function normalizeCharacterSetTarget(value: unknown): CommodoreCharacterSetTarget {
+  const object = isRecord(value) ? value : {};
+  const fallback = createDefaultCharacterSetTarget();
+  return {
+    characterDataAddress: normalizeWord(
+      object.characterDataAddress,
+      fallback.characterDataAddress
+    )
+  };
+}
+
+function createDefaultCharacterSetTarget(): CommodoreCharacterSetTarget {
+  return {
+    characterDataAddress: 0x2000
+  };
+}
+
 function normalizeGlyphHex(value: unknown): string {
   if (typeof value === 'string') {
     const normalized = value.replace(/[^0-9a-f]/giu, '').slice(0, 16);
@@ -433,6 +457,20 @@ function normalizeColorIndex(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value)
     ? Math.max(0, Math.min(15, Math.trunc(value)))
     : fallback;
+}
+
+function normalizeWord(value: unknown, fallback: number): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.max(0, Math.min(0xffff, Math.trunc(value)));
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim().replace(/^\$/u, '');
+    const parsed = Number.parseInt(trimmed, 16);
+    if (Number.isFinite(parsed)) {
+      return Math.max(0, Math.min(0xffff, parsed));
+    }
+  }
+  return fallback;
 }
 
 function normalizeString(value: unknown, fallback: string): string {

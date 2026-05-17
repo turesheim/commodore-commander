@@ -1,5 +1,6 @@
 import {
   COMMODORE_CHARACTER_SET_GEOMETRY,
+  bytesToCharacterSetDocument,
   createCharacterSetDocumentFromTemplate,
   normalizeCharacterSetDocument,
   type CommodoreCharacterColorMode,
@@ -56,6 +57,12 @@ export interface CommodoreScreenCell {
   color: number;
 }
 
+export interface CommodoreScreenTarget {
+  screenAddress: number;
+  colorAddress: number;
+  characterDataAddress: number;
+}
+
 export interface CommodoreScreenDocument {
   format: typeof COMMODORE_SCREEN_FORMAT;
   version: typeof COMMODORE_SCREEN_VERSION;
@@ -64,6 +71,7 @@ export interface CommodoreScreenDocument {
   colorMode: CommodoreScreenColorMode;
   colors: CommodoreScreenColors;
   characterSet: CommodoreScreenCharacterSet;
+  target: CommodoreScreenTarget;
   cells: CommodoreScreenCell[];
 }
 
@@ -71,6 +79,7 @@ export interface CommodoreScreenDocumentOptions {
   readonly columns?: number;
   readonly rows?: number;
   readonly characterSetTemplateId?: CommodoreCharacterSetTemplateId;
+  readonly target?: Partial<CommodoreScreenTarget>;
 }
 
 const EMPTY_GLYPH = '0000000000000000';
@@ -97,14 +106,21 @@ export function createDefaultScreenDocument(
     `${name} Character Set`
   );
 
-  return createScreenDocumentFromCharacterSet(characterSet, name, columns, rows);
+  return createScreenDocumentFromCharacterSet(
+    characterSet,
+    name,
+    columns,
+    rows,
+    options.target
+  );
 }
 
 export function createScreenDocumentFromCharacterSet(
   characterSet: CommodoreCharacterSetDocument,
   name = 'Untitled Screen',
   columns = COMMODORE_SCREEN_DEFAULT_COLUMNS,
-  rows = COMMODORE_SCREEN_DEFAULT_ROWS
+  rows = COMMODORE_SCREEN_DEFAULT_ROWS,
+  target?: Partial<CommodoreScreenTarget>
 ): CommodoreScreenDocument {
   const normalizedCharacterSet = normalizeCharacterSetDocument(characterSet);
   const normalizedColumns = normalizeDimension(
@@ -146,6 +162,7 @@ export function createScreenDocumentFromCharacterSet(
       name: normalizedCharacterSet.metadata.name,
       glyphs: [...normalizedCharacterSet.glyphs]
     },
+    target: normalizeScreenTarget(target),
     cells: Array.from(
       { length: normalizedColumns * normalizedRows },
       () => ({
@@ -232,6 +249,7 @@ export function normalizeScreenDocument(value: unknown): CommodoreScreenDocument
       multicolor2: normalizeColorIndex(colors.multicolor2, fallback.colors.multicolor2)
     },
     characterSet,
+    target: normalizeScreenTarget(object.target),
     cells: Array.from(
       { length: columns * rows },
       (_, index) => normalizeScreenCell(cells[index], foreground)
@@ -296,6 +314,55 @@ export function screenToCharacterBytes(
 export function screenToColorBytes(document: CommodoreScreenDocument): Uint8Array {
   const normalized = normalizeScreenDocument(document);
   return Uint8Array.from(normalized.cells, cell => cell.color & 0x0f);
+}
+
+export function applyScreenColorBytes(
+  document: CommodoreScreenDocument,
+  bytes: Uint8Array
+): CommodoreScreenDocument {
+  const normalized = normalizeScreenDocument(document);
+  return {
+    ...normalized,
+    cells: normalized.cells.map((cell, index) => ({
+      ...cell,
+      color: index < bytes.length ? bytes[index] & 0x0f : cell.color
+    }))
+  };
+}
+
+export function screenCharacterSetToBytes(
+  document: CommodoreScreenDocument
+): Uint8Array {
+  const normalized = normalizeScreenDocument(document);
+  const bytes = new Uint8Array(
+    COMMODORE_CHARACTER_SET_GEOMETRY.glyphCount *
+      COMMODORE_CHARACTER_SET_GEOMETRY.bytesPerGlyph
+  );
+  normalized.characterSet.glyphs.forEach((glyph, glyphIndex) => {
+    for (let row = 0; row < COMMODORE_CHARACTER_SET_GEOMETRY.bytesPerGlyph; row += 1) {
+      bytes[glyphIndex * COMMODORE_CHARACTER_SET_GEOMETRY.bytesPerGlyph + row] =
+        Number.parseInt(glyph.slice(row * 2, row * 2 + 2), 16) || 0;
+    }
+  });
+  return bytes;
+}
+
+export function replaceScreenCharacterSetBytes(
+  document: CommodoreScreenDocument,
+  bytes: Uint8Array
+): CommodoreScreenDocument {
+  const normalized = normalizeScreenDocument(document);
+  const imported = bytesToCharacterSetDocument(
+    bytes,
+    normalized.characterSet.name
+  );
+  return {
+    ...normalized,
+    characterSet: {
+      ...normalized.characterSet,
+      glyphs: imported.glyphs
+    }
+  };
 }
 
 export function formatKickAssemblerScreen(
@@ -499,6 +566,27 @@ function normalizeScreenCell(
   };
 }
 
+function normalizeScreenTarget(value: unknown): CommodoreScreenTarget {
+  const object = isRecord(value) ? value : {};
+  const fallback = createDefaultScreenTarget();
+  return {
+    screenAddress: normalizeWord(object.screenAddress, fallback.screenAddress),
+    colorAddress: normalizeWord(object.colorAddress, fallback.colorAddress),
+    characterDataAddress: normalizeWord(
+      object.characterDataAddress,
+      fallback.characterDataAddress
+    )
+  };
+}
+
+function createDefaultScreenTarget(): CommodoreScreenTarget {
+  return {
+    screenAddress: 0x0400,
+    colorAddress: 0xd800,
+    characterDataAddress: 0x2000
+  };
+}
+
 function screenIndex(
   document: CommodoreScreenDocument,
   column: number,
@@ -548,6 +636,20 @@ function normalizeColorIndex(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value)
     ? Math.max(0, Math.min(15, Math.trunc(value)))
     : fallback;
+}
+
+function normalizeWord(value: unknown, fallback: number): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.max(0, Math.min(0xffff, Math.trunc(value)));
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim().replace(/^\$/u, '');
+    const parsed = Number.parseInt(trimmed, 16);
+    if (Number.isFinite(parsed)) {
+      return Math.max(0, Math.min(0xffff, parsed));
+    }
+  }
+  return fallback;
 }
 
 function normalizeDimension(

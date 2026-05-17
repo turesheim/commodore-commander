@@ -14,6 +14,8 @@ import { FileDialogService } from '@theia/filesystem/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { DebugSession } from '@theia/debug/lib/browser/debug-session';
+import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { inject, injectable } from '@theia/core/shared/inversify';
 
 import {
@@ -34,8 +36,17 @@ import {
   transformGlyph,
   type CommodoreCharacterColorMode,
   type CommodoreCharacterSetColors,
-  type CommodoreCharacterSetDocument
+  type CommodoreCharacterSetDocument,
+  type CommodoreCharacterSetTarget
 } from '../common/commodore-character-set-format';
+import {
+  formatAddress,
+  parseOptionalAddress,
+  readViceMemory,
+  requireViceSession,
+  resolveViceAddress,
+  writeViceMemory
+} from './commodore-vice-memory-transfer';
 
 export const COMMODORE_CHARACTER_SET_WIDGET_FACTORY_ID =
   'commodore-commander.character-set-editor';
@@ -45,6 +56,7 @@ export interface CommodoreCharacterSetWidgetOptions {
 }
 
 type ColorRole = keyof CommodoreCharacterSetColors;
+type CharacterSetViceTransferScope = 'glyph' | 'set';
 
 const MULTICOLOR_PAINT_CHOICES: readonly {
   readonly value: number;
@@ -82,6 +94,9 @@ export class CommodoreCharacterSetWidget extends ReactWidget {
   @inject(WorkspaceService)
   protected readonly workspaceService!: WorkspaceService;
 
+  @inject(DebugSessionManager)
+  protected readonly debugSessionManager!: DebugSessionManager;
+
   protected readonly dirtyChangedEmitter = new Emitter<void>();
   protected readonly contentChangedEmitter = new Emitter<void>();
   protected resourceUri: URI | undefined;
@@ -89,6 +104,9 @@ export class CommodoreCharacterSetWidget extends ReactWidget {
   protected selectedGlyph = 0;
   protected paintValue = 3;
   protected openColorSelectorRole: ColorRole | undefined;
+  protected characterDataAddressInput = '$2000';
+  protected memoryTransferScope: CharacterSetViceTransferScope = 'set';
+  protected viceStatus = 'VICE memory actions use the active stopped commodore-vice session.';
   protected dirty = false;
   protected loaded = false;
 
@@ -163,6 +181,7 @@ export class CommodoreCharacterSetWidget extends ReactWidget {
         );
         await this.writeDocument(this.resourceUri);
       }
+      this.syncTargetInputsFromDocument();
       this.loaded = true;
       this.setDirty(false);
       this.update();
@@ -227,6 +246,136 @@ export class CommodoreCharacterSetWidget extends ReactWidget {
     }
     this.dirty = dirty;
     this.dirtyChangedEmitter.fire();
+  }
+
+  protected syncTargetInputsFromDocument(): void {
+    this.syncTargetInputs(this.document.target);
+  }
+
+  protected syncTargetInputs(target: CommodoreCharacterSetTarget): void {
+    this.characterDataAddressInput = formatAddress(target.characterDataAddress);
+  }
+
+  protected setTargetInput(value: string): void {
+    this.characterDataAddressInput = value;
+    this.update();
+  }
+
+  protected setTargetValue(value: number): void {
+    const target = {
+      ...this.document.target,
+      characterDataAddress: value & 0xffff
+    };
+    this.syncTargetInputs(target);
+    this.markChanged({
+      ...this.document,
+      target
+    });
+  }
+
+  protected async readViceMemory(): Promise<void> {
+    const session = requireViceSession(this.debugSessionManager, false);
+    const target = await this.resolveTargetAddress(session);
+    if (this.memoryTransferScope === 'glyph') {
+      const address = selectedGlyphAddress(target, this.selectedGlyph);
+      const bytes = await readViceMemory(
+        session,
+        address,
+        this.document.geometry.bytesPerGlyph,
+        { sideEffects: false }
+      );
+      this.viceStatus =
+        `Read glyph $${hexByte(this.selectedGlyph)} from ${formatAddress(address)}.`;
+      this.syncTargetInputs(target);
+      this.markChanged({
+        ...replaceGlyphBytes(this.document, this.selectedGlyph, bytes),
+        target
+      });
+      return;
+    }
+
+    const bytes = await readViceMemory(
+      session,
+      target.characterDataAddress,
+      CHARACTER_SET_BYTE_COUNT,
+      { sideEffects: false }
+    );
+    const imported = bytesToCharacterSetDocument(
+      bytes,
+      this.document.metadata.name
+    );
+    this.viceStatus =
+      `Read ${bytes.length} character byte(s) from ${formatAddress(target.characterDataAddress)}.`;
+    this.syncTargetInputs(target);
+    this.markChanged({
+      ...imported,
+      metadata: this.document.metadata,
+      colorMode: this.document.colorMode,
+      colors: this.document.colors,
+      target
+    });
+  }
+
+  protected async writeViceMemory(): Promise<void> {
+    const session = requireViceSession(this.debugSessionManager, true);
+    const target = await this.resolveTargetAddress(session);
+    if (this.memoryTransferScope === 'glyph') {
+      const address = selectedGlyphAddress(target, this.selectedGlyph);
+      const bytes = selectedGlyphBytes(this.document, this.selectedGlyph);
+      await writeViceMemory(
+        session,
+        address,
+        bytes,
+        { sideEffects: false }
+      );
+      this.viceStatus =
+        `Wrote glyph $${hexByte(this.selectedGlyph)} to ${formatAddress(address)}.`;
+      this.storeResolvedTarget(target);
+      return;
+    }
+
+    const bytes = characterSetToBytes(this.document);
+    await writeViceMemory(
+      session,
+      target.characterDataAddress,
+      bytes,
+      { sideEffects: false }
+    );
+    this.viceStatus =
+      `Wrote ${bytes.length} character byte(s) to ${formatAddress(target.characterDataAddress)}.`;
+    this.storeResolvedTarget(target);
+  }
+
+  protected async resolveTargetAddress(
+    session: DebugSession
+  ): Promise<CommodoreCharacterSetTarget> {
+    return {
+      characterDataAddress: await resolveViceAddress(
+        session,
+        this.characterDataAddressInput
+      )
+    };
+  }
+
+  protected storeResolvedTarget(target: CommodoreCharacterSetTarget): void {
+    this.syncTargetInputs(target);
+    if (
+      target.characterDataAddress === this.document.target.characterDataAddress
+    ) {
+      this.update();
+      return;
+    }
+    this.markChanged({
+      ...this.document,
+      target
+    });
+  }
+
+  protected runViceAction(action: () => Promise<void>): void {
+    void action().catch((error) => {
+      this.viceStatus = error instanceof Error ? error.message : String(error);
+      this.update();
+    });
   }
 
   protected async exportRaw(): Promise<void> {
@@ -476,7 +625,11 @@ export class CommodoreCharacterSetWidget extends ReactWidget {
             {this.renderCharacterTable()}
           </section>
           <section style={editorSectionStyle}>
-            {this.renderInspector()}
+            <div style={sidePanelStackStyle}>
+              {this.renderInspector()}
+              {this.renderTargetPanel()}
+              {this.renderVicePanel()}
+            </div>
             {this.renderBitmapEditor()}
           </section>
         </div>
@@ -621,6 +774,65 @@ export class CommodoreCharacterSetWidget extends ReactWidget {
             <span className={codicon('arrow-down')} />
           </button>
         </div>
+      </div>
+    );
+  }
+
+  protected renderTargetPanel(): React.ReactNode {
+    return (
+      <div style={panelStyle}>
+        <div style={panelTitleStyle}>Target</div>
+        <label style={fieldLabelGridStyle}>
+          Character data
+          <input
+            onBlur={(event) => {
+              const address = parseOptionalAddress(event.currentTarget.value);
+              if (address !== undefined) {
+                this.setTargetValue(address);
+              }
+            }}
+            onChange={(event) => this.setTargetInput(event.currentTarget.value)}
+            style={numberInputStyle}
+            value={this.characterDataAddressInput}
+          />
+        </label>
+      </div>
+    );
+  }
+
+  protected renderVicePanel(): React.ReactNode {
+    return (
+      <div style={panelStyle}>
+        <div style={panelTitleStyle}>VICE</div>
+        <label style={fieldLabelGridStyle}>
+          Scope
+          <select
+            onChange={(event) => {
+              this.memoryTransferScope = event.currentTarget.value as CharacterSetViceTransferScope;
+              this.update();
+            }}
+            style={selectStyle}
+            value={this.memoryTransferScope}
+          >
+            <option value='glyph'>Selected glyph</option>
+            <option value='set'>Full character set</option>
+          </select>
+        </label>
+        <div style={toolRowStyle}>
+          <button
+            style={commandButtonStyle}
+            onClick={() => this.runViceAction(() => this.readViceMemory())}
+          >
+            <span className={codicon('cloud-download')} /> Read
+          </button>
+          <button
+            style={commandButtonStyle}
+            onClick={() => this.runViceAction(() => this.writeViceMemory())}
+          >
+            <span className={codicon('cloud-upload')} /> Write
+          </button>
+        </div>
+        <div style={panelDetailStyle}>{this.viceStatus}</div>
       </div>
     );
   }
@@ -845,6 +1057,38 @@ export class CommodoreCharacterSetWidget extends ReactWidget {
   }
 }
 
+function selectedGlyphAddress(
+  target: CommodoreCharacterSetTarget,
+  selectedGlyph: number
+): number {
+  return (
+    target.characterDataAddress +
+    (selectedGlyph & 0xff) * COMMODORE_CHARACTER_SET_BYTES_PER_GLYPH
+  ) & 0xffff;
+}
+
+function selectedGlyphBytes(
+  document: CommodoreCharacterSetDocument,
+  selectedGlyph: number
+): Uint8Array {
+  return Uint8Array.from(
+    { length: document.geometry.bytesPerGlyph },
+    (_unused, row) => getGlyphByte(document, selectedGlyph, row)
+  );
+}
+
+function replaceGlyphBytes(
+  document: CommodoreCharacterSetDocument,
+  selectedGlyph: number,
+  bytes: Uint8Array
+): CommodoreCharacterSetDocument {
+  let next = document;
+  for (let row = 0; row < document.geometry.bytesPerGlyph; row += 1) {
+    next = setGlyphByte(next, selectedGlyph, row, bytes[row] ?? 0);
+  }
+  return next;
+}
+
 function getHiresValue(
   document: CommodoreCharacterSetDocument,
   glyphIndex: number,
@@ -889,6 +1133,8 @@ function toErrorMessage(error: unknown): string {
 const thinPixelShadow = 'inset 0 0 0 0.5px rgba(127, 127, 127, 0.28)';
 const glyphSelectedShadow =
   '0 0 0 1px var(--theia-focusBorder), inset 0 0 0 0.5px var(--theia-focusBorder)';
+const COMMODORE_CHARACTER_SET_BYTES_PER_GLYPH = 8;
+const CHARACTER_SET_BYTE_COUNT = 2048;
 
 const rootStyle: React.CSSProperties = {
   background: 'var(--theia-editor-background)',
@@ -938,6 +1184,12 @@ const editorSectionStyle: React.CSSProperties = {
   overflow: 'auto'
 };
 
+const sidePanelStackStyle: React.CSSProperties = {
+  alignContent: 'start',
+  display: 'grid',
+  gap: '12px'
+};
+
 const characterTableStyle: React.CSSProperties = {
   display: 'grid',
   gap: '1px',
@@ -982,6 +1234,42 @@ const selectStyle: React.CSSProperties = {
   border: '1px solid var(--theia-dropdown-border)',
   color: 'var(--theia-dropdown-foreground)',
   minHeight: '28px'
+};
+
+const numberInputStyle: React.CSSProperties = {
+  background: 'var(--theia-input-background)',
+  border: '1px solid var(--theia-input-border, var(--theia-editorGroup-border))',
+  color: 'var(--theia-input-foreground)',
+  minHeight: '24px',
+  minWidth: 0,
+  padding: '2px 6px'
+};
+
+const fieldLabelGridStyle: React.CSSProperties = {
+  color: 'var(--theia-descriptionForeground)',
+  display: 'grid',
+  fontSize: '11px',
+  gap: '4px'
+};
+
+const panelStyle: React.CSSProperties = {
+  alignContent: 'start',
+  border: '1px solid var(--theia-editorGroup-border)',
+  display: 'grid',
+  gap: '10px',
+  padding: '10px'
+};
+
+const panelTitleStyle: React.CSSProperties = {
+  color: 'var(--theia-descriptionForeground)',
+  fontSize: '12px',
+  textTransform: 'uppercase'
+};
+
+const panelDetailStyle: React.CSSProperties = {
+  color: 'var(--theia-descriptionForeground)',
+  fontSize: '11px',
+  lineHeight: '15px'
 };
 
 const multicolorPaintToolsStyle: React.CSSProperties = {

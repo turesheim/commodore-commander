@@ -35,6 +35,11 @@ screen.
       "0000000000000000"
     ]
   },
+  "target": {
+    "screenAddress": 1024,
+    "colorAddress": 55296,
+    "characterDataAddress": 8192
+  },
   "cells": [
     {
       "character": 32,
@@ -74,6 +79,31 @@ an existing `.charset` file.
 The embedded character set is editable from the screen editor. Pixel edits,
 flips, shifts, clears, and inversions update `characterSet.glyphs` directly, so
 screen artwork and custom glyphs stay in the same `.screen` file.
+
+## Machine Targets
+
+The `target` block stores the editor's intended runtime placement:
+
+- `screenAddress`: CPU-visible screen RAM address for screen-code transfers.
+- `colorAddress`: color RAM address for color-code transfers.
+- `characterDataAddress`: CPU-visible character-set byte address.
+
+The editor defaults to `$0400` screen RAM, `$d800` color RAM, and `$2000`
+character data. Target fields accept numeric addresses; VICE transfers also
+accept labels that resolve in the active debug session.
+
+## VICE Round-trip
+
+The screen editor can read from and write to the active stopped
+`commodore-vice` debug session through DAP `readMemory` and `writeMemory`.
+
+- Screen + color scope transfers screen codes and color RAM.
+- Screen RAM and Color RAM scopes transfer those byte ranges independently.
+- Character set scope transfers the embedded 2048-byte character set.
+- VIC colors scope transfers `$d020-$d023` for border, background, and
+  multicolor registers.
+- All screen data transfers screen codes, color RAM, character set bytes, and
+  VIC colors.
 
 ## Import
 

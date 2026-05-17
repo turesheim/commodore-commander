@@ -29,6 +29,9 @@ straightforward to convert with scripts.
     "multicolor1": 2,
     "multicolor2": 5
   },
+  "target": {
+    "characterDataAddress": 8192
+  },
   "glyphs": [
     "0000000000000000"
   ]
@@ -84,3 +87,22 @@ when it is present so the first glyph still begins on row 0.
 
 The JSON format also converts directly to other common formats by reading the
 `glyphs` array and writing each pair of hex digits as one byte.
+
+## Machine Targets
+
+The `target` block stores the editor's intended runtime placement:
+
+- `characterDataAddress`: CPU-visible address for the first character byte.
+
+The editor defaults to `$2000`. The target field accepts numeric addresses;
+VICE transfers also accept labels that resolve in the active debug session.
+
+## VICE Round-trip
+
+The character set editor can read from and write to the active stopped
+`commodore-vice` debug session through DAP `readMemory` and `writeMemory`.
+
+- Selected-glyph scope transfers the selected 8-byte glyph at
+  `characterDataAddress + glyphIndex * 8`.
+- Full-character-set scope transfers all 2048 bytes starting at
+  `characterDataAddress`.

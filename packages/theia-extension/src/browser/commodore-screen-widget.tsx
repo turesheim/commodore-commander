@@ -14,6 +14,8 @@ import { FileDialogService } from '@theia/filesystem/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { DebugSession } from '@theia/debug/lib/browser/debug-session';
+import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { inject, injectable } from '@theia/core/shared/inversify';
 
 import {
@@ -26,6 +28,7 @@ import {
   COMMODORE_RAW_SCREEN_FILE_EXTENSION,
   COMMODORE_SEQ_SCREEN_FILE_EXTENSION,
   COMMODORE_SCREEN_FILE_EXTENSION,
+  applyScreenColorBytes,
   applyScreenCodeSequence,
   createDefaultScreenDocument,
   fillScreen,
@@ -35,6 +38,8 @@ import {
   normalizeScreenDocument,
   parseScreenDocument,
   replaceScreenCharacterSet,
+  replaceScreenCharacterSetBytes,
+  screenCharacterSetToBytes,
   screenToCharacterBytes,
   screenToColorBytes,
   serializeScreenDocument,
@@ -45,8 +50,18 @@ import {
   transformScreenGlyph,
   type CommodoreScreenColorMode,
   type CommodoreScreenColors,
-  type CommodoreScreenDocument
+  type CommodoreScreenDocument,
+  type CommodoreScreenTarget
 } from '../common/commodore-screen-format';
+import {
+  C64_IO_BANK,
+  formatAddress,
+  parseOptionalAddress,
+  readViceMemory,
+  requireViceSession,
+  resolveViceAddress,
+  writeViceMemory
+} from './commodore-vice-memory-transfer';
 
 export const COMMODORE_SCREEN_WIDGET_FACTORY_ID =
   'commodore-commander.screen-editor';
@@ -57,6 +72,13 @@ export interface CommodoreScreenWidgetOptions {
 
 type ScreenColorRole = keyof CommodoreScreenColors;
 type ColorSelectorId = ScreenColorRole | 'paint';
+type ScreenViceTransferScope =
+  | 'screenAndColor'
+  | 'screen'
+  | 'color'
+  | 'characterSet'
+  | 'colors'
+  | 'all';
 
 const GLOBAL_COLOR_CHOICES: readonly {
   readonly role: ScreenColorRole;
@@ -83,6 +105,9 @@ export class CommodoreScreenWidget extends ReactWidget {
   @inject(WorkspaceService)
   protected readonly workspaceService!: WorkspaceService;
 
+  @inject(DebugSessionManager)
+  protected readonly debugSessionManager!: DebugSessionManager;
+
   protected readonly dirtyChangedEmitter = new Emitter<void>();
   protected readonly contentChangedEmitter = new Emitter<void>();
   protected resourceUri: URI | undefined;
@@ -93,6 +118,11 @@ export class CommodoreScreenWidget extends ReactWidget {
   protected cursorColumn = 0;
   protected cursorRow = 0;
   protected openColorSelector: ColorSelectorId | undefined;
+  protected screenAddressInput = '$0400';
+  protected colorAddressInput = '$D800';
+  protected characterDataAddressInput = '$2000';
+  protected memoryTransferScope: ScreenViceTransferScope = 'screenAndColor';
+  protected viceStatus = 'VICE memory actions use the active stopped commodore-vice session.';
   protected dirty = false;
   protected loaded = false;
 
@@ -169,6 +199,7 @@ export class CommodoreScreenWidget extends ReactWidget {
       }
       this.selectedColor = this.document.colors.foreground;
       this.glyphPaintValue = this.document.colorMode === 'multicolor' ? 3 : 1;
+      this.syncTargetInputsFromDocument();
       this.loaded = true;
       this.setDirty(false);
       this.update();
@@ -238,6 +269,202 @@ export class CommodoreScreenWidget extends ReactWidget {
     }
     this.dirty = dirty;
     this.dirtyChangedEmitter.fire();
+  }
+
+  protected syncTargetInputsFromDocument(): void {
+    this.syncTargetInputs(this.document.target);
+  }
+
+  protected syncTargetInputs(target: CommodoreScreenTarget): void {
+    this.screenAddressInput = formatAddress(target.screenAddress);
+    this.colorAddressInput = formatAddress(target.colorAddress);
+    this.characterDataAddressInput = formatAddress(target.characterDataAddress);
+  }
+
+  protected setTargetInput(
+    field: keyof CommodoreScreenTarget,
+    value: string
+  ): void {
+    if (field === 'screenAddress') {
+      this.screenAddressInput = value;
+    } else if (field === 'colorAddress') {
+      this.colorAddressInput = value;
+    } else {
+      this.characterDataAddressInput = value;
+    }
+    this.update();
+  }
+
+  protected setTargetValue(
+    field: keyof CommodoreScreenTarget,
+    value: number
+  ): void {
+    const target = {
+      ...this.document.target,
+      [field]: value & 0xffff
+    };
+    this.syncTargetInputs(target);
+    this.markChanged({
+      ...this.document,
+      target
+    });
+  }
+
+  protected async readViceMemory(): Promise<void> {
+    const session = requireViceSession(this.debugSessionManager, false);
+    const scope = this.memoryTransferScope;
+    const target = await this.resolveTargetAddresses(session, scope);
+    let next: CommodoreScreenDocument = {
+      ...this.document,
+      target
+    };
+    const messages: string[] = [];
+
+    if (scope === 'screenAndColor' || scope === 'screen' || scope === 'all') {
+      const bytes = await readViceMemory(
+        session,
+        target.screenAddress,
+        this.document.cells.length,
+        { sideEffects: false }
+      );
+      next = applyScreenCodeSequence(next, bytes);
+      messages.push(`${bytes.length} screen byte(s)`);
+    }
+
+    if (scope === 'screenAndColor' || scope === 'color' || scope === 'all') {
+      const bytes = await readViceMemory(
+        session,
+        target.colorAddress,
+        this.document.cells.length,
+        { sideEffects: false, bankId: C64_IO_BANK }
+      );
+      next = applyScreenColorBytes(next, bytes);
+      messages.push(`${bytes.length} color byte(s)`);
+    }
+
+    if (scope === 'characterSet' || scope === 'all') {
+      const bytes = await readViceMemory(
+        session,
+        target.characterDataAddress,
+        CHARACTER_SET_BYTE_COUNT,
+        { sideEffects: false }
+      );
+      next = replaceScreenCharacterSetBytes(next, bytes);
+      messages.push(`${bytes.length} character byte(s)`);
+    }
+
+    if (scope === 'colors' || scope === 'all') {
+      const bytes = await readViceMemory(
+        session,
+        VIC_COLOR_REGISTER_ADDRESS,
+        VIC_COLOR_REGISTER_COUNT,
+        { sideEffects: false, bankId: C64_IO_BANK }
+      );
+      next = applyVicColorBytes(next, bytes);
+      messages.push('VIC color registers');
+    }
+
+    this.syncTargetInputs(target);
+    this.viceStatus = `Read ${messages.join(', ')} from VICE.`;
+    this.markChanged(next);
+  }
+
+  protected async writeViceMemory(): Promise<void> {
+    const session = requireViceSession(this.debugSessionManager, true);
+    const scope = this.memoryTransferScope;
+    const target = await this.resolveTargetAddresses(session, scope);
+    const messages: string[] = [];
+
+    if (scope === 'screenAndColor' || scope === 'screen' || scope === 'all') {
+      const bytes = screenToCharacterBytes(this.document);
+      await writeViceMemory(
+        session,
+        target.screenAddress,
+        bytes,
+        { sideEffects: false }
+      );
+      messages.push(`${bytes.length} screen byte(s)`);
+    }
+
+    if (scope === 'screenAndColor' || scope === 'color' || scope === 'all') {
+      const bytes = screenToColorBytes(this.document);
+      await writeViceMemory(
+        session,
+        target.colorAddress,
+        bytes,
+        { sideEffects: false, bankId: C64_IO_BANK }
+      );
+      messages.push(`${bytes.length} color byte(s)`);
+    }
+
+    if (scope === 'characterSet' || scope === 'all') {
+      const bytes = screenCharacterSetToBytes(this.document);
+      await writeViceMemory(
+        session,
+        target.characterDataAddress,
+        bytes,
+        { sideEffects: false }
+      );
+      messages.push(`${bytes.length} character byte(s)`);
+    }
+
+    if (scope === 'colors' || scope === 'all') {
+      await writeViceMemory(
+        session,
+        VIC_COLOR_REGISTER_ADDRESS,
+        this.vicColorBytes(),
+        { sideEffects: true, bankId: C64_IO_BANK }
+      );
+      messages.push('VIC color registers');
+    }
+
+    this.viceStatus = `Wrote ${messages.join(', ')} to VICE.`;
+    this.storeResolvedTarget(target);
+  }
+
+  protected async resolveTargetAddresses(
+    session: DebugSession,
+    scope: ScreenViceTransferScope
+  ): Promise<CommodoreScreenTarget> {
+    return {
+      screenAddress: scope === 'screenAndColor' || scope === 'screen' || scope === 'all'
+        ? await resolveViceAddress(session, this.screenAddressInput)
+        : this.document.target.screenAddress,
+      colorAddress: scope === 'screenAndColor' || scope === 'color' || scope === 'all'
+        ? await resolveViceAddress(session, this.colorAddressInput)
+        : this.document.target.colorAddress,
+      characterDataAddress: scope === 'characterSet' || scope === 'all'
+        ? await resolveViceAddress(session, this.characterDataAddressInput)
+        : this.document.target.characterDataAddress
+    };
+  }
+
+  protected storeResolvedTarget(target: CommodoreScreenTarget): void {
+    this.syncTargetInputs(target);
+    if (sameScreenTarget(target, this.document.target)) {
+      this.update();
+      return;
+    }
+    this.markChanged({
+      ...this.document,
+      target
+    });
+  }
+
+  protected vicColorBytes(): Uint8Array {
+    return Uint8Array.of(
+      this.document.colors.border & 0x0f,
+      this.document.colors.background & 0x0f,
+      this.document.colors.multicolor1 & 0x0f,
+      this.document.colors.multicolor2 & 0x0f
+    );
+  }
+
+  protected runViceAction(action: () => Promise<void>): void {
+    void action().catch((error) => {
+      this.viceStatus = error instanceof Error ? error.message : String(error);
+      this.update();
+    });
   }
 
   protected async importCharacterSet(): Promise<void> {
@@ -629,6 +856,8 @@ export class CommodoreScreenWidget extends ReactWidget {
           </section>
           <section style={toolsSectionStyle}>
             {this.renderInspector()}
+            {this.renderTargetPanel()}
+            {this.renderVicePanel()}
             {this.renderBitmapEditor()}
             {this.renderCharacterTable()}
           </section>
@@ -761,6 +990,97 @@ export class CommodoreScreenWidget extends ReactWidget {
             </div>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  protected renderTargetPanel(): React.ReactNode {
+    return (
+      <div style={panelStyle}>
+        <div style={sectionTitleStyle}>Target</div>
+        <div style={targetGridStyle}>
+          {this.renderTargetAddressField(
+            'screenAddress',
+            'Screen RAM',
+            this.screenAddressInput
+          )}
+          {this.renderTargetAddressField(
+            'colorAddress',
+            'Color RAM',
+            this.colorAddressInput
+          )}
+          {this.renderTargetAddressField(
+            'characterDataAddress',
+            'Character data',
+            this.characterDataAddressInput
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  protected renderTargetAddressField(
+    field: keyof CommodoreScreenTarget,
+    label: string,
+    value: string
+  ): React.ReactNode {
+    return (
+      <label style={fieldLabelGridStyle}>
+        {label}
+        <input
+          onBlur={(event) => {
+            const address = parseOptionalAddress(event.currentTarget.value);
+            if (address !== undefined) {
+              this.setTargetValue(field, address);
+            }
+          }}
+          onChange={(event) =>
+            this.setTargetInput(field, event.currentTarget.value)
+          }
+          style={numberInputStyle}
+          value={value}
+        />
+      </label>
+    );
+  }
+
+  protected renderVicePanel(): React.ReactNode {
+    return (
+      <div style={panelStyle}>
+        <div style={sectionTitleStyle}>VICE</div>
+        <label style={fieldLabelGridStyle}>
+          Scope
+          <select
+            onChange={(event) => {
+              this.memoryTransferScope = event.currentTarget.value as ScreenViceTransferScope;
+              this.update();
+            }}
+            style={selectStyle}
+            value={this.memoryTransferScope}
+          >
+            <option value='screenAndColor'>Screen + color RAM</option>
+            <option value='screen'>Screen RAM</option>
+            <option value='color'>Color RAM</option>
+            <option value='characterSet'>Character set</option>
+            <option value='colors'>VIC colors</option>
+            <option value='all'>All screen data</option>
+          </select>
+        </label>
+        <div style={toolRowStyle}>
+          <button
+            style={commandButtonStyle}
+            onClick={() => this.runViceAction(() => this.readViceMemory())}
+          >
+            <span className={codicon('cloud-download')} /> Read
+          </button>
+          <button
+            style={commandButtonStyle}
+            onClick={() => this.runViceAction(() => this.writeViceMemory())}
+          >
+            <span className={codicon('cloud-upload')} /> Write
+          </button>
+        </div>
+        <div style={smallDetailStyle}>{this.viceStatus}</div>
       </div>
     );
   }
@@ -1433,6 +1753,34 @@ function screenCanvasHeight(document: CommodoreScreenDocument): number {
   return document.geometry.rows * CHARACTER_HEIGHT + SCREEN_BORDER_Y * 2;
 }
 
+function applyVicColorBytes(
+  document: CommodoreScreenDocument,
+  bytes: Uint8Array
+): CommodoreScreenDocument {
+  if (bytes.length < VIC_COLOR_REGISTER_COUNT) {
+    return document;
+  }
+  return {
+    ...document,
+    colors: {
+      ...document.colors,
+      border: bytes[0] & 0x0f,
+      background: bytes[1] & 0x0f,
+      multicolor1: bytes[2] & 0x0f,
+      multicolor2: bytes[3] & 0x0f
+    }
+  };
+}
+
+function sameScreenTarget(
+  left: CommodoreScreenTarget,
+  right: CommodoreScreenTarget
+): boolean {
+  return left.screenAddress === right.screenAddress &&
+    left.colorAddress === right.colorAddress &&
+    left.characterDataAddress === right.characterDataAddress;
+}
+
 function hexByte(value: number): string {
   return (value & 0xff).toString(16).toUpperCase().padStart(2, '0');
 }
@@ -1443,6 +1791,9 @@ function toErrorMessage(error: unknown): string {
 
 const CHARACTER_WIDTH = 8;
 const CHARACTER_HEIGHT = 8;
+const CHARACTER_SET_BYTE_COUNT = 2048;
+const VIC_COLOR_REGISTER_ADDRESS = 0xd020;
+const VIC_COLOR_REGISTER_COUNT = 4;
 const SCREEN_BORDER_X = 8;
 const SCREEN_BORDER_Y = 8;
 const BITMAP_PIXEL_SIZE = 28;
@@ -1495,9 +1846,9 @@ const toolsSectionStyle: React.CSSProperties = {
   alignContent: 'start',
   display: 'grid',
   gap: '12px',
-  gridTemplateRows: 'max-content max-content minmax(0, 1fr)',
+  gridTemplateRows: 'max-content max-content max-content max-content minmax(0, 1fr)',
   minHeight: 0,
-  overflow: 'hidden'
+  overflow: 'auto'
 };
 
 const screenPanelStyle: React.CSSProperties = {
@@ -1533,6 +1884,14 @@ const inspectorStyle: React.CSSProperties = {
   padding: '10px'
 };
 
+const panelStyle: React.CSSProperties = {
+  alignContent: 'start',
+  border: '1px solid var(--theia-editorGroup-border)',
+  display: 'grid',
+  gap: '10px',
+  padding: '10px'
+};
+
 const selectedIndexStyle: React.CSSProperties = {
   alignItems: 'baseline',
   display: 'flex',
@@ -1553,7 +1912,30 @@ const smallDetailStyle: React.CSSProperties = {
 
 const toolRowStyle: React.CSSProperties = {
   display: 'flex',
+  flexWrap: 'wrap',
   gap: '6px'
+};
+
+const targetGridStyle: React.CSSProperties = {
+  display: 'grid',
+  gap: '8px',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))'
+};
+
+const fieldLabelGridStyle: React.CSSProperties = {
+  color: 'var(--theia-descriptionForeground)',
+  display: 'grid',
+  fontSize: '11px',
+  gap: '4px'
+};
+
+const numberInputStyle: React.CSSProperties = {
+  background: 'var(--theia-input-background)',
+  border: '1px solid var(--theia-input-border, var(--theia-editorGroup-border))',
+  color: 'var(--theia-input-foreground)',
+  minHeight: '24px',
+  minWidth: 0,
+  padding: '2px 6px'
 };
 
 const colorToolsStyle: React.CSSProperties = {
