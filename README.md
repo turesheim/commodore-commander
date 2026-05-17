@@ -166,6 +166,15 @@ npm run package:current
 Nightly product packages are built by GitHub Actions for macOS, Windows, and
 Linux. The scheduled workflow uploads run artifacts and refreshes the mutable
 `nightly` prerelease after all three platform packages build successfully.
+The macOS nightly package is ad-hoc signed unless these repository secrets are
+configured:
+
+- `MACOS_CODESIGN_CERTIFICATE_BASE64`: base64-encoded Developer ID Application
+  `.p12` certificate.
+- `MACOS_CODESIGN_CERTIFICATE_PASSWORD`: password for the `.p12` certificate.
+- `MACOS_CODESIGN_IDENTITY`: optional explicit identity name, such as
+  `Developer ID Application: Example, Inc. (TEAMID)`.
+- `MACOS_CODESIGN_KEYCHAIN_PASSWORD`: optional temporary keychain password.
 
 ## Screenshots
 
