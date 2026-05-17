@@ -150,7 +150,7 @@ export class KickAssemblerBuilderContribution
     void this.updateStatusBar();
   }
 
-  async initializeLayout(_app: FrontendApplication): Promise<void> {
+  async onDidInitializeLayout(_app: FrontendApplication): Promise<void> {
     await this.openView();
   }
 

@@ -6,24 +6,24 @@ import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-con
 import { injectable } from '@theia/core/shared/inversify';
 
 import {
-  VICE_MEMORY_WIDGET_ID,
-  ViceMemoryWidget
-} from './vice-memory-widget';
+  SID_INSTRUMENT_CONTROL_WIDGET_ID,
+  SidInstrumentControlWidget
+} from './sid-instrument-control-widget';
 
 @injectable()
-export class ViceMemoryContribution
-  extends AbstractViewContribution<ViceMemoryWidget>
+export class SidInstrumentControlContribution
+  extends AbstractViewContribution<SidInstrumentControlWidget>
   implements FrontendApplicationContribution
 {
   constructor() {
     super({
-      widgetId: VICE_MEMORY_WIDGET_ID,
-      widgetName: 'Memory',
+      widgetId: SID_INSTRUMENT_CONTROL_WIDGET_ID,
+      widgetName: 'SID Instrument',
       defaultWidgetOptions: {
-        area: 'bottom',
-        rank: 230
+        area: 'right',
+        rank: 120
       },
-      toggleCommandId: 'commodoreCommander.viceMemory.toggle'
+      toggleCommandId: 'commodoreCommander.sidscore.toggleInstrumentControls'
     });
   }
 

@@ -222,7 +222,7 @@ export class SidScoreRuntimeContribution
     void this.refreshSubtunesForActiveResource();
   }
 
-  async initializeLayout(_app: FrontendApplication): Promise<void> {
+  async onDidInitializeLayout(_app: FrontendApplication): Promise<void> {
     this.configureWaveformWidget(await this.openView({ reveal: true }));
     void this.refreshSubtunesForActiveResource();
   }

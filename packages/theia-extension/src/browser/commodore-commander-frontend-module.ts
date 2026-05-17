@@ -138,6 +138,7 @@ import {
   SID_INSTRUMENT_CONTROL_WIDGET_ID,
   SidInstrumentControlWidget
 } from './sid-instrument-control-widget';
+import { SidInstrumentControlContribution } from './sid-instrument-control-contribution';
 import {
   SidScoreRuntimeService,
   SidScoreRuntimeServicePath
@@ -335,6 +336,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     }))
     .inSingletonScope();
   bindViewContribution(bind, ViceMemoryContribution);
+  bind(FrontendApplicationContribution).toService(ViceMemoryContribution);
   bind(C64VisualDebuggerWidget).toSelf();
   bind(WidgetFactory)
     .toDynamicValue((context) => ({
@@ -343,6 +345,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     }))
     .inSingletonScope();
   bindViewContribution(bind, C64VisualDebuggerContribution);
+  bind(FrontendApplicationContribution).toService(C64VisualDebuggerContribution);
   bind(KickAssemblerLanguageContribution).toSelf().inSingletonScope();
   bind(FrontendApplicationContribution).toService(KickAssemblerLanguageContribution);
   bind(LanguageGrammarDefinitionContribution).toService(KickAssemblerLanguageContribution);
@@ -380,6 +383,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
       createWidget: () => context.container.get(SidInstrumentControlWidget)
     }))
     .inSingletonScope();
+  bindViewContribution(bind, SidInstrumentControlContribution);
+  bind(FrontendApplicationContribution).toService(SidInstrumentControlContribution);
   bind(SidScoreProtocolLogWidget).toSelf();
   bind(WidgetFactory)
     .toDynamicValue((context) => ({

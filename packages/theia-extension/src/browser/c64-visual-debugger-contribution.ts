@@ -1,3 +1,7 @@
+import {
+  FrontendApplication,
+  FrontendApplicationContribution
+} from '@theia/core/lib/browser';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { injectable } from '@theia/core/shared/inversify';
 
@@ -9,6 +13,7 @@ import {
 @injectable()
 export class C64VisualDebuggerContribution
   extends AbstractViewContribution<C64VisualDebuggerWidget>
+  implements FrontendApplicationContribution
 {
   constructor() {
     super({
@@ -20,5 +25,9 @@ export class C64VisualDebuggerContribution
       },
       toggleCommandId: 'commodoreCommander.c64VisualDebugger.toggle'
     });
+  }
+
+  async onDidInitializeLayout(_app: FrontendApplication): Promise<void> {
+    await this.openView();
   }
 }
