@@ -57,7 +57,8 @@ export interface BundledDocumentationEntry {
   readonly details: string;
 }
 
-// Keep this manifest in sync with the root bundled-docs directory.
+// User-facing documentation entries. Resource files in bundled-docs are still
+// copied into the product, but should not appear as standalone help items.
 export const BUNDLED_DOCUMENTS: readonly BundledDocumentationEntry[] = [
   {
     path: 'build-configuration.md',
@@ -88,11 +89,6 @@ export const BUNDLED_DOCUMENTS: readonly BundledDocumentationEntry[] = [
     path: 'introduction_to_sidscore.md',
     label: 'Introduction to SIDScore',
     details: 'Synthesizer and SID background for SIDScore instruments'
-  },
-  {
-    path: 'ADSR_parameter.svg',
-    label: 'ADSR Parameter Diagram',
-    details: 'Envelope parameter diagram used by the SIDScore introduction'
   }
 ];
 
@@ -144,7 +140,7 @@ export class CommodoreCommanderBundledDocumentationContribution
   registerMenus(menus: MenuModelRegistry): void {
     menus.registerSubmenu(
       BUNDLED_DOCUMENTATION_MENU,
-      'Commodore Commander Documentation',
+      'Documentation',
       {
         sortString: '8'
       }
@@ -249,7 +245,7 @@ export class CommodoreCommanderBundledDocumentationLinkNormalizer
 export class CommodoreCommanderBundledDocumentationOpenHandler
   implements OpenHandler {
   readonly id = 'cc-doc-preview';
-  readonly label = 'Commodore Commander Documentation';
+  readonly label = 'Documentation';
 
   @inject(PreviewContribution)
   protected readonly previewContribution!: PreviewContribution;
@@ -392,13 +388,10 @@ function encodeBundledDocumentationPath(relativePath: string): string {
 }
 
 function bundledDocumentationAssetUrl(relativePath: string): string {
-  return new URL(
-    BUNDLED_DOCUMENTATION_ASSET_ROOT +
-      encodeBundledDocumentationPath(
-        normalizeBundledDocumentationPath(relativePath)
-      ),
-    window.location.href
-  ).toString();
+  return BUNDLED_DOCUMENTATION_ASSET_ROOT +
+    encodeBundledDocumentationPath(
+      normalizeBundledDocumentationPath(relativePath)
+    );
 }
 
 function resolveBundledDocumentationAssetLink(
