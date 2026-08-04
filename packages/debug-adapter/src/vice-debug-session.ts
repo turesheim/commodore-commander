@@ -1,7 +1,7 @@
 import path from 'node:path';
 import type { ChildProcess } from 'node:child_process';
 import { readdir } from 'node:fs/promises';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 import type { DebugProtocol } from '@vscode/debugprotocol';
 
@@ -2186,10 +2186,9 @@ export class ViceDebugSession {
 }
 
 function sourceForPath(sourcePath: string): DebugProtocol.Source {
-  const uri = sourceUriForPath(sourcePath);
   return {
     name: sourceNameForPath(sourcePath),
-    path: uri ?? sourcePath
+    path: dapSourcePath(sourcePath)
   };
 }
 
@@ -2205,13 +2204,13 @@ function shouldPublishLoadedSource(sourcePath: string): boolean {
   return !hasUriScheme(sourcePath) || /^file:/u.test(sourcePath);
 }
 
-function sourceUriForPath(sourcePath: string): string | undefined {
-  if (hasUriScheme(sourcePath)) {
-    return sourcePath;
+function dapSourcePath(sourcePath: string): string {
+  if (/^file:/u.test(sourcePath)) {
+    return fileURLToPath(sourcePath);
   }
   return path.isAbsolute(sourcePath)
-    ? pathToFileURL(path.normalize(sourcePath)).toString()
-    : undefined;
+    ? path.normalize(sourcePath)
+    : sourcePath;
 }
 
 function sourceNameForPath(sourcePath: string): string {
