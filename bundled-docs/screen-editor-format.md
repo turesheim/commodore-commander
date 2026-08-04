@@ -137,6 +137,8 @@ The screen-code and color RAM byte exports are unchanged.
 
 The editor can export:
 
+- `.seq` PETSCII control streams with clear-screen, character-set, color, and
+  reverse controls.
 - `.scr` screen-code bytes in row-major order.
 - `.col` color RAM bytes in row-major order.
 - KickAssembler `.asm` with separate character-code and color-code labels.

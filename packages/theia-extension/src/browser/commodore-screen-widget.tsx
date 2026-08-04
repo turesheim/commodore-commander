@@ -43,6 +43,7 @@ import {
   screenCharacterSetToBytes,
   screenToCharacterBytes,
   screenToColorBytes,
+  screenToSeqBytes,
   serializeScreenDocument,
   setScreenCell,
   setScreenGlyphByte,
@@ -557,6 +558,22 @@ export class CommodoreScreenWidget extends ReactWidget {
     this.messageService.info(`Exported ${target.path.base}.`);
   }
 
+  protected async exportSeq(): Promise<void> {
+    const target = await this.pickExportTarget(
+      'Export PETSCII SEQ',
+      COMMODORE_SEQ_SCREEN_FILE_EXTENSION
+    );
+    if (!target) {
+      return;
+    }
+
+    await this.fileService.writeFile(
+      target,
+      BinaryBuffer.wrap(screenToSeqBytes(this.document))
+    );
+    this.messageService.info(`Exported ${target.path.base}.`);
+  }
+
   protected async exportColorBytes(): Promise<void> {
     const target = await this.pickExportTarget(
       'Export Color RAM',
@@ -908,6 +925,13 @@ export class CommodoreScreenWidget extends ReactWidget {
           onClick={() => void this.exportScreenBytes()}
         >
           <span className={codicon('file-binary')} /> .SCR
+        </button>
+        <button
+          style={commandButtonStyle}
+          title='Export a PETSCII control stream as a .seq file'
+          onClick={() => void this.exportSeq()}
+        >
+          <span className={codicon('file-binary')} /> .SEQ
         </button>
         <button
           style={commandButtonStyle}
