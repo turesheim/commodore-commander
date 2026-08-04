@@ -35,7 +35,7 @@
     "./syntaxes/*": "./syntaxes/*"
   },
   "scripts": {
-    "langium:generate": "langium generate",
+    "langium:generate": "node ./scripts/generate-langium.mjs",
     "build": "npm run langium:generate && tsc -p tsconfig.json && node ./scripts/sync-dist-assets.mjs",
     "typecheck": "npm run langium:generate && tsc -p tsconfig.json --noEmit",
     "test": "node --experimental-strip-types --test test/*.test.ts"
@@ -45,7 +45,7 @@
     "typescript": "^5.7.0"
   },
   "dependencies": {
-    "langium": "^4.2.2",
-    "langium-cli": "^4.2.1"
+    "langium": "4.2.2",
+    "langium-cli": "4.2.1"
   }
 }
