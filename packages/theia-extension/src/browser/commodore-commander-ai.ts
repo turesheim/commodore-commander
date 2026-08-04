@@ -174,7 +174,6 @@ export class CommodoreCommanderChatAgent
   override readonly description =
     'Answers Commodore Commander and Commodore 8-bit development questions ' +
     'using bundled product documentation as retrieval context.';
-  override readonly iconClass = 'codicon codicon-circuit-board';
   override readonly tags = ['Commodore Commander', 'RAG'];
   override readonly prompts = [{
     id: COMMODORE_ASSISTANT_PROMPT.id,
