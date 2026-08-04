@@ -10,6 +10,11 @@ import {
   ChatSessionContext,
   SystemMessageDescription
 } from '@theia/ai-chat';
+import { AIChatContribution } from '@theia/ai-chat-ui/lib/browser/ai-chat-ui-contribution';
+import {
+  FrontendApplication,
+  FrontendApplicationContribution
+} from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 
 import {
@@ -159,6 +164,17 @@ export class CommodoreCommanderDocumentationSearchTool
         return formatDocumentationSearchResults(results);
       }
     };
+  }
+}
+
+@injectable()
+export class CommodoreCommanderChatViewContribution
+  implements FrontendApplicationContribution {
+  @inject(AIChatContribution)
+  protected readonly aiChatContribution!: AIChatContribution;
+
+  async onDidInitializeLayout(_app: FrontendApplication): Promise<void> {
+    await this.aiChatContribution.openView();
   }
 }
 

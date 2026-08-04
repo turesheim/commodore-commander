@@ -70,6 +70,7 @@ import {
 } from './commodore-commander-bundled-docs';
 import {
   CommodoreCommanderChatAgent,
+  CommodoreCommanderChatViewContribution,
   CommodoreCommanderDocumentationRagService,
   CommodoreCommanderDocumentationSearchTool
 } from './commodore-commander-ai';
@@ -229,6 +230,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
   bind(CommodoreCommanderChatAgent).toSelf().inSingletonScope();
   bind(Agent).toService(CommodoreCommanderChatAgent);
   bind(ChatAgent).toService(CommodoreCommanderChatAgent);
+  bind(CommodoreCommanderChatViewContribution).toSelf().inSingletonScope();
+  bind(FrontendApplicationContribution).toService(
+    CommodoreCommanderChatViewContribution
+  );
   bindToolProvider(CommodoreCommanderDocumentationSearchTool, bind);
   bind(CommodoreCommanderGettingStartedWidget).toSelf();
   rebind(GettingStartedWidget).toService(CommodoreCommanderGettingStartedWidget);
