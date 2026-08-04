@@ -69,6 +69,8 @@ same in both modes.
 `File > New > Character Set` lets you choose one of these starting points:
 
 - Blank: an empty 256-character set.
+- C64 uppercase/graphics: the upper/graphics half of the bundled C64 character
+  ROM.
 - C64 lowercase/uppercase: the lower/upper half of the bundled C64 character
   ROM.
 - PET lowercase/uppercase: the lower/upper half of the bundled PET character

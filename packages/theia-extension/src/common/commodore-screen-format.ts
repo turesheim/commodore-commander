@@ -82,8 +82,33 @@ export interface CommodoreScreenDocumentOptions {
   readonly target?: Partial<CommodoreScreenTarget>;
 }
 
+export interface CommodoreScreenSeqImportResult {
+  readonly document: CommodoreScreenDocument;
+  readonly importedCharacters: number;
+}
+
 const EMPTY_GLYPH = '0000000000000000';
 const HEX_GLYPH = /^[0-9a-f]{16}$/iu;
+const C64_DEFAULT_TEXT_COLOR = 14;
+const PETSCII_REVERSE_OFFSET = 0x80;
+const PETSCII_COLOR_CODES: ReadonlyMap<number, number> = new Map([
+  [0x90, 0],
+  [0x05, 1],
+  [0x1c, 2],
+  [0x9f, 3],
+  [0x9c, 4],
+  [0x1e, 5],
+  [0x1f, 6],
+  [0x9e, 7],
+  [0x81, 8],
+  [0x95, 9],
+  [0x96, 10],
+  [0x97, 11],
+  [0x98, 12],
+  [0x99, 13],
+  [0x9a, 14],
+  [0x9b, 15]
+]);
 
 export function createDefaultScreenDocument(
   name = 'Untitled Screen',
@@ -302,6 +327,13 @@ export function applyScreenCodeSequence(
       }
     )
   };
+}
+
+export function applySeqScreenImport(
+  document: CommodoreScreenDocument,
+  bytes: Uint8Array
+): CommodoreScreenSeqImportResult {
+  return applyPetsciiControlStream(document, bytes);
 }
 
 export function screenToCharacterBytes(
@@ -532,6 +564,217 @@ function normalizeScreenCharacterSet(
       { length: COMMODORE_CHARACTER_SET_GEOMETRY.glyphCount },
       (_, index) => glyphs[index] ?? fallback.characterSet.glyphs[index] ?? EMPTY_GLYPH
     )
+  };
+}
+
+function applyPetsciiControlStream(
+  document: CommodoreScreenDocument,
+  bytes: Uint8Array
+): CommodoreScreenSeqImportResult {
+  const normalized = normalizeScreenDocument(document);
+  const columns = normalized.geometry.columns;
+  const rows = normalized.geometry.rows;
+  let column = 0;
+  let row = 0;
+  let currentColor = C64_DEFAULT_TEXT_COLOR;
+  let reverse = false;
+  let characterSetTemplateId: CommodoreCharacterSetTemplateId | undefined;
+  let importedCharacters = 0;
+  let cells = createBlankScreenCells(normalized, currentColor);
+
+  for (let index = 0; index < bytes.length; index += 1) {
+    const value = bytes[index] ?? 0;
+
+    if (shouldIgnorePetsciiSeqByte(bytes, index)) {
+      continue;
+    }
+
+    if (value === 0x0e) {
+      characterSetTemplateId = 'c64-lower-upper';
+      continue;
+    }
+    if (value === 0x8e) {
+      characterSetTemplateId = 'c64-upper-graphics';
+      continue;
+    }
+    if (value === 0x12) {
+      reverse = true;
+      continue;
+    }
+    if (value === 0x92 || value === 0x0d || value === 0x8d) {
+      reverse = false;
+      if (value !== 0x92) {
+        column = 0;
+        row = Math.min(row + 1, rows);
+      }
+      continue;
+    }
+    if (value === 0x13) {
+      column = 0;
+      row = 0;
+      continue;
+    }
+    if (value === 0x93) {
+      column = 0;
+      row = 0;
+      reverse = false;
+      cells = createBlankScreenCells(normalized, currentColor);
+      continue;
+    }
+
+    const color = PETSCII_COLOR_CODES.get(value);
+    if (color !== undefined) {
+      currentColor = color;
+      continue;
+    }
+
+    const movedCursor = applyPetsciiCursorControl(value, columns, rows, column, row);
+    if (movedCursor) {
+      column = movedCursor.column;
+      row = movedCursor.row;
+      continue;
+    }
+
+    const screenCode = petsciiPrintableToScreenCode(value);
+    if (screenCode === undefined) {
+      continue;
+    }
+
+    if (row < rows) {
+      cells[row * columns + column] = {
+        character: reverse
+          ? (screenCode | PETSCII_REVERSE_OFFSET) & 0xff
+          : screenCode,
+        color: currentColor
+      };
+      importedCharacters += 1;
+    }
+
+    const next = advancePetsciiCursor(columns, rows, column, row);
+    column = next.column;
+    row = next.row;
+  }
+
+  let importedDocument: CommodoreScreenDocument = {
+    ...normalized,
+    cells
+  };
+  if (characterSetTemplateId) {
+    importedDocument = applyScreenCharacterSetTemplate(
+      importedDocument,
+      characterSetTemplateId
+    );
+  }
+
+  return {
+    document: importedDocument,
+    importedCharacters
+  };
+}
+
+function createBlankScreenCells(
+  document: CommodoreScreenDocument,
+  color: number
+): CommodoreScreenCell[] {
+  return Array.from(
+    { length: document.geometry.columns * document.geometry.rows },
+    () => ({
+      character: 32,
+      color
+    })
+  );
+}
+
+function shouldIgnorePetsciiSeqByte(bytes: Uint8Array, index: number): boolean {
+  const value = bytes[index] ?? 0;
+  return value === 0x14 || (value === 0x22 && index > 0 && bytes[index - 1] === 0x22);
+}
+
+function applyPetsciiCursorControl(
+  value: number,
+  columns: number,
+  rows: number,
+  column: number,
+  row: number
+): { column: number; row: number } | undefined {
+  if (value === 0x11) {
+    return { column, row: Math.min(row + 1, rows) };
+  }
+  if (value === 0x91) {
+    return { column, row: Math.max(row - 1, 0) };
+  }
+  if (value === 0x1d) {
+    return advancePetsciiCursor(columns, rows, column, row);
+  }
+  if (value === 0x9d) {
+    if (column > 0) {
+      return { column: column - 1, row };
+    }
+    if (row > 0) {
+      return { column: columns - 1, row: row - 1 };
+    }
+    return { column: 0, row: 0 };
+  }
+  return undefined;
+}
+
+function advancePetsciiCursor(
+  columns: number,
+  rows: number,
+  column: number,
+  row: number
+): { column: number; row: number } {
+  const nextColumn = column + 1;
+  if (nextColumn < columns) {
+    return { column: nextColumn, row };
+  }
+  return { column: 0, row: Math.min(row + 1, rows) };
+}
+
+function petsciiPrintableToScreenCode(value: number): number | undefined {
+  if (value >= 0x20 && value <= 0x3f) {
+    return value;
+  }
+  if (value >= 0x40 && value <= 0x5f) {
+    return value - 0x40;
+  }
+  if (value >= 0x60 && value <= 0x7f) {
+    return value - 0x20;
+  }
+  if (value >= 0xa0 && value <= 0xbf) {
+    return value - 0x40;
+  }
+  if (value === 0xc0) {
+    return 0x40;
+  }
+  if (value >= 0xc1 && value <= 0xda) {
+    return value - 0xc0;
+  }
+  if (value >= 0xdb && value <= 0xdf) {
+    return value - 0xc0;
+  }
+  if (value >= 0xe0 && value <= 0xff) {
+    return value - 0x80;
+  }
+  return undefined;
+}
+
+function applyScreenCharacterSetTemplate(
+  document: CommodoreScreenDocument,
+  templateId: CommodoreCharacterSetTemplateId
+): CommodoreScreenDocument {
+  const characterSet = createCharacterSetDocumentFromTemplate(templateId);
+  return {
+    ...document,
+    metadata: {
+      ...document.metadata,
+      machine: characterSet.metadata.machine
+    },
+    colorMode: characterSet.colorMode,
+    characterSet: {
+      name: characterSet.metadata.name,
+      glyphs: [...characterSet.glyphs]
+    }
   };
 }
 

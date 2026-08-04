@@ -81,7 +81,7 @@ The editor provides:
 - keyboard entry for common printable screen codes
 - single-color and multi-color character rendering modes
 - `.charset` import for replacing the embedded character set
-- `.seq` import for row-major screen-code sequences
+- `.seq` import for PETSCII control streams with color, reverse, and charset codes
 - `.scr`, `.col`, and KickAssembler `.asm` export
 
 ## Music and sound effects

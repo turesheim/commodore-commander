@@ -72,9 +72,9 @@ The editor renders cells in row-major order.
 set. Each glyph uses the same 16-digit hexadecimal row format as `.charset`
 files: 8 bytes per character, bit 7 leftmost.
 
-The screen editor can start from the bundled blank, C64 lower/upper, or PET
-lower/upper character sets. It can also replace the embedded character set with
-an existing `.charset` file.
+The screen editor can start from the bundled blank, C64 upper/graphics, C64
+lower/upper, or PET lower/upper character sets. It can also replace the
+embedded character set with an existing `.charset` file.
 
 The embedded character set is editable from the screen editor. Pixel edits,
 flips, shifts, clears, and inversions update `characterSet.glyphs` directly, so
@@ -107,10 +107,14 @@ The screen editor can read from and write to the active stopped
 
 ## Import
 
-`.seq` imports are interpreted as screen-code byte sequences in row-major order.
-The imported bytes replace the cell `character` values from the top-left cell
-forward. Existing cell colors are preserved, excess bytes are ignored, and
-missing trailing cells are padded with screen code 32.
+`.seq` imports are interpreted as PETSCII control streams. Printable PETSCII
+bytes are converted to screen-code cells from the top-left cell forward. The
+importer also applies C64 text color controls, reverse on/off controls, clear
+screen, home, return, cursor movement, and the C64 upper/graphics versus
+lower/upper character-set controls.
+
+The imported stream replaces the screen contents. Missing trailing cells are
+padded with screen code 32.
 
 ## Color Modes
 

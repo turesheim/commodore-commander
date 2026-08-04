@@ -30,6 +30,7 @@ import {
   COMMODORE_SCREEN_FILE_EXTENSION,
   applyScreenColorBytes,
   applyScreenCodeSequence,
+  applySeqScreenImport,
   createDefaultScreenDocument,
   fillScreen,
   formatKickAssemblerScreen,
@@ -515,12 +516,12 @@ export class CommodoreScreenWidget extends ReactWidget {
       : (await this.workspaceService.roots)[0];
     const source = await this.fileDialogService.showOpenDialog(
       {
-        title: 'Import SEQ Screen Codes',
+        title: 'Import PETSCII SEQ',
         openLabel: 'Import',
         canSelectFiles: true,
         canSelectFolders: false,
         filters: {
-          'SEQ Screen Code Files': [
+          'PETSCII SEQ Files': [
             COMMODORE_SEQ_SCREEN_FILE_EXTENSION.slice(1)
           ]
         }
@@ -533,9 +534,10 @@ export class CommodoreScreenWidget extends ReactWidget {
 
     const content = await this.fileService.readFile(source);
     const bytes = content.value.buffer;
-    this.markChanged(applyScreenCodeSequence(this.document, bytes));
+    const imported = applySeqScreenImport(this.document, bytes);
+    this.markChanged(imported.document);
     this.messageService.info(
-      `Imported ${Math.min(bytes.length, this.document.cells.length)} screen codes from ${source.path.base}.`
+      `Imported ${imported.importedCharacters} PETSCII character(s) from ${source.path.base}.`
     );
   }
 
