@@ -881,35 +881,44 @@ export class CommodoreScreenWidget extends ReactWidget {
   protected renderToolbar(): React.ReactNode {
     return (
       <div style={toolbarStyle}>
-        <button style={commandButtonStyle} onClick={() => void this.save()}>
+        <button
+          style={commandButtonStyle}
+          title='Save the current screen file'
+          onClick={() => void this.save()}
+        >
           <span className={codicon('save')} /> Save
         </button>
         <button
           style={commandButtonStyle}
+          title='Replace the embedded character set with a .charset file'
           onClick={() => void this.importCharacterSet()}
         >
           <span className={codicon('symbol-color')} /> Use .charset
         </button>
         <button
           style={commandButtonStyle}
+          title='Import a PETSCII control stream from a .seq file'
           onClick={() => void this.importSeq()}
         >
           <span className={codicon('folder-opened')} /> Import .SEQ
         </button>
         <button
           style={commandButtonStyle}
+          title='Export screen-code bytes as a .scr file'
           onClick={() => void this.exportScreenBytes()}
         >
           <span className={codicon('file-binary')} /> .SCR
         </button>
         <button
           style={commandButtonStyle}
+          title='Export color RAM bytes as a .col file'
           onClick={() => void this.exportColorBytes()}
         >
           <span className={codicon('symbol-color')} /> .COL
         </button>
         <button
           style={commandButtonStyle}
+          title='Export screen data as KickAssembler source'
           onClick={() => void this.exportAssembler()}
         >
           <span className={codicon('file-code')} /> ASM
@@ -1081,12 +1090,14 @@ export class CommodoreScreenWidget extends ReactWidget {
         <div style={toolRowStyle}>
           <button
             style={commandButtonStyle}
+            title='Read the selected screen data from the active stopped VICE debug session'
             onClick={() => this.runViceAction(() => this.readViceMemory())}
           >
             <span className={codicon('cloud-download')} /> Read
           </button>
           <button
             style={commandButtonStyle}
+            title='Write the selected screen data to the active stopped VICE debug session'
             onClick={() => this.runViceAction(() => this.writeViceMemory())}
           >
             <span className={codicon('cloud-upload')} /> Write
@@ -1384,7 +1395,7 @@ export class CommodoreScreenWidget extends ReactWidget {
                   ? 'var(--theia-focusBorder)'
                   : 'var(--theia-editorGroup-border)'
               }}
-              title={choice.label}
+              title={`Paint glyph pixels with ${glyphPaintChoiceTooltip(choice.label)}`}
               onClick={() => this.setGlyphPaintValue(choice.value)}
             >
               <span
@@ -1586,6 +1597,21 @@ function printableToScreenCode(value: string): number | undefined {
     return code - 64;
   }
   return undefined;
+}
+
+function glyphPaintChoiceTooltip(label: string): string {
+  switch (label) {
+    case 'BG':
+      return 'the background color';
+    case 'M1':
+      return 'multicolor 1';
+    case 'M2':
+      return 'multicolor 2';
+    case 'char':
+      return 'the selected character color';
+    default:
+      return label;
+  }
 }
 
 function drawScreenCanvas(
