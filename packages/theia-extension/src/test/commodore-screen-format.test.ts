@@ -101,6 +101,28 @@ test('applySeqScreenImport handles PETSCII Editor escaped quotes', () => {
   });
 });
 
+test('applySeqScreenImport preserves reverse mode across return', () => {
+  const document = createDefaultScreenDocument('PETSCII reverse return', {
+    columns: 2,
+    rows: 2
+  });
+
+  const imported = applySeqScreenImport(
+    document,
+    Uint8Array.of(0x93, 0x8e, 0x12, 0x41, 0x0d, 0x42, 0x92)
+  );
+
+  assert.equal(imported.importedCharacters, 2);
+  assert.deepEqual(getScreenCell(imported.document, 0, 0), {
+    character: 0x81,
+    color: 14
+  });
+  assert.deepEqual(getScreenCell(imported.document, 0, 1), {
+    character: 0x82,
+    color: 14
+  });
+});
+
 test('screenToSeqBytes exports a PETSCII control stream', () => {
   let document = createDefaultScreenDocument('PETSCII export', {
     columns: 3,

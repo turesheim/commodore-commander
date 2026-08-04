@@ -645,12 +645,13 @@ function applyPetsciiControlStream(
       reverse = true;
       continue;
     }
-    if (value === PETSCII_REVERSE_OFF || value === 0x0d || value === 0x8d) {
+    if (value === PETSCII_REVERSE_OFF) {
       reverse = false;
-      if (value !== PETSCII_REVERSE_OFF) {
-        column = 0;
-        row = Math.min(row + 1, rows);
-      }
+      continue;
+    }
+    if (value === 0x0d || value === 0x8d) {
+      column = 0;
+      row = Math.min(row + 1, rows);
       continue;
     }
     if (value === 0x13) {
