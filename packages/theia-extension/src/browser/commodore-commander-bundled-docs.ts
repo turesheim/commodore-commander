@@ -387,7 +387,7 @@ function encodeBundledDocumentationPath(relativePath: string): string {
   return relativePath.split('/').map(encodeURIComponent).join('/');
 }
 
-function bundledDocumentationAssetUrl(relativePath: string): string {
+export function bundledDocumentationAssetUrl(relativePath: string): string {
   return BUNDLED_DOCUMENTATION_ASSET_ROOT +
     encodeBundledDocumentationPath(
       normalizeBundledDocumentationPath(relativePath)

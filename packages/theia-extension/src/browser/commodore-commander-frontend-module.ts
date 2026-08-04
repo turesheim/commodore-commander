@@ -13,6 +13,13 @@ import {
   MenuContribution,
   ResourceResolver
 } from '@theia/core/lib/common';
+import {
+  Agent,
+  bindToolProvider
+} from '@theia/ai-core';
+import {
+  ChatAgent
+} from '@theia/ai-chat';
 import URI from '@theia/core/lib/common/uri';
 import {
   PreferenceContribution
@@ -61,6 +68,11 @@ import {
   CommodoreCommanderBundledDocumentationPreviewHandler,
   CommodoreCommanderBundledDocumentationResourceResolver
 } from './commodore-commander-bundled-docs';
+import {
+  CommodoreCommanderChatAgent,
+  CommodoreCommanderDocumentationRagService,
+  CommodoreCommanderDocumentationSearchTool
+} from './commodore-commander-ai';
 import {
   COMMODORE_MACHINE_PROFILE_PREFERENCE_BINDING,
   CommodoreMachineProfileContribution,
@@ -213,6 +225,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
   bind(FrontendApplicationContribution).toService(
     CommodoreCommanderBundledDocumentationEditorContribution
   );
+  bind(CommodoreCommanderDocumentationRagService).toSelf().inSingletonScope();
+  bind(CommodoreCommanderChatAgent).toSelf().inSingletonScope();
+  bind(Agent).toService(CommodoreCommanderChatAgent);
+  bind(ChatAgent).toService(CommodoreCommanderChatAgent);
+  bindToolProvider(CommodoreCommanderDocumentationSearchTool, bind);
   bind(CommodoreCommanderGettingStartedWidget).toSelf();
   rebind(GettingStartedWidget).toService(CommodoreCommanderGettingStartedWidget);
   bind(WidgetFactory)

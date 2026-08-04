@@ -4,7 +4,7 @@ Early electronic synthesizers emerged in the 1960s as large, modular systems ass
 
 Following discussions with the engineer and composer Vladimir Ussachevsky, the head of the Columbia-Princeton Electronic Music Center, in 1965, Moog developed a new envelope module whose functions were described in f T1 (attack time), T2 (initial decay time), ESUS (sustain level), and T3 (final decay time). These were later simplified to the modern ADSR form (attack time, decay time, sustain level, release time) by ARP.[1]
 
-![ADSR](ADSR_parameter.svg) 
+![ADSR envelope parameter diagram](ADSR_parameter.svg)
 
 At the core of this control model is the ADSR envelope:
 
@@ -39,4 +39,3 @@ The SID’s impact extends beyond its original context. It helped establish seve
 Its sonic fingerprint—characterized by sharp envelopes, resonant filters, and digitally controlled analog irregularities—remains recognizable. Modern genres such as chiptune, synthwave, and certain forms of electronic dance music explicitly reference or emulate SID-like textures.
 
 In summary, early synthesizers introduced the core abstractions of electronic sound design, particularly the ADSR envelope. The SID chip operationalized these ideas in mass-market hardware, making synthesis accessible at scale. Its combination of technical capability, distribution, and creative constraint positioned it as a formative influence on both video game music and contemporary electronic music practices.
-
