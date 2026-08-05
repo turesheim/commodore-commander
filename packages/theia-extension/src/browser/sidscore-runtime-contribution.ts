@@ -427,6 +427,7 @@ export class SidScoreRuntimeContribution
     const output = event.output.trim();
     if (output.length > 0) {
       console.debug(`SIDScore server ${event.stream}: ${output}`);
+      this.getProtocolLogWidget()?.appendServerOutput(event);
     }
   }
 

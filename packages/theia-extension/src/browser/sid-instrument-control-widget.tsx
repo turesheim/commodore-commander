@@ -23,6 +23,10 @@ import {
   type SidScoreSetInstrumentRequest,
   type SidScoreSidModel
 } from '../common/sidscore-runtime-service';
+import {
+  shouldScanMidiDevicesForModeActivation,
+  shouldStartInitialMidiDeviceScan
+} from './sid-instrument-midi-scan';
 
 export const SID_INSTRUMENT_CONTROL_WIDGET_ID =
   'commodoreCommander.sidInstrumentControls';
@@ -549,7 +553,10 @@ export class SidInstrumentControlWidget extends ReactWidget {
   }
 
   async initializeMidiDevices(): Promise<void> {
-    if (this.initialMidiScanStarted) {
+    if (!shouldStartInitialMidiDeviceScan({
+      initialMidiScanStarted: this.initialMidiScanStarted,
+      midiScanning: this.midiScanning
+    })) {
       return;
     }
     this.initialMidiScanStarted = true;
@@ -615,6 +622,7 @@ export class SidInstrumentControlWidget extends ReactWidget {
   protected override onAfterAttach(msg: Message): void {
     super.onAfterAttach(msg);
     this.update();
+    void this.initializeMidiDevices();
   }
 
   protected override onUpdateRequest(msg: Message): void {
@@ -1213,6 +1221,14 @@ export class SidInstrumentControlWidget extends ReactWidget {
     this.midiMode = toMidiMode(value);
     this.midiEnabled = this.midiEnabledForCurrentMode();
     this.update();
+    if (shouldScanMidiDevicesForModeActivation({
+      midiEnabled: this.midiEnabled,
+      midiDeviceCount: this.midiDevices.length,
+      midiScanning: this.midiScanning
+    })) {
+      void this.scanMidiDevices();
+      return;
+    }
     this.queueMidiUpdate();
   }
 
