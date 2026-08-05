@@ -52,8 +52,13 @@ import {
 import {
   getCommodoreCommanderToolPreferences
 } from '../common/commodore-commander-tool-preferences';
+import {
+  createSidScorePlayerServerArgs,
+  formatSidScoreLaunchDiagnostic,
+  SID_SCORE_CLI_JAR_FILENAME
+} from './sidscore-launch';
 
-export const SID_SCORE_CLI_JAR_FILENAME = 'sidscore-cli-0.6.0.jar';
+export { SID_SCORE_CLI_JAR_FILENAME } from './sidscore-launch';
 
 const SRAP_MAGIC = 0x53524150;
 const SRAP_VERSION = 1;
@@ -505,21 +510,26 @@ export class SidScoreRuntimeServiceImpl
     await assertReadable(kickAssemblerJarPath, 'KickAssembler jar');
 
     const command = javaCommand ?? await this.resolveJavaCommand();
-    const args = [
-      // The Theia instrument panel expects live MIDI to be audible immediately
-      // after settings changes. Waiting for a pre-audio note can miss input
-      // during device restarts and leave the monitor armed but silent.
-      '-Dsidscore.midi.monitor.startOnInput=false',
-      `-Dsidscore.kickass.jar=${kickAssemblerJarPath}`,
-      '-jar',
-      jarPath,
-      '--player-server',
-      '--port',
-      '0'
-    ];
+    const args = createSidScorePlayerServerArgs({
+      kickAssemblerJarPath,
+      sidScoreCliJarPath: jarPath
+    });
     this.serverCommand = command;
     this.serverArgs = args;
     this.serverCwd = process.cwd();
+
+    this.emitServerOutput(
+      'stdout',
+      `${formatSidScoreLaunchDiagnostic({
+        command,
+        args,
+        cwd: this.serverCwd,
+        env: process.env,
+        platform: process.platform,
+        arch: process.arch,
+        processExecPath: process.execPath
+      })}\n`
+    );
 
     const child = spawn(command, args, {
       cwd: this.serverCwd,

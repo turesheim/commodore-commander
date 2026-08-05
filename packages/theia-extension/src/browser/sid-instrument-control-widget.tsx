@@ -23,6 +23,16 @@ import {
   type SidScoreSetInstrumentRequest,
   type SidScoreSidModel
 } from '../common/sidscore-runtime-service';
+import {
+  planMidiModeActivationSync,
+  shouldStartInitialMidiDeviceScan
+} from './sid-instrument-midi-scan';
+import {
+  DEFAULT_MIDI_MODE,
+  isMidiEnabledForMode,
+  toMidiMode,
+  type MidiModeId
+} from './sid-instrument-midi-mode';
 
 export const SID_INSTRUMENT_CONTROL_WIDGET_ID =
   'commodoreCommander.sidInstrumentControls';
@@ -30,7 +40,6 @@ export const SID_INSTRUMENT_CONTROL_WIDGET_ID =
 type WaveformId = 'triangle' | 'saw' | 'pulse' | 'noise';
 type ToggleId = 'ringMod' | 'sync' | 'hardRestart' | 'waveTable' | 'pulseTable' | 'filterTable';
 type FilterModeId = 'low' | 'band' | 'high';
-type MidiModeId = 'song' | 'instrument' | 'playAlong';
 
 const NUMERIC_DEFAULTS = {
   attack: 1,
@@ -491,8 +500,11 @@ export class SidInstrumentControlWidget extends ReactWidget {
   protected pendingInstrumentResetVoices = new Set<number>();
   protected readonly pendingInstrumentVoiceTimers = new Map<number, ReturnType<typeof setTimeout>>();
   protected scorePlaybackActive = false;
-  protected midiMode: MidiModeId = 'song';
-  protected midiEnabled = false;
+  protected midiMode: MidiModeId = DEFAULT_MIDI_MODE;
+  protected midiEnabled = isMidiEnabledForMode(
+    this.midiMode,
+    this.scorePlaybackActive
+  );
   protected midiScanning = false;
   protected initialMidiScanStarted = false;
   protected selectedMidiDeviceSelector = '';
@@ -549,7 +561,10 @@ export class SidInstrumentControlWidget extends ReactWidget {
   }
 
   async initializeMidiDevices(): Promise<void> {
-    if (this.initialMidiScanStarted) {
+    if (!shouldStartInitialMidiDeviceScan({
+      initialMidiScanStarted: this.initialMidiScanStarted,
+      midiScanning: this.midiScanning
+    })) {
       return;
     }
     this.initialMidiScanStarted = true;
@@ -615,6 +630,7 @@ export class SidInstrumentControlWidget extends ReactWidget {
   protected override onAfterAttach(msg: Message): void {
     super.onAfterAttach(msg);
     this.update();
+    void this.initializeMidiDevices();
   }
 
   protected override onUpdateRequest(msg: Message): void {
@@ -1200,20 +1216,24 @@ export class SidInstrumentControlWidget extends ReactWidget {
   }
 
   protected midiEnabledForCurrentMode(): boolean {
-    if (this.midiMode === 'song') {
-      return false;
-    }
-    if (this.midiMode === 'instrument') {
-      return !this.scorePlaybackActive;
-    }
-    return true;
+    return isMidiEnabledForMode(this.midiMode, this.scorePlaybackActive);
   }
 
   protected setMidiMode(value: string): void {
     this.midiMode = toMidiMode(value);
     this.midiEnabled = this.midiEnabledForCurrentMode();
     this.update();
-    this.queueMidiUpdate();
+    const syncPlan = planMidiModeActivationSync({
+      midiEnabled: this.midiEnabled,
+      midiDeviceCount: this.midiDevices.length,
+      midiScanning: this.midiScanning
+    });
+    if (syncPlan.scanDevices) {
+      void this.scanMidiDevices();
+    }
+    if (syncPlan.queueMidiSettings) {
+      this.queueMidiUpdate();
+    }
   }
 
   protected async scanMidiDevices(): Promise<void> {
@@ -1628,13 +1648,6 @@ function renderWaveformIcon(id: WaveformId): React.ReactNode {
 
 function buttonClass(active: boolean, disabled = false): string {
   return `cc-sid-button${active ? ' cc-sid-button--active' : ''}${disabled ? ' cc-sid-button--disabled' : ''}`;
-}
-
-function toMidiMode(value: string): MidiModeId {
-  if (value === 'instrument' || value === 'playAlong') {
-    return value;
-  }
-  return 'song';
 }
 
 function knobTitle(
