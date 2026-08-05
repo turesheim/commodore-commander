@@ -9,10 +9,18 @@ export const COMMODORE_COMMANDER_VICE_EXECUTABLE_PREFERENCE =
   'commodoreCommander.tools.viceExecutable';
 export const COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE =
   'commodoreCommander.tools.viceResourcesPath';
+export const COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE =
+  'commodoreCommander.VICE.runtimePath';
+export const COMMODORE_COMMANDER_LEGACY_VICE_RUNTIME_PATH_PREFERENCE =
+  'commodoreCommander.vice.runtimePath';
 export const COMMODORE_COMMANDER_JAVA_RUNTIME_PREFERENCE =
   'commodoreCommander.tools.javaRuntime';
 
 export interface CommodoreCommanderToolPreferences {
+  /**
+   * VICE runtime root used by the debug adapter. The Settings UI exposes this
+   * as a runtime path because VICE is a suite of machine-specific emulators.
+   */
   viceExecutable?: string;
   viceResourcesPath?: string;
   javaRuntime?: string;
@@ -20,19 +28,36 @@ export interface CommodoreCommanderToolPreferences {
 
 export const COMMODORE_COMMANDER_TOOL_PREFERENCE_SCHEMA: PreferenceSchema = {
   scope: PreferenceScope.Folder,
-  title: 'Commodore Commander Tools',
+  title: 'Commodore Commander',
   properties: {
     [COMMODORE_COMMANDER_VICE_EXECUTABLE_PREFERENCE]: {
       type: 'string',
       default: '',
+      hidden: true,
       description:
-        'VICE executable command or absolute path. Leave empty to use the bundled emulator when available, otherwise the machine profile executable name.'
+        'Legacy VICE emulator command override. Use launch.json viceExecutable for a per-launch override.'
     },
     [COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE]: {
       type: 'string',
       default: '',
+      hidden: true,
       description:
-        'VICE runtime resources root containing share/vice and, for bundled archives, bin. Leave empty to use the bundled platform runtime when available.'
+        `Legacy VICE resources path. Use ${COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE} instead.`
+    },
+    [COMMODORE_COMMANDER_LEGACY_VICE_RUNTIME_PATH_PREFERENCE]: {
+      type: 'string',
+      default: '',
+      hidden: true,
+      description:
+        `Legacy lowercase VICE runtime path. Use ${COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE} instead.`
+    },
+    [COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE]: {
+      type: 'string',
+      default: '',
+      markdownDescription:
+        'VICE runtime or installation root. Leave empty to use bundled VICE when available, then standard system locations. Set this to override bundled VICE. The directory must contain `share/vice`; when it also contains `bin`, Commodore Commander selects the machine profile emulator such as `x64sc`, `x128`, or `xvic`.',
+      description:
+        'VICE runtime or installation root containing share/vice. Leave empty to use bundled VICE when available, then standard system locations.'
     },
     [COMMODORE_COMMANDER_JAVA_RUNTIME_PREFERENCE]: {
       type: 'string',
@@ -52,6 +77,24 @@ export function getCommodoreCommanderToolPreferences(
   preferenceService: Pick<PreferenceService, 'get'>,
   resourceUri?: string
 ): CommodoreCommanderToolPreferences {
+  const viceResourcesPath = firstConfiguredPreference(
+    preferenceService.get<string>(
+      COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE,
+      '',
+      resourceUri
+    ),
+    preferenceService.get<string>(
+      COMMODORE_COMMANDER_LEGACY_VICE_RUNTIME_PATH_PREFERENCE,
+      '',
+      resourceUri
+    ),
+    preferenceService.get<string>(
+      COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE,
+      '',
+      resourceUri
+    )
+  );
+
   return {
     ...optionalPreference(
       'viceExecutable',
@@ -63,11 +106,7 @@ export function getCommodoreCommanderToolPreferences(
     ),
     ...optionalPreference(
       'viceResourcesPath',
-      preferenceService.get<string>(
-        COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE,
-        '',
-        resourceUri
-      )
+      viceResourcesPath
     ),
     ...optionalPreference(
       'javaRuntime',
@@ -88,4 +127,16 @@ function optionalPreference<K extends keyof CommodoreCommanderToolPreferences>(
   return normalized
     ? { [key]: normalized } as Pick<CommodoreCommanderToolPreferences, K>
     : {};
+}
+
+function firstConfiguredPreference(
+  ...values: Array<string | undefined>
+): string | undefined {
+  for (const value of values) {
+    const normalized = value?.trim();
+    if (normalized) {
+      return normalized;
+    }
+  }
+  return undefined;
 }

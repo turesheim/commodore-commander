@@ -105,9 +105,8 @@ The screenshot above starts a named `.theia/launch.json` configuration, waits fo
 - launch and terminate VICE from Theia's built-in Run and Debug commands
 - Start Without Debugging through DAP `noDebug`, which starts VICE without the binary monitor
 - preference-backed external tool paths for installed VICE and Java:
-  `commodoreCommander.tools.viceExecutable`,
-  `commodoreCommander.tools.viceResourcesPath`, and
-  `commodoreCommander.tools.javaRuntime`
+  `commodoreCommander.VICE.runtimePath` selects a VICE runtime or installation
+  root, while `commodoreCommander.tools.javaRuntime` selects Java
 - Kick Assembler `.dbg` source mapping for source breakpoints, breakpoint locations, loaded sources, labels, and source-backed stack frame locations with nearest-line fallback and generated PRG-disassembly fallback
 - source breakpoints and memory data breakpoints/watchpoints through VICE binary-monitor checkpoints, including VICE checkpoint conditions and DAP-style hit conditions
 - logpoints/tracepoints for source lines, using non-stopping VICE checkpoints when the log message only needs static values and adapter-managed stop/log/resume when live register values are needed

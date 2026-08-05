@@ -195,10 +195,15 @@ tools without changing shared project files:
 - `commodoreCommander.tools.javaRuntime`: Java command or path for Kick
   Assembler and SIDScore. `COMMODORE_COMMANDER_JAVA_RUNTIME` still takes
   precedence.
-- `commodoreCommander.tools.viceExecutable`: VICE executable command or path.
-  Launch configurations can still override this with `viceExecutable`.
-- `commodoreCommander.tools.viceResourcesPath`: VICE resources root containing
-  `share/vice`. Bundled runtimes use the same root for `bin`.
+- `commodoreCommander.VICE.runtimePath`: VICE runtime or installation root
+  containing `share/vice`. Leave it empty to use bundled VICE when available,
+  then standard system locations. When the root also contains `bin`, Commodore
+  Commander selects the emulator for the active machine profile, such as
+  `x64sc`, `x128`, or `xvic`.
+
+Launch configurations can still override one debug launch with `viceExecutable`
+and `viceResourcesPath`, but the normal Settings override is the runtime path
+because VICE is a suite of machine-specific emulators.
 
 ## Headless Build
 

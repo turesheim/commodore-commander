@@ -1,0 +1,157 @@
+import assert from 'node:assert/strict';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { test } from 'node:test';
+
+import {
+  COMMODORE_COMMANDER_TOOL_PREFERENCE_SCHEMA,
+  COMMODORE_COMMANDER_LEGACY_VICE_RUNTIME_PATH_PREFERENCE,
+  COMMODORE_COMMANDER_VICE_EXECUTABLE_PREFERENCE,
+  COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE,
+  COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE,
+  getCommodoreCommanderToolPreferences
+} from '../common/commodore-commander-tool-preferences';
+import {
+  resolveViceRuntime
+} from '../node/vice-runtime-resolver';
+
+test('VICE settings expose runtime path and hide legacy executable and resources preferences', () => {
+  const properties = COMMODORE_COMMANDER_TOOL_PREFERENCE_SCHEMA.properties;
+
+  assert.equal(
+    COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE,
+    'commodoreCommander.VICE.runtimePath'
+  );
+  assert.ok(properties[COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE]);
+  assert.equal(
+    properties[COMMODORE_COMMANDER_VICE_EXECUTABLE_PREFERENCE]?.hidden,
+    true
+  );
+  assert.equal(
+    properties[COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE]?.hidden,
+    true
+  );
+  assert.equal(
+    properties[COMMODORE_COMMANDER_LEGACY_VICE_RUNTIME_PATH_PREFERENCE]?.hidden,
+    true
+  );
+});
+
+test('tool preferences prefer VICE runtime path and keep legacy fallbacks', () => {
+  const values = new Map<string, string>([
+    [COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE, ' /new-vice '],
+    [COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE, '/legacy-vice'],
+    [COMMODORE_COMMANDER_VICE_EXECUTABLE_PREFERENCE, ' x64sc-custom ']
+  ]);
+
+  const preferences = getCommodoreCommanderToolPreferences({
+    get: <T>(
+      preferenceName: string,
+      defaultValue?: T,
+      _resourceUri?: string
+    ): T | undefined =>
+      (values.has(preferenceName)
+        ? values.get(preferenceName)
+        : defaultValue) as T | undefined
+  });
+
+  assert.equal(preferences.viceResourcesPath, '/new-vice');
+  assert.equal(preferences.viceExecutable, 'x64sc-custom');
+});
+
+test('tool preferences keep legacy VICE resources path fallback', () => {
+  const values = new Map<string, string>([
+    [COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE, ' /legacy-vice ']
+  ]);
+
+  const preferences = getCommodoreCommanderToolPreferences({
+    get: <T>(
+      preferenceName: string,
+      defaultValue?: T,
+      _resourceUri?: string
+    ): T | undefined =>
+      (values.has(preferenceName)
+        ? values.get(preferenceName)
+        : defaultValue) as T | undefined
+  });
+
+  assert.equal(preferences.viceResourcesPath, '/legacy-vice');
+});
+
+test('tool preferences keep lowercase VICE runtime path fallback', () => {
+  const values = new Map<string, string>([
+    [COMMODORE_COMMANDER_LEGACY_VICE_RUNTIME_PATH_PREFERENCE, ' /lowercase-vice ']
+  ]);
+
+  const preferences = getCommodoreCommanderToolPreferences({
+    get: <T>(
+      preferenceName: string,
+      defaultValue?: T,
+      _resourceUri?: string
+    ): T | undefined =>
+      (values.has(preferenceName)
+        ? values.get(preferenceName)
+        : defaultValue) as T | undefined
+  });
+
+  assert.equal(preferences.viceResourcesPath, '/lowercase-vice');
+});
+
+test('resolveViceRuntime prefers configured runtime path over bundled runtime', async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'cc-vice-runtime-'));
+
+  try {
+    const runtimeDirectory = path.join(tempRoot, 'app-runtime');
+    const bundledRoot = path.join(
+      runtimeDirectory,
+      'assets',
+      'vice',
+      `${process.platform}-${process.arch}`
+    );
+    const configuredRoot = path.join(tempRoot, 'configured-vice');
+
+    await mkdir(path.join(bundledRoot, 'share', 'vice'), { recursive: true });
+    await mkdir(path.join(configuredRoot, 'share', 'vice'), {
+      recursive: true
+    });
+
+    const resolved = await resolveViceRuntime({
+      runtimeDirectory,
+      resourcesPath: configuredRoot
+    });
+
+    assert.equal(resolved.resourcesPath, path.resolve(configuredRoot));
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('resolveViceRuntime prefers resources beside explicit executable path over bundled runtime', async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'cc-vice-runtime-'));
+
+  try {
+    const runtimeDirectory = path.join(tempRoot, 'app-runtime');
+    const bundledRoot = path.join(
+      runtimeDirectory,
+      'assets',
+      'vice',
+      `${process.platform}-${process.arch}`
+    );
+    const externalRoot = path.join(tempRoot, 'external-vice');
+    const externalExecutable = path.join(externalRoot, 'bin', 'x64sc');
+
+    await mkdir(path.join(bundledRoot, 'share', 'vice'), { recursive: true });
+    await mkdir(path.join(externalRoot, 'share', 'vice'), { recursive: true });
+
+    const resolved = await resolveViceRuntime({
+      runtimeDirectory,
+      executable: externalExecutable
+    });
+
+    assert.equal(resolved.resourcesPath, path.resolve(externalRoot));
+    assert.equal(resolved.executable, externalExecutable);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});

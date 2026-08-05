@@ -12,7 +12,7 @@ import {
   type CommodoreMachineProfileId
 } from '@commodore-commander/language-support';
 import {
-  COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE
+  COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE
 } from '../common/commodore-commander-tool-preferences';
 
 export const VICE_DARWIN_ARM64_RESOURCES = path.join(
@@ -100,11 +100,14 @@ export async function resolveViceRuntime(
   const runtimeDirectory = options.runtimeDirectory ?? __dirname;
   const configuredResourcesPath = normalizeConfiguredPath(options.resourcesPath);
   const executable = normalizeConfiguredPath(options.executable);
+  const executableResourcesCandidates = executable
+    ? executableResourceCandidates(executable)
+    : [];
 
   const resourceCandidates = [
     ...(configuredResourcesPath ? [configuredResourcesPath] : []),
+    ...executableResourcesCandidates,
     ...bundledViceResourceCandidates(runtimeDirectory),
-    ...(executable ? executableResourceCandidates(executable) : []),
     ...systemViceResourceCandidates()
   ];
 
@@ -126,7 +129,7 @@ export async function resolveViceRuntime(
 
   throw new Error(
     `VICE runtime resources were not found for ${process.platform}-${process.arch}. ` +
-      `Set ${COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE} to a directory containing ${VICE_RESOURCES_SUBDIRECTORY}.`
+      `Set ${COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE} to a VICE runtime root containing ${VICE_RESOURCES_SUBDIRECTORY}.`
   );
 }
 
