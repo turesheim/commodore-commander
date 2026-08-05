@@ -27,13 +27,18 @@ profile creates debug information:
 See [Build Configuration](build-configuration.md) for project and launch
 configuration details.
 
-If your platform does not have a bundled VICE runtime, set these preferences
-before launching:
+Commodore Commander uses bundled VICE when it is packaged for the current
+platform. To override that bundle, set this preference before launching:
 
-- `commodoreCommander.tools.viceExecutable`: VICE executable command or path,
-  such as `x64sc` or an absolute path to it.
-- `commodoreCommander.tools.viceResourcesPath`: VICE resources root containing
-  `share/vice`, used for bundled ROM images and monitor symbols.
+- `commodoreCommander.VICE.runtimePath`: VICE runtime or installation root
+  containing `share/vice`. When that root also contains `bin`, Commodore
+  Commander selects the VICE emulator for the active machine profile, such as
+  `x64sc`, `x128`, or `xvic`.
+
+You normally do not point Settings at one VICE executable because VICE is a
+suite of machine-specific emulators. For an exceptional single launch,
+`.theia/launch.json` can still set `viceExecutable` to a command or absolute
+path and `viceResourcesPath` to the matching runtime root.
 
 ## Start A Debug Session
 

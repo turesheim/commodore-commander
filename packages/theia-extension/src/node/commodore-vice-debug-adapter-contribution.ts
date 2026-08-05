@@ -140,11 +140,11 @@ export class CommodoreViceDebugAdapterContribution
           },
           viceExecutable: {
             type: 'string',
-            description: 'VICE executable command or path. Overrides the Commodore Commander VICE executable preference.'
+            description: 'Advanced per-launch VICE emulator command or path. Usually leave unset so the selected machine profile chooses x64sc, x128, xvic, or another matching VICE emulator.'
           },
           viceResourcesPath: {
             type: 'string',
-            description: 'VICE runtime resources root containing share/vice. Overrides the Commodore Commander VICE resources preference.'
+            description: 'Per-launch VICE runtime root containing share/vice. Overrides the Commodore Commander VICE runtime path preference.'
           },
           viceArgs: {
             type: 'array',
