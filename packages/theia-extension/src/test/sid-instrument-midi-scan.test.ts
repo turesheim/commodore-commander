@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  planMidiModeActivationSync,
   shouldScanMidiDevicesForModeActivation,
   shouldStartInitialMidiDeviceScan
 } from '../browser/sid-instrument-midi-scan';
@@ -62,5 +63,19 @@ test('SID Instrument scans before enabling MIDI with no known input devices', ()
       midiScanning: true
     }),
     false
+  );
+});
+
+test('SID Instrument keeps MIDI settings sync queued when scan is needed', () => {
+  assert.deepEqual(
+    planMidiModeActivationSync({
+      midiEnabled: true,
+      midiDeviceCount: 0,
+      midiScanning: false
+    }),
+    {
+      scanDevices: true,
+      queueMidiSettings: true
+    }
   );
 });

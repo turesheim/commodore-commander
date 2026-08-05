@@ -14,6 +14,7 @@ export const SID_SCORE_PROTOCOL_LOG_WIDGET_ID =
 
 const MAX_PROTOCOL_LOG_ENTRIES = 500;
 const DEFAULT_IGNORE_HIGH_VOLUME_FRAMES = true;
+const TEXT_ENCODER = new TextEncoder();
 const IGNORED_HIGH_VOLUME_FRAME_TYPES = new Set([
   'SCOPE_SAMPLES',
   'VOICE_STATE'
@@ -260,5 +261,5 @@ function serverOutputLines(output: string): string[] {
 }
 
 function textByteLength(value: string): number {
-  return new TextEncoder().encode(value).length;
+  return TEXT_ENCODER.encode(value).length;
 }

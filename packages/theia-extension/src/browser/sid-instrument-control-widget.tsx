@@ -24,7 +24,7 @@ import {
   type SidScoreSidModel
 } from '../common/sidscore-runtime-service';
 import {
-  shouldScanMidiDevicesForModeActivation,
+  planMidiModeActivationSync,
   shouldStartInitialMidiDeviceScan
 } from './sid-instrument-midi-scan';
 import {
@@ -1223,15 +1223,17 @@ export class SidInstrumentControlWidget extends ReactWidget {
     this.midiMode = toMidiMode(value);
     this.midiEnabled = this.midiEnabledForCurrentMode();
     this.update();
-    if (shouldScanMidiDevicesForModeActivation({
+    const syncPlan = planMidiModeActivationSync({
       midiEnabled: this.midiEnabled,
       midiDeviceCount: this.midiDevices.length,
       midiScanning: this.midiScanning
-    })) {
+    });
+    if (syncPlan.scanDevices) {
       void this.scanMidiDevices();
-      return;
     }
-    this.queueMidiUpdate();
+    if (syncPlan.queueMidiSettings) {
+      this.queueMidiUpdate();
+    }
   }
 
   protected async scanMidiDevices(): Promise<void> {

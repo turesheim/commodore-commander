@@ -51,11 +51,11 @@ export function formatSidScoreLaunchDiagnostic(
     `cwd=${quoteDiagnosticValue(options.cwd)}`,
     `platform=${options.platform ?? process.platform}-${options.arch ?? process.arch}`,
     `processExecPath=${quoteDiagnosticValue(options.processExecPath ?? process.execPath)}`,
-    `JAVA_HOME=${quoteDiagnosticValue(env.JAVA_HOME ?? '<unset>')}`,
-    `JAVA_TOOL_OPTIONS=${quoteDiagnosticValue(env.JAVA_TOOL_OPTIONS ?? '<unset>')}`,
-    `JDK_JAVA_OPTIONS=${quoteDiagnosticValue(env.JDK_JAVA_OPTIONS ?? '<unset>')}`,
-    `COMMODORE_COMMANDER_JAVA_RUNTIME=${quoteDiagnosticValue(
-      env.COMMODORE_COMMANDER_JAVA_RUNTIME ?? '<unset>'
+    `JAVA_HOME=${formatEnvironmentSignal(env.JAVA_HOME)}`,
+    `JAVA_TOOL_OPTIONS=${formatEnvironmentSignal(env.JAVA_TOOL_OPTIONS)}`,
+    `JDK_JAVA_OPTIONS=${formatEnvironmentSignal(env.JDK_JAVA_OPTIONS)}`,
+    `COMMODORE_COMMANDER_JAVA_RUNTIME=${formatEnvironmentSignal(
+      env.COMMODORE_COMMANDER_JAVA_RUNTIME
     )}`
   ].join(' ');
 }
@@ -75,4 +75,11 @@ function quoteDiagnosticValue(value: string): string {
     return value;
   }
   return `'${value.replace(/'/gu, `'\\''`)}'`;
+}
+
+function formatEnvironmentSignal(value: string | undefined): string {
+  if (value === undefined) {
+    return '<unset>';
+  }
+  return `<set:length=${value.length}>`;
 }
