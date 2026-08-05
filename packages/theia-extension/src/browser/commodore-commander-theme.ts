@@ -601,6 +601,127 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   padding: 11px 9px 13px;
 }
 
+.cc-sid-visualization {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cc-sid-visualization__graph {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cc-sid-control-active) 10%, transparent), transparent 54%),
+    var(--cc-sid-control-recess);
+  border: 1px solid color-mix(in srgb, var(--cc-sid-control-border) 72%, black);
+  border-radius: 5px;
+  box-sizing: border-box;
+  display: block;
+  height: 104px;
+  min-width: 0;
+  width: 100%;
+}
+
+.cc-sid-visualization__grid {
+  stroke: color-mix(in srgb, var(--cc-sid-control-text) 18%, transparent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.cc-sid-visualization__envelope-fill {
+  fill: color-mix(in srgb, var(--cc-sid-control-active) 18%, transparent);
+}
+
+.cc-sid-visualization__envelope-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--cc-sid-control-active) 82%, white);
+  stroke-linecap: square;
+  stroke-linejoin: round;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.cc-sid-visualization__label {
+  fill: var(--cc-sid-control-muted);
+  font-size: 9px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.cc-sid-visualization__meters {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(2, minmax(82px, 1fr));
+  min-width: 0;
+}
+
+.cc-sid-visualization-meter {
+  background: var(--cc-sid-control-surface);
+  border: 1px solid color-mix(in srgb, var(--cc-sid-control-border) 58%, transparent);
+  border-radius: 5px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 6px;
+}
+
+.cc-sid-visualization-meter--inactive {
+  opacity: 0.55;
+}
+
+.cc-sid-visualization-meter__header {
+  align-items: center;
+  color: var(--cc-sid-control-text);
+  display: flex;
+  font-size: 9px;
+  font-weight: 700;
+  gap: 6px;
+  justify-content: space-between;
+  line-height: 1.1;
+  min-width: 0;
+  text-transform: uppercase;
+}
+
+.cc-sid-visualization-meter__header span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-sid-visualization-meter__header span:last-child {
+  color: var(--cc-sid-control-muted);
+  flex: 0 1 auto;
+  text-align: right;
+}
+
+.cc-sid-visualization-meter__track {
+  background: color-mix(in srgb, var(--cc-sid-control-panel) 84%, black);
+  border-radius: 999px;
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  position: relative;
+}
+
+.cc-sid-visualization-meter__fill {
+  background: color-mix(in srgb, var(--cc-sid-control-active) 76%, white);
+  display: block;
+  height: 100%;
+  width: var(--cc-sid-meter-fill);
+}
+
+.cc-sid-visualization-meter__marker {
+  background: var(--cc-sid-control-text);
+  bottom: -1px;
+  left: var(--cc-sid-meter-marker);
+  position: absolute;
+  top: -1px;
+  transform: translateX(-50%);
+  width: 2px;
+}
+
 .cc-sid-instrument__footer {
   display: grid;
   grid-template-columns: 25px minmax(0, 1fr);
@@ -945,6 +1066,10 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   }
 
   .cc-sid-row-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .cc-sid-visualization__meters {
     grid-template-columns: 1fr;
   }
 

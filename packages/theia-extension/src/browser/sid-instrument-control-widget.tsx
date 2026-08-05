@@ -33,6 +33,10 @@ import {
   toMidiMode,
   type MidiModeId
 } from './sid-instrument-midi-mode';
+import {
+  createSidAdsrEnvelopeVisualization,
+  type SidAdsrEnvelopeVisualization
+} from './sid-instrument-visualization';
 
 export const SID_INSTRUMENT_CONTROL_WIDGET_ID =
   'commodoreCommander.sidInstrumentControls';
@@ -94,6 +98,16 @@ interface FilterModeDefinition {
   readonly title: string;
 }
 
+interface VisualizationMeter {
+  readonly id: string;
+  readonly label: string;
+  readonly value: string;
+  readonly percent: number;
+  readonly markerPercent?: number;
+  readonly active: boolean;
+  readonly title: string;
+}
+
 // Tooltip copy follows MOS 6581 SID register behavior documented in the
 // Commodore 64 Programmer's Reference Guide and the 6581 SID datasheet.
 // SIDScore-only sequencing/articulation controls call that out explicitly.
@@ -122,6 +136,8 @@ const CONTROL_TITLES = {
     'Enables or disables this SID voice for live MIDI note input.',
   midiChannel:
     'Selects the MIDI channel that drives this SID voice assignment.',
+  visualization:
+    'Shows the SID ADSR volume envelope as the main shape. The meters summarize waveform mix, pulse duty and sweep, filter cutoff and resonance, and vibrato depth and rate.',
   waveRegister:
     'SID control register waveform bits: TRI=$10, SAW=$20, PULSE=$40, NOISE=$80. GATE, SYNC, and RING are separate control bits.',
   filterRegister:
@@ -648,6 +664,7 @@ export class SidInstrumentControlWidget extends ReactWidget {
       <div className='cc-sid-instrument'>
         {this.renderHeader()}
         <div className='cc-sid-instrument__sections'>
+          {this.renderVisualizationSection()}
           {this.renderWaveformSection()}
           {this.renderEnvelopeSection()}
           {this.renderKnobSection('Vibrato', VIBRATO_KNOBS)}
@@ -655,6 +672,97 @@ export class SidInstrumentControlWidget extends ReactWidget {
           {this.renderFilterSection()}
           {this.renderFooter()}
         </div>
+      </div>
+    );
+  }
+
+  protected renderVisualizationSection(): React.ReactNode {
+    const envelope = createSidAdsrEnvelopeVisualization({
+      attack: this.numericValues.attack,
+      decay: this.numericValues.decay,
+      sustain: this.numericValues.sustain,
+      release: this.numericValues.release
+    });
+    return (
+      <section className='cc-sid-section cc-sid-section--visualization'>
+        <h3 className='cc-sid-section__label'>Shape</h3>
+        <div className='cc-sid-section__body'>
+          <div
+            className='cc-sid-visualization'
+            {...this.tooltipAttributes(CONTROL_TITLES.visualization)}
+          >
+            {this.renderEnvelopeVisualization(envelope)}
+            <div className='cc-sid-visualization__meters'>
+              {this.instrumentVisualizationMeters().map((meter) =>
+                this.renderVisualizationMeter(meter)
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  protected renderEnvelopeVisualization(
+    envelope: SidAdsrEnvelopeVisualization
+  ): React.ReactNode {
+    return (
+      <svg
+        className='cc-sid-visualization__graph'
+        viewBox={envelope.viewBox}
+        role='img'
+        aria-label='SID ADSR envelope'
+        preserveAspectRatio='none'
+      >
+        <line className='cc-sid-visualization__grid' x1='12' y1='27.5' x2='268' y2='27.5' />
+        <line className='cc-sid-visualization__grid' x1='12' y1='45' x2='268' y2='45' />
+        <line className='cc-sid-visualization__grid' x1='12' y1='62.5' x2='268' y2='62.5' />
+        <path
+          className='cc-sid-visualization__envelope-fill'
+          d={envelope.areaPath}
+        />
+        <polyline
+          className='cc-sid-visualization__envelope-line'
+          points={envelope.pointsAttribute}
+        />
+        {envelope.labels.map((label) => (
+          <text
+            key={label.label}
+            className='cc-sid-visualization__label'
+            x={label.x}
+            y='96'
+          >
+            {label.label}
+          </text>
+        ))}
+      </svg>
+    );
+  }
+
+  protected renderVisualizationMeter(meter: VisualizationMeter): React.ReactNode {
+    const style = {
+      '--cc-sid-meter-fill': `${clampPercent(meter.percent) * 100}%`,
+      ...(meter.markerPercent !== undefined
+        ? { '--cc-sid-meter-marker': `${clampPercent(meter.markerPercent) * 100}%` }
+        : {})
+    } as React.CSSProperties;
+    return (
+      <div
+        key={meter.id}
+        className={`cc-sid-visualization-meter${meter.active ? '' : ' cc-sid-visualization-meter--inactive'}`}
+        style={style}
+        title={meter.title}
+      >
+        <div className='cc-sid-visualization-meter__header'>
+          <span>{meter.label}</span>
+          <span>{meter.value}</span>
+        </div>
+        <span className='cc-sid-visualization-meter__track'>
+          <span className='cc-sid-visualization-meter__fill' />
+          {meter.markerPercent !== undefined && (
+            <span className='cc-sid-visualization-meter__marker' />
+          )}
+        </span>
       </div>
     );
   }
@@ -708,6 +816,90 @@ export class SidInstrumentControlWidget extends ReactWidget {
         </label>
       </div>
     );
+  }
+
+  protected instrumentVisualizationMeters(): readonly VisualizationMeter[] {
+    const pulseEnabled = this.hasPulseWaveform();
+    const pulsePercent = this.numericValues.pulseWidth / 4095;
+    const filterEnabled = !this.filterOff && this.selectedFilterModes.size > 0;
+    const filterPercent = this.numericValues.filterCutoff / 2047;
+    const vibratoPercent = this.numericValues.vibratoAmp / 255;
+    const vibratoActive =
+      this.numericValues.vibratoAmp > 0 ||
+      this.numericValues.vibratoRate > 0 ||
+      this.numericValues.vibratoInc > 0;
+
+    return [
+      {
+        id: 'wave',
+        label: 'Wave',
+        value: this.waveformLabel() || 'OFF',
+        percent: this.selectedWaveforms.size / WAVEFORMS.length,
+        active: this.selectedWaveforms.size > 0,
+        title: [
+          `Waveform: ${this.waveformLabel() || 'OFF'}.`,
+          `WAVESEQ ${this.toggleValues.waveTable ? 'on' : 'off'}.`,
+          `SYNC ${this.toggleValues.sync ? 'on' : 'off'}.`,
+          `RING ${this.toggleValues.ringMod ? 'on' : 'off'}.`
+        ].join(' ')
+      },
+      {
+        id: 'pulse',
+        label: 'Pulse',
+        value: pulseEnabled ? percentageLabel(pulsePercent) : 'OFF',
+        percent: pulseEnabled ? pulsePercent : 0,
+        markerPercent: pulseEnabled
+          ? (this.numericValues.pulseSweep + 128) / 255
+          : undefined,
+        active: pulseEnabled,
+        title: pulseEnabled
+          ? [
+              `Pulse width ${hex12(this.numericValues.pulseWidth)} (${percentageLabel(pulsePercent)} duty).`,
+              `Sweep ${formatSigned(this.numericValues.pulseSweep)} steps/frame.`,
+              `Range ${hex12(this.numericValues.pulseMin)}..${hex12(this.numericValues.pulseMax)}.`,
+              `PWSEQ ${this.toggleValues.pulseTable ? 'on' : 'off'}.`
+            ].join(' ')
+          : 'Pulse waveform is off.'
+      },
+      {
+        id: 'filter',
+        label: 'Filter',
+        value: filterEnabled
+          ? `${this.filterModeLabel()} ${percentageLabel(filterPercent)}`
+          : 'OFF',
+        percent: filterEnabled ? filterPercent : 0,
+        markerPercent: filterEnabled
+          ? this.numericValues.filterResonance / 15
+          : undefined,
+        active: filterEnabled,
+        title: filterEnabled
+          ? [
+              `Filter mode ${this.filterModeLabel()}.`,
+              `Cutoff ${this.numericValues.filterCutoff}.`,
+              `Resonance ${this.numericValues.filterResonance}/15.`,
+              `FILTERSEQ ${this.toggleValues.filterTable ? 'on' : 'off'}.`
+            ].join(' ')
+          : 'Filter is off.'
+      },
+      {
+        id: 'vibrato',
+        label: 'Vibrato',
+        value: vibratoActive ? percentageLabel(vibratoPercent) : 'OFF',
+        percent: vibratoActive ? vibratoPercent : 0,
+        markerPercent: vibratoActive
+          ? this.numericValues.vibratoRate / 255
+          : undefined,
+        active: vibratoActive,
+        title: vibratoActive
+          ? [
+              `Vibrato depth ${this.numericValues.vibratoAmp}/255.`,
+              `Rate ${this.numericValues.vibratoRate}/255.`,
+              `Delay ${this.numericValues.vibratoDelay} frames.`,
+              `Increment ${this.numericValues.vibratoInc}/255.`
+            ].join(' ')
+          : 'Vibrato depth is zero.'
+      }
+    ];
   }
 
   protected renderWaveformSection(): React.ReactNode {
@@ -1696,6 +1888,17 @@ function knobValueDetail(
 
 function formatPercent(value: number): string {
   return `${value.toFixed(1).replace(/\.0$/, '')}%`;
+}
+
+function percentageLabel(value: number): string {
+  return formatPercent(clampPercent(value) * 100);
+}
+
+function clampPercent(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(1, value));
 }
 
 function formatInteger(value: number): string {
