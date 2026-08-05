@@ -75,6 +75,10 @@ export interface SidScoreInstrumentProperties {
   decay: number;
   sustain: number;
   release: number;
+  vibratoDelay: number;
+  vibratoRate: number;
+  vibratoAmp: number;
+  vibratoInc: number;
   pulseWidth: number;
   pulseSweep: number;
   pulseMin: number;

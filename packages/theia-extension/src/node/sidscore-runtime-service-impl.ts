@@ -318,31 +318,10 @@ export class SidScoreRuntimeServiceImpl
 
   async setInstrument(request: SidScoreSetInstrumentRequest): Promise<void> {
     await this.ensureConnected();
-    const voiceIndex = clampInteger(request.voiceIndex, 1, 3);
-    const pulseMin = clampInteger(request.pulseMin, 0, 4095);
-    const pulseMax = clampInteger(request.pulseMax, 0, 4095);
-    const payload = new PayloadWriter()
-      .u32(this.nextRequestId(request.requestId))
-      .u8(voiceIndex)
-      .u8(normalizeWaveMask(request.waveMask))
-      .u8(clampInteger(request.attack, 0, 15))
-      .u8(clampInteger(request.decay, 0, 15))
-      .u8(clampInteger(request.sustain, 0, 15))
-      .u8(clampInteger(request.release, 0, 15))
-      .u16(clampInteger(request.pulseWidth, 0, 4095))
-      .i16(clampInteger(request.pulseSweep, -128, 128))
-      .u16(Math.min(pulseMin, pulseMax))
-      .u16(Math.max(pulseMin, pulseMax))
-      .u8(request.filterModeMask & 0x07)
-      .u16(clampInteger(request.filterCutoff, 0, 2047))
-      .u8(clampInteger(request.filterResonance, 0, 15))
-      .u8(request.gateMode === 'legato' ? 1 : 0)
-      .u8(clampInteger(request.gateMin, 0, 16))
-      .bool8(request.sync)
-      .bool8(request.ring)
-      .str(request.instrumentName.trim());
-
-    this.sendFrame(FRAME_SET_INSTRUMENT, payload.toBuffer());
+    this.sendFrame(
+      FRAME_SET_INSTRUMENT,
+      createSetInstrumentPayload(request, this.nextRequestId(request.requestId))
+    );
   }
 
   async resetInstrument(request: SidScoreResetInstrumentRequest): Promise<void> {
@@ -1116,6 +1095,40 @@ export function getBundledSidScoreCliJarPath(
   return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0];
 }
 
+export function createSetInstrumentPayload(
+  request: SidScoreSetInstrumentRequest,
+  requestId: number
+): Buffer {
+  const voiceIndex = clampInteger(request.voiceIndex, 1, 3);
+  const pulseMin = clampInteger(request.pulseMin, 0, 4095);
+  const pulseMax = clampInteger(request.pulseMax, 0, 4095);
+  return new PayloadWriter()
+    .u32(requestId)
+    .u8(voiceIndex)
+    .u8(normalizeWaveMask(request.waveMask))
+    .u8(clampInteger(request.attack, 0, 15))
+    .u8(clampInteger(request.decay, 0, 15))
+    .u8(clampInteger(request.sustain, 0, 15))
+    .u8(clampInteger(request.release, 0, 15))
+    .u16(clampInteger(request.pulseWidth, 0, 4095))
+    .i16(clampInteger(request.pulseSweep, -128, 128))
+    .u16(Math.min(pulseMin, pulseMax))
+    .u16(Math.max(pulseMin, pulseMax))
+    .u8(request.filterModeMask & 0x07)
+    .u16(clampInteger(request.filterCutoff, 0, 2047))
+    .u8(clampInteger(request.filterResonance, 0, 15))
+    .u8(request.gateMode === 'legato' ? 1 : 0)
+    .u8(clampInteger(request.gateMin, 0, 16))
+    .bool8(request.sync)
+    .bool8(request.ring)
+    .str(request.instrumentName.trim())
+    .u8(clampInteger(request.vibratoDelay ?? 0, 0, 255))
+    .u8(clampInteger(request.vibratoRate ?? 0, 0, 255))
+    .u8(clampInteger(request.vibratoAmp ?? 0, 0, 255))
+    .u8(clampInteger(request.vibratoInc ?? 0, 0, 255))
+    .toBuffer();
+}
+
 class PayloadWriter {
   protected readonly chunks: Buffer[] = [];
 
@@ -1243,6 +1256,10 @@ class PayloadReader {
   skip(bytes: number): void {
     this.ensure(bytes);
     this.offset += bytes;
+  }
+
+  remaining(): number {
+    return this.buffer.length - this.offset;
   }
 
   protected ensure(bytes: number): void {
@@ -1653,13 +1670,13 @@ function readScopeSamples(payload: Buffer): SidScoreScopeSamplesEvent {
   };
 }
 
-function readInstrumentState(payload: Buffer): SidScoreInstrumentStateEvent {
+export function readInstrumentState(payload: Buffer): SidScoreInstrumentStateEvent {
   const reader = new PayloadReader(payload);
   const requestId = reader.u32();
   const voiceIndex = reader.u8();
   const source = instrumentSourceName(reader.u8());
   reader.u16();
-  return {
+  const instrument = {
     requestId,
     voiceIndex,
     source,
@@ -1679,8 +1696,19 @@ function readInstrumentState(payload: Buffer): SidScoreInstrumentStateEvent {
     gateMin: reader.u8(),
     sync: reader.u8() !== 0,
     ring: reader.u8() !== 0,
-    instrumentName: reader.str()
+    instrumentName: reader.str(),
+    vibratoDelay: 0,
+    vibratoRate: 0,
+    vibratoAmp: 0,
+    vibratoInc: 0
   };
+  if (reader.remaining() >= 4) {
+    instrument.vibratoDelay = reader.u8();
+    instrument.vibratoRate = reader.u8();
+    instrument.vibratoAmp = reader.u8();
+    instrument.vibratoInc = reader.u8();
+  }
+  return instrument;
 }
 
 function readMidiDeviceList(payload: Buffer): SidScoreMidiDeviceListEvent {

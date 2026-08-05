@@ -1,4 +1,4 @@
-export const SID_SCORE_CLI_JAR_FILENAME = 'sidscore-cli-0.6.0.jar';
+export const SID_SCORE_CLI_JAR_FILENAME = 'sidscore-cli-0.7.0.jar';
 
 const MACOS_MIDI_SYSTEM_PROPERTIES = [
   '-Djava.awt.headless=false',
