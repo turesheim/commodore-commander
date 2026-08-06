@@ -152,6 +152,11 @@ import {
   SidInstrumentControlWidget
 } from './sid-instrument-control-widget';
 import { SidInstrumentControlContribution } from './sid-instrument-control-contribution';
+import { SidSfxEditorContribution } from './sid-sfx-editor-contribution';
+import {
+  SID_SFX_EDITOR_WIDGET_ID,
+  SidSfxEditorWidget
+} from './sid-sfx-editor-widget';
 import {
   SidScoreRuntimeService,
   SidScoreRuntimeServicePath
@@ -407,6 +412,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     .inSingletonScope();
   bindViewContribution(bind, SidInstrumentControlContribution);
   bind(FrontendApplicationContribution).toService(SidInstrumentControlContribution);
+  bind(SidSfxEditorWidget).toSelf();
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: SID_SFX_EDITOR_WIDGET_ID,
+      createWidget: () => context.container.get(SidSfxEditorWidget)
+    }))
+    .inSingletonScope();
+  bindViewContribution(bind, SidSfxEditorContribution);
   bind(SidScoreProtocolLogWidget).toSelf();
   bind(WidgetFactory)
     .toDynamicValue((context) => ({

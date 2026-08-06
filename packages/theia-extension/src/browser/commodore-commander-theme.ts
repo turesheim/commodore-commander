@@ -485,11 +485,13 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   color: var(--cc-sidscore-protocol-received);
 }
 
-.cc-sid-instrument-widget {
+.cc-sid-instrument-widget,
+.cc-sid-sfx-widget {
   min-width: 280px;
 }
 
-.cc-sid-instrument {
+.cc-sid-instrument,
+.cc-sid-sfx {
   --cc-sid-control-active: var(--cc-vic20-highlight, var(--theia-focusBorder));
   --cc-sid-control-panel: var(--cc-vic20-status-background, var(--theia-sideBar-background));
   --cc-sid-control-border: color-mix(in srgb, var(--cc-sid-control-active) 58%, transparent);
@@ -507,7 +509,11 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
 
 .cc-sid-instrument input,
 .cc-sid-instrument select,
-.cc-sid-instrument button {
+.cc-sid-instrument button,
+.cc-sid-sfx input,
+.cc-sid-sfx select,
+.cc-sid-sfx button,
+.cc-sid-sfx textarea {
   box-sizing: border-box;
   font: inherit;
   letter-spacing: 0;
@@ -525,6 +531,23 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
 }
 
 .cc-sid-instrument__sections {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.cc-sid-sfx__header {
+  align-items: end;
+  background: color-mix(in srgb, var(--cc-sid-control-panel) 82%, var(--cc-vic20-background, var(--theia-foreground)) 18%);
+  border-bottom: 1px solid var(--cc-sid-control-border);
+  display: grid;
+  flex: 0 0 auto;
+  gap: 7px;
+  grid-template-columns: minmax(76px, 0.72fr) minmax(0, 1fr) minmax(63px, 0.55fr);
+  padding: 9px;
+}
+
+.cc-sid-sfx__sections {
   flex: 1;
   min-height: 0;
   overflow: auto;
@@ -973,6 +996,176 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.cc-sid-sfx-grid {
+  align-items: end;
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.cc-sid-sfx-grid--three {
+  grid-template-columns: repeat(3, minmax(55px, 1fr));
+}
+
+.cc-sid-sfx-readout {
+  color: var(--cc-sid-control-muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1;
+  min-height: 10px;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-sid-sfx-toggle {
+  align-items: center;
+  align-self: stretch;
+  background: var(--cc-sid-control-surface);
+  border: 1px solid color-mix(in srgb, var(--cc-sid-control-border) 74%, var(--theia-button-border, transparent));
+  border-radius: 5px;
+  color: var(--cc-sid-control-text);
+  cursor: pointer;
+  display: flex;
+  font-size: 10px;
+  font-weight: 700;
+  gap: 6px;
+  justify-content: center;
+  line-height: 1.1;
+  min-height: 31px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 5px 7px;
+  text-transform: uppercase;
+}
+
+.cc-sid-sfx-toggle input {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.cc-sid-sfx-toggle span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-sid-sfx-toggle--disabled {
+  cursor: default;
+  opacity: 0.48;
+}
+
+.cc-sid-sfx-slider-grid {
+  display: grid;
+  gap: 9px;
+  grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
+  min-width: 0;
+}
+
+.cc-sid-sfx-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cc-sid-sfx-slider__label {
+  color: var(--cc-sid-control-muted);
+  display: flex;
+  font-size: 9px;
+  font-weight: 700;
+  justify-content: space-between;
+  line-height: 1;
+  min-width: 0;
+  text-transform: uppercase;
+}
+
+.cc-sid-sfx-slider__label span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-sid-sfx-slider__input {
+  accent-color: var(--cc-sid-control-active);
+  cursor: pointer;
+  min-width: 0;
+  width: 100%;
+}
+
+.cc-sid-sfx-visualization {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cc-sid-control-active) 10%, transparent), transparent 54%),
+    var(--cc-sid-control-recess);
+  border: 1px solid color-mix(in srgb, var(--cc-sid-control-border) 72%, black);
+  border-radius: 5px;
+  box-sizing: border-box;
+  display: block;
+  height: 104px;
+  min-width: 0;
+  width: 100%;
+}
+
+.cc-sid-sfx-visualization__envelope {
+  fill: none;
+  stroke: color-mix(in srgb, var(--cc-sid-control-active) 82%, white);
+  stroke-linecap: square;
+  stroke-linejoin: round;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.cc-sid-sfx-visualization__pitch {
+  fill: none;
+  stroke: color-mix(in srgb, var(--cc-vic20-cyan, var(--theia-charts-blue)) 84%, white);
+  stroke-dasharray: 5 4;
+  stroke-linecap: square;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.cc-sid-sfx-visualization__gate {
+  stroke: color-mix(in srgb, var(--cc-sid-control-muted) 72%, transparent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.cc-sid-sfx-source {
+  background: color-mix(in srgb, var(--cc-sid-control-panel) 78%, black);
+  border: 1px solid var(--cc-sid-control-border);
+  border-radius: 5px;
+  color: var(--cc-sid-control-text);
+  font-family: var(--theia-editor-font-family, monospace);
+  font-size: 11px;
+  line-height: 1.35;
+  min-height: 180px;
+  min-width: 0;
+  padding: 7px;
+  resize: vertical;
+  white-space: pre;
+  width: 100%;
+}
+
+.cc-sid-sfx-source:focus {
+  outline: 1px solid var(--cc-sid-control-active);
+  outline-offset: 2px;
+}
+
+.cc-sid-sfx-actions {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(3, minmax(58px, 1fr));
+  min-width: 0;
+}
+
+.cc-sid-sfx-actions .cc-sid-button {
+  gap: 5px;
 }
 
 @media (max-width: 320px) {
