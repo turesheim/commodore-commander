@@ -548,9 +548,15 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
 }
 
 .cc-sid-sfx__sections {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
   overflow: auto;
+}
+
+.cc-sid-sfx__sections > .cc-sid-section {
+  flex: 0 0 auto;
 }
 
 .cc-sid-field {
@@ -1136,23 +1142,29 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   vector-effect: non-scaling-stroke;
 }
 
-.cc-sid-sfx-source {
+.cc-sid-sfx__sections > .cc-sid-section--source {
+  flex: 1 1 300px;
+  min-height: 280px;
+}
+
+.cc-sid-section--source .cc-sid-section__body {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cc-sid-sfx-source-editor {
   background: color-mix(in srgb, var(--cc-sid-control-panel) 78%, black);
   border: 1px solid var(--cc-sid-control-border);
   border-radius: 5px;
   color: var(--cc-sid-control-text);
-  font-family: var(--theia-editor-font-family, monospace);
-  font-size: 11px;
-  line-height: 1.35;
-  min-height: 180px;
+  flex: 1 1 auto;
+  min-height: 0;
   min-width: 0;
-  padding: 7px;
-  resize: vertical;
-  white-space: pre;
+  overflow: hidden;
   width: 100%;
 }
 
-.cc-sid-sfx-source:focus {
+.cc-sid-sfx-source-editor:focus-within {
   outline: 1px solid var(--cc-sid-control-active);
   outline-offset: 2px;
 }

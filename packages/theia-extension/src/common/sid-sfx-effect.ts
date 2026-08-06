@@ -4,12 +4,29 @@ export type SidSfxPresetId =
   | 'laser'
   | 'jump'
   | 'hit'
-  | 'explosion';
+  | 'explosion'
+  | 'powerUp'
+  | 'teleport'
+  | 'alarm'
+  | 'rumble';
 
 export type SidSfxVoice = 'any' | '1' | '2' | '3';
 export type SidSfxWave = 'TRI' | 'SAW' | 'PULSE' | 'NOISE';
 export type SidSfxCurve = 'LINEAR' | 'EXP' | 'LOG' | 'STEP';
 export type SidSfxRetriggerMode = 'RESTART' | 'IGNORE' | 'STEAL';
+export type SidSfxTimedAssignmentParameter =
+  | 'WAVE'
+  | 'ADSR'
+  | 'PITCH'
+  | 'FREQ'
+  | 'PW'
+  | 'VOLUME';
+
+export interface SidSfxTimedAssignment {
+  tick: number;
+  parameter: SidSfxTimedAssignmentParameter;
+  value: string | number;
+}
 
 export interface SidSfxEffectSettings {
   name: string;
@@ -32,6 +49,7 @@ export interface SidSfxEffectSettings {
   pulseEnd: number;
   pulseSweep: boolean;
   volume: number;
+  scriptedAssignments: readonly SidSfxTimedAssignment[];
 }
 
 export interface SidSfxPreset {
@@ -131,7 +149,8 @@ const basePreset: Omit<SidSfxEffectSettings, 'name' | 'preset'> = {
   pulseWidth: 0x0800,
   pulseEnd: 0x0800,
   pulseSweep: false,
-  volume: 15
+  volume: 15,
+  scriptedAssignments: []
 };
 
 export const SID_SFX_PRESETS: readonly SidSfxPreset[] = [
@@ -252,6 +271,120 @@ export const SID_SFX_PRESETS: readonly SidSfxPreset[] = [
       sustain: 7,
       release: 6
     }
+  },
+  {
+    id: 'powerUp',
+    label: 'Power Up',
+    defaults: {
+      ...basePreset,
+      name: 'PowerUp',
+      preset: 'powerUp',
+      lengthTicks: 32,
+      gateOffTick: 28,
+      priority: 88,
+      wave: 'PULSE',
+      startPitch: 'C4',
+      endPitch: 'C7',
+      pulseWidth: 0x0300,
+      pulseEnd: 0x0a00,
+      decay: 2,
+      sustain: 13,
+      release: 3,
+      scriptedAssignments: [
+        { tick: 4, parameter: 'PITCH', value: 'E4' },
+        { tick: 8, parameter: 'PITCH', value: 'G4' },
+        { tick: 12, parameter: 'PITCH', value: 'C5' },
+        { tick: 12, parameter: 'PW', value: 0x0400 },
+        { tick: 16, parameter: 'PITCH', value: 'E5' },
+        { tick: 20, parameter: 'PITCH', value: 'G5' },
+        { tick: 20, parameter: 'PW', value: 0x0900 },
+        { tick: 24, parameter: 'PITCH', value: 'C6' },
+        { tick: 28, parameter: 'PITCH', value: 'C7' }
+      ]
+    }
+  },
+  {
+    id: 'teleport',
+    label: 'Teleport',
+    defaults: {
+      ...basePreset,
+      name: 'Teleport',
+      preset: 'teleport',
+      lengthTicks: 40,
+      gateOffTick: 34,
+      priority: 104,
+      wave: 'PULSE',
+      startPitch: 'C3',
+      endPitch: 'C7',
+      pitchSweep: true,
+      pitchCurve: 'LOG',
+      pulseWidth: 0x0200,
+      pulseEnd: 0x0c00,
+      pulseSweep: true,
+      decay: 3,
+      sustain: 9,
+      release: 5,
+      scriptedAssignments: [
+        { tick: 8, parameter: 'WAVE', value: 'SAW' },
+        { tick: 16, parameter: 'WAVE', value: 'TRI' },
+        { tick: 24, parameter: 'WAVE', value: 'PULSE' },
+        { tick: 28, parameter: 'VOLUME', value: 12 },
+        { tick: 32, parameter: 'VOLUME', value: 9 }
+      ]
+    }
+  },
+  {
+    id: 'alarm',
+    label: 'Alarm',
+    defaults: {
+      ...basePreset,
+      name: 'Alarm',
+      preset: 'alarm',
+      lengthTicks: 48,
+      gateOffTick: 44,
+      priority: 72,
+      wave: 'SAW',
+      startPitch: 'C5',
+      endPitch: 'G5',
+      decay: 1,
+      sustain: 15,
+      release: 2,
+      scriptedAssignments: [
+        { tick: 6, parameter: 'PITCH', value: 'G5' },
+        { tick: 12, parameter: 'PITCH', value: 'C5' },
+        { tick: 18, parameter: 'PITCH', value: 'G5' },
+        { tick: 24, parameter: 'PITCH', value: 'C5' },
+        { tick: 30, parameter: 'PITCH', value: 'G5' },
+        { tick: 36, parameter: 'PITCH', value: 'C5' }
+      ]
+    }
+  },
+  {
+    id: 'rumble',
+    label: 'Rumble',
+    defaults: {
+      ...basePreset,
+      name: 'Rumble',
+      preset: 'rumble',
+      lengthTicks: 52,
+      gateOffTick: 44,
+      priority: 110,
+      wave: 'NOISE',
+      startPitch: 'C2',
+      endPitch: 'C1',
+      decay: 8,
+      sustain: 8,
+      release: 8,
+      scriptedAssignments: [
+        { tick: 0, parameter: 'FREQ', value: 0x5000 },
+        { tick: 8, parameter: 'FREQ', value: 0x3800 },
+        { tick: 16, parameter: 'FREQ', value: 0x2400 },
+        { tick: 24, parameter: 'FREQ', value: 0x1800 },
+        { tick: 36, parameter: 'FREQ', value: 0x0c00 },
+        { tick: 40, parameter: 'VOLUME', value: 12 },
+        { tick: 46, parameter: 'VOLUME', value: 7 }
+      ]
+    }
   }
 ];
 
@@ -291,7 +424,11 @@ export function normalizeSidSfxSettings(
     release: clampNibble(settings.release),
     pulseWidth: clampInteger(settings.pulseWidth, 0, 0x0fff),
     pulseEnd: clampInteger(settings.pulseEnd, 0, 0x0fff),
-    volume: clampNibble(settings.volume)
+    volume: clampNibble(settings.volume),
+    scriptedAssignments: normalizeTimedAssignments(
+      settings.scriptedAssignments ?? [],
+      lengthTicks
+    )
   };
 }
 
@@ -339,6 +476,9 @@ export function buildSidSfxSource(settings: SidSfxEffectSettings): string {
   }
 
   lines.push('  GATE=ON');
+  for (const assignment of normalized.scriptedAssignments) {
+    lines.push(`  ${assignment.parameter}=${assignment.value} @${assignment.tick}`);
+  }
   lines.push(`  GATE=OFF @${normalized.gateOffTick}`);
   lines.push('}');
   return `${lines.join('\n')}\n`;
@@ -374,6 +514,81 @@ function quoteSidScoreString(value: string): string {
   return `"${value.replace(/\\/gu, '\\\\').replace(/"/gu, '\\"')}"`;
 }
 
+function normalizeTimedAssignments(
+  assignments: readonly SidSfxTimedAssignment[],
+  lengthTicks: number
+): readonly SidSfxTimedAssignment[] {
+  return assignments
+    .map((assignment) => normalizeTimedAssignment(assignment, lengthTicks))
+    .filter((assignment): assignment is SidSfxTimedAssignment => Boolean(assignment))
+    .sort((left, right) => left.tick - right.tick);
+}
+
+function normalizeTimedAssignment(
+  assignment: SidSfxTimedAssignment,
+  lengthTicks: number
+): SidSfxTimedAssignment | undefined {
+  if (!isTimedAssignmentParameter(assignment.parameter)) {
+    return undefined;
+  }
+  return {
+    tick: clampInteger(assignment.tick, 0, lengthTicks),
+    parameter: assignment.parameter,
+    value: normalizeTimedAssignmentValue(assignment)
+  };
+}
+
+function normalizeTimedAssignmentValue(
+  assignment: SidSfxTimedAssignment
+): string {
+  switch (assignment.parameter) {
+    case 'ADSR':
+      return normalizeAdsrValue(assignment.value);
+    case 'FREQ':
+      return formatSidSfxFrequencyValue(assignment.value);
+    case 'PITCH':
+      return normalizeNote(String(assignment.value));
+    case 'PW':
+      return formatSidSfxHexWord(toInteger(assignment.value, 0));
+    case 'VOLUME':
+      return String(clampNibble(toInteger(assignment.value, 0)));
+    case 'WAVE': {
+      const wave = String(assignment.value).trim().toUpperCase();
+      return isSidSfxWave(wave) ? wave : 'TRI';
+    }
+  }
+}
+
+function normalizeAdsrValue(value: string | number): string {
+  const parts = String(value)
+    .split(',')
+    .map((part) => clampNibble(toInteger(part.trim(), 0)));
+  while (parts.length < 4) {
+    parts.push(0);
+  }
+  return parts.slice(0, 4).join(',');
+}
+
+function formatSidSfxFrequencyValue(value: string | number): string {
+  return `$${clampInteger(toInteger(value, 0), 0, 0xffff)
+    .toString(16)
+    .padStart(4, '0')
+    .toUpperCase()}`;
+}
+
+function toInteger(value: string | number, fallback: number): number {
+  if (typeof value === 'number') {
+    return value;
+  }
+  const trimmed = value.trim();
+  if (trimmed.startsWith('$')) {
+    const parsedHex = Number.parseInt(trimmed.slice(1), 16);
+    return Number.isFinite(parsedHex) ? parsedHex : fallback;
+  }
+  const parsed = Number.parseInt(trimmed, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function voiceLabel(value: SidSfxVoice): string {
   return value === 'any' ? 'ANY' : value;
 }
@@ -403,4 +618,17 @@ function isSidSfxCurve(value: string): value is SidSfxCurve {
 
 function isSidSfxRetriggerMode(value: string): value is SidSfxRetriggerMode {
   return SID_SFX_RETRIGGER_MODES.includes(value as SidSfxRetriggerMode);
+}
+
+function isTimedAssignmentParameter(
+  value: string
+): value is SidSfxTimedAssignmentParameter {
+  return (
+    value === 'WAVE' ||
+    value === 'ADSR' ||
+    value === 'PITCH' ||
+    value === 'FREQ' ||
+    value === 'PW' ||
+    value === 'VOLUME'
+  );
 }

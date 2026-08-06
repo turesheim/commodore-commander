@@ -1,9 +1,12 @@
 import * as React from 'react';
 
+import URI from '@theia/core/lib/common/uri';
 import { codicon, ReactWidget } from '@theia/core/lib/browser';
-import { Message } from '@theia/core/lib/browser/widgets/widget';
+import { Message, Widget } from '@theia/core/lib/browser/widgets/widget';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 
 import {
   SidScoreRuntimeService,
@@ -60,6 +63,9 @@ const WAVE_BUTTONS: readonly WaveButton[] = [
 
 const PREVIEW_RESOURCE_URI =
   'file:///tmp/commodore-commander-sid-sfx-preview.sidscore';
+const SOURCE_EDITOR_URI = new URI(
+  'untitled:/commodore-commander-sid-sfx-preview.sidscore'
+);
 
 @injectable()
 export class SidSfxEditorWidget extends ReactWidget {
@@ -69,10 +75,17 @@ export class SidSfxEditorWidget extends ReactWidget {
   @inject(MessageService)
   protected readonly messageService!: MessageService;
 
+  @inject(MonacoEditorProvider)
+  protected readonly monacoEditorProvider!: MonacoEditorProvider;
+
   protected settings = createSidSfxSettings();
   protected sidModel: SidScoreSidModel = '6581';
   protected nextRequestId = 1;
   protected previewBusy = false;
+  protected sourceEditor: MonacoEditor | undefined;
+  protected sourceEditorHost: HTMLDivElement | undefined;
+  protected sourceEditorCreating: Promise<void> | undefined;
+  protected sourceEditorCreateFailed = false;
 
   constructor() {
     super();
@@ -84,9 +97,28 @@ export class SidSfxEditorWidget extends ReactWidget {
     this.addClass('cc-sid-sfx-widget');
   }
 
+  override dispose(): void {
+    this.sourceEditor = undefined;
+    this.sourceEditorHost = undefined;
+    super.dispose();
+  }
+
   protected override onAfterAttach(msg: Message): void {
     super.onAfterAttach(msg);
     this.update();
+    void this.ensureSourceEditor();
+  }
+
+  protected override onUpdateRequest(msg: Message): void {
+    super.onUpdateRequest(msg);
+    void this.ensureSourceEditor();
+    this.updateSourceEditor();
+    this.resizeSourceEditor();
+  }
+
+  protected override onResize(msg: Widget.ResizeMessage): void {
+    super.onResize(msg);
+    this.resizeSourceEditor();
   }
 
   protected override onActivateRequest(msg: Message): void {
@@ -362,16 +394,13 @@ export class SidSfxEditorWidget extends ReactWidget {
 
   protected renderPlaybackSection(sourceText: string): React.ReactNode {
     return (
-      <section className='cc-sid-section'>
+      <section className='cc-sid-section cc-sid-section--source'>
         <h3 className='cc-sid-section__label'>Source</h3>
         <div className='cc-sid-section__body'>
-          <textarea
-            className='cc-sid-sfx-source'
-            readOnly={true}
-            spellCheck={false}
-            value={sourceText}
+          <div
+            className='cc-sid-sfx-source-editor'
             aria-label='Generated SIDScore effect source'
-            onFocus={(event) => event.currentTarget.select()}
+            ref={this.setSourceEditorHost}
           />
           <div className='cc-sid-sfx-actions'>
             <button
@@ -573,6 +602,7 @@ export class SidSfxEditorWidget extends ReactWidget {
 
   protected setPreset(value: string): void {
     this.settings = createSidSfxSettings(toPresetId(value));
+    this.updateSourceEditor();
     this.update();
   }
 
@@ -581,6 +611,7 @@ export class SidSfxEditorWidget extends ReactWidget {
       ...this.settings,
       ...patch
     });
+    this.updateSourceEditor();
     this.update();
   }
 
@@ -637,6 +668,86 @@ export class SidSfxEditorWidget extends ReactWidget {
     const requestId = this.nextRequestId;
     this.nextRequestId = (this.nextRequestId % 0x7fffffff) + 1;
     return requestId;
+  }
+
+  protected readonly setSourceEditorHost = (
+    node: HTMLDivElement | null
+  ): void => {
+    this.sourceEditorHost = node ?? undefined;
+    if (node) {
+      void this.ensureSourceEditor();
+    }
+  };
+
+  protected async ensureSourceEditor(): Promise<void> {
+    if (
+      this.sourceEditor ||
+      this.sourceEditorCreating ||
+      this.sourceEditorCreateFailed ||
+      !this.sourceEditorHost
+    ) {
+      return;
+    }
+    this.sourceEditorCreating = this.createSourceEditor();
+    try {
+      await this.sourceEditorCreating;
+    } finally {
+      this.sourceEditorCreating = undefined;
+    }
+  }
+
+  protected async createSourceEditor(): Promise<void> {
+    if (!this.sourceEditorHost) {
+      return;
+    }
+    try {
+      const editor = await this.monacoEditorProvider.createInline(
+        SOURCE_EDITOR_URI,
+        this.sourceEditorHost,
+        {
+          readOnly: true,
+          lineNumbers: 'on',
+          folding: true,
+          wordWrap: 'off',
+          minimap: { enabled: false },
+          renderLineHighlight: 'none',
+          scrollBeyondLastLine: false,
+          scrollbar: {
+            horizontal: 'auto',
+            vertical: 'auto'
+          }
+        }
+      );
+      this.sourceEditor = editor;
+      this.toDispose.push(editor);
+      this.updateSourceEditor();
+      this.resizeSourceEditor();
+    } catch (error) {
+      this.sourceEditorCreateFailed = true;
+      this.messageService.error(
+        `Unable to create SIDScore source editor: ${errorMessage(error)}`
+      );
+    }
+  }
+
+  protected updateSourceEditor(): void {
+    const model = this.sourceEditor?.getControl().getModel();
+    if (!model || model.isDisposed()) {
+      return;
+    }
+    const sourceText = buildSidSfxSource(this.settings);
+    if (model.getValue() !== sourceText) {
+      model.setValue(sourceText);
+    }
+  }
+
+  protected resizeSourceEditor(): void {
+    if (!this.sourceEditor) {
+      return;
+    }
+    requestAnimationFrame(() => {
+      this.sourceEditor?.refresh();
+    });
   }
 
   protected envelopePolyline(settings: SidSfxEffectSettings): string {

@@ -70,3 +70,16 @@ test('SID SFX source generator clamps values to SID/player ranges', () => {
   assert.match(source, /\n  GATE=OFF @255\n/u);
   assert.equal(formatSidSfxHexWord(0x12345), '$0FFF');
 });
+
+test('SID SFX source generator emits scripted complex preset steps', () => {
+  const powerUp = buildSidSfxSource(createSidSfxSettings('powerUp'));
+  const teleport = buildSidSfxSource(createSidSfxSettings('teleport'));
+  const rumble = buildSidSfxSource(createSidSfxSettings('rumble'));
+
+  assert.match(powerUp, /\n  PITCH=E4 @4\n/u);
+  assert.match(powerUp, /\n  PW=\$0400 @12\n/u);
+  assert.match(teleport, /\n  WAVE=SAW @8\n/u);
+  assert.match(teleport, /\n  VOLUME=9 @32\n/u);
+  assert.match(rumble, /\n  FREQ=\$5000 @0\n/u);
+  assert.match(rumble, /\n  FREQ=\$0C00 @36\n/u);
+});
