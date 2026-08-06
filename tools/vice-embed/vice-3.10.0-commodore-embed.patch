@@ -55,7 +55,7 @@ diff --git a/src/arch/sdl/cc_embed.c b/src/arch/sdl/cc_embed.c
 new file mode 100644
 --- /dev/null
 +++ b/src/arch/sdl/cc_embed.c
-@@ -0,0 +1,449 @@
+@@ -0,0 +1,459 @@
 +/*
 + * cc_embed.c - Commodore Commander VICE embedding transport.
 + *
@@ -93,11 +93,13 @@ new file mode 100644
 +#define CC_EMBED_PREFIX "CCV1 "
 +#define CC_EMBED_PROTOCOL "commodore-vice-embed-v1"
 +#define CC_EMBED_LINE_BYTES 4096
-+#define CC_EMBED_FRAME_STRIDE 3
++#define CC_EMBED_MIN_FRAME_INTERVAL_MS 100
++#define CC_EMBED_DOWNSAMPLE_THRESHOLD_WIDTH 400
++#define CC_EMBED_DOWNSAMPLE_THRESHOLD_HEIGHT 300
 +
 +static int cc_embed_enabled = 0;
 +static unsigned long cc_embed_frame_id = 0;
-+static unsigned int cc_embed_refresh_counter = 0;
++static uint32_t cc_embed_last_frame_ticks = 0;
 +static char cc_embed_line[CC_EMBED_LINE_BYTES];
 +static size_t cc_embed_line_len = 0;
 +
@@ -202,6 +204,10 @@ new file mode 100644
 +    uint8_t *target;
 +    int x;
 +    int y;
++    int sample_step;
++    int output_width;
++    int output_height;
++    uint32_t now;
 +    size_t length;
 +
 +    if (!cc_embed_enabled || pixels == NULL || format == NULL) {
@@ -210,15 +216,19 @@ new file mode 100644
 +    if (width <= 0 || height <= 0 || width > 2048 || height > 2048) {
 +        return;
 +    }
++    now = SDL_GetTicks();
 +    if (cc_embed_frame_id > 0) {
-+        cc_embed_refresh_counter++;
-+        if (cc_embed_refresh_counter < CC_EMBED_FRAME_STRIDE) {
++        if ((uint32_t)(now - cc_embed_last_frame_ticks) < CC_EMBED_MIN_FRAME_INTERVAL_MS) {
 +            return;
 +        }
-+        cc_embed_refresh_counter = 0;
 +    }
++    cc_embed_last_frame_ticks = now;
 +
-+    length = (size_t)width * (size_t)height * 4;
++    sample_step = (width > CC_EMBED_DOWNSAMPLE_THRESHOLD_WIDTH ||
++                   height > CC_EMBED_DOWNSAMPLE_THRESHOLD_HEIGHT) ? 2 : 1;
++    output_width = width / sample_step;
++    output_height = height / sample_step;
++    length = (size_t)output_width * (size_t)output_height * 4;
 +    rgba = (uint8_t *)malloc(length);
 +    if (rgba == NULL) {
 +        cc_embed_emit_status("error", "Could not allocate embedded frame buffer.");
@@ -227,14 +237,14 @@ new file mode 100644
 +
 +    target = rgba;
 +    source = (const uint8_t *)pixels;
-+    for (y = 0; y < height; y++) {
-+        const uint8_t *row = source + (pitch * y);
-+        for (x = 0; x < width; x++) {
++    for (y = 0; y < output_height; y++) {
++        const uint8_t *row = source + (pitch * y * sample_step);
++        for (x = 0; x < output_width; x++) {
 +            uint8_t r;
 +            uint8_t g;
 +            uint8_t b;
 +            uint8_t a;
-+            uint32_t pixel = cc_embed_get_pixel(row, x, format);
++            uint32_t pixel = cc_embed_get_pixel(row, x * sample_step, format);
 +            SDL_GetRGBA(pixel, format, &r, &g, &b, &a);
 +            *target++ = r;
 +            *target++ = g;
@@ -248,9 +258,9 @@ new file mode 100644
 +           "{\"type\":\"frame\",\"frameId\":%lu,\"width\":%d,\"height\":%d,"
 +           "\"pixelFormat\":\"rgba8888\",\"timestamp\":%lu,\"data\":\"",
 +           cc_embed_frame_id,
-+           width,
-+           height,
-+           (unsigned long)time(NULL) * 1000UL);
++           output_width,
++           output_height,
++           (unsigned long)now);
 +    cc_embed_write_base64(rgba, length);
 +    printf("\"}\n");
 +    free(rgba);

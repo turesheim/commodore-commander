@@ -76,7 +76,9 @@ test('patched VICE keeps refreshing hidden embedded SDL canvases', async () => {
     patch,
     /sdl_canvas_is_visible\(canvas\) == 0 && !cc_embed_is_enabled\(\)/u
   );
-  assert.match(patch, /CC_EMBED_FRAME_STRIDE 3/u);
+  assert.match(patch, /CC_EMBED_MIN_FRAME_INTERVAL_MS 100/u);
+  assert.match(patch, /CC_EMBED_DOWNSAMPLE_THRESHOLD_WIDTH 400/u);
+  assert.match(patch, /output_width = width \/ sample_step/u);
   assert.match(patch, /cc_embed_publish_frame/u);
 
   const renderIndex = patch.indexOf(

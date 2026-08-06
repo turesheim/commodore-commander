@@ -111,10 +111,7 @@ export class CommodoreMachineProfileWidget
   }
 
   onViceEmbedFrame(event: CommodoreViceEmbedFrameEvent): void {
-    this.runtimeOwner = 'standalone';
-    this.frame = event;
-    this.drawFrame();
-    this.update();
+    this.applyFrame(event, 'standalone');
   }
 
   onViceEmbedStatus(event: CommodoreViceEmbedStatusEvent): void {
@@ -135,6 +132,7 @@ export class CommodoreMachineProfileWidget
     const profile = this.machineProfileSelection.getActiveMachineProfile();
     const screen = profile.screenLayouts[0];
     const isPowered = this.isPowered();
+    const debugSessionActive = this.hasEmbeddedViceDebugSession();
     const aspectRatio = this.frame
       ? `${this.frame.width} / ${this.frame.height}`
       : screen
@@ -160,7 +158,10 @@ export class CommodoreMachineProfileWidget
           <div style={styles.controls}>
             <button
               className='theia-button secondary'
-              title='Select active machine'
+              title={debugSessionActive
+                ? 'Machine selection is locked while debugging'
+                : 'Select active machine'}
+              disabled={debugSessionActive}
               onClick={this.selectMachine}
               style={styles.iconButton}
             >
@@ -360,9 +361,7 @@ export class CommodoreMachineProfileWidget
         }, this.runtimeOwner);
         return;
       case 'frame':
-        this.frame = event;
-        this.drawFrame();
-        this.update();
+        this.applyFrame(event, this.runtimeOwner);
         return;
       case 'status':
         this.applyStatus(event, this.runtimeOwner);
@@ -386,6 +385,28 @@ export class CommodoreMachineProfileWidget
       this.activeDebugSessionId = undefined;
     }
     this.update();
+  }
+
+  protected applyFrame(
+    event: CommodoreViceEmbedFrameEvent,
+    owner: ViceRuntimeOwner | undefined
+  ): void {
+    const previousFrame = this.frame;
+    const shouldUpdate = this.starting ||
+      this.status !== 'running' ||
+      previousFrame?.width !== event.width ||
+      previousFrame?.height !== event.height;
+    this.runtimeOwner = owner ?? this.runtimeOwner;
+    this.status = 'running';
+    this.statusMessage = this.runtimeOwner === 'debug'
+      ? 'Debug VICE running.'
+      : 'Patched VICE running.';
+    this.starting = false;
+    this.frame = event;
+    this.drawFrame();
+    if (shouldUpdate) {
+      this.update();
+    }
   }
 
   protected applyOutput(event: CommodoreViceEmbedOutputEvent): void {
@@ -471,6 +492,12 @@ export class CommodoreMachineProfileWidget
       Boolean(this.currentEmbeddedViceDebugSession()) ||
       this.runtimeOwner === 'debug' ||
       this.runtimeOwner === 'standalone';
+  }
+
+  protected hasEmbeddedViceDebugSession(): boolean {
+    return this.debugSessionManager.sessions.some((session) =>
+      this.isEmbeddedViceDebugSession(session)
+    );
   }
 
   protected currentViceDebugSession(): DebugSession | undefined {

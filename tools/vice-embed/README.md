@@ -59,9 +59,10 @@ The current patch is intentionally narrow:
 - Joystick and peripheral input commands are reserved by the protocol but are
   not implemented in the native patch yet.
 - The JSON/base64 frame stream is good enough to validate the embedding model.
-  It is throttled to roughly every third SDL refresh to avoid flooding stdout.
-  A later patch should replace it with a binary or shared-memory frame channel
-  before treating this as the final high-performance transport.
+  It is throttled to at most one frame every 100 ms and large SDL canvases are
+  downsampled by 2x before encoding to avoid flooding stdout. A later patch
+  should replace it with a binary or shared-memory frame channel before treating
+  this as the final high-performance transport.
 
 After building patched VICE, point `commodoreCommander.VICE.runtimePath` at the
 runtime root that contains `share/vice`, or run `make -C tools/vice-embed assets`
