@@ -8,7 +8,11 @@ export type SidSfxPresetId =
   | 'powerUp'
   | 'teleport'
   | 'alarm'
-  | 'rumble';
+  | 'rumble'
+  | 'coinCascade'
+  | 'shield'
+  | 'engineStart'
+  | 'zapBurst';
 
 export type SidSfxVoice = 'any' | '1' | '2' | '3';
 export type SidSfxWave = 'TRI' | 'SAW' | 'PULSE' | 'NOISE';
@@ -385,6 +389,123 @@ export const SID_SFX_PRESETS: readonly SidSfxPreset[] = [
         { tick: 46, parameter: 'VOLUME', value: 7 }
       ]
     }
+  },
+  {
+    id: 'coinCascade',
+    label: 'Coin Cascade',
+    defaults: {
+      ...basePreset,
+      name: 'CoinCascade',
+      preset: 'coinCascade',
+      lengthTicks: 30,
+      gateOffTick: 26,
+      priority: 84,
+      wave: 'PULSE',
+      startPitch: 'C6',
+      endPitch: 'C8',
+      pulseWidth: 0x0500,
+      pulseEnd: 0x0200,
+      decay: 2,
+      sustain: 11,
+      release: 3,
+      scriptedAssignments: [
+        { tick: 3, parameter: 'PITCH', value: 'E6' },
+        { tick: 6, parameter: 'PITCH', value: 'G6' },
+        { tick: 9, parameter: 'PITCH', value: 'C7' },
+        { tick: 9, parameter: 'PW', value: 0x0300 },
+        { tick: 12, parameter: 'PITCH', value: 'E7' },
+        { tick: 15, parameter: 'PITCH', value: 'G7' },
+        { tick: 18, parameter: 'PITCH', value: 'C8' },
+        { tick: 22, parameter: 'VOLUME', value: 11 }
+      ]
+    }
+  },
+  {
+    id: 'shield',
+    label: 'Shield',
+    defaults: {
+      ...basePreset,
+      name: 'Shield',
+      preset: 'shield',
+      lengthTicks: 42,
+      gateOffTick: 36,
+      priority: 92,
+      wave: 'PULSE',
+      startPitch: 'C4',
+      endPitch: 'G5',
+      pitchSweep: true,
+      pitchCurve: 'LOG',
+      pulseWidth: 0x0a00,
+      pulseEnd: 0x0300,
+      pulseSweep: true,
+      decay: 4,
+      sustain: 12,
+      release: 6,
+      scriptedAssignments: [
+        { tick: 10, parameter: 'PW', value: 0x0800 },
+        { tick: 18, parameter: 'WAVE', value: 'TRI' },
+        { tick: 24, parameter: 'WAVE', value: 'PULSE' },
+        { tick: 28, parameter: 'VOLUME', value: 12 },
+        { tick: 34, parameter: 'VOLUME', value: 8 }
+      ]
+    }
+  },
+  {
+    id: 'engineStart',
+    label: 'Engine Start',
+    defaults: {
+      ...basePreset,
+      name: 'EngineStart',
+      preset: 'engineStart',
+      lengthTicks: 58,
+      gateOffTick: 50,
+      priority: 90,
+      wave: 'PULSE',
+      pulseWidth: 0x0400,
+      decay: 7,
+      sustain: 10,
+      release: 7,
+      scriptedAssignments: [
+        { tick: 0, parameter: 'FREQ', value: 0x0400 },
+        { tick: 6, parameter: 'FREQ', value: 0x0700 },
+        { tick: 12, parameter: 'FREQ', value: 0x0b00 },
+        { tick: 18, parameter: 'FREQ', value: 0x1000 },
+        { tick: 24, parameter: 'PW', value: 0x0600 },
+        { tick: 30, parameter: 'FREQ', value: 0x1800 },
+        { tick: 38, parameter: 'FREQ', value: 0x2200 },
+        { tick: 46, parameter: 'VOLUME', value: 12 }
+      ]
+    }
+  },
+  {
+    id: 'zapBurst',
+    label: 'Zap Burst',
+    defaults: {
+      ...basePreset,
+      name: 'ZapBurst',
+      preset: 'zapBurst',
+      lengthTicks: 28,
+      gateOffTick: 23,
+      priority: 98,
+      wave: 'PULSE',
+      startPitch: 'C7',
+      endPitch: 'C2',
+      pitchSweep: true,
+      pitchCurve: 'EXP',
+      pulseWidth: 0x0100,
+      pulseEnd: 0x0b00,
+      pulseSweep: true,
+      decay: 2,
+      sustain: 7,
+      release: 4,
+      scriptedAssignments: [
+        { tick: 5, parameter: 'WAVE', value: 'SAW' },
+        { tick: 10, parameter: 'WAVE', value: 'PULSE' },
+        { tick: 15, parameter: 'ADSR', value: '0,5,4,4' },
+        { tick: 18, parameter: 'VOLUME', value: 10 },
+        { tick: 22, parameter: 'VOLUME', value: 6 }
+      ]
+    }
   }
 ];
 
@@ -435,6 +556,9 @@ export function normalizeSidSfxSettings(
 export function buildSidSfxSource(settings: SidSfxEffectSettings): string {
   const normalized = normalizeSidSfxSettings(settings);
   const effectName = sanitizeSidSfxEffectName(normalized.name);
+  const usesFrequencyAssignments = normalized.scriptedAssignments.some(
+    (assignment) => assignment.parameter === 'FREQ'
+  );
   const lines = [
     `TITLE ${quoteSidScoreString(`${normalized.name} SFX`)}`,
     'AUTHOR "Commodore Commander"',
@@ -450,11 +574,18 @@ export function buildSidSfxSource(settings: SidSfxEffectSettings): string {
     '',
     `  WAVE=${normalized.wave}`,
     `  ADSR=${normalized.attack},${normalized.decay},${normalized.sustain},${normalized.release}`,
-    `  VOLUME=${normalized.volume}`,
-    `  PITCH=${normalized.startPitch}`
+    `  VOLUME=${normalized.volume}`
   ];
 
   if (
+    !usesFrequencyAssignments &&
+    normalized.startPitch
+  ) {
+    lines.push(`  PITCH=${normalized.startPitch}`);
+  }
+
+  if (
+    !usesFrequencyAssignments &&
     normalized.pitchSweep &&
     normalized.startPitch !== normalized.endPitch
   ) {
@@ -477,7 +608,8 @@ export function buildSidSfxSource(settings: SidSfxEffectSettings): string {
 
   lines.push('  GATE=ON');
   for (const assignment of normalized.scriptedAssignments) {
-    lines.push(`  ${assignment.parameter}=${assignment.value} @${assignment.tick}`);
+    const tickSuffix = assignment.tick > 0 ? ` @${assignment.tick}` : '';
+    lines.push(`  ${assignment.parameter}=${assignment.value}${tickSuffix}`);
   }
   lines.push(`  GATE=OFF @${normalized.gateOffTick}`);
   lines.push('}');

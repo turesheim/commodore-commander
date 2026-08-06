@@ -80,6 +80,29 @@ test('SID SFX source generator emits scripted complex preset steps', () => {
   assert.match(powerUp, /\n  PW=\$0400 @12\n/u);
   assert.match(teleport, /\n  WAVE=SAW @8\n/u);
   assert.match(teleport, /\n  VOLUME=9 @32\n/u);
-  assert.match(rumble, /\n  FREQ=\$5000 @0\n/u);
+  assert.match(rumble, /\n  FREQ=\$5000\n/u);
   assert.match(rumble, /\n  FREQ=\$0C00 @36\n/u);
+});
+
+test('SID SFX source generator keeps frequency effects separate from pitch', () => {
+  const rumble = buildSidSfxSource(createSidSfxSettings('rumble'));
+  const engineStart = buildSidSfxSource(createSidSfxSettings('engineStart'));
+
+  assert.doesNotMatch(rumble, /\n  PITCH=/u);
+  assert.doesNotMatch(engineStart, /\n  PITCH=/u);
+  assert.match(engineStart, /\n  FREQ=\$0400\n/u);
+  assert.match(engineStart, /\n  FREQ=\$2200 @38\n/u);
+});
+
+test('SID SFX source generator emits additional complex preset steps', () => {
+  const coinCascade = buildSidSfxSource(createSidSfxSettings('coinCascade'));
+  const shield = buildSidSfxSource(createSidSfxSettings('shield'));
+  const zapBurst = buildSidSfxSource(createSidSfxSettings('zapBurst'));
+
+  assert.match(coinCascade, /\n  PITCH=C8 @18\n/u);
+  assert.match(coinCascade, /\n  VOLUME=11 @22\n/u);
+  assert.match(shield, /\n  WAVE=TRI @18\n/u);
+  assert.match(shield, /\n  PW=\$0800 @10\n/u);
+  assert.match(zapBurst, /\n  ADSR=0,5,4,4 @15\n/u);
+  assert.match(zapBurst, /\n  WAVE=SAW @5\n/u);
 });
