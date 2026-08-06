@@ -420,6 +420,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     }))
     .inSingletonScope();
   bindViewContribution(bind, SidSfxEditorContribution);
+  bind(FrontendApplicationContribution).toService(SidSfxEditorContribution);
   bind(SidScoreProtocolLogWidget).toSelf();
   bind(WidgetFactory)
     .toDynamicValue((context) => ({
