@@ -528,10 +528,17 @@ diff --git a/src/arch/sdl/video_sdl2.c b/src/arch/sdl/video_sdl2.c
 @@ -818 +823 @@
 -    if (sdl_canvas_is_visible(canvas) == 0) {
 +    if (sdl_canvas_is_visible(canvas) == 0 && !cc_embed_is_enabled()) {
-@@ -872,0 +874,6 @@
+@@ -865,6 +870,12 @@
+         video_canvas_render(canvas, (uint8_t *)canvas->screen->pixels, w, h, xs, ys, xi, yi, canvas->screen->pitch);
+     }
+-
 +    cc_embed_poll_commands();
 +    cc_embed_publish_frame(canvas->screen->w,
 +                           canvas->screen->h,
 +                           canvas->screen->pixels,
 +                           canvas->screen->pitch,
 +                           canvas->screen->format);
++
+     if (recreate_textures) {
+         recreate_all_textures();
+         recreate_textures = 0;

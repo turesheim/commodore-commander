@@ -78,6 +78,20 @@ test('patched VICE keeps refreshing hidden embedded SDL canvases', async () => {
   );
   assert.match(patch, /CC_EMBED_FRAME_STRIDE 3/u);
   assert.match(patch, /cc_embed_publish_frame/u);
+
+  const renderIndex = patch.indexOf(
+    'video_canvas_render(canvas, (uint8_t *)canvas->screen->pixels'
+  );
+  const publishIndex = patch.indexOf(
+    'cc_embed_publish_frame(canvas->screen->w'
+  );
+  const recreateTexturesIndex = patch.indexOf(
+    'if (recreate_textures)',
+    publishIndex
+  );
+  assert.ok(renderIndex >= 0);
+  assert.ok(publishIndex > renderIndex);
+  assert.ok(recreateTexturesIndex > publishIndex);
 });
 
 test('tool preferences prefer VICE runtime path and keep legacy fallbacks', () => {
