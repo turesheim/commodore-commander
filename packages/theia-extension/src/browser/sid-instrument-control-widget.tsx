@@ -33,6 +33,7 @@ import {
   toMidiMode,
   type MidiModeId
 } from './sid-instrument-midi-mode';
+import { isSidInstrumentProtocolNumericControl } from './sid-instrument-protocol-controls';
 import {
   createSidAdsrEnvelopeVisualization,
   type SidAdsrEnvelopeVisualization
@@ -461,20 +462,6 @@ const FILTER_MODE_REGISTER_BITS: Record<FilterModeId, number> = {
   band: 0x20,
   high: 0x40
 };
-
-const PROTOCOL_NUMERIC_CONTROLS = new Set<NumericControlId>([
-  'attack',
-  'decay',
-  'sustain',
-  'release',
-  'gateMin',
-  'pulseWidth',
-  'pulseSweep',
-  'pulseMin',
-  'pulseMax',
-  'filterCutoff',
-  'filterResonance'
-]);
 
 const INSTRUMENT_UPDATE_DELAY_MS = 120;
 const PENDING_INSTRUMENT_STATE_TIMEOUT_MS = 1_500;
@@ -1187,7 +1174,7 @@ export class SidInstrumentControlWidget extends ReactWidget {
 
     this.numericValues[id] = parsed;
     this.update();
-    if (PROTOCOL_NUMERIC_CONTROLS.has(id)) {
+    if (isSidInstrumentProtocolNumericControl(id)) {
       this.queueInstrumentUpdate();
     }
   }
