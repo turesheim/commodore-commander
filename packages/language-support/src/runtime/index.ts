@@ -20,6 +20,9 @@ export {
   buildKickAssemblerOutlineFromParsed
 } from '../outline/kick-assembler-outline-model.ts';
 export {
+  buildSidScoreOutline
+} from '../outline/sidscore-outline-model.ts';
+export {
   parseKickAssemblerExpression
 } from '../semantic/kick-assembler-expression.ts';
 export {
@@ -89,6 +92,10 @@ export type {
   KickAssemblerOutlineSymbol,
   KickAssemblerOutlineSymbolKind
 } from '../outline/kick-assembler-outline-model.ts';
+export type {
+  SidScoreOutlineSymbol,
+  SidScoreOutlineSymbolKind
+} from '../outline/sidscore-outline-model.ts';
 export type {
   KickAssemblerExpressionDiagnostic,
   KickAssemblerExpressionNode,

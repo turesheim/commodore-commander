@@ -134,6 +134,7 @@ import { KickAssemblerEditorLookupContribution } from './kick-assembler-editor-l
 import { KickAssemblerLanguageContribution } from './kick-assembler-language-contribution';
 import { KickAssemblerOutlineContribution } from './kick-assembler-outline-contribution';
 import { SidScoreLanguageContribution } from './sidscore-language-contribution';
+import { SidScoreOutlineContribution } from './sidscore-outline-contribution';
 import {
   SID_SCORE_EXPORT_TOOLBAR_ID,
   SidScoreRuntimeContribution
@@ -434,6 +435,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
   bind(FrontendApplicationContribution).toService(KickAssemblerEditorLookupContribution);
   bind(KickAssemblerOutlineContribution).toSelf().inSingletonScope();
   bind(FrontendApplicationContribution).toService(KickAssemblerOutlineContribution);
+  bind(SidScoreOutlineContribution).toSelf().inSingletonScope();
+  bind(FrontendApplicationContribution).toService(SidScoreOutlineContribution);
   bind(KickAssemblerBuildService)
     .toDynamicValue((context) =>
       WebSocketConnectionProvider.createProxy(

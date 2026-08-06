@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  SID_SFX_PRESETS,
   buildSidSfxSource,
   createSidSfxSettings,
   formatSidSfxHexWord,
@@ -105,4 +106,63 @@ test('SID SFX source generator emits additional complex preset steps', () => {
   assert.match(shield, /\n  PW=\$0800 @10\n/u);
   assert.match(zapBurst, /\n  ADSR=0,5,4,4 @15\n/u);
   assert.match(zapBurst, /\n  WAVE=SAW @5\n/u);
+});
+
+test('SID SFX preset catalog includes expanded complex effects', () => {
+  const presetIds = SID_SFX_PRESETS.map((preset) => preset.id);
+  const expectedPresetIds = [
+    'bossHit',
+    'doorOpen',
+    'doorClose',
+    'footstep',
+    'splash',
+    'magicCast',
+    'warpDown',
+    'confirmChord',
+    'errorBuzz',
+    'typeClick',
+    'missileLaunch',
+    'powerDrain'
+  ] as const;
+
+  assert.deepEqual(
+    expectedPresetIds.filter((presetId) => !presetIds.includes(presetId)),
+    []
+  );
+});
+
+test('SID SFX source generator emits expanded complex preset steps', () => {
+  const bossHit = buildSidSfxSource(createSidSfxSettings('bossHit'));
+  const magicCast = buildSidSfxSource(createSidSfxSettings('magicCast'));
+  const warpDown = buildSidSfxSource(createSidSfxSettings('warpDown'));
+  const missileLaunch = buildSidSfxSource(createSidSfxSettings('missileLaunch'));
+
+  assert.match(bossHit, /\n  FREQ=\$7000\n/u);
+  assert.match(bossHit, /\n  FREQ=\$1400 @18\n/u);
+  assert.match(magicCast, /\n  WAVE=TRI @18\n/u);
+  assert.match(magicCast, /\n  PITCH=C6 @36\n/u);
+  assert.match(warpDown, /\n  WAVE=NOISE @30\n/u);
+  assert.match(missileLaunch, /\n  FREQ=\$4A00 @42\n/u);
+});
+
+test('SID SFX source generator omits note pitch for frequency-driven presets', () => {
+  const frequencyPresetIds = [
+    'rumble',
+    'engineStart',
+    'bossHit',
+    'doorOpen',
+    'doorClose',
+    'footstep',
+    'splash',
+    'typeClick',
+    'missileLaunch'
+  ] as const;
+
+  for (const presetId of frequencyPresetIds) {
+    assert.doesNotMatch(
+      buildSidSfxSource(createSidSfxSettings(presetId)),
+      /\n  PITCH=/u,
+      presetId
+    );
+  }
 });
