@@ -28,6 +28,10 @@ import {
   type CommodoreViceDebugConfiguration
 } from '../common/commodore-vice-debug';
 import {
+  COMMODORE_COMMANDER_PATCHED_VICE_BASE_VERSION,
+  DEFAULT_COMMODORE_COMMANDER_VICE_LAUNCH_MODE
+} from '../common/commodore-vice-embed';
+import {
   getCommodoreCommanderToolPreferences
 } from '../common/commodore-commander-tool-preferences';
 
@@ -138,6 +142,13 @@ export class CommodoreViceDebugAdapterContribution
             type: 'string',
             description: 'Working directory for VICE.'
           },
+          viceLaunchMode: {
+            type: 'string',
+            enum: ['patchedView', 'externalWindow'],
+            default: DEFAULT_COMMODORE_COMMANDER_VICE_LAUNCH_MODE,
+            description:
+              `VICE launch surface. patchedView is the intended default embedded view for compatible patched VICE ${COMMODORE_COMMANDER_PATCHED_VICE_BASE_VERSION} runtimes; externalWindow launches stock VICE in its own window.`
+          },
           viceExecutable: {
             type: 'string',
             description: 'Advanced per-launch VICE emulator command or path. Usually leave unset so the selected machine profile chooses x64sc, x128, xvic, or another matching VICE emulator.'
@@ -245,6 +256,8 @@ export class CommodoreViceDebugAdapterContribution
         : path.dirname(program),
       viceResourcesPath: viceRuntime.resourcesPath,
       viceExecutable: viceRuntime.executable ?? profile.vice.executable,
+      // TODO: Route patchedView through the patched VICE frame/input transport.
+      viceLaunchMode: config.viceLaunchMode ?? toolPreferences.viceLaunchMode,
       viceArgs: config.viceArgs ?? createViceArgs(profile, launch),
       machineName: profile.displayName,
       stopOnEntry: config.stopOnEntry ?? true

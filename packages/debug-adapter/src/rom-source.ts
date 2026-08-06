@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import {
@@ -56,7 +56,7 @@ export async function loadC64RomSources(
   viceResourcesPath: string,
   sourceReferenceBase: number
 ): Promise<RomSource[]> {
-  const c64Directory = path.join(viceResourcesPath, 'share', 'vice', 'C64');
+  const c64Directory = await resolveC64RomDirectory(viceResourcesPath);
   const symbols = [
     ...await loadViceSymbolFile(path.join(c64Directory, 'c64mem.sym')),
     ...EXTRA_C64_ROM_SYMBOLS
@@ -75,6 +75,28 @@ export async function loadC64RomSources(
     ));
   }
   return sources;
+}
+
+async function resolveC64RomDirectory(viceResourcesPath: string): Promise<string> {
+  const candidates = [
+    path.join(viceResourcesPath, 'share', 'vice', 'C64'),
+    path.join(viceResourcesPath, 'C64')
+  ];
+  for (const candidate of candidates) {
+    if (await isReadable(path.join(candidate, C64_ROM_SPECS[0].fileName))) {
+      return candidate;
+    }
+  }
+  return candidates[0];
+}
+
+async function isReadable(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function findRomSourceForAddress(

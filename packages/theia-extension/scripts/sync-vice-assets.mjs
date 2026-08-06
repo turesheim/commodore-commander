@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { cp, chmod, lstat, mkdir, open, readdir, rm } from 'node:fs/promises';
+import { access, cp, chmod, lstat, mkdir, open, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -25,12 +25,16 @@ const sidScoreCliTarget = path.join(
   'sidscore',
   sidScoreCliJar
 );
-const source = path.join(
-  repoRoot,
-  'net.sourceforge.vice.cocoa.macosx.aarch64',
-  'vice',
-  'VICE.app'
-);
+const source = process.env.COMMODORE_COMMANDER_PATCHED_VICE_APP
+  ? path.resolve(process.env.COMMODORE_COMMANDER_PATCHED_VICE_APP)
+  : path.join(
+    repoRoot,
+    'tools',
+    'vice-embed',
+    'dist',
+    'darwin-arm64',
+    'VICE.app'
+  );
 const target = path.join(
   scriptDir,
   '..',
@@ -50,11 +54,25 @@ await cp(sidScoreCliSource, sidScoreCliTarget, {
   preserveTimestamps: true
 });
 
+if (process.env.COMMODORE_COMMANDER_SKIP_VICE_ASSETS === '1') {
+  console.warn('Skipping bundled VICE asset sync.');
+  process.exit(0);
+}
+
+if (!(await pathExists(source))) {
+  throw new Error(
+    `Patched embedded VICE app bundle was not found: ${source}\n` +
+      'Run `make -C tools/vice-embed package` or set ' +
+      'COMMODORE_COMMANDER_PATCHED_VICE_APP to a patched VICE.app.'
+  );
+}
+
 await mkdir(path.dirname(target), { recursive: true });
 await rm(target, { recursive: true, force: true });
 await cp(source, target, {
   recursive: true,
   preserveTimestamps: true,
+  verbatimSymlinks: true,
   filter: (entry) => !entry.endsWith('.DS_Store')
 });
 
@@ -148,6 +166,15 @@ async function collectMachOFiles(entryPath) {
   }
 
   return (await isMachO(entryPath)) ? [entryPath] : [];
+}
+
+async function pathExists(entryPath) {
+  try {
+    await access(entryPath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function isMachO(filePath) {

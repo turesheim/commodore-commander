@@ -195,6 +195,11 @@ tools without changing shared project files:
 - `commodoreCommander.tools.javaRuntime`: Java command or path for Kick
   Assembler and SIDScore. `COMMODORE_COMMANDER_JAVA_RUNTIME` still takes
   precedence.
+- `commodoreCommander.VICE.launchMode`: VICE launch surface. It defaults to
+  `patchedView`, the embedded Theia view intended for patched VICE runtimes
+  with frame/input transport. The patched runtime baseline is VICE 3.10.0 from
+  SourceForge tag `tags/v3.10/vice`. Use `externalWindow` for a stock external
+  VICE process and native VICE window.
 - `commodoreCommander.VICE.runtimePath`: VICE runtime or installation root
   containing `share/vice`. Leave it empty to use bundled VICE when available,
   then standard system locations. When the root also contains `bin`, Commodore
@@ -204,6 +209,10 @@ tools without changing shared project files:
 Launch configurations can still override one debug launch with `viceExecutable`
 and `viceResourcesPath`, but the normal Settings override is the runtime path
 because VICE is a suite of machine-specific emulators.
+
+Local product builds use the patched VICE runtime staged by
+`npm run vice:assets`. CI lanes that intentionally use an external VICE process
+can set `COMMODORE_COMMANDER_SKIP_VICE_ASSETS=1` during the Theia build.
 
 ## Headless Build
 

@@ -90,6 +90,7 @@ export interface ViceDebugLaunchArguments
   cwd?: string;
   viceResourcesPath: string;
   viceExecutable: string;
+  viceLaunchMode?: 'patchedView' | 'externalWindow';
   viceArgs?: readonly string[];
   machineName?: string;
   stopOnEntry?: boolean;

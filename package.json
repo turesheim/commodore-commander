@@ -16,6 +16,8 @@
     "screenshots:theia": "node tools/capture-theia-screenshots.mjs",
     "test:e2e:theia:ui": "node tools/run-theia-ui-e2e.mjs",
     "test:e2e:vice": "npm run test:e2e:vice --workspace @commodore-commander/debug-adapter",
+    "vice:package": "make -C tools/vice-embed package",
+    "vice:assets": "make -C tools/vice-embed assets",
     "test:e2e:vice:docker": "bash tools/run-vice-e2e-docker.sh"
   },
   "workspaces": [

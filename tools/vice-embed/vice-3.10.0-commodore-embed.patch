@@ -1,0 +1,510 @@
+diff --git a/src/arch/sdl/Makefile.am b/src/arch/sdl/Makefile.am
+--- a/src/arch/sdl/Makefile.am
++++ b/src/arch/sdl/Makefile.am
+@@ -96,0 +97,2 @@
++	cc_embed.c \
++	cc_embed.h \
+diff --git a/src/arch/shared/macOS-launcher.c b/src/arch/shared/macOS-launcher.c
+--- a/src/arch/shared/macOS-launcher.c
++++ b/src/arch/shared/macOS-launcher.c
+@@ -24,7 +24,8 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <libgen.h>
+ #include <limits.h>
+-
++#include <mach-o/dyld.h>
++
+ int main(int argc, char *argv[])
+ {
+diff --git a/src/arch/sdl/cc_embed.h b/src/arch/sdl/cc_embed.h
+new file mode 100644
+--- /dev/null
++++ b/src/arch/sdl/cc_embed.h
+@@ -0,0 +1,27 @@
++/*
++ * cc_embed.h - Commodore Commander VICE embedding transport.
++ *
++ * This file is part of VICE, the Versatile Commodore Emulator.
++ * See README for copyright notice.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#ifndef VICE_CC_EMBED_H
++#define VICE_CC_EMBED_H
++
++#include "vice_sdl.h"
++
++void cc_embed_init_from_args(int *argc, char ***argv);
++void cc_embed_poll_commands(void);
++void cc_embed_publish_frame(int width,
++                            int height,
++                            const void *pixels,
++                            int pitch,
++                            const SDL_PixelFormat *format);
++void cc_embed_shutdown(void);
++
++#endif
+diff --git a/src/arch/sdl/cc_embed.c b/src/arch/sdl/cc_embed.c
+new file mode 100644
+--- /dev/null
++++ b/src/arch/sdl/cc_embed.c
+@@ -0,0 +1,431 @@
++/*
++ * cc_embed.c - Commodore Commander VICE embedding transport.
++ *
++ * This file is part of VICE, the Versatile Commodore Emulator.
++ * See README for copyright notice.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#include "vice.h"
++
++#include "vice_sdl.h"
++
++#include <ctype.h>
++#include <errno.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <time.h>
++
++#ifndef WINDOWS_COMPILE
++#include <fcntl.h>
++#include <unistd.h>
++#endif
++
++#include "cc_embed.h"
++#include "kbd.h"
++
++#define CC_EMBED_FLAG "-cc-embed"
++#define CC_EMBED_PREFIX "CCV1 "
++#define CC_EMBED_PROTOCOL "commodore-vice-embed-v1"
++#define CC_EMBED_LINE_BYTES 4096
++
++static int cc_embed_enabled = 0;
++static unsigned long cc_embed_frame_id = 0;
++static char cc_embed_line[CC_EMBED_LINE_BYTES];
++static size_t cc_embed_line_len = 0;
++
++static void cc_embed_emit_hello(void);
++static void cc_embed_emit_status(const char *state, const char *message);
++static void cc_embed_set_stdin_nonblocking(void);
++static void cc_embed_handle_line(const char *line);
++static void cc_embed_handle_key(const char *payload);
++static int cc_embed_json_bool(const char *json, const char *name, int *value);
++static int cc_embed_json_int(const char *json, const char *name, int *value);
++static int cc_embed_json_has_string(const char *json, const char *name, const char *value);
++static SDLKey cc_embed_dom_key_to_sdl(int key_code, const char *payload);
++static uint32_t cc_embed_get_pixel(const uint8_t *row, int x, const SDL_PixelFormat *format);
++static void cc_embed_write_base64(const uint8_t *bytes, size_t length);
++
++void cc_embed_init_from_args(int *argc, char ***argv)
++{
++    int source;
++    int target;
++    char **args;
++
++    if (argc == NULL || argv == NULL || *argv == NULL) {
++        return;
++    }
++
++    args = *argv;
++    target = 1;
++    for (source = 1; source < *argc; source++) {
++        if (strcmp(args[source], CC_EMBED_FLAG) == 0) {
++            cc_embed_enabled = 1;
++            continue;
++        }
++        args[target++] = args[source];
++    }
++    args[target] = NULL;
++    *argc = target;
++
++    if (!cc_embed_enabled) {
++        return;
++    }
++
++    setvbuf(stdout, NULL, _IONBF, 0);
++    cc_embed_set_stdin_nonblocking();
++    cc_embed_emit_hello();
++    cc_embed_emit_status("running", "Frame transport enabled.");
++}
++
++void cc_embed_poll_commands(void)
++{
++#ifndef WINDOWS_COMPILE
++    char buffer[512];
++    ssize_t count;
++    ssize_t index;
++
++    if (!cc_embed_enabled) {
++        return;
++    }
++
++    for (;;) {
++        count = read(STDIN_FILENO, buffer, sizeof(buffer));
++        if (count < 0) {
++            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
++                return;
++            }
++            cc_embed_emit_status("error", "Could not read embedded input stream.");
++            return;
++        }
++        if (count == 0) {
++            return;
++        }
++
++        for (index = 0; index < count; index++) {
++            char c = buffer[index];
++            if (c == '\n') {
++                cc_embed_line[cc_embed_line_len] = '\0';
++                cc_embed_handle_line(cc_embed_line);
++                cc_embed_line_len = 0;
++            } else if (cc_embed_line_len + 1 < sizeof(cc_embed_line)) {
++                cc_embed_line[cc_embed_line_len++] = c;
++            } else {
++                cc_embed_line_len = 0;
++                cc_embed_emit_status("error", "Embedded input line was too long.");
++            }
++        }
++    }
++#endif
++}
++
++void cc_embed_publish_frame(int width,
++                            int height,
++                            const void *pixels,
++                            int pitch,
++                            const SDL_PixelFormat *format)
++{
++    const uint8_t *source;
++    uint8_t *rgba;
++    uint8_t *target;
++    int x;
++    int y;
++    size_t length;
++
++    if (!cc_embed_enabled || pixels == NULL || format == NULL) {
++        return;
++    }
++    if (width <= 0 || height <= 0 || width > 2048 || height > 2048) {
++        return;
++    }
++
++    length = (size_t)width * (size_t)height * 4;
++    rgba = (uint8_t *)malloc(length);
++    if (rgba == NULL) {
++        cc_embed_emit_status("error", "Could not allocate embedded frame buffer.");
++        return;
++    }
++
++    target = rgba;
++    source = (const uint8_t *)pixels;
++    for (y = 0; y < height; y++) {
++        const uint8_t *row = source + (pitch * y);
++        for (x = 0; x < width; x++) {
++            uint8_t r;
++            uint8_t g;
++            uint8_t b;
++            uint8_t a;
++            uint32_t pixel = cc_embed_get_pixel(row, x, format);
++            SDL_GetRGBA(pixel, format, &r, &g, &b, &a);
++            *target++ = r;
++            *target++ = g;
++            *target++ = b;
++            *target++ = a;
++        }
++    }
++
++    cc_embed_frame_id++;
++    printf(CC_EMBED_PREFIX
++           "{\"type\":\"frame\",\"frameId\":%lu,\"width\":%d,\"height\":%d,"
++           "\"pixelFormat\":\"rgba8888\",\"timestamp\":%lu,\"data\":\"",
++           cc_embed_frame_id,
++           width,
++           height,
++           (unsigned long)time(NULL) * 1000UL);
++    cc_embed_write_base64(rgba, length);
++    printf("\"}\n");
++    free(rgba);
++}
++
++void cc_embed_shutdown(void)
++{
++    if (!cc_embed_enabled) {
++        return;
++    }
++    cc_embed_emit_status("stopped", "Frame transport stopped.");
++}
++
++static void cc_embed_emit_hello(void)
++{
++    printf(CC_EMBED_PREFIX
++           "{\"type\":\"hello\",\"protocol\":\"%s\",\"machine\":\"sdl\"}\n",
++           CC_EMBED_PROTOCOL);
++}
++
++static void cc_embed_emit_status(const char *state, const char *message)
++{
++    printf(CC_EMBED_PREFIX
++           "{\"type\":\"status\",\"state\":\"%s\",\"message\":\"%s\"}\n",
++           state,
++           message);
++}
++
++static void cc_embed_set_stdin_nonblocking(void)
++{
++#ifndef WINDOWS_COMPILE
++    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
++    if (flags >= 0) {
++        (void)fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
++    }
++#endif
++}
++
++static void cc_embed_handle_line(const char *line)
++{
++    const char *payload;
++
++    if (strncmp(line, CC_EMBED_PREFIX, strlen(CC_EMBED_PREFIX)) != 0) {
++        return;
++    }
++
++    payload = line + strlen(CC_EMBED_PREFIX);
++    if (strstr(payload, "\"type\":\"key\"") != NULL) {
++        cc_embed_handle_key(payload);
++    } else if (strstr(payload, "\"type\":\"quit\"") != NULL) {
++        cc_embed_emit_status("stopped", "Quit requested.");
++        exit(0);
++    }
++}
++
++static void cc_embed_handle_key(const char *payload)
++{
++    int key_code = 0;
++    int pressed = 0;
++    int modifier = 0;
++    SDLKey key;
++    SDLMod mod = KMOD_NONE;
++
++    if (!cc_embed_json_int(payload, "\"keyCode\"", &key_code)) {
++        return;
++    }
++    if (!cc_embed_json_bool(payload, "\"pressed\"", &pressed)) {
++        return;
++    }
++
++    key = cc_embed_dom_key_to_sdl(key_code, payload);
++    if (key == SDLK_UNKNOWN) {
++        return;
++    }
++
++    if (cc_embed_json_bool(payload, "\"shift\"", &modifier) && modifier) {
++        mod |= KMOD_LSHIFT;
++    }
++    if (cc_embed_json_bool(payload, "\"ctrl\"", &modifier) && modifier) {
++        mod |= KMOD_LCTRL;
++    }
++    if (cc_embed_json_bool(payload, "\"alt\"", &modifier) && modifier) {
++        mod |= KMOD_LALT;
++    }
++
++    if (pressed) {
++        sdlkbd_press(key, mod);
++    } else {
++        sdlkbd_release(key, mod);
++    }
++}
++
++static int cc_embed_json_bool(const char *json, const char *name, int *value)
++{
++    const char *position = strstr(json, name);
++    if (position == NULL) {
++        return 0;
++    }
++    position = strchr(position, ':');
++    if (position == NULL) {
++        return 0;
++    }
++    position++;
++    while (isspace((unsigned char)*position)) {
++        position++;
++    }
++    if (strncmp(position, "true", 4) == 0) {
++        *value = 1;
++        return 1;
++    }
++    if (strncmp(position, "false", 5) == 0) {
++        *value = 0;
++        return 1;
++    }
++    return 0;
++}
++
++static int cc_embed_json_int(const char *json, const char *name, int *value)
++{
++    char *endptr;
++    long parsed;
++    const char *position = strstr(json, name);
++    if (position == NULL) {
++        return 0;
++    }
++    position = strchr(position, ':');
++    if (position == NULL) {
++        return 0;
++    }
++    parsed = strtol(position + 1, &endptr, 10);
++    if (endptr == position + 1) {
++        return 0;
++    }
++    *value = (int)parsed;
++    return 1;
++}
++
++static int cc_embed_json_has_string(const char *json, const char *name, const char *value)
++{
++    char pattern[128];
++    if (strlen(name) + strlen(value) + 6 >= sizeof(pattern)) {
++        return 0;
++    }
++    sprintf(pattern, "%s:\"%s\"", name, value);
++    return strstr(json, pattern) != NULL;
++}
++
++static SDLKey cc_embed_dom_key_to_sdl(int key_code, const char *payload)
++{
++    if (key_code >= 'A' && key_code <= 'Z') {
++        return (SDLKey)('a' + (key_code - 'A'));
++    }
++    if (key_code >= '0' && key_code <= '9') {
++        return (SDLKey)key_code;
++    }
++
++    switch (key_code) {
++        case 8:
++            return SDLK_BACKSPACE;
++        case 9:
++            return SDLK_TAB;
++        case 13:
++            return SDLK_RETURN;
++        case 27:
++            return SDLK_ESCAPE;
++        case 32:
++            return SDLK_SPACE;
++        case 37:
++            return SDLK_LEFT;
++        case 38:
++            return SDLK_UP;
++        case 39:
++            return SDLK_RIGHT;
++        case 40:
++            return SDLK_DOWN;
++        case 112:
++            return SDLK_F1;
++        case 113:
++            return SDLK_F2;
++        case 114:
++            return SDLK_F3;
++        case 115:
++            return SDLK_F4;
++        case 116:
++            return SDLK_F5;
++        case 117:
++            return SDLK_F6;
++        case 118:
++            return SDLK_F7;
++        case 119:
++            return SDLK_F8;
++        default:
++            break;
++    }
++
++    if (cc_embed_json_has_string(payload, "\"code\"", "ArrowLeft")) {
++        return SDLK_LEFT;
++    }
++    if (cc_embed_json_has_string(payload, "\"code\"", "ArrowUp")) {
++        return SDLK_UP;
++    }
++    if (cc_embed_json_has_string(payload, "\"code\"", "ArrowRight")) {
++        return SDLK_RIGHT;
++    }
++    if (cc_embed_json_has_string(payload, "\"code\"", "ArrowDown")) {
++        return SDLK_DOWN;
++    }
++
++    return SDLK_UNKNOWN;
++}
++
++static uint32_t cc_embed_get_pixel(const uint8_t *row, int x, const SDL_PixelFormat *format)
++{
++    const uint8_t *p = row + (x * format->BytesPerPixel);
++
++    switch (format->BytesPerPixel) {
++        case 1:
++            return *p;
++        case 2:
++            return *(const uint16_t *)p;
++        case 3:
++#if SDL_BYTEORDER == SDL_BIG_ENDIAN
++            return p[0] << 16 | p[1] << 8 | p[2];
++#else
++            return p[0] | p[1] << 8 | p[2] << 16;
++#endif
++        case 4:
++            return *(const uint32_t *)p;
++        default:
++            return 0;
++    }
++}
++
++static void cc_embed_write_base64(const uint8_t *bytes, size_t length)
++{
++    static const char alphabet[] =
++        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
++    size_t index;
++
++    for (index = 0; index < length; index += 3) {
++        uint32_t octet_a = bytes[index];
++        uint32_t octet_b = index + 1 < length ? bytes[index + 1] : 0;
++        uint32_t octet_c = index + 2 < length ? bytes[index + 2] : 0;
++        uint32_t triple = (octet_a << 16) | (octet_b << 8) | octet_c;
++
++        fputc(alphabet[(triple >> 18) & 0x3f], stdout);
++        fputc(alphabet[(triple >> 12) & 0x3f], stdout);
++        fputc(index + 1 < length ? alphabet[(triple >> 6) & 0x3f] : '=', stdout);
++        fputc(index + 2 < length ? alphabet[triple & 0x3f] : '=', stdout);
++    }
++}
+diff --git a/src/arch/sdl/sdlmain.c b/src/arch/sdl/sdlmain.c
+--- a/src/arch/sdl/sdlmain.c
++++ b/src/arch/sdl/sdlmain.c
+@@ -38,0 +39 @@
++#include "cc_embed.h"
+@@ -45,0 +47 @@
++    cc_embed_init_from_args(&argc, &argv);
+@@ -67,0 +70,2 @@
++    cc_embed_shutdown();
++
+diff --git a/src/arch/sdl/video_sdl2.c b/src/arch/sdl/video_sdl2.c
+--- a/src/arch/sdl/video_sdl2.c
++++ b/src/arch/sdl/video_sdl2.c
+@@ -54,0 +55 @@
++#include "cc_embed.h"
+@@ -872,0 +874,6 @@
++    cc_embed_poll_commands();
++    cc_embed_publish_frame(canvas->screen->w,
++                           canvas->screen->h,
++                           canvas->screen->pixels,
++                           canvas->screen->pitch,
++                           canvas->screen->format);

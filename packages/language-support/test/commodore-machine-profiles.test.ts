@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { constants } from 'node:fs';
+import { constants, existsSync } from 'node:fs';
 import { access } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -113,18 +113,25 @@ test('Commodore machine profile VICE metadata maps shared executables and model 
   assert.equal(isCommodoreViceModelForMachineProfile('c64', 'c128dcr'), false);
 });
 
-test('Commodore machine profile VICE executables exist in the bundled macOS runtime', async () => {
-  const viceBinRoot = fileURLToPath(
+const generatedViceBinRoot = process.env.COMMODORE_COMMANDER_VICE_BIN_ROOT
+  ? path.resolve(process.env.COMMODORE_COMMANDER_VICE_BIN_ROOT)
+  : fileURLToPath(
     new URL(
-      '../../../net.sourceforge.vice.cocoa.macosx.aarch64/vice/VICE.app/Contents/Resources/bin/',
+      '../../../tools/vice-embed/dist/darwin-arm64/VICE.app/Contents/Resources/bin/',
       import.meta.url
     )
   );
+
+test('Commodore machine profile VICE executables exist in the generated patched runtime', {
+  skip: existsSync(generatedViceBinRoot)
+    ? false
+    : 'run `make -C tools/vice-embed package` to generate the patched VICE runtime'
+}, async () => {
   const executables = new Set(
     COMMODORE_MACHINE_PROFILES.map((profile) => profile.vice.executable)
   );
 
   for (const executable of executables) {
-    await access(path.join(viceBinRoot, executable), constants.X_OK);
+    await access(path.join(generatedViceBinRoot, executable), constants.X_OK);
   }
 });

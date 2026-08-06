@@ -14,16 +14,23 @@ import {
   SidScoreRuntimeServicePath,
   type SidScoreRuntimeClient
 } from '../common/sidscore-runtime-service';
+import {
+  CommodoreViceEmbedServicePath,
+  type CommodoreViceEmbedClient
+} from '../common/commodore-vice-embed-service';
 import { CommodorePrgServiceImpl } from './commodore-prg-service-impl';
 import { KickAssemblerBuildServiceImpl } from './kick-assembler-build-service-impl';
 import { SidScoreRuntimeServiceImpl } from './sidscore-runtime-service-impl';
 import { CommodoreViceDebugAdapterContribution } from './commodore-vice-debug-adapter-contribution';
+import { CommodoreViceEmbedServiceImpl } from './commodore-vice-embed-service-impl';
 
 export default new ContainerModule((bind) => {
   bind(CommodorePrgServiceImpl).toSelf().inSingletonScope();
   bind(KickAssemblerBuildServiceImpl).toSelf().inSingletonScope();
   bind(SidScoreRuntimeServiceImpl).toSelf().inSingletonScope();
   bind(BackendApplicationContribution).toService(SidScoreRuntimeServiceImpl);
+  bind(CommodoreViceEmbedServiceImpl).toSelf().inSingletonScope();
+  bind(BackendApplicationContribution).toService(CommodoreViceEmbedServiceImpl);
   bind(CommodoreViceDebugAdapterContribution).toSelf().inSingletonScope();
   bind(DebugAdapterContribution).toService(CommodoreViceDebugAdapterContribution);
   bind(ConnectionHandler)
@@ -52,6 +59,18 @@ export default new ContainerModule((bind) => {
         SidScoreRuntimeServicePath,
         (client) => {
           const service = context.container.get(SidScoreRuntimeServiceImpl);
+          service.setClient(client);
+          return service;
+        }
+      )
+    )
+    .inSingletonScope();
+  bind(ConnectionHandler)
+    .toDynamicValue((context) =>
+      new RpcConnectionHandler<CommodoreViceEmbedClient>(
+        CommodoreViceEmbedServicePath,
+        (client) => {
+          const service = context.container.get(CommodoreViceEmbedServiceImpl);
           service.setClient(client);
           return service;
         }

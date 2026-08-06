@@ -58,6 +58,21 @@ test('loadC64RomSources creates generated BASIC and KERNAL disassembly sources',
   assert.match(kernal?.content ?? '', /kCHROUT:/u);
 });
 
+test('loadC64RomSources accepts a direct VICE data directory', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'cc-rom-data-'));
+  const c64Directory = path.join(root, 'C64');
+  await mkdir(c64Directory, { recursive: true });
+  await writeFile(path.join(c64Directory, 'c64mem.sym'), 'al ffd2 .kCHROUT\n');
+  await writeFile(path.join(c64Directory, 'basic-901226-01.bin'), romBytes(0x2000, []));
+  await writeFile(path.join(c64Directory, 'kernal-901227-03.bin'), romBytes(0x2000, [
+    [0x1fd2, [0x60]]
+  ]));
+
+  const sources = await loadC64RomSources(root, 650400);
+
+  assert.equal(findRomSourceForAddress(sources, 0xffd2)?.sourceReference, 650401);
+});
+
 function romBytes(
   length: number,
   patches: readonly [number, readonly number[]][]

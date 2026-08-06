@@ -12,7 +12,6 @@ on:
       - "packages/language-support/**"
       - "packages/theia-extension/**"
       - "tools/**"
-      - "net.sourceforge.vice.cocoa.macosx.aarch64/vice/VICE.app/Contents/Resources/share/vice/**"
   pull_request:
     branches: [ "main" ]
     paths:
@@ -24,7 +23,6 @@ on:
       - "packages/language-support/**"
       - "packages/theia-extension/**"
       - "tools/**"
-      - "net.sourceforge.vice.cocoa.macosx.aarch64/vice/VICE.app/Contents/Resources/share/vice/**"
   workflow_dispatch:
 
 permissions:
@@ -39,8 +37,6 @@ jobs:
     env:
       VICE_E2E: "1"
       VICE_EXECUTABLE: /usr/bin/x64sc
-      VICE_RESOURCES_PATH: ${{ github.workspace }}/net.sourceforge.vice.cocoa.macosx.aarch64/vice/VICE.app/Contents/Resources
-      VICE_ARGS: '["-directory","${{ github.workspace }}/net.sourceforge.vice.cocoa.macosx.aarch64/vice/VICE.app/Contents/Resources/share/vice","-console","+sound"]'
 
     steps:
       - name: Check out repository
@@ -61,13 +57,21 @@ jobs:
           sudo apt-get install -y software-properties-common
           sudo add-apt-repository -y multiverse
           sudo apt-get update
-          sudo apt-get install -y dbus-x11 vice xvfb
+          sudo apt-get install -y dbus-x11 vice vice-data xvfb
+
+      - name: Resolve VICE resources
+        run: |
+          vice_basic="$(dpkg -L vice-data vice 2>/dev/null | grep '/C64/basic-901226-01.bin$' | head -n 1)"
+          test -n "$vice_basic"
+          vice_resources="$(dirname "$(dirname "$vice_basic")")"
+          echo "VICE_RESOURCES_PATH=$vice_resources" >> "$GITHUB_ENV"
+          printf 'VICE_ARGS=["-directory","%s","-console","+sound"]\n' "$vice_resources" >> "$GITHUB_ENV"
 
       - name: Verify VICE runtime
         run: |
-          test -d "$VICE_RESOURCES_PATH/share/vice"
-          test -f "$VICE_RESOURCES_PATH/share/vice/C64/basic-901226-01.bin"
-          test -f "$VICE_RESOURCES_PATH/share/vice/C64/kernal-901227-03.bin"
+          test -d "$VICE_RESOURCES_PATH/C64"
+          test -f "$VICE_RESOURCES_PATH/C64/basic-901226-01.bin"
+          test -f "$VICE_RESOURCES_PATH/C64/kernal-901227-03.bin"
           test -x "$VICE_EXECUTABLE"
           file "$VICE_EXECUTABLE"
 
@@ -90,11 +94,7 @@ jobs:
     env:
       CI: "true"
       VICE_EXECUTABLE: /usr/bin/x64sc
-      VICE_RESOURCES_PATH: ${{ github.workspace }}/net.sourceforge.vice.cocoa.macosx.aarch64/vice/VICE.app/Contents/Resources
-      VICE_ARGS: '["-directory","${{ github.workspace }}/net.sourceforge.vice.cocoa.macosx.aarch64/vice/VICE.app/Contents/Resources/share/vice","-console","+sound"]'
       THEIA_UI_E2E_VICE_EXECUTABLE: /usr/bin/x64sc
-      THEIA_UI_E2E_VICE_RESOURCES_PATH: ${{ github.workspace }}/net.sourceforge.vice.cocoa.macosx.aarch64/vice/VICE.app/Contents/Resources
-      THEIA_UI_E2E_VICE_ARGS: '["-directory","${{ github.workspace }}/net.sourceforge.vice.cocoa.macosx.aarch64/vice/VICE.app/Contents/Resources/share/vice","-console","+sound"]'
 
     steps:
       - name: Check out repository
@@ -127,7 +127,18 @@ jobs:
             pkg-config \
             python3 \
             vice \
+            vice-data \
             xvfb
+
+      - name: Resolve VICE resources
+        run: |
+          vice_basic="$(dpkg -L vice-data vice 2>/dev/null | grep '/C64/basic-901226-01.bin$' | head -n 1)"
+          test -n "$vice_basic"
+          vice_resources="$(dirname "$(dirname "$vice_basic")")"
+          echo "VICE_RESOURCES_PATH=$vice_resources" >> "$GITHUB_ENV"
+          printf 'VICE_ARGS=["-directory","%s","-console","+sound"]\n' "$vice_resources" >> "$GITHUB_ENV"
+          echo "THEIA_UI_E2E_VICE_RESOURCES_PATH=$vice_resources" >> "$GITHUB_ENV"
+          printf 'THEIA_UI_E2E_VICE_ARGS=["-directory","%s","-console","+sound"]\n' "$vice_resources" >> "$GITHUB_ENV"
 
       - name: Prepare @vscode/ripgrep download cache
         env:
@@ -147,13 +158,14 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=4096
           THEIA_BUILD_MAX_OLD_SPACE_SIZE_MB: "4096"
+          COMMODORE_COMMANDER_SKIP_VICE_ASSETS: "1"
         run: npm run theia:build
 
       - name: Verify VICE runtime
         run: |
-          test -d "$VICE_RESOURCES_PATH/share/vice"
-          test -f "$VICE_RESOURCES_PATH/share/vice/C64/basic-901226-01.bin"
-          test -f "$VICE_RESOURCES_PATH/share/vice/C64/kernal-901227-03.bin"
+          test -d "$VICE_RESOURCES_PATH/C64"
+          test -f "$VICE_RESOURCES_PATH/C64/basic-901226-01.bin"
+          test -f "$VICE_RESOURCES_PATH/C64/kernal-901227-03.bin"
           test -x "$VICE_EXECUTABLE"
           file "$VICE_EXECUTABLE"
 

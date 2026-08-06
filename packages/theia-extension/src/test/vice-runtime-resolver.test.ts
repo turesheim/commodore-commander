@@ -8,6 +8,7 @@ import {
   COMMODORE_COMMANDER_TOOL_PREFERENCE_SCHEMA,
   COMMODORE_COMMANDER_LEGACY_VICE_RUNTIME_PATH_PREFERENCE,
   COMMODORE_COMMANDER_VICE_EXECUTABLE_PREFERENCE,
+  COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE,
   COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE,
   COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE,
   getCommodoreCommanderToolPreferences
@@ -15,6 +16,12 @@ import {
 import {
   resolveViceRuntime
 } from '../node/vice-runtime-resolver';
+import {
+  COMMODORE_COMMANDER_PATCHED_VICE_BASE_VERSION,
+  COMMODORE_COMMANDER_PATCHED_VICE_SOURCE_TAG,
+  COMMODORE_COMMANDER_PATCHED_VICE_SOURCE_URL,
+  DEFAULT_COMMODORE_COMMANDER_VICE_LAUNCH_MODE
+} from '../common/commodore-vice-embed';
 
 test('VICE settings expose runtime path and hide legacy executable and resources preferences', () => {
   const properties = COMMODORE_COMMANDER_TOOL_PREFERENCE_SCHEMA.properties;
@@ -24,6 +31,14 @@ test('VICE settings expose runtime path and hide legacy executable and resources
     'commodoreCommander.VICE.runtimePath'
   );
   assert.ok(properties[COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE]);
+  assert.equal(
+    properties[COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE]?.default,
+    DEFAULT_COMMODORE_COMMANDER_VICE_LAUNCH_MODE
+  );
+  assert.deepEqual(
+    properties[COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE]?.enum,
+    ['patchedView', 'externalWindow']
+  );
   assert.equal(
     properties[COMMODORE_COMMANDER_VICE_EXECUTABLE_PREFERENCE]?.hidden,
     true
@@ -38,10 +53,20 @@ test('VICE settings expose runtime path and hide legacy executable and resources
   );
 });
 
+test('patched VICE metadata is pinned to the 3.10.0 release tag', () => {
+  assert.equal(COMMODORE_COMMANDER_PATCHED_VICE_BASE_VERSION, '3.10.0');
+  assert.equal(COMMODORE_COMMANDER_PATCHED_VICE_SOURCE_TAG, 'v3.10');
+  assert.equal(
+    COMMODORE_COMMANDER_PATCHED_VICE_SOURCE_URL,
+    'https://sourceforge.net/p/vice-emu/code/HEAD/tree/tags/v3.10/vice/'
+  );
+});
+
 test('tool preferences prefer VICE runtime path and keep legacy fallbacks', () => {
   const values = new Map<string, string>([
     [COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE, ' /new-vice '],
     [COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE, '/legacy-vice'],
+    [COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE, ' externalWindow '],
     [COMMODORE_COMMANDER_VICE_EXECUTABLE_PREFERENCE, ' x64sc-custom ']
   ]);
 
@@ -58,6 +83,38 @@ test('tool preferences prefer VICE runtime path and keep legacy fallbacks', () =
 
   assert.equal(preferences.viceResourcesPath, '/new-vice');
   assert.equal(preferences.viceExecutable, 'x64sc-custom');
+  assert.equal(preferences.viceLaunchMode, 'externalWindow');
+});
+
+test('tool preferences default VICE launch mode to the patched embedded view', () => {
+  const preferences = getCommodoreCommanderToolPreferences({
+    get: <T>(
+      _preferenceName: string,
+      defaultValue?: T,
+      _resourceUri?: string
+    ): T | undefined => defaultValue
+  });
+
+  assert.equal(preferences.viceLaunchMode, 'patchedView');
+});
+
+test('tool preferences fall back to patched VICE view for invalid launch modes', () => {
+  const values = new Map<string, string>([
+    [COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE, 'sidecar']
+  ]);
+
+  const preferences = getCommodoreCommanderToolPreferences({
+    get: <T>(
+      preferenceName: string,
+      defaultValue?: T,
+      _resourceUri?: string
+    ): T | undefined =>
+      (values.has(preferenceName)
+        ? values.get(preferenceName)
+        : defaultValue) as T | undefined
+  });
+
+  assert.equal(preferences.viceLaunchMode, 'patchedView');
 });
 
 test('tool preferences keep legacy VICE resources path fallback', () => {

@@ -8,9 +8,9 @@ npm run test:e2e:vice:docker
 
 The container installs Debian's VICE package and runs `x64sc` behind a manual
 Xvfb display via `tools/run-vice-e2e-linux.sh`. The Linux run uses VICE console
-mode so the emulator process stays attached to the test harness. Because
-distribution VICE packages do not ship the C64 ROM images, the test passes
-`-directory` to the repository's bundled `share/vice` resources.
+mode so the emulator process stays attached to the test harness. The container
+discovers the installed VICE data directory from the Debian packages and passes
+that directory through `-directory`.
 
 The wrapper mounts the checkout at `/workspace`, installs only the
 `@commodore-commander/debug-adapter` workspace dependencies, and stores

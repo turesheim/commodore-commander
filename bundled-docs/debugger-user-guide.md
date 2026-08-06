@@ -30,6 +30,11 @@ configuration details.
 Commodore Commander uses bundled VICE when it is packaged for the current
 platform. To override that bundle, set this preference before launching:
 
+- `commodoreCommander.VICE.launchMode`: launch surface for VICE. The default is
+  `patchedView`, which is the intended embedded Theia view backed by a patched
+  VICE 3.10.0 runtime with video-frame and input transport. The upstream base
+  is SourceForge tag `tags/v3.10/vice`. Set this to `externalWindow` when you
+  want stock VICE to stay in its own native window.
 - `commodoreCommander.VICE.runtimePath`: VICE runtime or installation root
   containing `share/vice`. When that root also contains `bin`, Commodore
   Commander selects the VICE emulator for the active machine profile, such as
@@ -39,6 +44,13 @@ You normally do not point Settings at one VICE executable because VICE is a
 suite of machine-specific emulators. For an exceptional single launch,
 `.theia/launch.json` can still set `viceExecutable` to a command or absolute
 path and `viceResourcesPath` to the matching runtime root.
+
+The embedded VICE view is present in the Theia view area and is backed by the
+patched SDL runtime. Until a patched runtime is bundled for the platform, use
+`commodoreCommander.VICE.runtimePath` or a launch-specific executable override
+to point Commodore Commander at the patched build. For local product builds,
+run `npm run vice:assets` before packaging so the generated assets use the
+patched runtime.
 
 ## Start A Debug Session
 
