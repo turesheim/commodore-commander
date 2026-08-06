@@ -27,6 +27,8 @@ CCV1 {"type":"frame","frameId":1,"width":384,"height":272,"pixelFormat":"rgba888
 The first patch emits `rgba8888` base64 payloads so Theia can render a frame
 without native browser extensions or a temporary file. This is simple and
 portable, but it is not the intended final transport for full-speed rendering.
+The native patch currently throttles frame emission to roughly every third SDL
+refresh to keep stdout volume manageable.
 
 ## Commodore Commander to VICE
 

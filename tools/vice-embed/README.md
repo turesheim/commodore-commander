@@ -52,11 +52,14 @@ view canvas.
 The current patch is intentionally narrow:
 
 - Frame publishing hooks into `src/arch/sdl/video_sdl2.c`.
+- Hidden embedded SDL windows still run through the canvas refresh path so
+  frames are emitted without showing the native window.
 - Keyboard input reuses the SDL keyboard path in `src/arch/sdl/kbd.c`.
 - Reset commands trigger a normal machine CPU reset.
 - Joystick and peripheral input commands are reserved by the protocol but are
   not implemented in the native patch yet.
 - The JSON/base64 frame stream is good enough to validate the embedding model.
+  It is throttled to roughly every third SDL refresh to avoid flooding stdout.
   A later patch should replace it with a binary or shared-memory frame channel
   before treating this as the final high-performance transport.
 

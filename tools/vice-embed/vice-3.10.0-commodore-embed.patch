@@ -55,7 +55,7 @@ diff --git a/src/arch/sdl/cc_embed.c b/src/arch/sdl/cc_embed.c
 new file mode 100644
 --- /dev/null
 +++ b/src/arch/sdl/cc_embed.c
-@@ -0,0 +1,440 @@
+@@ -0,0 +1,449 @@
 +/*
 + * cc_embed.c - Commodore Commander VICE embedding transport.
 + *
@@ -93,9 +93,11 @@ new file mode 100644
 +#define CC_EMBED_PREFIX "CCV1 "
 +#define CC_EMBED_PROTOCOL "commodore-vice-embed-v1"
 +#define CC_EMBED_LINE_BYTES 4096
++#define CC_EMBED_FRAME_STRIDE 3
 +
 +static int cc_embed_enabled = 0;
 +static unsigned long cc_embed_frame_id = 0;
++static unsigned int cc_embed_refresh_counter = 0;
 +static char cc_embed_line[CC_EMBED_LINE_BYTES];
 +static size_t cc_embed_line_len = 0;
 +
@@ -207,6 +209,13 @@ new file mode 100644
 +    }
 +    if (width <= 0 || height <= 0 || width > 2048 || height > 2048) {
 +        return;
++    }
++    if (cc_embed_frame_id > 0) {
++        cc_embed_refresh_counter++;
++        if (cc_embed_refresh_counter < CC_EMBED_FRAME_STRIDE) {
++            return;
++        }
++        cc_embed_refresh_counter = 0;
 +    }
 +
 +    length = (size_t)width * (size_t)height * 4;
@@ -516,6 +525,9 @@ diff --git a/src/arch/sdl/video_sdl2.c b/src/arch/sdl/video_sdl2.c
 +        flags |= SDL_WINDOW_HIDDEN;
 +    }
 +
+@@ -818 +823 @@
+-    if (sdl_canvas_is_visible(canvas) == 0) {
++    if (sdl_canvas_is_visible(canvas) == 0 && !cc_embed_is_enabled()) {
 @@ -872,0 +874,6 @@
 +    cc_embed_poll_commands();
 +    cc_embed_publish_frame(canvas->screen->w,

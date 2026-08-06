@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -60,6 +60,24 @@ test('patched VICE metadata is pinned to the 3.10.0 release tag', () => {
     COMMODORE_COMMANDER_PATCHED_VICE_SOURCE_URL,
     'https://sourceforge.net/p/vice-emu/code/HEAD/tree/tags/v3.10/vice/'
   );
+});
+
+test('patched VICE keeps refreshing hidden embedded SDL canvases', async () => {
+  const patch = await readFile(
+    path.resolve(
+      __dirname,
+      '../../../../tools/vice-embed/vice-3.10.0-commodore-embed.patch'
+    ),
+    'utf8'
+  );
+
+  assert.match(patch, /SDL_WINDOW_HIDDEN/u);
+  assert.match(
+    patch,
+    /sdl_canvas_is_visible\(canvas\) == 0 && !cc_embed_is_enabled\(\)/u
+  );
+  assert.match(patch, /CC_EMBED_FRAME_STRIDE 3/u);
+  assert.match(patch, /cc_embed_publish_frame/u);
 });
 
 test('tool preferences prefer VICE runtime path and keep legacy fallbacks', () => {

@@ -89,11 +89,8 @@ export class CommodoreMachineProfileWidget
       this.debugSessionManager.onDidStartDebugSession((session) =>
         this.handleDebugSessionStarted(session)
       ),
-      this.debugSessionManager.onDidStopDebugSession((session) =>
-        this.handleDebugSessionStopped(session)
-      ),
       this.debugSessionManager.onDidDestroyDebugSession((session) =>
-        this.handleDebugSessionStopped(session)
+        this.handleDebugSessionDestroyed(session)
       ),
       this.debugSessionManager.onDidReceiveDebugSessionCustomEvent((event) =>
         this.handleDebugSessionCustomEvent(event)
@@ -321,7 +318,7 @@ export class CommodoreMachineProfileWidget
     this.update();
   }
 
-  protected handleDebugSessionStopped(session: DebugSession): void {
+  protected handleDebugSessionDestroyed(session: DebugSession): void {
     if (session.id !== this.activeDebugSessionId) {
       return;
     }

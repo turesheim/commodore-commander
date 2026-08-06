@@ -36,7 +36,7 @@ import {
 
 const DEFAULT_VICE_EMULATOR = 'x64sc';
 const EMBED_FLAG = '-cc-embed';
-const MAX_UNFRAMED_STDOUT_BYTES = 1024 * 1024;
+const MAX_UNFRAMED_STDOUT_BYTES = 16 * 1024 * 1024;
 
 interface ResolvedViceEmbedLaunch {
     readonly command: string;
