@@ -28,6 +28,7 @@ import {
   type SidSfxWave
 } from '../common/sid-sfx-effect';
 import { SID_SCORE_LANGUAGE_ID } from './sidscore-language-contribution';
+import { SidKnob } from './sid-knob';
 
 export const SID_SFX_EDITOR_WIDGET_ID = 'commodoreCommander.sidSfxEditor';
 
@@ -303,40 +304,45 @@ export class SidSfxEditorWidget extends ReactWidget {
       <section className='cc-sid-section'>
         <h3 className='cc-sid-section__label'>Envelope</h3>
         <div className='cc-sid-section__body'>
-          <div className='cc-sid-sfx-slider-grid'>
-            {this.renderSlider(
+          <div className='cc-sid-knob-grid cc-sid-knob-grid--five'>
+            {this.renderKnob(
               'A',
+              'Attack',
               this.settings.attack,
               0,
               15,
               (attack) => this.setSettings({ attack }),
               'SID attack value.'
             )}
-            {this.renderSlider(
+            {this.renderKnob(
               'D',
+              'Decay',
               this.settings.decay,
               0,
               15,
               (decay) => this.setSettings({ decay }),
               'SID decay value.'
             )}
-            {this.renderSlider(
+            {this.renderKnob(
               'S',
+              'Sustain',
               this.settings.sustain,
               0,
               15,
               (sustain) => this.setSettings({ sustain }),
               'SID sustain value.'
             )}
-            {this.renderSlider(
+            {this.renderKnob(
               'R',
+              'Release',
               this.settings.release,
               0,
               15,
               (release) => this.setSettings({ release }),
               'SID release value.'
             )}
-            {this.renderSlider(
+            {this.renderKnob(
+              'VOL',
               'Volume',
               this.settings.volume,
               0,
@@ -356,27 +362,31 @@ export class SidSfxEditorWidget extends ReactWidget {
       <section className='cc-sid-section'>
         <h3 className='cc-sid-section__label'>Pulse</h3>
         <div className='cc-sid-section__body'>
-          <div className='cc-sid-sfx-grid cc-sid-sfx-grid--three'>
-            {this.renderNumberField(
-              'Width',
-              this.settings.pulseWidth,
-              0,
-              0x0fff,
-              (pulseWidth) => this.setSettings({ pulseWidth }),
-              'Starting pulse width.',
-              !pulseEnabled,
-              (value) => formatSidSfxHexWord(value)
-            )}
-            {this.renderNumberField(
-              'End',
-              this.settings.pulseEnd,
-              0,
-              0x0fff,
-              (pulseEnd) => this.setSettings({ pulseEnd }),
-              'Pulse width reached by the generated sweep.',
-              !pulseEnabled || !this.settings.pulseSweep,
-              (value) => formatSidSfxHexWord(value)
-            )}
+          <div className='cc-sid-sfx-pulse-grid'>
+            <div className='cc-sid-knob-grid cc-sid-knob-grid--two'>
+              {this.renderKnob(
+                'PW',
+                'Pulse width',
+                this.settings.pulseWidth,
+                0,
+                0x0fff,
+                (pulseWidth) => this.setSettings({ pulseWidth }),
+                'Starting pulse width.',
+                !pulseEnabled,
+                (value) => formatSidSfxHexWord(value)
+              )}
+              {this.renderKnob(
+                'END',
+                'Pulse width end',
+                this.settings.pulseEnd,
+                0,
+                0x0fff,
+                (pulseEnd) => this.setSettings({ pulseEnd }),
+                'Pulse width reached by the generated sweep.',
+                !pulseEnabled || !this.settings.pulseSweep,
+                (value) => formatSidSfxHexWord(value)
+              )}
+            </div>
             {this.renderToggleField(
               'PW Sweep',
               this.settings.pulseSweep,
@@ -387,6 +397,33 @@ export class SidSfxEditorWidget extends ReactWidget {
           </div>
         </div>
       </section>
+    );
+  }
+
+  protected renderKnob(
+    label: string,
+    ariaLabel: string,
+    value: number,
+    min: number,
+    max: number,
+    onChange: (value: number) => void,
+    title: string,
+    disabled = false,
+    format?: (value: number) => string
+  ): React.ReactNode {
+    return (
+      <SidKnob
+        key={ariaLabel}
+        label={label}
+        ariaLabel={ariaLabel}
+        value={value}
+        min={min}
+        max={max}
+        formattedValue={format?.(value) ?? String(value)}
+        disabled={disabled}
+        title={`${ariaLabel}: ${format?.(value) ?? value}. ${title}`}
+        onChange={onChange}
+      />
     );
   }
 
@@ -566,34 +603,6 @@ export class SidSfxEditorWidget extends ReactWidget {
           onChange={(event) => onChange(event.currentTarget.checked)}
         />
         <span>{label}</span>
-      </label>
-    );
-  }
-
-  protected renderSlider(
-    label: string,
-    value: number,
-    min: number,
-    max: number,
-    onChange: (value: number) => void,
-    title: string
-  ): React.ReactNode {
-    return (
-      <label className='cc-sid-sfx-slider' title={title}>
-        <span className='cc-sid-sfx-slider__label'>
-          <span>{label}</span>
-          <span>{value}</span>
-        </span>
-        <input
-          className='cc-sid-sfx-slider__input'
-          type='range'
-          min={min}
-          max={max}
-          step='1'
-          value={value}
-          aria-label={label}
-          onChange={(event) => onChange(Number(event.currentTarget.value))}
-        />
       </label>
     );
   }

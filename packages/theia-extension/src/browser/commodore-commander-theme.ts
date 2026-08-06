@@ -889,6 +889,10 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   grid-template-columns: repeat(auto-fit, minmax(45px, 1fr));
 }
 
+.cc-sid-knob-grid--two {
+  grid-template-columns: repeat(2, minmax(45px, 1fr));
+}
+
 .cc-sid-knob {
   align-items: center;
   display: grid;
@@ -1066,43 +1070,15 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   opacity: 0.48;
 }
 
-.cc-sid-sfx-slider-grid {
+.cc-sid-sfx-pulse-grid {
   display: grid;
-  gap: 9px;
-  grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
+  gap: 7px;
+  grid-template-columns: minmax(0, 2fr) minmax(95px, 1fr);
   min-width: 0;
 }
 
-.cc-sid-sfx-slider {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.cc-sid-sfx-slider__label {
-  color: var(--cc-sid-control-muted);
-  display: flex;
-  font-size: 9px;
-  font-weight: 700;
-  justify-content: space-between;
-  line-height: 1;
-  min-width: 0;
-  text-transform: uppercase;
-}
-
-.cc-sid-sfx-slider__label span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cc-sid-sfx-slider__input {
-  accent-color: var(--cc-sid-control-active);
-  cursor: pointer;
-  min-width: 0;
-  width: 100%;
+.cc-sid-sfx-pulse-grid > .cc-sid-sfx-toggle {
+  min-height: 100%;
 }
 
 .cc-sid-sfx-visualization {
@@ -1191,8 +1167,13 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
 
   .cc-sid-wave-grid,
   .cc-sid-knob-grid,
-  .cc-sid-knob-grid--five {
+  .cc-sid-knob-grid--five,
+  .cc-sid-knob-grid--two {
     grid-template-columns: repeat(2, minmax(49px, 1fr));
+  }
+
+  .cc-sid-sfx-pulse-grid {
+    grid-template-columns: 1fr;
   }
 
   .cc-sid-row-controls {
