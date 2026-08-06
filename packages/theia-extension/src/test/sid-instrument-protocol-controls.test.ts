@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { isSidInstrumentProtocolNumericControl } from '../browser/sid-instrument-protocol-controls';
 
 test('SID Instrument vibrato controls send instrument updates', () => {
-  for (const id of ['vibratoDelay', 'vibratoRate', 'vibratoAmp', 'vibratoInc']) {
+  for (const id of ['vibratoDelay', 'vibratoRate', 'vibratoAmp', 'vibratoRise']) {
     assert.equal(isSidInstrumentProtocolNumericControl(id), true, id);
   }
 });

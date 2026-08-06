@@ -7,7 +7,7 @@ const PROTOCOL_NUMERIC_CONTROL_IDS = [
   'vibratoDelay',
   'vibratoRate',
   'vibratoAmp',
-  'vibratoInc',
+  'vibratoRise',
   'pulseWidth',
   'pulseSweep',
   'pulseMin',
