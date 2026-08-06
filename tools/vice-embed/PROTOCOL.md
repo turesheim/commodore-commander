@@ -48,12 +48,18 @@ Resize:
 CCV1 {"type":"resize","width":768,"height":544}
 ```
 
+Reset:
+
+```json
+CCV1 {"type":"reset"}
+```
+
 Quit:
 
 ```json
 CCV1 {"type":"quit"}
 ```
 
-The initial native patch handles keyboard and quit commands. Joystick and resize
-messages are part of the contract so the Theia service API will not need to
-change when those native hooks are added.
+The initial native patch handles keyboard, reset, and quit commands. Joystick
+and resize messages are part of the contract so the Theia service API will not
+need to change when those native hooks are added.

@@ -43,15 +43,17 @@ Homebrew/local dylibs when possible, ad-hoc signs on macOS, and verifies that
 `x64sc` contains the embedded `-cc-embed` transport flag.
 
 The patch adds a small SDL-only transport enabled with `-cc-embed`. The patched
-emulator still runs as an external process, but it publishes rendered frames to
-stdout and accepts keyboard input on stdin. Commodore Commander consumes that
-stream in `CommodoreViceEmbedServiceImpl` and paints the latest frame into a
-Theia canvas.
+emulator still runs as an external process, but its SDL window is hidden while
+it publishes rendered frames to stdout and accepts control input on stdin.
+Commodore Commander consumes that stream from the debug adapter or
+`CommodoreViceEmbedServiceImpl` and paints the latest frame into the Machine
+view canvas.
 
 The current patch is intentionally narrow:
 
 - Frame publishing hooks into `src/arch/sdl/video_sdl2.c`.
 - Keyboard input reuses the SDL keyboard path in `src/arch/sdl/kbd.c`.
+- Reset commands trigger a normal machine CPU reset.
 - Joystick and peripheral input commands are reserved by the protocol but are
   not implemented in the native patch yet.
 - The JSON/base64 frame stream is good enough to validate the embedding model.

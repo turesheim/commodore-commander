@@ -1,10 +1,13 @@
 import type { RpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
+import type { CommodoreMachineLaunchConfiguration } from '@commodore-commander/language-support/runtime';
 
 export const CommodoreViceEmbedServicePath = '/services/commodore-commander/vice-embed';
 export const CommodoreViceEmbedService = Symbol('CommodoreViceEmbedService');
 
 export const COMMODORE_VICE_EMBED_PROTOCOL = 'commodore-vice-embed-v1';
 export type CommodoreViceEmbedProtocol = typeof COMMODORE_VICE_EMBED_PROTOCOL;
+export const COMMODORE_VICE_EMBED_DEBUG_EVENT =
+    'commodoreCommander.viceEmbed';
 
 export type CommodoreViceEmbedPixelFormat = 'rgba8888';
 
@@ -20,6 +23,7 @@ export interface CommodoreViceEmbedLaunchRequest {
     readonly args?: readonly string[];
     readonly cwd?: string;
     readonly program?: string;
+    readonly machine?: CommodoreMachineLaunchConfiguration;
 }
 
 export interface CommodoreViceEmbedLaunchResult {
@@ -53,6 +57,21 @@ export interface CommodoreViceEmbedOutputEvent {
     readonly text: string;
 }
 
+export interface CommodoreViceEmbedHelloEvent {
+    readonly type: 'hello';
+    readonly protocol: CommodoreViceEmbedProtocol;
+    readonly machine?: string;
+}
+
+export type CommodoreViceEmbedProtocolEvent =
+    | CommodoreViceEmbedHelloEvent
+    | ({ readonly type: 'frame' } & CommodoreViceEmbedFrameEvent)
+    | ({ readonly type: 'status' } & CommodoreViceEmbedStatusEvent);
+
+export type CommodoreViceEmbedDebugEvent =
+    | ({ readonly protocol: CommodoreViceEmbedProtocol } & CommodoreViceEmbedProtocolEvent)
+    | ({ readonly protocol: CommodoreViceEmbedProtocol; readonly type: 'output' } & CommodoreViceEmbedOutputEvent);
+
 export interface CommodoreViceEmbedKeyEvent {
     readonly code: string;
     readonly key: string;
@@ -84,6 +103,7 @@ export interface CommodoreViceEmbedClient {
 export interface CommodoreViceEmbedService extends RpcServer<CommodoreViceEmbedClient> {
     launch(request?: CommodoreViceEmbedLaunchRequest): Promise<CommodoreViceEmbedLaunchResult>;
     stop(): Promise<void>;
+    reset(): Promise<void>;
     sendKey(event: CommodoreViceEmbedKeyEvent): Promise<void>;
     sendJoystick(event: CommodoreViceEmbedJoystickEvent): Promise<void>;
     resize(event: CommodoreViceEmbedResizeEvent): Promise<void>;

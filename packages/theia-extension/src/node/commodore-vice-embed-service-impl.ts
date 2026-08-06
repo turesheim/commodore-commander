@@ -15,6 +15,7 @@ import {
     type CommodoreViceEmbedKeyEvent,
     type CommodoreViceEmbedLaunchRequest,
     type CommodoreViceEmbedLaunchResult,
+    type CommodoreViceEmbedProtocolEvent,
     type CommodoreViceEmbedResizeEvent,
     type CommodoreViceEmbedService,
     type CommodoreViceEmbedStatusEvent
@@ -23,13 +24,14 @@ import {
     getCommodoreCommanderToolPreferences
 } from '../common/commodore-commander-tool-preferences';
 import {
+    createViceArgs,
+    resolveViceMachineProfile,
     resolveViceRuntime
 } from './vice-runtime-resolver';
 import {
     encodeViceEmbedCommand,
     parseViceEmbedProtocolLine,
-    type CommodoreViceEmbedCommand,
-    type CommodoreViceEmbedProtocolEvent
+    type CommodoreViceEmbedCommand
 } from './commodore-vice-embed-protocol';
 
 const DEFAULT_VICE_EMULATOR = 'x64sc';
@@ -94,16 +96,22 @@ export class CommodoreViceEmbedServiceImpl
             });
         });
         child.on('error', (error: Error) => {
+            if (this.viceProcess !== child) {
+                return;
+            }
             this.emitStatus({
                 state: 'error',
                 message: `Could not start patched VICE: ${error.message}`,
                 pid: child.pid
             });
-            if (this.viceProcess === child) {
-                this.viceProcess = undefined;
-            }
+            this.viceProcess = undefined;
         });
         child.on('close', (exitCode: number | null, signal: NodeJS.Signals | null) => {
+            if (this.viceProcess !== child) {
+                return;
+            }
+            this.viceProcess = undefined;
+            this.stdoutBuffer = '';
             this.emitStatus({
                 state: exitCode === 0 ? 'stopped' : 'error',
                 message: exitCode === 0
@@ -113,10 +121,6 @@ export class CommodoreViceEmbedServiceImpl
                 exitCode,
                 signal
             });
-            if (this.viceProcess === child) {
-                this.viceProcess = undefined;
-            }
-            this.stdoutBuffer = '';
         });
 
         return {
@@ -135,6 +139,10 @@ export class CommodoreViceEmbedServiceImpl
         this.emitStatus({ state: 'stopped', message: 'Patched VICE stopped.' });
     }
 
+    async reset(): Promise<void> {
+        this.sendCommand({ type: 'reset' });
+    }
+
     async sendKey(event: CommodoreViceEmbedKeyEvent): Promise<void> {
         this.sendCommand({ type: 'key', ...event });
     }
@@ -149,6 +157,9 @@ export class CommodoreViceEmbedServiceImpl
 
     protected async resolveLaunch(request: CommodoreViceEmbedLaunchRequest): Promise<ResolvedViceEmbedLaunch> {
         const preferences = getCommodoreCommanderToolPreferences(this.preferenceService);
+        const machine = request.machine
+            ? resolveViceMachineProfile(request.machine)
+            : undefined;
         const executableOverride = normalizeConfiguredValue(request.executable ?? preferences.viceExecutable);
         const runtime = await resolveViceRuntime({
             resourcesPath: preferences.viceResourcesPath,
@@ -156,10 +167,11 @@ export class CommodoreViceEmbedServiceImpl
         });
         const command = await resolveViceCommand(
             runtime.resourcesPath,
-            executableOverride ?? runtime.executable ?? DEFAULT_VICE_EMULATOR
+            executableOverride ?? runtime.executable ?? machine?.profile.vice.executable ?? DEFAULT_VICE_EMULATOR
         );
         const args = [
             EMBED_FLAG,
+            ...(machine ? createViceArgs(machine.profile, machine.launch) : []),
             ...(request.args ?? []),
             ...(request.program ? [request.program] : [])
         ];

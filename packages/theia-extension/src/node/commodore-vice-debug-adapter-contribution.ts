@@ -14,6 +14,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import {
   KickAssemblerWorkspaceBuildPlanner,
   loadKickAssemblerBuildConfiguration,
+  type CommodoreMachineLaunchConfiguration,
   type KickAssemblerBuildProgram
 } from '@commodore-commander/language-support';
 
@@ -34,6 +35,9 @@ import {
 import {
   getCommodoreCommanderToolPreferences
 } from '../common/commodore-commander-tool-preferences';
+
+const COMMODORE_MACHINE_PROFILE_PREFERENCE =
+  'commodoreCommander.activeMachine';
 
 @injectable()
 export class CommodoreViceDebugAdapterContribution
@@ -224,7 +228,9 @@ export class CommodoreViceDebugAdapterContribution
       return undefined;
     }
 
-    const { profile, launch } = resolveViceMachineProfile(config.machine);
+    const activeMachine = config.machine ??
+      this.getActiveMachineConfiguration(workspaceFolderUri);
+    const { profile, launch } = resolveViceMachineProfile(activeMachine);
     await this.preferenceService.ready;
     const toolPreferences = getCommodoreCommanderToolPreferences(
       this.preferenceService,
@@ -256,7 +262,6 @@ export class CommodoreViceDebugAdapterContribution
         : path.dirname(program),
       viceResourcesPath: viceRuntime.resourcesPath,
       viceExecutable: viceRuntime.executable ?? profile.vice.executable,
-      // TODO: Route patchedView through the patched VICE frame/input transport.
       viceLaunchMode: config.viceLaunchMode ?? toolPreferences.viceLaunchMode,
       viceArgs: config.viceArgs ?? createViceArgs(profile, launch),
       machineName: profile.displayName,
@@ -296,6 +301,19 @@ export class CommodoreViceDebugAdapterContribution
       stopOnEntry: true
     };
   }
+
+  private getActiveMachineConfiguration(
+    workspaceFolderUri?: string
+  ): CommodoreMachineLaunchConfiguration | undefined {
+    const value = this.preferenceService.get<unknown>(
+      COMMODORE_MACHINE_PROFILE_PREFERENCE,
+      undefined,
+      workspaceFolderUri
+    );
+    return isRecord(value)
+      ? value as unknown as CommodoreMachineLaunchConfiguration
+      : undefined;
+  }
 }
 
 function replaceExtension(filePath: string, extension: string): string {
@@ -316,6 +334,10 @@ function resolveWorkspacePath(rootPath: string, filePath: string): string {
   return path.isAbsolute(filePath)
     ? filePath
     : path.resolve(rootPath, filePath);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function resolveToolPath(rootPath: string, commandOrPath: string): string {

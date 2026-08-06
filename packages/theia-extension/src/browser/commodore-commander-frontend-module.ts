@@ -121,11 +121,6 @@ import {
   VICE_MEMORY_WIDGET_ID,
   ViceMemoryWidget
 } from './vice-memory-widget';
-import { ViceEmbeddedContribution } from './vice-embedded-contribution';
-import {
-  VICE_EMBEDDED_WIDGET_ID,
-  ViceEmbeddedWidget
-} from './vice-embedded-widget';
 import { C64VisualDebuggerContribution } from './c64-visual-debugger-contribution';
 import {
   C64_VISUAL_DEBUGGER_WIDGET_ID,
@@ -367,15 +362,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
       )
     )
     .inSingletonScope();
-  bind(ViceEmbeddedWidget).toSelf();
-  bind(WidgetFactory)
-    .toDynamicValue((context) => ({
-      id: VICE_EMBEDDED_WIDGET_ID,
-      createWidget: () => context.container.get(ViceEmbeddedWidget)
-    }))
-    .inSingletonScope();
-  bindViewContribution(bind, ViceEmbeddedContribution);
-  bind(FrontendApplicationContribution).toService(ViceEmbeddedContribution);
   bind(ViceMemoryWidget).toSelf();
   bind(WidgetFactory)
     .toDynamicValue((context) => ({

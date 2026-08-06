@@ -1,10 +1,10 @@
 import {
     COMMODORE_VICE_EMBED_PROTOCOL,
-    type CommodoreViceEmbedFrameEvent,
     type CommodoreViceEmbedJoystickEvent,
     type CommodoreViceEmbedKeyEvent,
+    type CommodoreViceEmbedProtocolEvent,
     type CommodoreViceEmbedResizeEvent,
-    type CommodoreViceEmbedStatusEvent
+    type CommodoreViceEmbedStatusEvent,
 } from '../common/commodore-vice-embed-service';
 
 export const COMMODORE_VICE_EMBED_PROTOCOL_PREFIX = 'CCV1 ';
@@ -13,12 +13,8 @@ export type CommodoreViceEmbedCommand =
     | ({ readonly type: 'key' } & CommodoreViceEmbedKeyEvent)
     | ({ readonly type: 'joystick' } & CommodoreViceEmbedJoystickEvent)
     | ({ readonly type: 'resize' } & CommodoreViceEmbedResizeEvent)
+    | { readonly type: 'reset' }
     | { readonly type: 'quit' };
-
-export type CommodoreViceEmbedProtocolEvent =
-    | ({ readonly type: 'hello'; readonly protocol: typeof COMMODORE_VICE_EMBED_PROTOCOL; readonly machine?: string })
-    | ({ readonly type: 'frame' } & CommodoreViceEmbedFrameEvent)
-    | ({ readonly type: 'status' } & CommodoreViceEmbedStatusEvent);
 
 export function encodeViceEmbedCommand(command: CommodoreViceEmbedCommand): string {
     return `${COMMODORE_VICE_EMBED_PROTOCOL_PREFIX}${JSON.stringify(command)}\n`;

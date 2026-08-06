@@ -50,6 +50,36 @@ test('createViceProcessArgs includes binary monitor arguments for debug launches
   ]);
 });
 
+test('createViceProcessArgs enables the embedded VICE transport when requested', () => {
+  const args = createViceProcessArgs({
+    program: '/workspace/out/main.prg',
+    viceArgs: ['-model', 'c64'],
+    embed: true
+  });
+
+  assert.deepEqual(args, [
+    '-cc-embed',
+    '-model',
+    'c64',
+    '/workspace/out/main.prg'
+  ]);
+});
+
+test('createViceProcessArgs does not duplicate an explicit embedded transport flag', () => {
+  const args = createViceProcessArgs({
+    program: '/workspace/out/main.prg',
+    viceArgs: ['-cc-embed', '-model', 'c64'],
+    embed: true
+  });
+
+  assert.deepEqual(args, [
+    '-cc-embed',
+    '-model',
+    'c64',
+    '/workspace/out/main.prg'
+  ]);
+});
+
 test('terminateViceProcess sends SIGTERM and waits for process exit', async () => {
   const child = spawn(
     process.execPath,

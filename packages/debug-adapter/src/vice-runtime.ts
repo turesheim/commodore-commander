@@ -4,6 +4,8 @@ import net from 'node:net';
 import path from 'node:path';
 import { spawn, type ChildProcess } from 'node:child_process';
 
+import { VICE_EMBED_FLAG } from './vice-embed-protocol';
+
 const DEFAULT_TERMINATION_TIMEOUT_MS = 1500;
 const DEFAULT_FORCE_KILL_TIMEOUT_MS = 1000;
 
@@ -14,6 +16,7 @@ export interface ViceProcessLaunchOptions {
   viceExecutable: string;
   viceArgs: readonly string[];
   enableMonitor?: boolean;
+  enableEmbed?: boolean;
   monitorHost?: string;
   monitorPort?: number;
 }
@@ -35,6 +38,7 @@ export interface ViceProcessTerminateOptions {
 export interface ViceProcessArgsOptions {
   program: string;
   viceArgs: readonly string[];
+  embed?: boolean;
   monitor?: {
     host: string;
     port: number;
@@ -58,6 +62,7 @@ export async function launchViceProcess(
   const args = createViceProcessArgs({
     program: options.program,
     viceArgs: options.viceArgs,
+    embed: options.enableEmbed,
     ...(monitorHost && monitorPort !== undefined
       ? { monitor: { host: monitorHost, port: monitorPort } }
       : {})
@@ -69,7 +74,7 @@ export async function launchViceProcess(
       ...process.env,
       VICE_INITIAL_CWD: options.cwd
     },
-    stdio: ['ignore', 'pipe', 'pipe']
+    stdio: [options.enableEmbed ? 'pipe' : 'ignore', 'pipe', 'pipe']
   });
 
   await waitForSpawn(child, command);
@@ -106,6 +111,9 @@ export function createViceProcessArgs(
   options: ViceProcessArgsOptions
 ): string[] {
   const args = [
+    ...(options.embed && !options.viceArgs.includes(VICE_EMBED_FLAG)
+      ? [VICE_EMBED_FLAG]
+      : []),
     ...options.viceArgs,
     ...configArgs(options.program, options.viceArgs)
   ];

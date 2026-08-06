@@ -106,6 +106,15 @@ test('VICE embed protocol parses status events', () => {
   );
 });
 
+test('VICE embed protocol encodes reset commands', () => {
+  const encoded = encodeViceEmbedCommand({ type: 'reset' });
+
+  assert.deepEqual(
+    JSON.parse(encoded.slice(COMMODORE_VICE_EMBED_PROTOCOL_PREFIX.length)),
+    { type: 'reset' }
+  );
+});
+
 test('VICE embed protocol ignores non-protocol stdout and unsupported payloads', () => {
   assert.equal(parseViceEmbedProtocolLine('VICE log line\n'), undefined);
   assert.equal(
