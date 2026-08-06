@@ -90,6 +90,15 @@ Commodore Commander supports [SIDScore](https://github.com/turesheim/SIDScore) w
 
 ![Theia SIDScore player with SID instrument controls](docs/theia-sidscore-player.png)
 
+The SID SFX editor provides a focused workspace for one-shot game sound
+effects. It starts from a small preset catalog and exposes SIDScore controls for
+waveform, pitch sweep, ADSR envelope, pulse width, priority, voice selection,
+and retrigger behavior. The editor visualizes the envelope, pitch movement, and
+gate-off point while generating a SIDScore `EFFECT` block that can be previewed,
+stopped, or copied into a project source file.
+
+![Theia SID SFX editor](docs/theia-sid-sfx-editor.png)
+
 Note that export to SID/ASM is not a very efficient format. If you need to optimise for size, hand-coding the music and sound effects is a better option.
 
 ## Debugging

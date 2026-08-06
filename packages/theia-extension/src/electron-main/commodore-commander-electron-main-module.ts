@@ -77,6 +77,7 @@ type ElectronScreenCaptureStep =
   | { readonly type: 'openC64VisualDebugger' }
   | { readonly type: 'openMemoryView' }
   | { readonly type: 'openOutlineView' }
+  | { readonly type: 'openSidSfxEditor' }
   | { readonly type: 'prepareC64VisualDebuggerDemoState' }
   | { readonly type: 'revealMemoryTextColumn' }
   | {
@@ -411,6 +412,19 @@ async function runScreenCaptureStep(
       );
       if (!opened) {
         throw new Error('Unable to open outline view.');
+      }
+      return;
+    }
+    case 'openSidSfxEditor': {
+      const opened = await callScreenCaptureApi<boolean>(
+        window,
+        'openSidSfxEditor',
+        [],
+        false,
+        timeoutMs
+      );
+      if (!opened) {
+        throw new Error('Unable to open SID SFX editor.');
       }
       return;
     }
