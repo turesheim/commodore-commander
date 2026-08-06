@@ -16,7 +16,7 @@ const MACHO_MAGIC = new Set([
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..', '..', '..');
-const sidScoreCliJar = 'sidscore-cli-0.6.0.jar';
+const sidScoreCliJar = 'sidscore-cli-0.7.0.jar';
 const sidScoreCliSource = path.join(repoRoot, 'resources', sidScoreCliJar);
 const sidScoreCliTarget = path.join(
   scriptDir,

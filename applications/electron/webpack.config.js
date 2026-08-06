@@ -14,7 +14,7 @@ const frontendOutputPath = configs[0].output.path;
 const outputPath = nodeConfig.config.output.path;
 const bundledDocsPath = path.resolve(__dirname, '..', '..', 'bundled-docs');
 const bundledDocsTargetPath = path.resolve(frontendOutputPath, 'assets', 'docs');
-const sidScoreCliJar = 'sidscore-cli-0.6.0.jar';
+const sidScoreCliJar = 'sidscore-cli-0.7.0.jar';
 const sidScoreAssetsTargetPath = path.resolve(outputPath, 'assets', 'sidscore');
 const viceAppPath = path.resolve(
     path.dirname(

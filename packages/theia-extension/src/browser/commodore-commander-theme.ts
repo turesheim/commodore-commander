@@ -601,6 +601,52 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   padding: 11px 9px 13px;
 }
 
+.cc-sid-visualization {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cc-sid-visualization__graph {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cc-sid-control-active) 10%, transparent), transparent 54%),
+    var(--cc-sid-control-recess);
+  border: 1px solid color-mix(in srgb, var(--cc-sid-control-border) 72%, black);
+  border-radius: 5px;
+  box-sizing: border-box;
+  display: block;
+  height: 104px;
+  min-width: 0;
+  width: 100%;
+}
+
+.cc-sid-visualization__grid {
+  stroke: color-mix(in srgb, var(--cc-sid-control-text) 18%, transparent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.cc-sid-visualization__envelope-fill {
+  fill: color-mix(in srgb, var(--cc-sid-control-active) 18%, transparent);
+}
+
+.cc-sid-visualization__envelope-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--cc-sid-control-active) 82%, white);
+  stroke-linecap: square;
+  stroke-linejoin: round;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.cc-sid-visualization__label {
+  fill: var(--cc-sid-control-muted);
+  font-size: 9px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
 .cc-sid-instrument__footer {
   display: grid;
   grid-template-columns: 25px minmax(0, 1fr);

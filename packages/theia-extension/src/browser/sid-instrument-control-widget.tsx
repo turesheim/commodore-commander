@@ -33,6 +33,16 @@ import {
   toMidiMode,
   type MidiModeId
 } from './sid-instrument-midi-mode';
+import { isSidInstrumentProtocolNumericControl } from './sid-instrument-protocol-controls';
+import {
+  effectiveVibratoRiseFrames,
+  vibratoIncrementToRiseFrames,
+  vibratoRiseFramesToIncrement
+} from './sid-instrument-vibrato';
+import {
+  createSidAdsrEnvelopeVisualization,
+  type SidAdsrEnvelopeVisualization
+} from './sid-instrument-visualization';
 
 export const SID_INSTRUMENT_CONTROL_WIDGET_ID =
   'commodoreCommander.sidInstrumentControls';
@@ -49,8 +59,8 @@ const NUMERIC_DEFAULTS = {
   gateMin: 0,
   vibratoDelay: 15,
   vibratoRate: 14,
-  vibratoAmp: 16,
-  vibratoInc: 16,
+  vibratoAmp: 0,
+  vibratoRise: 0,
   pulseWidth: 1536,
   pulseSweep: 9,
   pulseMin: 1024,
@@ -122,6 +132,8 @@ const CONTROL_TITLES = {
     'Enables or disables this SID voice for live MIDI note input.',
   midiChannel:
     'Selects the MIDI channel that drives this SID voice assignment.',
+  visualization:
+    'Shows the SID ADSR volume envelope and the gate/articulation settings that directly affect note shape.',
   waveRegister:
     'SID control register waveform bits: TRI=$10, SAW=$20, PULSE=$40, NOISE=$80. GATE, SYNC, and RING are separate control bits.',
   filterRegister:
@@ -312,7 +324,7 @@ const VIBRATO_KNOBS: readonly KnobDefinition[] = [
     ariaLabel: 'Vibrato delay',
     min: 0,
     max: 255,
-    title: 'SIDScore pitch modulation delay. Vibrato is made by changing SID frequency registers during a note.'
+    title: 'SIDScore pitch modulation delay in player frames before vibrato starts.'
   },
   {
     id: 'vibratoRate',
@@ -320,7 +332,7 @@ const VIBRATO_KNOBS: readonly KnobDefinition[] = [
     ariaLabel: 'Vibrato rate',
     min: 0,
     max: 255,
-    title: 'SIDScore pitch modulation speed. Higher values move the SID frequency modulation cycle faster.'
+    title: 'SIDScore vibrato speed. The value advances an 8-bit LFO phase once per player frame.'
   },
   {
     id: 'vibratoAmp',
@@ -328,15 +340,15 @@ const VIBRATO_KNOBS: readonly KnobDefinition[] = [
     ariaLabel: 'Vibrato amplitude',
     min: 0,
     max: 255,
-    title: 'SIDScore pitch modulation depth. Higher values bend the SID frequency farther from the base note.'
+    title: 'SIDScore vibrato depth. Zero disables vibrato; higher values bend SID frequency farther from the base note.'
   },
   {
-    id: 'vibratoInc',
-    label: 'INC',
-    ariaLabel: 'Vibrato increment',
+    id: 'vibratoRise',
+    label: 'RISE',
+    ariaLabel: 'Vibrato rise',
     min: 0,
-    max: 255,
-    title: 'SIDScore pitch modulation phase increment applied over player frames.'
+    max: 64,
+    title: 'SIDScore vibrato depth rise time after the delay. Zero jumps straight to full depth.'
   }
 ];
 
@@ -455,20 +467,6 @@ const FILTER_MODE_REGISTER_BITS: Record<FilterModeId, number> = {
   band: 0x20,
   high: 0x40
 };
-
-const PROTOCOL_NUMERIC_CONTROLS = new Set<NumericControlId>([
-  'attack',
-  'decay',
-  'sustain',
-  'release',
-  'gateMin',
-  'pulseWidth',
-  'pulseSweep',
-  'pulseMin',
-  'pulseMax',
-  'filterCutoff',
-  'filterResonance'
-]);
 
 const INSTRUMENT_UPDATE_DELAY_MS = 120;
 const PENDING_INSTRUMENT_STATE_TIMEOUT_MS = 1_500;
@@ -648,6 +646,7 @@ export class SidInstrumentControlWidget extends ReactWidget {
       <div className='cc-sid-instrument'>
         {this.renderHeader()}
         <div className='cc-sid-instrument__sections'>
+          {this.renderVisualizationSection()}
           {this.renderWaveformSection()}
           {this.renderEnvelopeSection()}
           {this.renderKnobSection('Vibrato', VIBRATO_KNOBS)}
@@ -656,6 +655,64 @@ export class SidInstrumentControlWidget extends ReactWidget {
           {this.renderFooter()}
         </div>
       </div>
+    );
+  }
+
+  protected renderVisualizationSection(): React.ReactNode {
+    const envelope = createSidAdsrEnvelopeVisualization({
+      attack: this.numericValues.attack,
+      decay: this.numericValues.decay,
+      sustain: this.numericValues.sustain,
+      release: this.numericValues.release
+    });
+    return (
+      <section className='cc-sid-section cc-sid-section--visualization'>
+        <h3 className='cc-sid-section__label'>Shape</h3>
+        <div className='cc-sid-section__body'>
+          <div
+            className='cc-sid-visualization'
+            {...this.tooltipAttributes(CONTROL_TITLES.visualization)}
+          >
+            {this.renderEnvelopeVisualization(envelope)}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  protected renderEnvelopeVisualization(
+    envelope: SidAdsrEnvelopeVisualization
+  ): React.ReactNode {
+    return (
+      <svg
+        className='cc-sid-visualization__graph'
+        viewBox={envelope.viewBox}
+        role='img'
+        aria-label='SID ADSR envelope'
+        preserveAspectRatio='none'
+      >
+        <line className='cc-sid-visualization__grid' x1='12' y1='27.5' x2='268' y2='27.5' />
+        <line className='cc-sid-visualization__grid' x1='12' y1='45' x2='268' y2='45' />
+        <line className='cc-sid-visualization__grid' x1='12' y1='62.5' x2='268' y2='62.5' />
+        <path
+          className='cc-sid-visualization__envelope-fill'
+          d={envelope.areaPath}
+        />
+        <polyline
+          className='cc-sid-visualization__envelope-line'
+          points={envelope.pointsAttribute}
+        />
+        {envelope.labels.map((label) => (
+          <text
+            key={label.label}
+            className='cc-sid-visualization__label'
+            x={label.x}
+            y='96'
+          >
+            {label.label}
+          </text>
+        ))}
+      </svg>
     );
   }
 
@@ -961,7 +1018,7 @@ export class SidInstrumentControlWidget extends ReactWidget {
     const clampedPercent = Math.max(0, Math.min(1, percent));
     const angle = -130 + clampedPercent * 260;
     const fill = clampedPercent * 260;
-    const formatted = definition.format?.(value) ?? String(value);
+    const formatted = this.formatKnobValue(definition, value);
     const style = {
       '--cc-sid-knob-angle': `${angle}deg`,
       '--cc-sid-knob-fill': `${fill}deg`
@@ -971,7 +1028,9 @@ export class SidInstrumentControlWidget extends ReactWidget {
       <label
         key={definition.id}
         className={`cc-sid-knob${disabled ? ' cc-sid-knob--disabled' : ''}`}
-        {...this.tooltipAttributes(knobTitle(definition, value, formatted))}
+        {...this.tooltipAttributes(
+          knobTitle(definition, value, formatted, this.numericValues)
+        )}
       >
         <span className='cc-sid-knob__value'>{formatted}</span>
         <span className='cc-sid-knob__dial' style={style}>
@@ -992,6 +1051,19 @@ export class SidInstrumentControlWidget extends ReactWidget {
         <span className='cc-sid-knob__label'>{definition.label}</span>
       </label>
     );
+  }
+
+  protected formatKnobValue(definition: KnobDefinition, value: number): string {
+    if (definition.id === 'vibratoRise') {
+      if (this.numericValues.vibratoAmp <= 0) {
+        return value === 0 ? 'FULL' : `${value}F`;
+      }
+      if (value === 0) {
+        return 'FULL';
+      }
+      return `${effectiveVibratoRiseFrames(this.numericValues.vibratoAmp, value)}F`;
+    }
+    return definition.format?.(value) ?? String(value);
   }
 
   protected renderWaveformButton(definition: WaveformDefinition): React.ReactNode {
@@ -1122,7 +1194,7 @@ export class SidInstrumentControlWidget extends ReactWidget {
 
     this.numericValues[id] = parsed;
     this.update();
-    if (PROTOCOL_NUMERIC_CONTROLS.has(id)) {
+    if (isSidInstrumentProtocolNumericControl(id)) {
       this.queueInstrumentUpdate();
     }
   }
@@ -1425,6 +1497,13 @@ export class SidInstrumentControlWidget extends ReactWidget {
       decay: this.numericValues.decay,
       sustain: this.numericValues.sustain,
       release: this.numericValues.release,
+      vibratoDelay: this.numericValues.vibratoDelay,
+      vibratoRate: this.numericValues.vibratoRate,
+      vibratoAmp: this.numericValues.vibratoAmp,
+      vibratoInc: vibratoRiseFramesToIncrement(
+        this.numericValues.vibratoAmp,
+        this.numericValues.vibratoRise
+      ),
       pulseWidth: this.numericValues.pulseWidth,
       pulseSweep: this.numericValues.pulseSweep,
       pulseMin: this.numericValues.pulseMin,
@@ -1455,6 +1534,10 @@ export class SidInstrumentControlWidget extends ReactWidget {
       decay: state.decay,
       sustain: state.sustain,
       release: state.release,
+      vibratoDelay: state.vibratoDelay,
+      vibratoRate: state.vibratoRate,
+      vibratoAmp: state.vibratoAmp,
+      vibratoRise: vibratoIncrementToRiseFrames(state.vibratoAmp, state.vibratoInc),
       gateMin: state.gateMin,
       pulseWidth: state.pulseWidth,
       pulseSweep: state.pulseSweep,
@@ -1653,15 +1736,17 @@ function buttonClass(active: boolean, disabled = false): string {
 function knobTitle(
   definition: KnobDefinition,
   value: number,
-  formatted: string
+  formatted: string,
+  values?: Readonly<Record<NumericControlId, number>>
 ): string {
-  return `${definition.ariaLabel}: ${knobValueDetail(definition.id, value, formatted)}. ${definition.title}`;
+  return `${definition.ariaLabel}: ${knobValueDetail(definition.id, value, formatted, values)}. ${definition.title}`;
 }
 
 function knobValueDetail(
   id: NumericControlId,
   value: number,
-  formatted: string
+  formatted: string,
+  values?: Readonly<Record<NumericControlId, number>>
 ): string {
   switch (id) {
     case 'attack':
@@ -1677,8 +1762,9 @@ function knobValueDetail(
       return `${value} ${value === 1 ? 'frame' : 'frames'}`;
     case 'vibratoRate':
     case 'vibratoAmp':
-    case 'vibratoInc':
       return `${value}/255`;
+    case 'vibratoRise':
+      return vibratoRiseValueDetail(value, values?.vibratoAmp ?? 0);
     case 'pulseWidth':
     case 'pulseMin':
     case 'pulseMax':
@@ -1692,6 +1778,19 @@ function knobValueDetail(
     case 'filterSweep':
       return `${formatSigned(value)} cutoff steps per frame`;
   }
+}
+
+function vibratoRiseValueDetail(value: number, amp: number): string {
+  if (amp <= 0) {
+    return value === 0
+      ? 'full depth immediately once amplitude is above zero'
+      : `${value} frame rise, inactive while amplitude is zero`;
+  }
+  if (value === 0) {
+    return 'full depth immediately';
+  }
+  const frames = effectiveVibratoRiseFrames(amp, value);
+  return `full depth in about ${frames} ${frames === 1 ? 'frame' : 'frames'}`;
 }
 
 function formatPercent(value: number): string {
