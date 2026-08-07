@@ -7,7 +7,6 @@ import {
   DisposableCollection
 } from '@theia/core/lib/common/disposable';
 import {
-  PreferenceScope,
   PreferenceService
 } from '@theia/core/lib/common/preferences';
 import {
@@ -40,21 +39,6 @@ import {
   type CommodoreViceEmbedStatusState
 } from '../common/commodore-vice-embed-service';
 import {
-  COMMODORE_COMMANDER_VICE_EMBEDDED_CONTROL_PORT_1_DEVICE_PREFERENCE,
-  COMMODORE_COMMANDER_VICE_EMBEDDED_CONTROL_PORT_2_DEVICE_PREFERENCE,
-  COMMODORE_COMMANDER_VICE_EMBEDDED_JOYSTICK_1_DEVICE_PREFERENCE,
-  COMMODORE_COMMANDER_VICE_EMBEDDED_JOYSTICK_2_DEVICE_PREFERENCE,
-  COMMODORE_COMMANDER_VICE_EMBEDDED_KEYBOARD_MAPPING_PREFERENCE,
-  COMMODORE_COMMANDER_VICE_EMBEDDED_MOUSE_PADDLE_PORT_PREFERENCE,
-  getCommodoreViceEmbeddedInputPreferences,
-  isCommodoreViceEmbeddedInputPreference,
-  type CommodoreViceControlPortDevice,
-  type CommodoreViceEmbeddedInputPreferences,
-  type CommodoreViceJoystickDevice,
-  type CommodoreViceKeyboardMapping,
-  type CommodoreViceMousePaddlePort
-} from '../common/commodore-commander-tool-preferences';
-import {
   createViceEmbedFrameSocket,
   type ViceEmbedBinaryFrame
 } from './vice-embed-frame-stream';
@@ -69,52 +53,6 @@ type ViceEmbedRenderableFrame = CommodoreViceEmbedFrameEvent | ViceEmbedBinaryFr
 type ViceEmbedFrameBytes =
   | Uint8Array<ArrayBufferLike>
   | Uint8ClampedArray<ArrayBufferLike>;
-
-const CONTROL_PORT_DEVICE_OPTIONS: ReadonlyArray<{
-  readonly label: string;
-  readonly value: CommodoreViceControlPortDevice;
-}> = [
-  { label: 'Default', value: 'default' },
-  { label: 'None', value: 'none' },
-  { label: 'Joystick', value: 'joystick' },
-  { label: 'Paddles', value: 'paddles' },
-  { label: '1351 Mouse', value: 'mouse1351' }
-];
-
-const JOYSTICK_DEVICE_OPTIONS: ReadonlyArray<{
-  readonly label: string;
-  readonly value: CommodoreViceJoystickDevice;
-}> = [
-  { label: 'Default', value: 'default' },
-  { label: 'None', value: 'none' },
-  { label: 'Numpad', value: 'numpad' },
-  { label: 'Keyset 1', value: 'keyset1' },
-  { label: 'Keyset 2', value: 'keyset2' },
-  { label: 'Analog 0', value: 'analog0' },
-  { label: 'Analog 1', value: 'analog1' },
-  { label: 'Analog 2', value: 'analog2' },
-  { label: 'Analog 3', value: 'analog3' },
-  { label: 'Analog 4', value: 'analog4' },
-  { label: 'Analog 5', value: 'analog5' }
-];
-
-const MOUSE_PADDLE_PORT_OPTIONS: ReadonlyArray<{
-  readonly label: string;
-  readonly value: CommodoreViceMousePaddlePort;
-}> = [
-  { label: 'Off', value: 'off' },
-  { label: 'Port 1', value: '1' },
-  { label: 'Port 2', value: '2' }
-];
-
-const KEYBOARD_MAPPING_OPTIONS: ReadonlyArray<{
-  readonly label: string;
-  readonly value: CommodoreViceKeyboardMapping;
-}> = [
-  { label: 'Default', value: 'default' },
-  { label: 'Symbolic', value: 'symbolic' },
-  { label: 'Positional', value: 'positional' }
-];
 
 const VICE_MENU_KEY = {
   code: 'F12',
@@ -198,10 +136,6 @@ export class CommodoreMachineProfileWidget
       this.preferenceService.onPreferenceChanged((event) => {
         if (event.preferenceName === COMMODORE_MACHINE_PROFILE_PREFERENCE) {
           this.handleMachinePreferenceChanged();
-          return;
-        }
-        if (isCommodoreViceEmbeddedInputPreference(event.preferenceName)) {
-          this.handleViceInputPreferenceChanged();
         }
       }),
       this.debugSessionManager.onDidStartDebugSession((session) =>
@@ -265,10 +199,6 @@ export class CommodoreMachineProfileWidget
     const screen = profile.screenLayouts[0];
     const isPowered = this.isPowered();
     const machineSelectorDisabled = this.starting || this.hasEmbeddedViceDebugSession();
-    const inputPreferences = getCommodoreViceEmbeddedInputPreferences(
-      this.preferenceService
-    );
-    const inputSettingsDisabled = isPowered;
     const aspectRatio = this.frame
       ? `${this.frame.width} / ${this.frame.height}`
       : screen
@@ -366,8 +296,6 @@ export class CommodoreMachineProfileWidget
           </div>
         </div>
 
-        {this.renderViceInputSettings(inputPreferences, inputSettingsDisabled)}
-
         <div
           className='cc-machine-vice-screen'
           style={styles.screen}
@@ -395,6 +323,9 @@ export class CommodoreMachineProfileWidget
               </div>
             )}
           </div>
+          <div style={styles.menuHint}>
+            Press F12 for emulated machine menu.
+          </div>
         </div>
       </div>
     );
@@ -411,112 +342,6 @@ export class CommodoreMachineProfileWidget
       return this.statusMessage;
     }
     return undefined;
-  }
-
-  protected renderViceInputSettings(
-    preferences: CommodoreViceEmbeddedInputPreferences,
-    disabled: boolean
-  ): React.ReactNode {
-    return (
-      <div style={styles.inputSettings}>
-        <label style={styles.inputField}>
-          <span style={styles.inputLabel}>Port 1</span>
-          <select
-            aria-label='VICE control port 1 device'
-            disabled={disabled}
-            onChange={this.changeControlPort1Device}
-            style={styles.inputSelect}
-            value={preferences.controlPort1Device}
-          >
-            {CONTROL_PORT_DEVICE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label style={styles.inputField}>
-          <span style={styles.inputLabel}>Port 2</span>
-          <select
-            aria-label='VICE control port 2 device'
-            disabled={disabled}
-            onChange={this.changeControlPort2Device}
-            style={styles.inputSelect}
-            value={preferences.controlPort2Device}
-          >
-            {CONTROL_PORT_DEVICE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label style={styles.inputField}>
-          <span style={styles.inputLabel}>Joy 1</span>
-          <select
-            aria-label='VICE joystick source 1'
-            disabled={disabled}
-            onChange={this.changeJoystick1Device}
-            style={styles.inputSelect}
-            value={preferences.joystick1Device}
-          >
-            {JOYSTICK_DEVICE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label style={styles.inputField}>
-          <span style={styles.inputLabel}>Joy 2</span>
-          <select
-            aria-label='VICE joystick source 2'
-            disabled={disabled}
-            onChange={this.changeJoystick2Device}
-            style={styles.inputSelect}
-            value={preferences.joystick2Device}
-          >
-            {JOYSTICK_DEVICE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label style={styles.inputField}>
-          <span style={styles.inputLabel}>Mouse Paddles</span>
-          <select
-            aria-label='Use host mouse as VICE paddles'
-            disabled={disabled}
-            onChange={this.changeMousePaddlePort}
-            style={styles.inputSelect}
-            value={preferences.mousePaddlePort}
-          >
-            {MOUSE_PADDLE_PORT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label style={styles.inputField}>
-          <span style={styles.inputLabel}>Keyboard</span>
-          <select
-            aria-label='VICE keyboard mapping mode'
-            disabled={disabled}
-            onChange={this.changeKeyboardMapping}
-            style={styles.inputSelect}
-            value={preferences.keyboardMapping}
-          >
-            {KEYBOARD_MAPPING_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-    );
   }
 
   protected readonly togglePower = async (): Promise<void> => {
@@ -591,71 +416,6 @@ export class CommodoreMachineProfileWidget
     this.requestMouseCapture();
   };
 
-  protected readonly changeControlPort1Device = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ): void => {
-    void this.setViceInputPreference(
-      COMMODORE_COMMANDER_VICE_EMBEDDED_CONTROL_PORT_1_DEVICE_PREFERENCE,
-      event.currentTarget.value as CommodoreViceControlPortDevice
-    );
-  };
-
-  protected readonly changeControlPort2Device = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ): void => {
-    void this.setViceInputPreference(
-      COMMODORE_COMMANDER_VICE_EMBEDDED_CONTROL_PORT_2_DEVICE_PREFERENCE,
-      event.currentTarget.value as CommodoreViceControlPortDevice
-    );
-  };
-
-  protected readonly changeJoystick1Device = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ): void => {
-    void this.setViceInputPreference(
-      COMMODORE_COMMANDER_VICE_EMBEDDED_JOYSTICK_1_DEVICE_PREFERENCE,
-      event.currentTarget.value as CommodoreViceJoystickDevice
-    );
-  };
-
-  protected readonly changeJoystick2Device = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ): void => {
-    void this.setViceInputPreference(
-      COMMODORE_COMMANDER_VICE_EMBEDDED_JOYSTICK_2_DEVICE_PREFERENCE,
-      event.currentTarget.value as CommodoreViceJoystickDevice
-    );
-  };
-
-  protected readonly changeMousePaddlePort = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ): void => {
-    void this.setViceInputPreference(
-      COMMODORE_COMMANDER_VICE_EMBEDDED_MOUSE_PADDLE_PORT_PREFERENCE,
-      event.currentTarget.value as CommodoreViceMousePaddlePort
-    );
-  };
-
-  protected readonly changeKeyboardMapping = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ): void => {
-    void this.setViceInputPreference(
-      COMMODORE_COMMANDER_VICE_EMBEDDED_KEYBOARD_MAPPING_PREFERENCE,
-      event.currentTarget.value as CommodoreViceKeyboardMapping
-    );
-  };
-
-  protected async setViceInputPreference(
-    preferenceName: string,
-    value: string | boolean
-  ): Promise<void> {
-    await this.preferenceService.set(
-      preferenceName,
-      value,
-      PreferenceScope.Workspace
-    );
-  }
-
   protected readonly changeMachineProfile = async (
     event: React.ChangeEvent<HTMLSelectElement>
   ): Promise<void> => {
@@ -669,10 +429,6 @@ export class CommodoreMachineProfileWidget
       void this.powerOnStandalone();
       return;
     }
-    this.update();
-  }
-
-  protected handleViceInputPreferenceChanged(): void {
     this.update();
   }
 
@@ -1010,20 +766,14 @@ export class CommodoreMachineProfileWidget
       this.pendingMouseYRel = 0;
       return;
     }
-    const x = drainMouseDelta(this.pendingMouseXRel);
-    const y = drainMouseDelta(this.pendingMouseYRel);
-    this.pendingMouseXRel = x.remainder;
-    this.pendingMouseYRel = y.remainder;
-    if (x.delta === 0 && y.delta === 0) {
+    const xRel = toMouseDelta(this.pendingMouseXRel);
+    const yRel = toMouseDelta(this.pendingMouseYRel);
+    this.pendingMouseXRel = 0;
+    this.pendingMouseYRel = 0;
+    if (xRel === 0 && yRel === 0) {
       return;
     }
-    this.sendMouseEvent({ xRel: x.delta, yRel: y.delta });
-    if (hasWholeMouseDelta(this.pendingMouseXRel) ||
-      hasWholeMouseDelta(this.pendingMouseYRel)) {
-      this.pendingMouseMoveAnimationFrame = window.requestAnimationFrame(
-        this.flushQueuedMouseMove
-      );
-    }
+    this.sendMouseEvent({ xRel, yRel });
   }
 
   protected clearPendingMouseMove(): void {
@@ -1142,10 +892,7 @@ export class CommodoreMachineProfileWidget
 
   protected isPowered(): boolean {
     return this.status === 'running' ||
-      this.status === 'starting' ||
-      Boolean(this.currentEmbeddedViceDebugSession()) ||
-      this.runtimeOwner === 'debug' ||
-      this.runtimeOwner === 'standalone';
+      this.status === 'starting';
   }
 
   protected hasEmbeddedViceDebugSession(): boolean {
@@ -1240,26 +987,15 @@ function isPromiseLike(value: unknown): value is Promise<void> {
     typeof (value as { then?: unknown }).then === 'function';
 }
 
-function drainMouseDelta(value: number): {
-  readonly delta: number;
-  readonly remainder: number;
-} {
+function toMouseDelta(value: number): number {
   if (!Number.isFinite(value)) {
-    return { delta: 0, remainder: 0 };
+    return 0;
   }
   const clamped = Math.max(
     -MOUSE_CAPTURE_MAX_RELATIVE_DELTA,
     Math.min(MOUSE_CAPTURE_MAX_RELATIVE_DELTA, value)
   );
-  const delta = clamped < 0 ? Math.ceil(clamped) : Math.floor(clamped);
-  return {
-    delta,
-    remainder: value - delta
-  };
-}
-
-function hasWholeMouseDelta(value: number): boolean {
-  return Math.abs(value) >= 1;
+  return clamped < 0 ? Math.ceil(clamped) : Math.floor(clamped);
 }
 
 const styles = {
@@ -1373,43 +1109,14 @@ const styles = {
     minWidth: 58,
     justifyContent: 'center'
   } satisfies React.CSSProperties,
-  inputSettings: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(108px, 1fr))',
-    gap: '7px 8px',
-    padding: '8px 10px',
-    borderBottom: '1px solid var(--theia-panel-border)'
-  } satisfies React.CSSProperties,
-  inputField: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 3,
-    minWidth: 0
-  } satisfies React.CSSProperties,
-  inputLabel: {
-    color: 'var(--theia-descriptionForeground)',
-    fontSize: 11,
-    lineHeight: 1.2
-  } satisfies React.CSSProperties,
-  inputSelect: {
-    width: '100%',
-    minWidth: 0,
-    height: 22,
-    color: 'var(--theia-dropdown-foreground)',
-    background: 'var(--theia-dropdown-background)',
-    border: '1px solid var(--theia-dropdown-border)',
-    borderRadius: 2,
-    font: 'inherit',
-    fontSize: 12,
-    lineHeight: '20px'
-  } satisfies React.CSSProperties,
   screen: {
     position: 'relative',
     flex: 1,
     minHeight: 0,
     display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
     overflow: 'hidden',
     padding: 0,
     background: 'var(--theia-editor-background)'
@@ -1417,9 +1124,10 @@ const styles = {
   viewport: {
     position: 'relative',
     maxWidth: '100%',
-    maxHeight: '100%',
+    maxHeight: 'calc(100% - 20px)',
     width: '100%',
     height: 'auto',
+    flexShrink: 1,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1444,5 +1152,13 @@ const styles = {
     color: 'var(--theia-disabledForeground)',
     fontSize: 18,
     letterSpacing: 0
+  } satisfies React.CSSProperties,
+  menuHint: {
+    flexShrink: 0,
+    minHeight: 20,
+    lineHeight: '20px',
+    color: 'var(--theia-descriptionForeground)',
+    fontSize: 11,
+    textAlign: 'center'
   } satisfies React.CSSProperties
 };

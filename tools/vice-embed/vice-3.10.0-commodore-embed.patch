@@ -113,6 +113,8 @@ new file mode 100644
 +static int cc_embed_enabled = 0;
 +static int cc_embed_frame_port = 0;
 +static int cc_embed_frame_socket = -1;
++static int cc_embed_mouse_x = 0;
++static int cc_embed_mouse_y = 0;
 +static uint32_t cc_embed_frame_id = 0;
 +static uint32_t cc_embed_last_frame_ticks = 0;
 +static int cc_embed_force_next_frame = 0;
@@ -544,7 +546,11 @@ new file mode 100644
 +    SDL_Event event;
 +
 +    memset(&event, 0, sizeof(event));
++    cc_embed_mouse_x += xrel;
++    cc_embed_mouse_y += yrel;
 +    event.type = SDL_MOUSEMOTION;
++    event.motion.x = cc_embed_mouse_x;
++    event.motion.y = cc_embed_mouse_y;
 +    event.motion.xrel = xrel;
 +    event.motion.yrel = yrel;
 +    SDL_PushEvent(&event);

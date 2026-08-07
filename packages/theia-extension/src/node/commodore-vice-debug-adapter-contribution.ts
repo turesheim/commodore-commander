@@ -33,7 +33,6 @@ import {
   DEFAULT_COMMODORE_COMMANDER_VICE_LAUNCH_MODE
 } from '../common/commodore-vice-embed';
 import {
-  createCommodoreViceEmbeddedInputArgs,
   getCommodoreCommanderToolPreferences,
   normalizeViceLaunchMode
 } from '../common/commodore-commander-tool-preferences';
@@ -259,15 +258,7 @@ export class CommodoreViceDebugAdapterContribution
     const viceFramePort = viceLaunchMode === 'embedded'
       ? await this.viceEmbedService.startExternalFrameTransport()
       : undefined;
-    const viceArgs = config.viceArgs ??
-      (viceLaunchMode === 'embedded'
-        ? [
-            ...createViceArgs(profile, launch),
-            ...createCommodoreViceEmbeddedInputArgs(
-              toolPreferences.viceEmbeddedInput
-            )
-          ]
-        : createViceArgs(profile, launch));
+    const viceArgs = config.viceArgs ?? createViceArgs(profile, launch);
 
     return {
       ...config,

@@ -32,7 +32,6 @@ import {
     type CommodoreViceEmbedStatusEvent
 } from '../common/commodore-vice-embed-service';
 import {
-    createCommodoreViceEmbeddedInputArgs,
     getCommodoreCommanderToolPreferences
 } from '../common/commodore-commander-tool-preferences';
 import {
@@ -282,7 +281,6 @@ export class CommodoreViceEmbedServiceImpl
             EMBED_FRAME_PORT_FLAG,
             String(framePort),
             ...(machine ? createViceArgs(machine.profile, machine.launch) : []),
-            ...createCommodoreViceEmbeddedInputArgs(preferences.viceEmbeddedInput),
             ...(request.args ?? []),
             ...(request.program ? [request.program] : [])
         ];
