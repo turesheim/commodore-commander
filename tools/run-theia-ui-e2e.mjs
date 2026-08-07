@@ -423,6 +423,7 @@ function createLaunchConfiguration(name, fixture, options) {
     program: path.relative(path.dirname(fixture.sourcePath), fixture.programPath),
     debugInfo: path.relative(path.dirname(fixture.sourcePath), fixture.debugInfoPath),
     sourceRoot: '.',
+    viceLaunchMode: 'external',
     machine: {
       profile: 'c64',
       model: 'c64',
