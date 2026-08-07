@@ -43,11 +43,13 @@ offset  size  value
 ```
 
 The native patch emits complete SDL `rgba8888` frames without downsampling or
-compression; the browser canvas is responsible for presentation scaling. Frame
-emission is limited to a minimum interval of 16 ms to avoid flooding the frame
-transport during warp or over-rendering. `CommodoreViceEmbedServiceImpl` opens
-the local frame socket, launches VICE with its port, parses the binary records
-from that socket, and publishes them to the browser over
+compression; the browser canvas is responsible for presentation scaling.
+Commodore Commander default launches also disable VICE render filters and
+request nearest GL filtering for the active video chip. Frame emission is
+limited to a minimum interval of 16 ms to avoid flooding the frame transport
+during warp or over-rendering. `CommodoreViceEmbedServiceImpl` opens the local
+frame socket, launches VICE with its port, parses the binary records from that
+socket, and publishes them to the browser over
 `/services/commodore-commander/vice-embed/frames` as binary WebSocket messages.
 The service still accepts `CCB1` records on stdout as a compatibility fallback,
 but the high-rate display path does not depend on DAP or the DAP stdout channel.

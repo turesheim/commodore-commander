@@ -5,6 +5,9 @@ import path from 'node:path';
 import { test } from 'node:test';
 
 import {
+  getCommodoreMachineProfile
+} from '@commodore-commander/language-support';
+import {
   COMMODORE_COMMANDER_TOOL_PREFERENCE_SCHEMA,
   COMMODORE_COMMANDER_LEGACY_VICE_RUNTIME_PATH_PREFERENCE,
   COMMODORE_COMMANDER_VICE_EXECUTABLE_PREFERENCE,
@@ -14,6 +17,7 @@ import {
   getCommodoreCommanderToolPreferences
 } from '../common/commodore-commander-tool-preferences';
 import {
+  createViceArgs,
   resolveViceRuntime
 } from '../node/vice-runtime-resolver';
 import {
@@ -274,6 +278,25 @@ test('tool preferences keep lowercase VICE runtime path fallback', () => {
   });
 
   assert.equal(preferences.viceResourcesPath, '/lowercase-vice');
+});
+
+test('createViceArgs keeps unfiltered display defaults before model and explicit args', () => {
+  const args = createViceArgs(getCommodoreMachineProfile('pet'), {
+    profile: 'pet',
+    model: '8296',
+    viceArgs: ['-Crtcfilter', '1']
+  });
+
+  assert.deepEqual(args, [
+    '-Crtcfilter',
+    '0',
+    '-Crtcglfilter',
+    '0',
+    '-model',
+    '8296',
+    '-Crtcfilter',
+    '1'
+  ]);
 });
 
 test('resolveViceRuntime prefers configured runtime path over bundled runtime', async () => {

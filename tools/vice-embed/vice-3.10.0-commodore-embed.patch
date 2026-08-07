@@ -90,7 +90,7 @@ diff --git a/src/arch/sdl/cc_embed.c b/src/arch/sdl/cc_embed.c
 new file mode 100644
 --- /dev/null
 +++ b/src/arch/sdl/cc_embed.c
-@@ -0,0 +1,791 @@
+@@ -0,0 +1,779 @@
 +/*
 + * cc_embed.c - Commodore Commander VICE embedding transport.
 + *
