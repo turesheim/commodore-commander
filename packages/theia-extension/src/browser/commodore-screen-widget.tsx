@@ -133,7 +133,7 @@ export class CommodoreScreenWidget extends ReactWidget {
   protected colorAddressInput = '$D800';
   protected characterDataAddressInput = '$2000';
   protected memoryTransferScope: ScreenViceTransferScope = 'screenAndColor';
-  protected viceStatus = 'VICE memory actions use the active stopped commodore-vice session.';
+  protected viceStatus = 'Emulator memory actions use the active stopped debug session.';
   protected dirty = false;
   protected loaded = false;
 
@@ -1114,14 +1114,14 @@ export class CommodoreScreenWidget extends ReactWidget {
         <div style={toolRowStyle}>
           <button
             style={commandButtonStyle}
-            title='Read the selected screen data from the active stopped VICE debug session'
+            title='Read the selected screen data from the active stopped debug session'
             onClick={() => this.runViceAction(() => this.readViceMemory())}
           >
             <span className={codicon('cloud-download')} /> Read
           </button>
           <button
             style={commandButtonStyle}
-            title='Write the selected screen data to the active stopped VICE debug session'
+            title='Write the selected screen data to the active stopped debug session'
             onClick={() => this.runViceAction(() => this.writeViceMemory())}
           >
             <span className={codicon('cloud-upload')} /> Write

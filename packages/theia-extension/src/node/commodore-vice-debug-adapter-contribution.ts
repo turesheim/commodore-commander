@@ -46,7 +46,7 @@ export class CommodoreViceDebugAdapterContribution
   implements DebugAdapterContribution
 {
   readonly type = COMMODORE_VICE_DEBUG_TYPE;
-  readonly label = 'Commodore VICE';
+  readonly label = 'Commodore Commander';
   readonly languages = ['kickassembler'];
 
   @inject(PreferenceService)
@@ -137,7 +137,7 @@ export class CommodoreViceDebugAdapterContribution
           },
           program: {
             type: 'string',
-            description: 'Path to the PRG file to start in VICE.'
+            description: 'Path to the PRG file to start.'
           },
           debugInfo: {
             type: 'string',
@@ -202,11 +202,11 @@ export class CommodoreViceDebugAdapterContribution
   getConfigurationSnippets(): IJSONSchemaSnippet[] {
     return [
       {
-        label: 'Commodore VICE: Launch PRG',
+        label: 'Commodore Commander: Launch PRG',
         body: {
           type: COMMODORE_VICE_DEBUG_TYPE,
           request: 'launch',
-          name: 'Debug PRG in VICE',
+          name: 'Debug PRG',
           program: '${workspaceFolder}/out/program.prg',
           debugInfo: '${workspaceFolder}/out/program.dbg',
           sourceRoot: '${workspaceFolder}',
@@ -291,7 +291,7 @@ export class CommodoreViceDebugAdapterContribution
     return {
       type: COMMODORE_VICE_DEBUG_TYPE,
       request: 'launch',
-      name: `Debug ${program.name} in VICE`,
+      name: `Debug ${program.name}`,
       program: relativeOrAbsolute(workspaceRootPath, runProgramPath),
       debugInfo: relativeOrAbsolute(workspaceRootPath, replaceExtension(runProgramPath, '.dbg')),
       sourceRoot: relativeOrAbsolute(workspaceRootPath, workspaceRootPath),
@@ -304,7 +304,7 @@ export class CommodoreViceDebugAdapterContribution
     return {
       type: COMMODORE_VICE_DEBUG_TYPE,
       request: 'launch',
-      name: 'Debug PRG in VICE',
+      name: 'Debug PRG',
       program: '${workspaceFolder}/out/program.prg',
       debugInfo: '${workspaceFolder}/out/program.dbg',
       sourceRoot: '${workspaceFolder}',

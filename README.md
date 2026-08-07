@@ -210,7 +210,7 @@ npm run test:e2e:theia:ui
 ```
 
 The UI e2e runner launches the built Electron app against a temporary workspace,
-starts real VICE debug sessions, checks the Debug and Memory views, edits a
+starts real debug sessions, checks the Debug and Memory views, edits a
 memory byte through the Memory view, and switches through the C64 Visual
 Debugger views. The VICE GitHub Actions workflow runs the same lane on Linux
 under Xvfb. Use `--vice-executable`, `--vice-resources`, and `--vice-args` to

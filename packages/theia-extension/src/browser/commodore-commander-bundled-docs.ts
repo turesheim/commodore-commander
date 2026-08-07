@@ -68,7 +68,7 @@ export const BUNDLED_DOCUMENTS: readonly BundledDocumentationEntry[] = [
   {
     path: 'debugger-user-guide.md',
     label: 'Debugger User Guide',
-    details: 'Step-by-step VICE debugger workflow and watchpoints'
+    details: 'Step-by-step debugger workflow and watchpoints'
   },
   {
     path: 'character-set-format.md',

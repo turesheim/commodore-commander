@@ -1,7 +1,7 @@
 # Debugger User Guide
 
-This guide walks through the Commodore Commander VICE debugger from first
-launch to more advanced breakpoint and watchpoint workflows.
+This guide walks through the Commodore Commander debugger from first launch to
+more advanced breakpoint and watchpoint workflows.
 
 The debugger uses Theia's normal Run and Debug UI and a `commodore-vice` Debug
 Adapter Protocol session. It launches VICE as an external process and talks to
@@ -58,7 +58,7 @@ patched runtime.
 2. Select the intended build profile from the status bar if your workspace has
    multiple profiles.
 3. Run **Run > Start Debugging** or press `F5`.
-4. If no matching VICE launch configuration exists, accept the prompt to create
+4. If no matching launch configuration exists, accept the prompt to create
    one. Commodore Commander writes a `.theia/launch.json` entry and a matching
    Kick Assembler build task.
 5. VICE starts and the debugger connects to the binary monitor.
@@ -67,8 +67,8 @@ patched runtime.
    stop.
 
 Use **Run > Start Without Debugging** or `Ctrl+F5` when you want to launch the
-PRG in VICE without the binary monitor. In that mode breakpoints, memory views,
-watchpoints, and stepping are not available.
+PRG in the emulator without the binary monitor. In that mode breakpoints,
+memory views, watchpoints, and stepping are not available.
 
 ## Source Breakpoints
 
@@ -206,7 +206,7 @@ evaluate registers, labels, numeric addresses, and simple address expressions.
 
 1. Select a register, label, address, or expression in the editor.
 2. Right-click and choose **Add Expression to Watch**.
-3. Start or stop in a `commodore-vice` debug session.
+3. Start or stop in a debug session.
 4. Inspect the expression in Theia's Watch view.
 
 Examples:
@@ -236,7 +236,7 @@ checkpoints. You can watch a label, an address, or an address expression.
 5. Choose **Write**, **Read**, or **Read / Write**.
 6. Optionally enter a VICE condition.
 7. Optionally enter a hit condition such as `5`, `>= 5`, or `% 10`.
-8. If a compatible VICE debug session is active, the watchpoint is installed
+8. If a compatible debug session is active, the watchpoint is installed
    immediately. Otherwise it is saved and installed in the next session.
 
 When a watchpoint hits, the debugger stops with reason `data breakpoint`. The
@@ -275,7 +275,7 @@ Available actions:
 
 - **Add Memory Watchpoint...** creates another watchpoint.
 - **Install Watchpoints Now** reinstalls enabled watchpoints into the active
-  VICE debug session.
+  debug session.
 - **Clear Memory Watchpoints** deletes all saved watchpoints.
 - Selecting a watchpoint opens actions to enable or disable it, edit it, or
   delete it.
@@ -286,10 +286,9 @@ sent to the active debug session.
 
 ## Memory View
 
-The Memory view reads and writes through the active stopped `commodore-vice`
-debug session.
+The Memory view reads and writes through the active stopped debug session.
 
-1. Start a VICE debug session.
+1. Start a debug session.
 2. Stop at a breakpoint, watchpoint, pause, or step.
 3. Open **View > Memory**.
 4. Enter an address, label, range, or comma-separated list of monitors.
@@ -318,10 +317,10 @@ debug session supports `writeMemory`.
 
 ## C64 Visual Debugger
 
-The C64 Visual Debugger view turns the stopped VICE machine state into
+The C64 Visual Debugger view turns the stopped emulator state into
 C64-specific panels instead of only generic CPU and memory state.
 
-1. Start a VICE debug session.
+1. Start a debug session.
 2. Stop at a breakpoint, watchpoint, pause, or step.
 3. Open **View > C64 Visual Debugger**.
 4. Press refresh, or leave **Auto** enabled to refresh whenever execution stops.
@@ -406,7 +405,7 @@ If a conditional breakpoint or watchpoint is rejected:
 
 If watchpoints do not install:
 
-1. Make sure a `commodore-vice` debug session is active.
+1. Make sure a debug session is active.
 2. Make sure the session is not a Start Without Debugging session.
 3. Check that the expression resolves to a C64 memory address.
 4. Use **Manage Memory Watchpoints > Install Watchpoints Now** after editing.
@@ -414,7 +413,7 @@ If watchpoints do not install:
 If the Memory view is read-only:
 
 1. Stop the target first. Memory refreshes only while the CPU is stopped.
-2. Confirm that the active debug session is `commodore-vice`.
+2. Confirm that the active debug session is a Commodore Commander session.
 3. Confirm that the launch was started with debugging, not `noDebug`.
 
 ## Current Limits

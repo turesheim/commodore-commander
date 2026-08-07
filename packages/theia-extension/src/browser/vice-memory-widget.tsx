@@ -307,7 +307,7 @@ export class ViceMemoryWidget extends ReactWidget {
   protected autoRefresh = true;
   protected advancedOpen = false;
   protected loading = false;
-  protected status = 'Start a VICE debug session and stop at a breakpoint to read memory.';
+  protected status = 'Start a debug session and stop at a breakpoint to read memory.';
   protected error: string | undefined;
   protected snapshot: MemorySnapshot | undefined;
   protected snapshotSessionId: string | undefined;
@@ -425,7 +425,7 @@ export class ViceMemoryWidget extends ReactWidget {
   protected updateSessionStatus(): void {
     const session = this.currentViceSession();
     if (!session) {
-      this.status = 'Start a VICE debug session to read memory.';
+      this.status = 'Start a debug session to read memory.';
       return;
     }
     if (!session.capabilities.supportsReadMemoryRequest) {
@@ -468,7 +468,7 @@ export class ViceMemoryWidget extends ReactWidget {
     const session = this.currentViceSession();
     if (!session) {
       this.clearMemorySnapshot();
-      this.status = 'Start a VICE debug session to read memory.';
+      this.status = 'Start a debug session to read memory.';
       this.update();
       return;
     }
@@ -678,7 +678,7 @@ export class ViceMemoryWidget extends ReactWidget {
   protected async writeByte(address: number, value: number): Promise<void> {
     const session = this.currentViceSession();
     if (!session) {
-      throw new Error('Start a VICE debug session to edit memory.');
+      throw new Error('Start a debug session to edit memory.');
     }
     if (!session.capabilities.supportsWriteMemoryRequest) {
       throw new Error('The active debug session does not support memory writes.');
@@ -834,7 +834,7 @@ export class ViceMemoryWidget extends ReactWidget {
         <button
           className='theia-button'
           disabled={this.loading}
-          title='Read memory from the active stopped VICE debug session'
+          title='Read memory from the active stopped debug session'
           type='submit'
         >
           Refresh
@@ -1067,7 +1067,7 @@ export class ViceMemoryWidget extends ReactWidget {
           padding: '12px'
         }}
       >
-        Memory bytes will appear here after a stopped VICE debug session is refreshed.
+        Memory bytes will appear here after a stopped debug session is refreshed.
       </div>
     );
   }

@@ -319,7 +319,7 @@ export class C64VisualDebuggerWidget extends ReactWidget {
   protected autoRefresh = true;
   protected selectedView: C64VisualDebuggerView = 'overview';
   protected loading = false;
-  protected status = 'Start a VICE debug session and stop at a breakpoint to inspect C64 state.';
+  protected status = 'Start a debug session and stop at a breakpoint to inspect C64 state.';
   protected error: string | undefined;
   protected snapshot: C64VisualSnapshot | undefined;
 
@@ -401,7 +401,7 @@ export class C64VisualDebuggerWidget extends ReactWidget {
   protected updateSessionStatus(): void {
     const session = this.currentViceSession();
     if (!session) {
-      this.status = 'Start a VICE debug session to inspect C64 state.';
+      this.status = 'Start a debug session to inspect C64 state.';
       return;
     }
     if (!session.capabilities.supportsReadMemoryRequest) {
@@ -426,7 +426,7 @@ export class C64VisualDebuggerWidget extends ReactWidget {
     const session = this.currentViceSession();
     if (!session) {
       this.error = undefined;
-      this.status = 'Start a VICE debug session to inspect C64 state.';
+      this.status = 'Start a debug session to inspect C64 state.';
       this.update();
       return;
     }
@@ -653,7 +653,7 @@ export class C64VisualDebuggerWidget extends ReactWidget {
           onClick={() => {
             void this.refreshSnapshot();
           }}
-          title='Refresh from the active stopped VICE debug session'
+          title='Refresh from the active stopped debug session'
           type='button'
         >
           <i className={codicon('refresh')} />
@@ -705,7 +705,7 @@ export class C64VisualDebuggerWidget extends ReactWidget {
   protected renderEmpty(): React.ReactNode {
     return (
       <div style={emptyStyle}>
-        C64 state will appear here after a stopped VICE debug session is refreshed.
+        C64 state will appear here after a stopped debug session is refreshed.
       </div>
     );
   }

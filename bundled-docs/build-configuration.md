@@ -27,7 +27,7 @@ The build model deliberately uses separate concepts:
 - **program**: a source entry point that can be assembled into an artifact.
   Standalone assembly files in the workspace are auto-detected even when they
   are not listed in the config. A program can declare a `machine` section for
-  generated VICE launch configurations; if it does not, the debug adapter uses
+  generated launch configurations; if it does not, the debug adapter uses
   the default C64 profile until Active Machine launch defaults are wired in.
 - **profile**: reusable build settings such as output folders, symbols, debug
   dumps, toolchain paths, and custom assembler arguments.

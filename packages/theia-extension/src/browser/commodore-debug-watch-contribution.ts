@@ -202,7 +202,7 @@ export class CommodoreDebugWatchContribution
     const applied = await this.applyWatchpoints(this.currentViceSession(), true);
     if (!applied) {
       this.messageService.info(
-        `Memory watchpoint for ${watchpoint.expression} will be installed in the next VICE debug session.`
+        `Memory watchpoint for ${watchpoint.expression} will be installed in the next debug session.`
       );
     }
   }
