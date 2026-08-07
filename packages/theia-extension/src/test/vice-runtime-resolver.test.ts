@@ -17,6 +17,7 @@ import {
   getCommodoreCommanderToolPreferences
 } from '../common/commodore-commander-tool-preferences';
 import {
+  createEmbeddedViceArgs,
   createViceArgs,
   resolveViceRuntime
 } from '../node/vice-runtime-resolver';
@@ -297,6 +298,21 @@ test('createViceArgs keeps unfiltered display defaults before model and explicit
     '-CRTCfilter',
     '1'
   ]);
+});
+
+test('createEmbeddedViceArgs enables VICE mouse grab for captured input', () => {
+  assert.deepEqual(
+    createEmbeddedViceArgs(['-model', 'c64']),
+    ['-mouse', '-model', 'c64']
+  );
+  assert.deepEqual(
+    createEmbeddedViceArgs(['+mouse', '-model', 'c64']),
+    ['+mouse', '-model', 'c64']
+  );
+  assert.deepEqual(
+    createEmbeddedViceArgs(['-mouse', '-model', 'c64']),
+    ['-mouse', '-model', 'c64']
+  );
 });
 
 test('resolveViceRuntime prefers configured runtime path over bundled runtime', async () => {

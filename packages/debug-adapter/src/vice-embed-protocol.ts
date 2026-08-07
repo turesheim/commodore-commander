@@ -4,6 +4,7 @@ export const COMMODORE_VICE_EMBED_DEBUG_EVENT =
   'commodoreCommander.viceEmbed';
 export const VICE_EMBED_FLAG = '-cc-embed';
 export const VICE_EMBED_FRAME_PORT_FLAG = '-cc-frame-port';
+export const VICE_EMBED_MOUSE_GRAB_FLAG = '-mouse';
 export const COMMODORE_VICE_EMBED_BINARY_FRAME_MAGIC = Buffer.from(
   'CCB1',
   'ascii'

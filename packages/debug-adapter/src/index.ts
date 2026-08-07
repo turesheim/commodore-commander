@@ -3,6 +3,9 @@ export {
   type ViceDebugLaunchArguments
 } from './vice-debug-session';
 export {
+  VICE_EMBED_MOUSE_GRAB_FLAG
+} from './vice-embed-protocol';
+export {
   parseKickAssemblerDebugInfo,
   loadKickAssemblerDebugInfo,
   findLineMappingForSourceLine,

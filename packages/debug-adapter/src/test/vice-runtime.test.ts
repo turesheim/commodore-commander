@@ -62,6 +62,26 @@ test('createViceProcessArgs enables the embedded VICE transport when requested',
     '-cc-embed',
     '-cc-frame-port',
     '6510',
+    '-mouse',
+    '-model',
+    'c64',
+    '/workspace/out/main.prg'
+  ]);
+});
+
+test('createViceProcessArgs allows embedded launch args to override mouse grab', () => {
+  const args = createViceProcessArgs({
+    program: '/workspace/out/main.prg',
+    viceArgs: ['+mouse', '-model', 'c64'],
+    embed: true,
+    embedFramePort: 6510
+  });
+
+  assert.deepEqual(args, [
+    '-cc-embed',
+    '-cc-frame-port',
+    '6510',
+    '+mouse',
     '-model',
     'c64',
     '/workspace/out/main.prg'
@@ -77,6 +97,7 @@ test('createViceProcessArgs does not duplicate an explicit embedded transport fl
   });
 
   assert.deepEqual(args, [
+    '-mouse',
     '-cc-embed',
     '-cc-frame-port',
     '6511',

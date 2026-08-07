@@ -12,6 +12,9 @@ import {
   type CommodoreMachineProfileId
 } from '@commodore-commander/language-support';
 import {
+  VICE_EMBED_MOUSE_GRAB_FLAG
+} from '@commodore-commander/debug-adapter';
+import {
   COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE
 } from '../common/commodore-commander-tool-preferences';
 
@@ -26,6 +29,7 @@ export const VICE_DARWIN_ARM64_RESOURCES = path.join(
 
 const VICE_RESOURCES_SUBDIRECTORY = path.join('share', 'vice');
 const VICE_C64_RESOURCE_SUBDIRECTORY = 'C64';
+const VICE_MOUSE_RELEASE_FLAG = '+mouse';
 
 export interface ViceRuntimeResolutionOptions {
   runtimeDirectory?: string;
@@ -87,6 +91,15 @@ export function createViceArgs(
   }
   args.push(...(launch.viceArgs ?? []));
   return args;
+}
+
+export function createEmbeddedViceArgs(
+  viceArgs: readonly string[]
+): string[] {
+  if (hasViceMouseGrabSetting(viceArgs)) {
+    return [...viceArgs];
+  }
+  return [VICE_EMBED_MOUSE_GRAB_FLAG, ...viceArgs];
 }
 
 export async function getViceResourcesPath(
@@ -177,6 +190,11 @@ function withoutModelArgs(args: readonly string[]): string[] {
     filtered.push(args[index]);
   }
   return filtered;
+}
+
+function hasViceMouseGrabSetting(viceArgs: readonly string[]): boolean {
+  return viceArgs.includes(VICE_EMBED_MOUSE_GRAB_FLAG) ||
+    viceArgs.includes(VICE_MOUSE_RELEASE_FLAG);
 }
 
 async function isViceResourcesPath(filePath: string): Promise<boolean> {

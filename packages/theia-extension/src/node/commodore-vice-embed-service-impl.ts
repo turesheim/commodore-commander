@@ -35,6 +35,7 @@ import {
     getCommodoreCommanderToolPreferences
 } from '../common/commodore-commander-tool-preferences';
 import {
+    createEmbeddedViceArgs,
     createViceArgs,
     resolveViceMachineProfile,
     resolveViceRuntime
@@ -276,12 +277,15 @@ export class CommodoreViceEmbedServiceImpl
             runtime.resourcesPath,
             executableOverride ?? runtime.executable ?? machine?.profile.vice.executable ?? DEFAULT_VICE_EMULATOR
         );
+        const viceArgs = createEmbeddedViceArgs([
+            ...(machine ? createViceArgs(machine.profile, machine.launch) : []),
+            ...(request.args ?? [])
+        ]);
         const args = [
             EMBED_FLAG,
             EMBED_FRAME_PORT_FLAG,
             String(framePort),
-            ...(machine ? createViceArgs(machine.profile, machine.launch) : []),
-            ...(request.args ?? []),
+            ...viceArgs,
             ...(request.program ? [request.program] : [])
         ];
 

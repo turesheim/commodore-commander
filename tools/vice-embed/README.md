@@ -75,6 +75,10 @@ The current patch is intentionally narrow:
   used by the embedded view. The UI uses pixelated browser upscaling to fit the
   available view and keeps wide frames at native size instead of applying
   fractional downscaling.
+- Embedded launches enable VICE mouse grab by default so browser pointer-lock
+  mouse commands are accepted by VICE's mouse and paddle input path. Input
+  device selection remains controlled by VICE's own menu or explicit launch
+  arguments.
 - The Theia backend opens a local frame socket, passes it to VICE with
   `-cc-frame-port <port>`, parses binary frames from that socket, and forwards
   them to the browser over a dedicated binary WebSocket. stdout remains for

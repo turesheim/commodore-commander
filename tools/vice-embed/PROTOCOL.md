@@ -106,9 +106,12 @@ CCV1 {"type":"quit"}
 The native patch handles keyboard, mouse, menu, reset, and quit commands. Mouse
 commands are relative movement and SDL button numbers; they are pushed into
 VICE's SDL event queue and require VICE mouse emulation to be enabled for the
-active device. The menu command activates VICE's SDL main menu directly. Theia
-maps F12 to that command when the embedded emulator is active. While the SDL
-menu is active, the patch polls stdin from the menu event loop and pushes
-browser keyboard commands into SDL so the menu remains controllable from the
-embedded canvas. Joystick and resize messages are part of the contract so the
-Theia service API will not need to change when those native hooks are added.
+active device. Embedded Commodore Commander launches enable VICE mouse grab by
+default so browser pointer-lock mouse commands reach that path; VICE menu or
+explicit launch arguments still control which input device is attached. The
+menu command activates VICE's SDL main menu directly. Theia maps F12 to that
+command when the embedded emulator is active. While the SDL menu is active, the
+patch polls stdin from the menu event loop and pushes browser keyboard commands
+into SDL so the menu remains controllable from the embedded canvas. Joystick
+and resize messages are part of the contract so the Theia service API will not
+need to change when those native hooks are added.
