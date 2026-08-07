@@ -219,7 +219,7 @@ export class CommodoreMachineProfileWidget
 
   override dispose(): void {
     this.clearPendingMouseMove();
-    if (document.pointerLockElement === this.canvas) {
+    if (this.isMouseCaptureActive()) {
       document.exitPointerLock();
     }
     this.viceEmbedService.setClient(undefined);
@@ -583,15 +583,8 @@ export class CommodoreMachineProfileWidget
     window.setTimeout(() => this.focusCanvas(), 0);
   };
 
-  protected readonly handleMouseCaptureButtonMouseDown = (
-    event: React.MouseEvent<HTMLButtonElement>
-  ): void => {
-    if (event.button !== 0) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    if (this.mouseCaptured) {
+  protected readonly toggleMouseCapture = (): void => {
+    if (this.isMouseCaptureActive()) {
       this.releaseMouseCapture();
       return;
     }
@@ -832,46 +825,71 @@ export class CommodoreMachineProfileWidget
     this.canvas?.focus();
   };
 
-  protected readonly handleScreenMouseDown = (
-    event: React.MouseEvent<HTMLDivElement>
+  protected readonly handleMouseCaptureButtonMouseDown = (
+    event: React.MouseEvent<HTMLButtonElement>
   ): void => {
-    this.focusCanvas();
-    if (event.button !== 0 || this.mouseCaptured || !this.isPowered()) {
+    if (event.button !== 0) {
       return;
     }
     event.preventDefault();
-    this.requestMouseCapture();
+    event.stopPropagation();
+    this.toggleMouseCapture();
+  };
+
+  protected readonly handleScreenMouseDown = (
+    event: React.MouseEvent<HTMLDivElement>
+  ): void => {
+    if (event.button !== 0) {
+      return;
+    }
+    this.requestMouseCaptureFromGesture(event);
   };
 
   protected readonly handleCanvasMouseDown = (
     event: React.MouseEvent<HTMLCanvasElement>
   ): void => {
-    this.focusCanvas();
-    if (event.button !== 0 || this.mouseCaptured || !this.isPowered()) {
+    if (event.button !== 0) {
       return;
     }
+    this.requestMouseCaptureFromGesture(event);
+  };
+
+  protected requestMouseCaptureFromGesture(event: React.MouseEvent): void {
+    this.focusCanvas();
+    if (this.isMouseCaptureActive() || !this.isPowered()) {
+      return;
+    }
+    this.requestMouseCapture();
     event.preventDefault();
     event.stopPropagation();
-    this.requestMouseCapture();
-  };
+  }
 
   protected requestMouseCapture(): void {
     const canvas = this.canvas;
     if (!canvas || !this.isPowered()) {
       return;
     }
+    if (this.isMouseCaptureActive()) {
+      this.syncMouseCaptureState();
+      return;
+    }
     canvas.focus();
     try {
-      void Promise.resolve(canvas.requestPointerLock()).catch((error) =>
-        this.reportMouseCaptureError(error)
-      );
+      const result = canvas.requestPointerLock() as Promise<void> | void;
+      if (isPromiseLike(result)) {
+        void result
+          .then(() => this.syncMouseCaptureState())
+          .catch((error) => this.reportMouseCaptureError(error));
+      } else {
+        window.setTimeout(() => this.syncMouseCaptureState(), 0);
+      }
     } catch (error) {
       this.reportMouseCaptureError(error);
     }
   }
 
   protected releaseMouseCapture(): void {
-    if (document.pointerLockElement === this.canvas) {
+    if (this.isMouseCaptureActive()) {
       document.exitPointerLock();
     }
     this.clearPendingMouseMove();
@@ -882,7 +900,11 @@ export class CommodoreMachineProfileWidget
   }
 
   protected readonly handlePointerLockChanged = (): void => {
-    const captured = document.pointerLockElement === this.canvas;
+    this.syncMouseCaptureState();
+  };
+
+  protected syncMouseCaptureState(): void {
+    const captured = this.isMouseCaptureActive();
     if (captured === this.mouseCaptured) {
       return;
     }
@@ -891,7 +913,7 @@ export class CommodoreMachineProfileWidget
       this.clearPendingMouseMove();
     }
     this.update();
-  };
+  }
 
   protected readonly handlePointerLockError = (): void => {
     this.reportMouseCaptureError(new Error('Pointer lock was rejected.'));
@@ -954,7 +976,12 @@ export class CommodoreMachineProfileWidget
   }
 
   protected isMouseCaptureActive(): boolean {
-    return this.mouseCaptured && document.pointerLockElement === this.canvas;
+    const pointerLockElement = document.pointerLockElement;
+    if (!pointerLockElement) {
+      return false;
+    }
+    return pointerLockElement === this.canvas ||
+      this.node.contains(pointerLockElement);
   }
 
   protected queueMouseMove(xRel: number, yRel: number): void {
@@ -1033,7 +1060,7 @@ export class CommodoreMachineProfileWidget
     if (!this.isPowered() || this.starting || !isViceMenuKeyEvent(event)) {
       return false;
     }
-    if (document.pointerLockElement === this.canvas) {
+    if (this.isMouseCaptureActive()) {
       return true;
     }
     const target = event.target;
@@ -1205,6 +1232,12 @@ function normalizePointerMovement(value: number): number {
     return 0;
   }
   return value;
+}
+
+function isPromiseLike(value: unknown): value is Promise<void> {
+  return Boolean(value) &&
+    typeof value === 'object' &&
+    typeof (value as { then?: unknown }).then === 'function';
 }
 
 function drainMouseDelta(value: number): {
