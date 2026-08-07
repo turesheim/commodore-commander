@@ -58,6 +58,9 @@ import {
   type SidScoreVoiceStateEvent
 } from '../common/sidscore-runtime-service';
 import {
+  shouldTreatUnmatchedTerminalAsScorePlayback
+} from '../common/sidscore-playback-routing';
+import {
   extractSidScoreSubtuneCatalog,
   type SidScoreSubtuneInfo
 } from '../common/sidscore-subtunes';
@@ -754,42 +757,19 @@ export class SidScoreRuntimeContribution
   protected isUnmatchedTerminalScorePlaybackStateEvent(
     event: SidScorePlaybackStateEvent
   ): boolean {
-    if (!this.isTerminalPlaybackState(event.state)) {
-      return false;
-    }
-    if (event.requestId !== 0) {
-      return false;
-    }
-    if (!this.isActivePlaybackState(this.playbackState)) {
-      return false;
-    }
-
     // The SIDScore server can report normal score completion with request id 0,
     // then immediately switch to a separate MIDI monitor score. If that terminal
     // frame misses the strict request/score id match, the instrument widget would
     // keep scorePlaybackActive=true and continue sending MIDI settings with
     // enabled=false. Treat one unmatched terminal frame as belonging to the active
-    // score so Instrument mode can re-arm MIDI after song playback.
-    return (
+    // score so Instrument mode can re-arm MIDI after song playback. Do not apply
+    // that fallback while a new score is still loading; an ending SFX preview can
+    // otherwise race with a fresh Play request and mark the new score as ended.
+    return shouldTreatUnmatchedTerminalAsScorePlayback(
+      event,
+      this.playbackState,
       this.scorePlaybackRequestId !== undefined ||
-      this.scorePlaybackScoreId !== undefined
-    );
-  }
-
-  protected isActivePlaybackState(
-    state: SidScorePlaybackStateEvent['state']
-  ): boolean {
-    return state === 'loading' || state === 'playing' || state === 'paused';
-  }
-
-  protected isTerminalPlaybackState(
-    state: SidScorePlaybackStateEvent['state']
-  ): boolean {
-    return (
-      state === 'idle' ||
-      state === 'stopped' ||
-      state === 'ended' ||
-      state === 'error'
+        this.scorePlaybackScoreId !== undefined
     );
   }
 
