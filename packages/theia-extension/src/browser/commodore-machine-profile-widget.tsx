@@ -107,9 +107,9 @@ export class CommodoreMachineProfileWidget
   @postConstruct()
   protected init(): void {
     this.id = COMMODORE_MACHINE_PROFILE_WIDGET_ID;
-    this.title.label = 'Machine';
-    this.title.caption = 'Commodore Machine and VICE';
-    this.title.iconClass = codicon('circuit-board');
+    this.title.label = 'Emulator';
+    this.title.caption = 'Commodore Emulator and VICE';
+    this.title.iconClass = codicon('device-desktop');
     this.title.closable = false;
     this.addClass('cc-machine-profile-widget');
     this.viceEmbedService.setClient(this);
@@ -216,7 +216,6 @@ export class CommodoreMachineProfileWidget
       >
         <div style={styles.header}>
           <div style={styles.heading}>
-            <div style={styles.eyebrow}>Active Machine</div>
             <select
               aria-label='Active Commodore machine'
               disabled={machineSelectorDisabled}
@@ -238,20 +237,17 @@ export class CommodoreMachineProfileWidget
                 </option>
               ))}
             </select>
+          </div>
+          <div style={styles.controls}>
             <div
-              style={styles.status}
-              title={this.lastOutput || this.statusMessage}
-            >
-              {this.statusMessage}
-            </div>
-            <div
-              style={styles.frameRate}
+              style={{
+                ...styles.frameRate,
+                ...(!isPowered ? styles.frameRateDisabled : {})
+              }}
               title='Displayed emulator frame rate'
             >
               FPS {this.frameRate === undefined ? '--' : Math.round(this.frameRate)}
             </div>
-          </div>
-          <div style={styles.controls}>
             <button
               aria-checked={isPowered}
               aria-label={isPowered ? 'Turn active machine off' : 'Turn active machine on'}
@@ -362,6 +358,7 @@ export class CommodoreMachineProfileWidget
     this.statusMessage = 'Starting emulator.';
     this.frame = undefined;
     this.resetFrameRate();
+    this.drawFrame();
     this.update();
     try {
       await this.viceEmbedService.launch({
@@ -445,6 +442,7 @@ export class CommodoreMachineProfileWidget
     this.status = 'starting';
     this.statusMessage = 'Starting emulator.';
     this.frame = undefined;
+    this.drawFrame();
     this.update();
   }
 
@@ -512,6 +510,8 @@ export class CommodoreMachineProfileWidget
     this.starting = event.state === 'starting';
     if (event.state === 'stopped' || event.state === 'error') {
       this.activeDebugSessionId = undefined;
+      this.frame = undefined;
+      this.drawFrame();
       this.resetFrameRate();
       this.releaseMouseCapture();
     }
@@ -884,8 +884,12 @@ export class CommodoreMachineProfileWidget
 
   protected drawFrame(): void {
     const canvas = this.canvas;
+    if (!canvas) {
+      return;
+    }
     const frame = this.frame;
-    if (!canvas || !frame) {
+    if (!frame) {
+      this.clearCanvas(canvas);
       return;
     }
     const expectedLength = frame.width * frame.height * 4;
@@ -908,6 +912,15 @@ export class CommodoreMachineProfileWidget
     }
     const imageData = new ImageData(toClampedBytes(bytes), frame.width, frame.height);
     context.putImageData(imageData, 0, 0);
+  }
+
+  protected clearCanvas(canvas: HTMLCanvasElement): void {
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return;
+    }
+    context.fillStyle = '#000';
+    context.fillRect(0, 0, canvas.width, canvas.height);
   }
 
   protected isPowered(): boolean {
@@ -1036,27 +1049,21 @@ const styles = {
   } satisfies React.CSSProperties,
   header: {
     display: 'flex',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-    padding: '10px 10px 8px',
+    padding: '8px 10px',
     borderBottom: '1px solid var(--theia-panel-border)'
   } satisfies React.CSSProperties,
   heading: {
-    minWidth: 0
-  } satisfies React.CSSProperties,
-  eyebrow: {
-    color: 'var(--theia-descriptionForeground)',
-    fontSize: 11,
-    fontWeight: 600,
-    textTransform: 'uppercase'
+    minWidth: 0,
+    flex: '0 1 240px'
   } satisfies React.CSSProperties,
   machineSelect: {
     width: '100%',
     maxWidth: 240,
     minWidth: 0,
     height: 24,
-    marginTop: 3,
     color: 'var(--theia-dropdown-foreground)',
     background: 'var(--theia-dropdown-background)',
     border: '1px solid var(--theia-dropdown-border)',
@@ -1065,20 +1072,15 @@ const styles = {
     fontSize: 13,
     lineHeight: '22px'
   } satisfies React.CSSProperties,
-  status: {
-    color: 'var(--theia-descriptionForeground)',
-    fontSize: 12,
-    lineHeight: 1.35,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap'
-  } satisfies React.CSSProperties,
   frameRate: {
     color: 'var(--theia-descriptionForeground)',
     fontSize: 12,
-    lineHeight: 1.35,
-    marginTop: 2,
+    lineHeight: '22px',
+    minWidth: 46,
     whiteSpace: 'nowrap'
+  } satisfies React.CSSProperties,
+  frameRateDisabled: {
+    color: 'var(--theia-disabledForeground)'
   } satisfies React.CSSProperties,
   controls: {
     display: 'flex',

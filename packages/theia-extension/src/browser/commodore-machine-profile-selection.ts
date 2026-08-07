@@ -106,7 +106,7 @@ export namespace CommodoreMachineProfileCommands {
     id: 'commodoreCommander.machine.selectProfile',
     category: 'Commodore Commander',
     label: 'Select Commodore Machine Profile',
-    iconClass: 'codicon codicon-circuit-board'
+    iconClass: 'codicon codicon-device-desktop'
   };
 }
 
