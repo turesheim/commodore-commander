@@ -72,7 +72,8 @@ The current patch is intentionally narrow:
 - Commodore Commander default launch arguments disable VICE render filters and
   request nearest GL filtering for the active video chip. The browser canvas is
   responsible for presentation scaling; SDL fullscreen custom resolution is not
-  used by the embedded view.
+  used by the embedded view. The UI uses integer upscaling and keeps wide
+  frames at native size instead of applying fractional downscaling.
 - The Theia backend opens a local frame socket, passes it to VICE with
   `-cc-frame-port <port>`, parses binary frames from that socket, and forwards
   them to the browser over a dedicated binary WebSocket. stdout remains for

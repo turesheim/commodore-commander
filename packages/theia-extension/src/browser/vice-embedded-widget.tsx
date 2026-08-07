@@ -18,6 +18,10 @@ import {
     createViceEmbedFrameSocket,
     type ViceEmbedBinaryFrame
 } from './vice-embed-frame-stream';
+import {
+    calculateViceCanvasDisplaySize,
+    type ViceCanvasDisplaySize
+} from './vice-canvas-scaling';
 
 export const VICE_EMBEDDED_WIDGET_ID = 'commodore-commander.vice-embedded';
 
@@ -33,8 +37,11 @@ export class ViceEmbeddedWidget
     @inject(CommodoreViceEmbedService)
     protected readonly viceEmbedService!: CommodoreViceEmbedServiceProxy;
 
+    protected screenElement: HTMLDivElement | undefined;
+    protected resizeObserver: ResizeObserver | undefined;
     protected canvas: HTMLCanvasElement | undefined;
     protected frame: ViceEmbedRenderableFrame | undefined;
+    protected canvasDisplaySize: ViceCanvasDisplaySize | undefined;
     protected frameSocket: WebSocket | undefined;
     protected status: CommodoreViceEmbedStatusState = 'idle';
     protected statusMessage = 'Idle';
@@ -58,6 +65,8 @@ export class ViceEmbeddedWidget
     }
 
     override dispose(): void {
+        this.resizeObserver?.disconnect();
+        this.resizeObserver = undefined;
         this.viceEmbedService.setClient(undefined);
         this.frameSocket?.close();
         this.frameSocket = undefined;
@@ -72,6 +81,7 @@ export class ViceEmbeddedWidget
     onViceEmbedFrame(event: CommodoreViceEmbedFrameEvent): void {
         this.frame = event;
         this.drawFrame();
+        this.refreshCanvasDisplaySize();
         this.update();
     }
 
@@ -79,6 +89,10 @@ export class ViceEmbeddedWidget
         this.status = event.state;
         this.statusMessage = event.message ?? event.state;
         this.starting = event.state === 'starting';
+        if (event.state === 'stopped' || event.state === 'error') {
+            this.frame = undefined;
+            this.refreshCanvasDisplaySize();
+        }
         this.update();
     }
 
@@ -101,7 +115,8 @@ export class ViceEmbeddedWidget
         this.statusMessage = 'Emulator running';
         this.starting = false;
         this.drawFrame();
-        if (shouldUpdate) {
+        const displaySizeChanged = this.refreshCanvasDisplaySize();
+        if (shouldUpdate || displaySizeChanged) {
             this.update();
         }
     };
@@ -154,6 +169,7 @@ export class ViceEmbeddedWidget
                 </div>
                 <div
                     className='cc-vice-embed-screen'
+                    ref={this.setScreenRef}
                     style={styles.screen}
                     onMouseDown={this.focusCanvas}
                 >
@@ -164,7 +180,10 @@ export class ViceEmbeddedWidget
                         aria-label='Embedded VICE'
                         onKeyDown={this.handleKeyDown}
                         onKeyUp={this.handleKeyUp}
-                        style={styles.canvas}
+                        style={{
+                            ...styles.canvas,
+                            ...this.canvasDisplayStyle()
+                        }}
                     />
                     {!this.frame && (
                         <div style={styles.emptyState}>
@@ -180,6 +199,8 @@ export class ViceEmbeddedWidget
         this.starting = true;
         this.status = 'starting';
         this.statusMessage = 'Starting emulator.';
+        this.frame = undefined;
+        this.refreshCanvasDisplaySize();
         this.update();
         try {
             await this.viceEmbedService.launch();
@@ -195,6 +216,8 @@ export class ViceEmbeddedWidget
         await this.viceEmbedService.stop();
         this.status = 'stopped';
         this.statusMessage = 'Stopped';
+        this.frame = undefined;
+        this.refreshCanvasDisplaySize();
         this.update();
     };
 
@@ -202,6 +225,66 @@ export class ViceEmbeddedWidget
         this.canvas = canvas ?? undefined;
         this.drawFrame();
     };
+
+    protected readonly setScreenRef = (element: HTMLDivElement | null): void => {
+        if (this.screenElement === (element ?? undefined)) {
+            return;
+        }
+        this.resizeObserver?.disconnect();
+        this.screenElement = element ?? undefined;
+        if (this.screenElement && typeof ResizeObserver !== 'undefined') {
+            this.resizeObserver = new ResizeObserver(this.handleScreenResize);
+            this.resizeObserver.observe(this.screenElement);
+        } else {
+            this.resizeObserver = undefined;
+        }
+        if (this.refreshCanvasDisplaySize()) {
+            this.update();
+        }
+    };
+
+    protected readonly handleScreenResize = (): void => {
+        if (this.refreshCanvasDisplaySize()) {
+            this.update();
+        }
+    };
+
+    protected refreshCanvasDisplaySize(): boolean {
+        const next = this.calculateCanvasDisplaySize();
+        const previous = this.canvasDisplaySize;
+        const changed =
+            previous?.width !== next?.width ||
+            previous?.height !== next?.height ||
+            previous?.scale !== next?.scale;
+        this.canvasDisplaySize = next;
+        return changed;
+    }
+
+    protected calculateCanvasDisplaySize(): ViceCanvasDisplaySize | undefined {
+        if (!this.frame || !this.screenElement) {
+            return undefined;
+        }
+        return calculateViceCanvasDisplaySize(
+            this.frame.width,
+            this.frame.height,
+            this.screenElement.clientWidth,
+            this.screenElement.clientHeight
+        );
+    }
+
+    protected canvasDisplayStyle(): React.CSSProperties {
+        const displaySize = this.canvasDisplaySize;
+        if (!displaySize) {
+            return {};
+        }
+        return {
+            width: displaySize.width,
+            height: displaySize.height,
+            maxWidth: 'none',
+            maxHeight: 'none',
+            flexShrink: 0
+        };
+    }
 
     protected readonly focusCanvas = (): void => {
         this.canvas?.focus();
@@ -322,7 +405,7 @@ const styles = {
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'center',
-        overflow: 'hidden',
+        overflow: 'auto',
         background: 'var(--theia-editor-background)'
     } satisfies React.CSSProperties,
     canvas: {

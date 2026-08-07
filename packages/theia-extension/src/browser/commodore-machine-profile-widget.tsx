@@ -43,6 +43,10 @@ import {
   type ViceEmbedBinaryFrame
 } from './vice-embed-frame-stream';
 import {
+  calculateViceCanvasDisplaySize,
+  type ViceCanvasDisplaySize
+} from './vice-canvas-scaling';
+import {
   COMMODORE_MACHINE_PROFILE_PREFERENCE,
   COMMODORE_MACHINE_PROFILE_WIDGET_ID,
   CommodoreMachineProfileSelectionService
@@ -68,6 +72,7 @@ const VICE_MENU_KEY = {
 const MOUSE_CAPTURE_MAX_RELATIVE_DELTA = 63;
 const MOUSE_CAPTURE_MIN_RELATIVE_DELTA = 2;
 const MOUSE_CAPTURE_JITTER_HOLD_MS = 120;
+const VICE_MENU_HINT_HEIGHT = 20;
 
 @injectable()
 export class CommodoreMachineProfileWidget
@@ -86,8 +91,11 @@ export class CommodoreMachineProfileWidget
   protected readonly debugSessionManager!: DebugSessionManager;
 
   protected readonly toDispose = new DisposableCollection();
+  protected screenElement: HTMLDivElement | undefined;
+  protected resizeObserver: ResizeObserver | undefined;
   protected canvas: HTMLCanvasElement | undefined;
   protected frame: ViceEmbedRenderableFrame | undefined;
+  protected canvasDisplaySize: ViceCanvasDisplaySize | undefined;
   protected frameSocket: WebSocket | undefined;
   protected status: CommodoreViceEmbedStatusState = 'idle';
   protected statusMessage = 'Off';
@@ -156,6 +164,8 @@ export class CommodoreMachineProfileWidget
 
   override dispose(): void {
     this.clearPendingMouseMove();
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = undefined;
     if (this.isMouseCaptureActive()) {
       document.exitPointerLock();
     }
@@ -170,6 +180,29 @@ export class CommodoreMachineProfileWidget
     super.onActivateRequest(msg);
     this.canvas?.focus();
   }
+
+  protected readonly setScreenRef = (element: HTMLDivElement | null): void => {
+    if (this.screenElement === (element ?? undefined)) {
+      return;
+    }
+    this.resizeObserver?.disconnect();
+    this.screenElement = element ?? undefined;
+    if (this.screenElement && typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(this.handleScreenResize);
+      this.resizeObserver.observe(this.screenElement);
+    } else {
+      this.resizeObserver = undefined;
+    }
+    if (this.refreshCanvasDisplaySize()) {
+      this.update();
+    }
+  };
+
+  protected readonly handleScreenResize = (): void => {
+    if (this.refreshCanvasDisplaySize()) {
+      this.update();
+    }
+  };
 
   onViceEmbedFrame(event: CommodoreViceEmbedFrameEvent): void {
     this.applyFrame(event, 'standalone');
@@ -297,12 +330,14 @@ export class CommodoreMachineProfileWidget
 
         <div
           className='cc-machine-vice-screen'
+          ref={this.setScreenRef}
           style={styles.screen}
           onMouseDown={this.handleScreenMouseDown}
         >
           <div
             style={{
               ...styles.viewport,
+              ...this.canvasDisplayStyle(),
               aspectRatio
             }}
           >
@@ -357,6 +392,7 @@ export class CommodoreMachineProfileWidget
     this.status = 'starting';
     this.statusMessage = 'Starting emulator.';
     this.frame = undefined;
+    this.refreshCanvasDisplaySize();
     this.resetFrameRate();
     this.drawFrame();
     this.update();
@@ -384,6 +420,7 @@ export class CommodoreMachineProfileWidget
     this.runtimeOwner = undefined;
     this.activeDebugSessionId = undefined;
     this.frame = undefined;
+    this.refreshCanvasDisplaySize();
     this.resetFrameRate();
     this.applyStatus({ state: 'stopped', message: 'Off' }, 'standalone');
   }
@@ -442,6 +479,7 @@ export class CommodoreMachineProfileWidget
     this.status = 'starting';
     this.statusMessage = 'Starting emulator.';
     this.frame = undefined;
+    this.refreshCanvasDisplaySize();
     this.drawFrame();
     this.update();
   }
@@ -454,6 +492,7 @@ export class CommodoreMachineProfileWidget
     this.activeDebugSessionId = undefined;
     this.starting = false;
     this.frame = undefined;
+    this.refreshCanvasDisplaySize();
     this.applyStatus({ state: 'stopped', message: 'Off' }, 'debug');
   }
 
@@ -511,6 +550,7 @@ export class CommodoreMachineProfileWidget
     if (event.state === 'stopped' || event.state === 'error') {
       this.activeDebugSessionId = undefined;
       this.frame = undefined;
+      this.refreshCanvasDisplaySize();
       this.drawFrame();
       this.resetFrameRate();
       this.releaseMouseCapture();
@@ -534,9 +574,47 @@ export class CommodoreMachineProfileWidget
     this.starting = false;
     this.frame = event;
     this.drawFrame();
-    if (shouldUpdate || frameRateChanged) {
+    const displaySizeChanged = this.refreshCanvasDisplaySize();
+    if (shouldUpdate || frameRateChanged || displaySizeChanged) {
       this.update();
     }
+  }
+
+  protected refreshCanvasDisplaySize(): boolean {
+    const next = this.calculateCanvasDisplaySize();
+    const previous = this.canvasDisplaySize;
+    const changed =
+      previous?.width !== next?.width ||
+      previous?.height !== next?.height ||
+      previous?.scale !== next?.scale;
+    this.canvasDisplaySize = next;
+    return changed;
+  }
+
+  protected calculateCanvasDisplaySize(): ViceCanvasDisplaySize | undefined {
+    if (!this.frame || !this.screenElement) {
+      return undefined;
+    }
+    return calculateViceCanvasDisplaySize(
+      this.frame.width,
+      this.frame.height,
+      this.screenElement.clientWidth,
+      this.screenElement.clientHeight - VICE_MENU_HINT_HEIGHT
+    );
+  }
+
+  protected canvasDisplayStyle(): React.CSSProperties {
+    const displaySize = this.canvasDisplaySize;
+    if (!displaySize) {
+      return {};
+    }
+    return {
+      width: displaySize.width,
+      height: displaySize.height,
+      maxWidth: 'none',
+      maxHeight: 'none',
+      flexShrink: 0
+    };
   }
 
   protected updateFrameRate(): boolean {
@@ -1147,7 +1225,7 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    overflow: 'hidden',
+    overflow: 'auto',
     padding: 0,
     background: 'var(--theia-editor-background)'
   } satisfies React.CSSProperties,
