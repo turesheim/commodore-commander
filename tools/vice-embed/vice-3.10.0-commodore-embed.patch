@@ -51,11 +51,46 @@ new file mode 100644
 +void cc_embed_shutdown(void);
 +
 +#endif
+diff --git a/src/sid/sid.c b/src/sid/sid.c
+--- a/src/sid/sid.c
++++ b/src/sid/sid.c
+@@ -52,2 +52,3 @@
+ #ifdef HAVE_MOUSE
++#include "cc_embed.h"
+ #include "mouse.h"
+@@ -183,6 +184,12 @@ static inline uint8_t makepotval(int value)
+ {
+     unsigned int fuzz;
+-
++
++#ifdef HAVE_MOUSE
++    if (cc_embed_is_enabled()) {
++        return value;
++    }
++#endif
++
+     if (get_joyport_pot_type() == JOYPORT_POT_TYPE_ANALOG) {
+         fuzz = lib_unsigned_rand(0, (value * 5) / 255);
+     } else {
+@@ -204,6 +211,12 @@ static inline uint8_t makebadpotval(int value, int clkdiff)
+ {
+     unsigned int fuzz;
+-
++
++#ifdef HAVE_MOUSE
++    if (cc_embed_is_enabled()) {
++        return value;
++    }
++#endif
++
+     if (get_joyport_pot_type() == JOYPORT_POT_TYPE_ANALOG) {
+         fuzz = lib_unsigned_rand(0, (clkdiff * 32) / 255);
+     } else {
 diff --git a/src/arch/sdl/cc_embed.c b/src/arch/sdl/cc_embed.c
 new file mode 100644
 --- /dev/null
 +++ b/src/arch/sdl/cc_embed.c
-@@ -0,0 +1,797 @@
+@@ -0,0 +1,791 @@
 +/*
 + * cc_embed.c - Commodore Commander VICE embedding transport.
 + *
@@ -92,6 +127,8 @@ new file mode 100644
 +#include "cc_embed.h"
 +#include "kbd.h"
 +#include "machine.h"
++#include "mouse.h"
++#include "mousedrv.h"
 +#include "uimenu.h"
 +
 +#define CC_EMBED_FLAG "-cc-embed"
@@ -113,8 +150,6 @@ new file mode 100644
 +static int cc_embed_enabled = 0;
 +static int cc_embed_frame_port = 0;
 +static int cc_embed_frame_socket = -1;
-+static int cc_embed_mouse_x = 0;
-+static int cc_embed_mouse_y = 0;
 +static uint32_t cc_embed_frame_id = 0;
 +static uint32_t cc_embed_last_frame_ticks = 0;
 +static int cc_embed_force_next_frame = 0;
@@ -134,8 +169,8 @@ new file mode 100644
 +static void cc_embed_handle_key(const char *payload);
 +static void cc_embed_handle_mouse(const char *payload);
 +static void cc_embed_push_sdl_key(SDLKey key, SDLMod mod, int pressed);
-+static void cc_embed_push_sdl_mouse_motion(int xrel, int yrel);
-+static void cc_embed_push_sdl_mouse_button(int button, int pressed);
++static void cc_embed_apply_mouse_motion(int xrel, int yrel);
++static void cc_embed_apply_mouse_button(int button, int pressed);
 +static int cc_embed_json_bool(const char *json, const char *name, int *value);
 +static int cc_embed_json_int(const char *json, const char *name, int *value);
 +static int cc_embed_json_has_string(const char *json, const char *name, const char *value);
@@ -518,14 +553,14 @@ new file mode 100644
 +    (void)cc_embed_json_int(payload, "\"xRel\"", &xrel);
 +    (void)cc_embed_json_int(payload, "\"yRel\"", &yrel);
 +    if (xrel != 0 || yrel != 0) {
-+        cc_embed_push_sdl_mouse_motion(xrel, yrel);
++        cc_embed_apply_mouse_motion(xrel, yrel);
 +    }
 +
 +    if (cc_embed_json_int(payload, "\"button\"", &button) &&
 +        cc_embed_json_bool(payload, "\"pressed\"", &pressed) &&
 +        button > 0 &&
 +        button <= 255) {
-+        cc_embed_push_sdl_mouse_button(button, pressed);
++        cc_embed_apply_mouse_button(button, pressed);
 +    }
 +}
 +
@@ -541,30 +576,18 @@ new file mode 100644
 +    SDL_PushEvent(&event);
 +}
 +
-+static void cc_embed_push_sdl_mouse_motion(int xrel, int yrel)
++static void cc_embed_apply_mouse_motion(int xrel, int yrel)
 +{
-+    SDL_Event event;
-+
-+    memset(&event, 0, sizeof(event));
-+    cc_embed_mouse_x += xrel;
-+    cc_embed_mouse_y += yrel;
-+    event.type = SDL_MOUSEMOTION;
-+    event.motion.x = cc_embed_mouse_x;
-+    event.motion.y = cc_embed_mouse_y;
-+    event.motion.xrel = xrel;
-+    event.motion.yrel = yrel;
-+    SDL_PushEvent(&event);
++    if (_mouse_enabled) {
++        mouse_move((float)xrel, (float)yrel);
++    }
 +}
 +
-+static void cc_embed_push_sdl_mouse_button(int button, int pressed)
++static void cc_embed_apply_mouse_button(int button, int pressed)
 +{
-+    SDL_Event event;
-+
-+    memset(&event, 0, sizeof(event));
-+    event.type = pressed ? SDL_MOUSEBUTTONDOWN : SDL_MOUSEBUTTONUP;
-+    event.button.state = pressed ? SDL_PRESSED : SDL_RELEASED;
-+    event.button.button = (uint8_t)button;
-+    SDL_PushEvent(&event);
++    if (_mouse_enabled) {
++        mouse_button(button, pressed);
++    }
 +}
 +
 +static int cc_embed_json_bool(const char *json, const char *name, int *value)

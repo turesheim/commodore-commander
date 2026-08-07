@@ -66,6 +66,8 @@ const VICE_MENU_KEY = {
 } as const;
 
 const MOUSE_CAPTURE_MAX_RELATIVE_DELTA = 63;
+const MOUSE_CAPTURE_MIN_RELATIVE_DELTA = 2;
+const MOUSE_CAPTURE_JITTER_HOLD_MS = 120;
 
 @injectable()
 export class CommodoreMachineProfileWidget
@@ -99,6 +101,7 @@ export class CommodoreMachineProfileWidget
   protected mouseCaptured = false;
   protected pendingMouseXRel = 0;
   protected pendingMouseYRel = 0;
+  protected pendingMouseMoveStarted = 0;
   protected pendingMouseMoveAnimationFrame: number | undefined;
 
   @postConstruct()
@@ -741,6 +744,18 @@ export class CommodoreMachineProfileWidget
   }
 
   protected queueMouseMove(xRel: number, yRel: number): void {
+    const now = window.performance.now();
+    if (
+      this.pendingMouseMoveStarted > 0 &&
+      now - this.pendingMouseMoveStarted > MOUSE_CAPTURE_JITTER_HOLD_MS
+    ) {
+      this.pendingMouseXRel = 0;
+      this.pendingMouseYRel = 0;
+      this.pendingMouseMoveStarted = 0;
+    }
+    if (this.pendingMouseMoveStarted <= 0) {
+      this.pendingMouseMoveStarted = now;
+    }
     this.pendingMouseXRel += xRel;
     this.pendingMouseYRel += yRel;
     if (this.pendingMouseMoveAnimationFrame !== undefined) {
@@ -768,8 +783,12 @@ export class CommodoreMachineProfileWidget
     }
     const xRel = toMouseDelta(this.pendingMouseXRel);
     const yRel = toMouseDelta(this.pendingMouseYRel);
+    if (isMouseJitterDelta(xRel, yRel)) {
+      return;
+    }
     this.pendingMouseXRel = 0;
     this.pendingMouseYRel = 0;
+    this.pendingMouseMoveStarted = 0;
     if (xRel === 0 && yRel === 0) {
       return;
     }
@@ -783,6 +802,7 @@ export class CommodoreMachineProfileWidget
     }
     this.pendingMouseXRel = 0;
     this.pendingMouseYRel = 0;
+    this.pendingMouseMoveStarted = 0;
   }
 
   protected readonly handleDocumentKeyDown = (event: KeyboardEvent): void => {
@@ -996,6 +1016,12 @@ function toMouseDelta(value: number): number {
     Math.min(MOUSE_CAPTURE_MAX_RELATIVE_DELTA, value)
   );
   return clamped < 0 ? Math.ceil(clamped) : Math.floor(clamped);
+}
+
+function isMouseJitterDelta(xRel: number, yRel: number): boolean {
+  return Math.abs(xRel) + Math.abs(yRel) > 0 &&
+    Math.abs(xRel) < MOUSE_CAPTURE_MIN_RELATIVE_DELTA &&
+    Math.abs(yRel) < MOUSE_CAPTURE_MIN_RELATIVE_DELTA;
 }
 
 const styles = {
