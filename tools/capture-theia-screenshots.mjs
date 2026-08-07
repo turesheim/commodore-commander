@@ -546,6 +546,26 @@ function createCaptureConfig(options) {
         ]
       },
       {
+        outputPath: path.join(options.outputDir, 'theia-sid-sfx-editor.png'),
+        sourcePath: options.sidScorePath,
+        steps: [
+          { type: 'openSidSfxEditor' },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-sid-sfx-widget',
+            text: 'Preset',
+            timeoutMs: options.timeoutMs
+          },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-sid-sfx-widget',
+            text: 'Source',
+            timeoutMs: options.timeoutMs
+          },
+          { type: 'wait', ms: 750 }
+        ]
+      },
+      {
         outputPath: path.join(options.outputDir, 'theia-vice-debugging.png'),
         sourcePath: options.debugSourcePath,
         marker: debugBasicReadyBreakpoint,

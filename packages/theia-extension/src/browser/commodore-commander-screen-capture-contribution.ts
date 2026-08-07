@@ -31,6 +31,7 @@ import {
   C64_VISUAL_DEBUGGER_WIDGET_ID,
   C64VisualDebuggerWidget
 } from './c64-visual-debugger-widget';
+import { SID_SFX_EDITOR_WIDGET_ID } from './sid-sfx-editor-widget';
 
 export const SCREEN_CAPTURE_STATE_KEY = '__commodoreCommanderScreenCapture';
 export const SCREEN_CAPTURE_API_KEY = '__commodoreCommanderScreenCaptureApi';
@@ -80,6 +81,7 @@ export interface CommodoreCommanderScreenCaptureApi {
   openC64VisualDebugger?: () => Promise<boolean>;
   openMemoryView?: () => Promise<boolean>;
   openOutlineView?: () => Promise<boolean>;
+  openSidSfxEditor?: () => Promise<boolean>;
   prepareC64VisualDebuggerDemoState?: () => Promise<boolean>;
   openSourceFile?: (filePath: string) => Promise<boolean>;
   revealMemoryTextColumn?: () => Promise<boolean>;
@@ -177,6 +179,7 @@ export class CommodoreCommanderScreenCaptureContribution
         230
       ),
       openOutlineView: async () => this.openOutlineViewForScreenCapture(),
+      openSidSfxEditor: async () => this.openSidSfxEditorForScreenCapture(),
       prepareC64VisualDebuggerDemoState: async () =>
         this.prepareC64VisualDebuggerDemoStateForScreenCapture(),
       openSourceFile: async (filePath) =>
@@ -446,6 +449,15 @@ export class CommodoreCommanderScreenCaptureContribution
       'right',
       640,
       240
+    );
+  }
+
+  protected async openSidSfxEditorForScreenCapture(): Promise<boolean> {
+    return this.openWidgetForScreenCapture(
+      SID_SFX_EDITOR_WIDGET_ID,
+      'right',
+      640,
+      320
     );
   }
 

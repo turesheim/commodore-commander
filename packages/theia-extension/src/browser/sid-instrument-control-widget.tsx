@@ -43,6 +43,7 @@ import {
   createSidAdsrEnvelopeVisualization,
   type SidAdsrEnvelopeVisualization
 } from './sid-instrument-visualization';
+import { SidKnob } from './sid-knob';
 
 export const SID_INSTRUMENT_CONTROL_WIDGET_ID =
   'commodoreCommander.sidInstrumentControls';
@@ -1014,42 +1015,25 @@ export class SidInstrumentControlWidget extends ReactWidget {
     disabled = false
   ): React.ReactNode {
     const value = this.numericValues[definition.id];
-    const percent = (value - definition.min) / (definition.max - definition.min);
-    const clampedPercent = Math.max(0, Math.min(1, percent));
-    const angle = -130 + clampedPercent * 260;
-    const fill = clampedPercent * 260;
     const formatted = this.formatKnobValue(definition, value);
-    const style = {
-      '--cc-sid-knob-angle': `${angle}deg`,
-      '--cc-sid-knob-fill': `${fill}deg`
-    } as React.CSSProperties;
-
     return (
-      <label
+      <SidKnob
         key={definition.id}
-        className={`cc-sid-knob${disabled ? ' cc-sid-knob--disabled' : ''}`}
-        {...this.tooltipAttributes(
+        label={definition.label}
+        ariaLabel={definition.ariaLabel}
+        value={value}
+        min={definition.min}
+        max={definition.max}
+        step={definition.step}
+        formattedValue={formatted}
+        disabled={disabled}
+        tooltipAttributes={this.tooltipAttributes(
           knobTitle(definition, value, formatted, this.numericValues)
         )}
-      >
-        <span className='cc-sid-knob__value'>{formatted}</span>
-        <span className='cc-sid-knob__dial' style={style}>
-          <input
-            className='cc-sid-knob__input'
-            type='range'
-            min={definition.min}
-            max={definition.max}
-            step={definition.step ?? 1}
-            value={value}
-            aria-label={definition.ariaLabel}
-            disabled={disabled}
-            onChange={(event) =>
-              this.setNumericValue(definition.id, event.currentTarget.value)
-            }
-          />
-        </span>
-        <span className='cc-sid-knob__label'>{definition.label}</span>
-      </label>
+        onChange={(nextValue) =>
+          this.setNumericValue(definition.id, String(nextValue))
+        }
+      />
     );
   }
 

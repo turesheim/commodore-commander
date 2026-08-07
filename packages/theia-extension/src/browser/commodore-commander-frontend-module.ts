@@ -134,6 +134,7 @@ import { KickAssemblerEditorLookupContribution } from './kick-assembler-editor-l
 import { KickAssemblerLanguageContribution } from './kick-assembler-language-contribution';
 import { KickAssemblerOutlineContribution } from './kick-assembler-outline-contribution';
 import { SidScoreLanguageContribution } from './sidscore-language-contribution';
+import { SidScoreOutlineContribution } from './sidscore-outline-contribution';
 import {
   SID_SCORE_EXPORT_TOOLBAR_ID,
   SidScoreRuntimeContribution
@@ -152,6 +153,11 @@ import {
   SidInstrumentControlWidget
 } from './sid-instrument-control-widget';
 import { SidInstrumentControlContribution } from './sid-instrument-control-contribution';
+import { SidSfxEditorContribution } from './sid-sfx-editor-contribution';
+import {
+  SID_SFX_EDITOR_WIDGET_ID,
+  SidSfxEditorWidget
+} from './sid-sfx-editor-widget';
 import {
   SidScoreRuntimeService,
   SidScoreRuntimeServicePath
@@ -407,6 +413,15 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     .inSingletonScope();
   bindViewContribution(bind, SidInstrumentControlContribution);
   bind(FrontendApplicationContribution).toService(SidInstrumentControlContribution);
+  bind(SidSfxEditorWidget).toSelf();
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: SID_SFX_EDITOR_WIDGET_ID,
+      createWidget: () => context.container.get(SidSfxEditorWidget)
+    }))
+    .inSingletonScope();
+  bindViewContribution(bind, SidSfxEditorContribution);
+  bind(FrontendApplicationContribution).toService(SidSfxEditorContribution);
   bind(SidScoreProtocolLogWidget).toSelf();
   bind(WidgetFactory)
     .toDynamicValue((context) => ({
@@ -420,6 +435,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
   bind(FrontendApplicationContribution).toService(KickAssemblerEditorLookupContribution);
   bind(KickAssemblerOutlineContribution).toSelf().inSingletonScope();
   bind(FrontendApplicationContribution).toService(KickAssemblerOutlineContribution);
+  bind(SidScoreOutlineContribution).toSelf().inSingletonScope();
+  bind(FrontendApplicationContribution).toService(SidScoreOutlineContribution);
   bind(KickAssemblerBuildService)
     .toDynamicValue((context) =>
       WebSocketConnectionProvider.createProxy(
