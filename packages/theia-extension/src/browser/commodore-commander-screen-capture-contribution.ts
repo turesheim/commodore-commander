@@ -31,6 +31,9 @@ import {
   C64_VISUAL_DEBUGGER_WIDGET_ID,
   C64VisualDebuggerWidget
 } from './c64-visual-debugger-widget';
+import {
+  COMMODORE_MACHINE_PROFILE_WIDGET_ID
+} from './commodore-machine-profile-selection';
 import { SID_SFX_EDITOR_WIDGET_ID } from './sid-sfx-editor-widget';
 
 export const SCREEN_CAPTURE_STATE_KEY = '__commodoreCommanderScreenCapture';
@@ -78,6 +81,7 @@ export interface CommodoreCommanderScreenCaptureApi {
     args?: readonly unknown[]
   ) => Promise<boolean>;
   openDebugView?: () => Promise<boolean>;
+  openEmulatorView?: () => Promise<boolean>;
   openC64VisualDebugger?: () => Promise<boolean>;
   openMemoryView?: () => Promise<boolean>;
   openOutlineView?: () => Promise<boolean>;
@@ -169,6 +173,12 @@ export class CommodoreCommanderScreenCaptureContribution
         'left',
         420,
         400
+      ),
+      openEmulatorView: async () => this.openWidgetForScreenCapture(
+        COMMODORE_MACHINE_PROFILE_WIDGET_ID,
+        'right',
+        540,
+        120
       ),
       openC64VisualDebugger: async () =>
         this.openC64VisualDebuggerForScreenCapture(),
