@@ -25,6 +25,7 @@ export const VICE_DARWIN_ARM64_RESOURCES = path.join(
 );
 
 const VICE_RESOURCES_SUBDIRECTORY = path.join('share', 'vice');
+const VICE_C64_RESOURCE_SUBDIRECTORY = 'C64';
 
 export interface ViceRuntimeResolutionOptions {
   runtimeDirectory?: string;
@@ -123,7 +124,7 @@ export async function resolveViceRuntime(
 
   if (configuredResourcesPath) {
     throw new Error(
-      `Configured VICE resources path does not contain ${VICE_RESOURCES_SUBDIRECTORY}: ${configuredResourcesPath}.`
+      `Configured VICE resources path does not contain ${VICE_RESOURCES_SUBDIRECTORY} or ${VICE_C64_RESOURCE_SUBDIRECTORY}: ${configuredResourcesPath}.`
     );
   }
 
@@ -179,7 +180,8 @@ function withoutModelArgs(args: readonly string[]): string[] {
 }
 
 async function isViceResourcesPath(filePath: string): Promise<boolean> {
-  return pathExists(path.join(filePath, VICE_RESOURCES_SUBDIRECTORY));
+  return (await pathExists(path.join(filePath, VICE_RESOURCES_SUBDIRECTORY))) ||
+    pathExists(path.join(filePath, VICE_C64_RESOURCE_SUBDIRECTORY));
 }
 
 function bundledViceResourceCandidates(runtimeDirectory: string): string[] {

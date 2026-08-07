@@ -304,6 +304,24 @@ test('resolveViceRuntime prefers configured runtime path over bundled runtime', 
   }
 });
 
+test('resolveViceRuntime accepts a direct VICE data directory', async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'cc-vice-runtime-'));
+
+  try {
+    const configuredRoot = path.join(tempRoot, 'vice-data');
+
+    await mkdir(path.join(configuredRoot, 'C64'), { recursive: true });
+
+    const resolved = await resolveViceRuntime({
+      resourcesPath: configuredRoot
+    });
+
+    assert.equal(resolved.resourcesPath, path.resolve(configuredRoot));
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
 test('resolveViceRuntime prefers resources beside explicit executable path over bundled runtime', async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'cc-vice-runtime-'));
 
