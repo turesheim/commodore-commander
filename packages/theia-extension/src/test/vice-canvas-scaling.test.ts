@@ -16,12 +16,23 @@ test('VICE canvas scaling keeps narrow 80-column frames at native size', () => {
   );
 });
 
-test('VICE canvas scaling uses the largest integer scale that fits', () => {
+test('VICE canvas scaling uses the largest integer scale that fits readable frames', () => {
   assert.deepEqual(
     calculateViceCanvasDisplaySize(320, 200, 900, 700),
     {
       width: 640,
       height: 400,
+      scale: 2
+    }
+  );
+});
+
+test('VICE canvas scaling keeps small native frames readable when height is constrained', () => {
+  assert.deepEqual(
+    calculateViceCanvasDisplaySize(352, 266, 695, 409),
+    {
+      width: 704,
+      height: 532,
       scale: 2
     }
   );

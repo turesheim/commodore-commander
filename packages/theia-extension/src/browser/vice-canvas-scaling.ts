@@ -4,6 +4,9 @@ export interface ViceCanvasDisplaySize {
   scale: number;
 }
 
+const MIN_READABLE_FRAME_WIDTH = 640;
+const MIN_READABLE_FRAME_SCALE = 2;
+
 export function calculateViceCanvasDisplaySize(
   frameWidth: number,
   frameHeight: number,
@@ -23,7 +26,11 @@ export function calculateViceCanvasDisplaySize(
     availableWidth / frameWidth,
     availableHeight / frameHeight
   );
-  const scale = Math.max(1, Math.floor(fitScale));
+  const fittingScale = Math.max(1, Math.floor(fitScale));
+  const readableScale = frameWidth < MIN_READABLE_FRAME_WIDTH
+    ? MIN_READABLE_FRAME_SCALE
+    : 1;
+  const scale = Math.max(fittingScale, readableScale);
 
   return {
     width: frameWidth * scale,
