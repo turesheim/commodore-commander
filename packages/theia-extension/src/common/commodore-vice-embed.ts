@@ -4,8 +4,8 @@ export const COMMODORE_COMMANDER_PATCHED_VICE_SOURCE_URL =
   'https://sourceforge.net/p/vice-emu/code/HEAD/tree/tags/v3.10/vice/';
 
 export type CommodoreCommanderViceLaunchMode =
-  | 'patchedView'
-  | 'externalWindow';
+  | 'embedded'
+  | 'external';
 
 export const DEFAULT_COMMODORE_COMMANDER_VICE_LAUNCH_MODE:
-  CommodoreCommanderViceLaunchMode = 'patchedView';
+  CommodoreCommanderViceLaunchMode = 'embedded';

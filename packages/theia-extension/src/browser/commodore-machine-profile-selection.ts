@@ -18,10 +18,6 @@ import {
   type PreferenceSchema
 } from '@theia/core/lib/common/preferences';
 import URI from '@theia/core/lib/common/uri';
-import {
-  TabBarToolbarContribution,
-  TabBarToolbarRegistry
-} from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 
@@ -193,8 +189,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export class CommodoreMachineProfileContribution
   implements
     FrontendApplicationContribution,
-    CommandContribution,
-    TabBarToolbarContribution
+    CommandContribution
 {
   @inject(CommodoreMachineProfileSelectionService)
   protected readonly machineProfileSelection!: CommodoreMachineProfileSelectionService;
@@ -229,17 +224,6 @@ export class CommodoreMachineProfileContribution
         isVisible: () => true
       }
     );
-  }
-
-  registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
-    toolbar.registerItem({
-      id: `${CommodoreMachineProfileCommands.SELECT_MACHINE_PROFILE.id}.toolbar`,
-      command: CommodoreMachineProfileCommands.SELECT_MACHINE_PROFILE.id,
-      text: '$(circuit-board)',
-      tooltip: 'Select Commodore machine profile',
-      priority: 1,
-      isVisible: (widget) => widget?.id === COMMODORE_MACHINE_PROFILE_WIDGET_ID
-    });
   }
 
   protected async selectMachineProfile(): Promise<void> {

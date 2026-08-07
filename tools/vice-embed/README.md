@@ -44,10 +44,10 @@ Homebrew/local dylibs when possible, ad-hoc signs on macOS, and verifies that
 
 The patch adds a small SDL-only transport enabled with `-cc-embed`. The patched
 emulator still runs as an external process, but its SDL window is hidden while
-it publishes rendered frames to stdout and accepts control input on stdin.
-Commodore Commander consumes that stream from the debug adapter or
+it publishes rendered frames to a local loopback socket and accepts control
+input on stdin. Commodore Commander launches that independent frame socket from
 `CommodoreViceEmbedServiceImpl` and paints the latest frame into the Machine
-view canvas.
+view canvas without routing display updates through DAP.
 
 The current patch is intentionally narrow:
 
@@ -55,14 +55,27 @@ The current patch is intentionally narrow:
 - Hidden embedded SDL windows still run through the canvas refresh path so
   frames are emitted without showing the native window.
 - Keyboard input reuses the SDL keyboard path in `src/arch/sdl/kbd.c`.
+- Mouse input is sent as relative movement and button commands from the browser
+  pointer-lock capture path and is pushed into VICE's SDL event queue.
+- The embedded transport can open VICE's SDL menu directly. Theia maps F12 to
+  that command when the embedded emulator is active. While that menu is active,
+  the patch polls stdin from the menu event loop and turns embedded keyboard
+  commands into SDL key events so the menu can be controlled from Theia.
 - Reset commands trigger a normal machine CPU reset.
-- Joystick and peripheral input commands are reserved by the protocol but are
-  not implemented in the native patch yet.
-- The JSON/base64 frame stream is good enough to validate the embedding model.
-  It is throttled to at most one frame every 100 ms and large SDL canvases are
-  downsampled by 2x before encoding to avoid flooding stdout. A later patch
-  should replace it with a binary or shared-memory frame channel before treating
-  this as the final high-performance transport.
+- Joystick commands are reserved by the protocol but are not implemented in the
+  native patch yet.
+- Frame output uses a binary `CCB1` header followed by native/logical
+  `rgba8888` bytes. When SDL renders a large 2x presentation surface, the patch
+  samples every second pixel so a C64 frame is transported as 384x272 instead
+  of 768x544. The native patch limits frame emission to a minimum interval of
+  16 ms, which is fast enough for 50 Hz display while still avoiding unbounded
+  frame traffic during warp or over-rendering.
+- The Theia backend opens a local frame socket, passes it to VICE with
+  `-cc-frame-port <port>`, parses binary frames from that socket, and forwards
+  them to the browser over a dedicated binary WebSocket. stdout remains for
+  JSON status/logging and as a compatibility fallback for manual `-cc-embed`
+  launches without a frame port. Debug launches use the same frame socket; the
+  debug adapter does not forward video frames as DAP events.
 
 After building patched VICE, point `commodoreCommander.VICE.runtimePath` at the
 runtime root that contains `share/vice`, or run `make -C tools/vice-embed assets`

@@ -265,9 +265,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     .inSingletonScope();
   bind(CommodoreMachineProfileContribution).toSelf().inSingletonScope();
   bind(CommandContribution).toService(CommodoreMachineProfileContribution);
-  bind(TabBarToolbarContribution).toService(
-    CommodoreMachineProfileContribution
-  );
   bind(FrontendApplicationContribution).toService(
     CommodoreMachineProfileContribution
   );

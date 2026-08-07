@@ -64,11 +64,14 @@ import {
 } from './trace-history';
 import { launchViceProcess, terminateViceProcess } from './vice-runtime';
 import {
+  COMMODORE_VICE_EMBED_BINARY_FRAME_MAGIC,
   COMMODORE_VICE_EMBED_DEBUG_EVENT,
   COMMODORE_VICE_EMBED_PROTOCOL,
   encodeViceEmbedCommand,
+  getViceEmbedBinaryFrameRecordLength,
   isViceEmbedProtocolLine,
   parseViceEmbedProtocolLine,
+  startsWithViceEmbedBinaryFrame,
   type ViceEmbedCommand,
   type ViceEmbedProtocolEvent
 } from './vice-embed-protocol';
@@ -90,7 +93,7 @@ const VICE_MONITOR_CONNECT_ATTEMPTS = 150;
 const VICE_MONITOR_CONNECT_DELAY_MS = 100;
 const WATCH_MEMORY_PREVIEW_BYTES = 64;
 const TRACE_HISTORY_CAPACITY = 200;
-const MAX_EMBED_STDOUT_BUFFER_BYTES = 16 * 1024 * 1024;
+const MAX_EMBED_STDOUT_BUFFER_BYTES = 32 * 1024 * 1024;
 
 export interface ViceDebugLaunchArguments
   extends DebugProtocol.LaunchRequestArguments {
@@ -100,8 +103,9 @@ export interface ViceDebugLaunchArguments
   cwd?: string;
   viceResourcesPath: string;
   viceExecutable: string;
-  viceLaunchMode?: 'patchedView' | 'externalWindow';
+  viceLaunchMode?: 'embedded' | 'external';
   viceArgs?: readonly string[];
+  viceFramePort?: number;
   machineName?: string;
   stopOnEntry?: boolean;
 }
@@ -179,7 +183,8 @@ export class ViceDebugSession {
   private terminated = false;
   private clientSupportsMemoryEvent = false;
   private clientSupportsInvalidatedEvent = false;
-  private viceEmbedStdoutBuffer = '';
+  private viceEmbedStdoutBuffer = Buffer.alloc(0);
+  private droppedViceEmbedFrameNoticeSent = false;
 
   constructor(private readonly connection: DapConnection) {}
 
@@ -265,11 +270,17 @@ export class ViceDebugSession {
         case 'commodoreViceEmbedKey':
           this.handleViceEmbedCommand(request, 'key');
           break;
+        case 'commodoreViceEmbedMouse':
+          this.handleViceEmbedCommand(request, 'mouse');
+          break;
         case 'commodoreViceEmbedJoystick':
           this.handleViceEmbedCommand(request, 'joystick');
           break;
         case 'commodoreViceEmbedResize':
           this.handleViceEmbedCommand(request, 'resize');
+          break;
+        case 'commodoreViceEmbedMenu':
+          this.handleViceEmbedCommand(request, 'menu');
           break;
         case 'commodoreViceEmbedReset':
           this.handleViceEmbedCommand(request, 'reset');
@@ -336,7 +347,8 @@ export class ViceDebugSession {
     this.memoryDisassemblySources.clear();
     this.nextSourceReference = MEMORY_DISASSEMBLY_SOURCE_REFERENCE_BASE;
     this.traceHistory.clear();
-    this.viceEmbedStdoutBuffer = '';
+    this.viceEmbedStdoutBuffer = Buffer.alloc(0);
+    this.droppedViceEmbedFrameNoticeSent = false;
 
     if (path.extname(program).toLowerCase() === '.prg') {
       try {
@@ -364,7 +376,8 @@ export class ViceDebugSession {
       viceResourcesPath: path.resolve(args.viceResourcesPath),
       viceExecutable: args.viceExecutable,
       viceArgs: args.viceArgs ?? [],
-      enableEmbed: args.viceLaunchMode === 'patchedView',
+      enableEmbed: isEmbeddedViceLaunchMode(args.viceLaunchMode),
+      embedFramePort: args.viceFramePort,
       enableMonitor: useMonitor
     });
     this.child = launch.child;
@@ -380,8 +393,10 @@ export class ViceDebugSession {
           type: 'status',
           state: exitCode === 0 ? 'stopped' : 'error',
           message: exitCode === 0
-            ? 'Patched VICE stopped.'
-            : `Patched VICE exited with code ${exitCode ?? 'unknown'}.`,
+            ? 'Emulator stopped.'
+            : exitCode === null
+              ? 'Emulator quit with unknown exit code'
+              : `Emulator quit with exit code ${exitCode}`,
           exitCode,
           signal
         });
@@ -422,10 +437,14 @@ export class ViceDebugSession {
       return;
     }
 
-    this.viceEmbedStdoutBuffer += chunk.toString('utf8');
+    const ownedChunk = Buffer.from(chunk);
+    this.viceEmbedStdoutBuffer =
+      this.viceEmbedStdoutBuffer.length === 0
+        ? ownedChunk
+        : Buffer.concat([this.viceEmbedStdoutBuffer, ownedChunk]);
     if (this.viceEmbedStdoutBuffer.length > MAX_EMBED_STDOUT_BUFFER_BYTES) {
-      const text = this.viceEmbedStdoutBuffer;
-      this.viceEmbedStdoutBuffer = '';
+      const text = this.viceEmbedStdoutBuffer.toString('utf8');
+      this.viceEmbedStdoutBuffer = Buffer.alloc(0);
       this.connection.sendOutput(
         'Dropped oversized VICE embedded stdout buffer.\n',
         'stderr'
@@ -436,13 +455,74 @@ export class ViceDebugSession {
       return;
     }
 
-    let newlineIndex = this.viceEmbedStdoutBuffer.indexOf('\n');
-    while (newlineIndex >= 0) {
-      const line = this.viceEmbedStdoutBuffer.slice(0, newlineIndex + 1);
-      this.viceEmbedStdoutBuffer =
-        this.viceEmbedStdoutBuffer.slice(newlineIndex + 1);
-      this.handleViceStdoutLine(line);
-      newlineIndex = this.viceEmbedStdoutBuffer.indexOf('\n');
+    for (;;) {
+      if (startsWithViceEmbedBinaryFrame(this.viceEmbedStdoutBuffer)) {
+        let recordLength: number | undefined;
+        try {
+          recordLength = getViceEmbedBinaryFrameRecordLength(
+            this.viceEmbedStdoutBuffer
+          );
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          this.sendViceEmbedEvent({
+            type: 'status',
+            state: 'error',
+            message: `Invalid patched VICE binary frame: ${message}`
+          });
+          this.viceEmbedStdoutBuffer = this.viceEmbedStdoutBuffer.subarray(
+            COMMODORE_VICE_EMBED_BINARY_FRAME_MAGIC.length
+          );
+          continue;
+        }
+        if (
+          recordLength === undefined ||
+          this.viceEmbedStdoutBuffer.length < recordLength
+        ) {
+          return;
+        }
+        const record = this.viceEmbedStdoutBuffer.subarray(0, recordLength);
+        this.viceEmbedStdoutBuffer =
+          this.viceEmbedStdoutBuffer.subarray(recordLength);
+        this.handleViceStdoutBinaryFrame(record);
+        continue;
+      }
+
+      const binaryIndex = this.viceEmbedStdoutBuffer.indexOf(
+        COMMODORE_VICE_EMBED_BINARY_FRAME_MAGIC
+      );
+      const newlineIndex = this.viceEmbedStdoutBuffer.indexOf(0x0a);
+      if (newlineIndex >= 0 && (binaryIndex < 0 || newlineIndex < binaryIndex)) {
+        const line = this.viceEmbedStdoutBuffer
+          .subarray(0, newlineIndex + 1)
+          .toString('utf8');
+        this.viceEmbedStdoutBuffer =
+          this.viceEmbedStdoutBuffer.subarray(newlineIndex + 1);
+        this.handleViceStdoutLine(line);
+        continue;
+      }
+      if (binaryIndex > 0) {
+        const text = this.viceEmbedStdoutBuffer
+          .subarray(0, binaryIndex)
+          .toString('utf8');
+        this.viceEmbedStdoutBuffer =
+          this.viceEmbedStdoutBuffer.subarray(binaryIndex);
+        this.connection.sendOutput(text, 'stdout');
+        this.sendViceEmbedOutput('stdout', text);
+        continue;
+      }
+
+      return;
+    }
+  }
+
+  private handleViceStdoutBinaryFrame(_record: Buffer): void {
+    if (!this.droppedViceEmbedFrameNoticeSent) {
+      this.droppedViceEmbedFrameNoticeSent = true;
+      this.sendViceEmbedEvent({
+        type: 'status',
+        state: 'running',
+        message: 'Using direct frame transport; DAP frame forwarding is disabled.'
+      });
     }
   }
 
@@ -507,6 +587,9 @@ export class ViceDebugSession {
   }
 
   private sendViceEmbedEvent(event: ViceEmbedProtocolEvent): void {
+    if (event.type === 'frame') {
+      return;
+    }
     this.connection.sendEvent(COMMODORE_VICE_EMBED_DEBUG_EVENT, {
       protocol: COMMODORE_VICE_EMBED_PROTOCOL,
       ...event
@@ -529,7 +612,7 @@ export class ViceDebugSession {
   }
 
   private isViceEmbedActive(): boolean {
-    return this.launchArguments?.viceLaunchMode === 'patchedView';
+    return isEmbeddedViceLaunchMode(this.launchArguments?.viceLaunchMode);
   }
 
   private async loadDebugInfoForLaunch(
@@ -1105,6 +1188,9 @@ export class ViceDebugSession {
 
   private shouldTerminateDebuggee(request: DapRequest): boolean {
     if (request.command === 'terminate') {
+      return true;
+    }
+    if (isEmbeddedViceLaunchMode(this.launchArguments?.viceLaunchMode)) {
       return true;
     }
     const args = request.arguments as DebugProtocol.DisconnectArguments | undefined;
@@ -2844,6 +2930,10 @@ function normalizeAddress(address: number): number {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isEmbeddedViceLaunchMode(value: unknown): boolean {
+  return value === 'embedded' || value === 'patchedView';
 }
 
 function hexByte(value: number): string {

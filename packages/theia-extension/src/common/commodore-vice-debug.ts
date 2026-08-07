@@ -14,6 +14,7 @@ export interface CommodoreViceDebugConfiguration extends DebugConfiguration {
   viceResourcesPath?: string;
   viceExecutable?: string;
   viceArgs?: readonly string[];
+  viceFramePort?: number;
   machineName?: string;
   stopOnEntry?: boolean;
 }

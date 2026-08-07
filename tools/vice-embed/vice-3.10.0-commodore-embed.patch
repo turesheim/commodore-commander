@@ -55,7 +55,7 @@ diff --git a/src/arch/sdl/cc_embed.c b/src/arch/sdl/cc_embed.c
 new file mode 100644
 --- /dev/null
 +++ b/src/arch/sdl/cc_embed.c
-@@ -0,0 +1,459 @@
+@@ -0,0 +1,797 @@
 +/*
 + * cc_embed.c - Commodore Commander VICE embedding transport.
 + *
@@ -81,39 +81,80 @@ new file mode 100644
 +#include <time.h>
 +
 +#ifndef WINDOWS_COMPILE
++#include <arpa/inet.h>
 +#include <fcntl.h>
++#include <netinet/in.h>
++#include <sys/socket.h>
++#include <sys/types.h>
 +#include <unistd.h>
 +#endif
 +
 +#include "cc_embed.h"
 +#include "kbd.h"
 +#include "machine.h"
++#include "uimenu.h"
 +
 +#define CC_EMBED_FLAG "-cc-embed"
++#define CC_EMBED_FRAME_PORT_FLAG "-cc-frame-port"
 +#define CC_EMBED_PREFIX "CCV1 "
 +#define CC_EMBED_PROTOCOL "commodore-vice-embed-v1"
 +#define CC_EMBED_LINE_BYTES 4096
-+#define CC_EMBED_MIN_FRAME_INTERVAL_MS 100
-+#define CC_EMBED_DOWNSAMPLE_THRESHOLD_WIDTH 400
-+#define CC_EMBED_DOWNSAMPLE_THRESHOLD_HEIGHT 300
++#define CC_EMBED_BINARY_MAGIC "CCB1"
++#define CC_EMBED_BINARY_HEADER_BYTES 32
++#define CC_EMBED_BINARY_FRAME_TYPE_RGBA8888 1
++#define CC_EMBED_BINARY_PIXEL_FORMAT_RGBA8888 1
++#define CC_EMBED_MIN_FRAME_INTERVAL_MS 16
++#define CC_EMBED_PRESENTATION_SCALE_THRESHOLD_WIDTH 400
++#define CC_EMBED_PRESENTATION_SCALE_THRESHOLD_HEIGHT 300
++#define CC_EMBED_PRESENTATION_SCALE_FACTOR 2
++#define CC_EMBED_FRAME_SOCKET_SEND_BUFFER_BYTES (1024 * 1024)
++#define CC_EMBED_FRAME_SOCKET_BACKLOG_LIMIT_BYTES (512 * 1024)
 +
 +static int cc_embed_enabled = 0;
-+static unsigned long cc_embed_frame_id = 0;
++static int cc_embed_frame_port = 0;
++static int cc_embed_frame_socket = -1;
++static uint32_t cc_embed_frame_id = 0;
 +static uint32_t cc_embed_last_frame_ticks = 0;
++static int cc_embed_force_next_frame = 0;
++static int cc_embed_skip_current_frame = 0;
 +static char cc_embed_line[CC_EMBED_LINE_BYTES];
 +static size_t cc_embed_line_len = 0;
 +
 +static void cc_embed_emit_hello(void);
 +static void cc_embed_emit_status(const char *state, const char *message);
 +static void cc_embed_set_stdin_nonblocking(void);
++static void cc_embed_connect_frame_socket(void);
++static void cc_embed_close_frame_socket(void);
++static int cc_embed_should_use_frame_socket(void);
++static int cc_embed_frame_socket_connected(void);
++static int cc_embed_frame_socket_accepts_frame(size_t frame_length);
 +static void cc_embed_handle_line(const char *line);
 +static void cc_embed_handle_key(const char *payload);
++static void cc_embed_handle_mouse(const char *payload);
++static void cc_embed_push_sdl_key(SDLKey key, SDLMod mod, int pressed);
++static void cc_embed_push_sdl_mouse_motion(int xrel, int yrel);
++static void cc_embed_push_sdl_mouse_button(int button, int pressed);
 +static int cc_embed_json_bool(const char *json, const char *name, int *value);
 +static int cc_embed_json_int(const char *json, const char *name, int *value);
 +static int cc_embed_json_has_string(const char *json, const char *name, const char *value);
 +static SDLKey cc_embed_dom_key_to_sdl(int key_code, const char *payload);
 +static uint32_t cc_embed_get_pixel(const uint8_t *row, int x, const SDL_PixelFormat *format);
-+static void cc_embed_write_base64(const uint8_t *bytes, size_t length);
++static int cc_embed_write_binary_frame(uint32_t frame_id,
++                                       uint64_t timestamp_ms,
++                                       uint16_t width,
++                                       uint16_t height,
++                                       const uint8_t *payload,
++                                       size_t payload_length);
++static void cc_embed_write_binary_frame_header(uint8_t *header,
++                                               uint32_t frame_id,
++                                               uint64_t timestamp_ms,
++                                               uint16_t width,
++                                               uint16_t height,
++                                               uint32_t payload_length);
++static int cc_embed_write_frame_bytes(const void *buffer, size_t length);
++static void cc_embed_write_u16_le(uint8_t *target, uint16_t value);
++static void cc_embed_write_u32_le(uint8_t *target, uint32_t value);
++static void cc_embed_write_u64_le(uint8_t *target, uint64_t value);
 +
 +void cc_embed_init_from_args(int *argc, char ***argv)
 +{
@@ -132,6 +173,19 @@ new file mode 100644
 +            cc_embed_enabled = 1;
 +            continue;
 +        }
++        if (strcmp(args[source], CC_EMBED_FRAME_PORT_FLAG) == 0) {
++            if (source + 1 < *argc) {
++                char *endptr;
++                long parsed_port = strtol(args[source + 1], &endptr, 10);
++                if (endptr != args[source + 1] &&
++                    parsed_port > 0 &&
++                    parsed_port <= 65535) {
++                    cc_embed_frame_port = (int)parsed_port;
++                }
++                source++;
++            }
++            continue;
++        }
 +        args[target++] = args[source];
 +    }
 +    args[target] = NULL;
@@ -143,8 +197,13 @@ new file mode 100644
 +
 +    setvbuf(stdout, NULL, _IONBF, 0);
 +    cc_embed_set_stdin_nonblocking();
++    cc_embed_connect_frame_socket();
 +    cc_embed_emit_hello();
-+    cc_embed_emit_status("running", "Frame transport enabled.");
++    if (cc_embed_should_use_frame_socket() && !cc_embed_frame_socket_connected()) {
++        cc_embed_emit_status("error", "Frame socket transport unavailable.");
++    } else {
++        cc_embed_emit_status("running", "Frame transport enabled.");
++    }
 +}
 +
 +int cc_embed_is_enabled(void)
@@ -216,16 +275,23 @@ new file mode 100644
 +    if (width <= 0 || height <= 0 || width > 2048 || height > 2048) {
 +        return;
 +    }
++    if (cc_embed_skip_current_frame) {
++        cc_embed_skip_current_frame = 0;
++        return;
++    }
 +    now = SDL_GetTicks();
-+    if (cc_embed_frame_id > 0) {
++    if (!cc_embed_force_next_frame && cc_embed_frame_id > 0) {
 +        if ((uint32_t)(now - cc_embed_last_frame_ticks) < CC_EMBED_MIN_FRAME_INTERVAL_MS) {
 +            return;
 +        }
 +    }
++    cc_embed_force_next_frame = 0;
 +    cc_embed_last_frame_ticks = now;
 +
-+    sample_step = (width > CC_EMBED_DOWNSAMPLE_THRESHOLD_WIDTH ||
-+                   height > CC_EMBED_DOWNSAMPLE_THRESHOLD_HEIGHT) ? 2 : 1;
++    sample_step = (width > CC_EMBED_PRESENTATION_SCALE_THRESHOLD_WIDTH ||
++                   height > CC_EMBED_PRESENTATION_SCALE_THRESHOLD_HEIGHT)
++        ? CC_EMBED_PRESENTATION_SCALE_FACTOR
++        : 1;
 +    output_width = width / sample_step;
 +    output_height = height / sample_step;
 +    length = (size_t)output_width * (size_t)output_height * 4;
@@ -254,15 +320,13 @@ new file mode 100644
 +    }
 +
 +    cc_embed_frame_id++;
-+    printf(CC_EMBED_PREFIX
-+           "{\"type\":\"frame\",\"frameId\":%lu,\"width\":%d,\"height\":%d,"
-+           "\"pixelFormat\":\"rgba8888\",\"timestamp\":%lu,\"data\":\"",
-+           cc_embed_frame_id,
-+           output_width,
-+           output_height,
-+           (unsigned long)now);
-+    cc_embed_write_base64(rgba, length);
-+    printf("\"}\n");
++    (void)cc_embed_write_binary_frame(
++        cc_embed_frame_id,
++        (uint64_t)now,
++        (uint16_t)output_width,
++        (uint16_t)output_height,
++        rgba,
++        length);
 +    free(rgba);
 +}
 +
@@ -272,6 +336,7 @@ new file mode 100644
 +        return;
 +    }
 +    cc_embed_emit_status("stopped", "Frame transport stopped.");
++    cc_embed_close_frame_socket();
 +}
 +
 +static void cc_embed_emit_hello(void)
@@ -299,6 +364,78 @@ new file mode 100644
 +#endif
 +}
 +
++static void cc_embed_connect_frame_socket(void)
++{
++#ifndef WINDOWS_COMPILE
++    struct sockaddr_in address;
++    int socket_fd;
++    int send_buffer_bytes = CC_EMBED_FRAME_SOCKET_SEND_BUFFER_BYTES;
++#ifdef SO_NOSIGPIPE
++    int no_sigpipe = 1;
++#endif
++
++    if (!cc_embed_should_use_frame_socket() || cc_embed_frame_socket >= 0) {
++        return;
++    }
++
++    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
++    if (socket_fd < 0) {
++        cc_embed_emit_status("error", "Could not create embedded frame socket.");
++        return;
++    }
++
++    (void)setsockopt(socket_fd,
++                     SOL_SOCKET,
++                     SO_SNDBUF,
++                     (const char *)&send_buffer_bytes,
++                     sizeof(send_buffer_bytes));
++#ifdef SO_NOSIGPIPE
++    (void)setsockopt(socket_fd,
++                     SOL_SOCKET,
++                     SO_NOSIGPIPE,
++                     (const char *)&no_sigpipe,
++                     sizeof(no_sigpipe));
++#endif
++
++    memset(&address, 0, sizeof(address));
++    address.sin_family = AF_INET;
++    address.sin_port = htons((uint16_t)cc_embed_frame_port);
++    address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
++
++    if (connect(socket_fd, (const struct sockaddr *)&address, sizeof(address)) != 0) {
++        close(socket_fd);
++        cc_embed_emit_status("error", "Could not connect embedded frame socket.");
++        return;
++    }
++
++    cc_embed_frame_socket = socket_fd;
++#endif
++}
++
++static void cc_embed_close_frame_socket(void)
++{
++#ifndef WINDOWS_COMPILE
++    if (cc_embed_frame_socket >= 0) {
++        close(cc_embed_frame_socket);
++        cc_embed_frame_socket = -1;
++    }
++#endif
++}
++
++static int cc_embed_should_use_frame_socket(void)
++{
++    return cc_embed_frame_port > 0;
++}
++
++static int cc_embed_frame_socket_connected(void)
++{
++#ifndef WINDOWS_COMPILE
++    return cc_embed_frame_socket >= 0;
++#else
++    return 0;
++#endif
++}
++
 +static void cc_embed_handle_line(const char *line)
 +{
 +    const char *payload;
@@ -310,9 +447,17 @@ new file mode 100644
 +    payload = line + strlen(CC_EMBED_PREFIX);
 +    if (strstr(payload, "\"type\":\"key\"") != NULL) {
 +        cc_embed_handle_key(payload);
++    } else if (strstr(payload, "\"type\":\"mouse\"") != NULL) {
++        cc_embed_handle_mouse(payload);
 +    } else if (strstr(payload, "\"type\":\"reset\"") != NULL) {
 +        machine_trigger_reset(MACHINE_RESET_MODE_RESET_CPU);
 +        cc_embed_emit_status("running", "Reset requested.");
++    } else if (strstr(payload, "\"type\":\"menu\"") != NULL) {
++        cc_embed_last_frame_ticks = 0;
++        cc_embed_force_next_frame = 1;
++        cc_embed_skip_current_frame = 1;
++        sdl_ui_activate();
++        cc_embed_emit_status("running", "Menu requested.");
 +    } else if (strstr(payload, "\"type\":\"quit\"") != NULL) {
 +        cc_embed_emit_status("stopped", "Quit requested.");
 +        exit(0);
@@ -349,11 +494,71 @@ new file mode 100644
 +        mod |= KMOD_LALT;
 +    }
 +
++    if (sdl_menu_state) {
++        cc_embed_push_sdl_key(key, mod, pressed);
++        return;
++    }
++
 +    if (pressed) {
 +        sdlkbd_press(key, mod);
 +    } else {
 +        sdlkbd_release(key, mod);
 +    }
++}
++
++static void cc_embed_handle_mouse(const char *payload)
++{
++    int xrel = 0;
++    int yrel = 0;
++    int button = 0;
++    int pressed = 0;
++
++    (void)cc_embed_json_int(payload, "\"xRel\"", &xrel);
++    (void)cc_embed_json_int(payload, "\"yRel\"", &yrel);
++    if (xrel != 0 || yrel != 0) {
++        cc_embed_push_sdl_mouse_motion(xrel, yrel);
++    }
++
++    if (cc_embed_json_int(payload, "\"button\"", &button) &&
++        cc_embed_json_bool(payload, "\"pressed\"", &pressed) &&
++        button > 0 &&
++        button <= 255) {
++        cc_embed_push_sdl_mouse_button(button, pressed);
++    }
++}
++
++static void cc_embed_push_sdl_key(SDLKey key, SDLMod mod, int pressed)
++{
++    SDL_Event event;
++
++    memset(&event, 0, sizeof(event));
++    event.type = pressed ? SDL_KEYDOWN : SDL_KEYUP;
++    event.key.state = pressed ? SDL_PRESSED : SDL_RELEASED;
++    event.key.keysym.sym = SDL1x_to_SDL2x_Keys(key);
++    event.key.keysym.mod = mod;
++    SDL_PushEvent(&event);
++}
++
++static void cc_embed_push_sdl_mouse_motion(int xrel, int yrel)
++{
++    SDL_Event event;
++
++    memset(&event, 0, sizeof(event));
++    event.type = SDL_MOUSEMOTION;
++    event.motion.xrel = xrel;
++    event.motion.yrel = yrel;
++    SDL_PushEvent(&event);
++}
++
++static void cc_embed_push_sdl_mouse_button(int button, int pressed)
++{
++    SDL_Event event;
++
++    memset(&event, 0, sizeof(event));
++    event.type = pressed ? SDL_MOUSEBUTTONDOWN : SDL_MOUSEBUTTONUP;
++    event.button.state = pressed ? SDL_PRESSED : SDL_RELEASED;
++    event.button.button = (uint8_t)button;
++    SDL_PushEvent(&event);
 +}
 +
 +static int cc_embed_json_bool(const char *json, const char *name, int *value)
@@ -455,6 +660,14 @@ new file mode 100644
 +            return SDLK_F7;
 +        case 119:
 +            return SDLK_F8;
++        case 120:
++            return SDLK_F9;
++        case 121:
++            return SDLK_F10;
++        case 122:
++            return SDLK_F11;
++        case 123:
++            return SDLK_F12;
 +        default:
 +            break;
 +    }
@@ -497,24 +710,157 @@ new file mode 100644
 +    }
 +}
 +
-+static void cc_embed_write_base64(const uint8_t *bytes, size_t length)
++static int cc_embed_write_binary_frame(uint32_t frame_id,
++                                       uint64_t timestamp_ms,
++                                       uint16_t width,
++                                       uint16_t height,
++                                       const uint8_t *payload,
++                                       size_t payload_length)
 +{
-+    static const char alphabet[] =
-+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-+    size_t index;
-+
-+    for (index = 0; index < length; index += 3) {
-+        uint32_t octet_a = bytes[index];
-+        uint32_t octet_b = index + 1 < length ? bytes[index + 1] : 0;
-+        uint32_t octet_c = index + 2 < length ? bytes[index + 2] : 0;
-+        uint32_t triple = (octet_a << 16) | (octet_b << 8) | octet_c;
-+
-+        fputc(alphabet[(triple >> 18) & 0x3f], stdout);
-+        fputc(alphabet[(triple >> 12) & 0x3f], stdout);
-+        fputc(index + 1 < length ? alphabet[(triple >> 6) & 0x3f] : '=', stdout);
-+        fputc(index + 2 < length ? alphabet[triple & 0x3f] : '=', stdout);
++    uint8_t header[CC_EMBED_BINARY_HEADER_BYTES];
++    size_t frame_length = sizeof(header) + payload_length;
++    cc_embed_write_binary_frame_header(header,
++                                       frame_id,
++                                       timestamp_ms,
++                                       width,
++                                       height,
++                                       (uint32_t)payload_length);
++    if (!cc_embed_frame_socket_accepts_frame(frame_length)) {
++        return 0;
 +    }
++    if (!cc_embed_write_frame_bytes(header, sizeof(header))) {
++        return 0;
++    }
++    if (!cc_embed_write_frame_bytes(payload, payload_length)) {
++        return 0;
++    }
++    if (!cc_embed_should_use_frame_socket()) {
++        fflush(stdout);
++    }
++    return 1;
 +}
++
++static void cc_embed_write_binary_frame_header(uint8_t *header,
++                                               uint32_t frame_id,
++                                               uint64_t timestamp_ms,
++                                               uint16_t width,
++                                               uint16_t height,
++                                               uint32_t payload_length)
++{
++    memcpy(header, CC_EMBED_BINARY_MAGIC, 4);
++    header[4] = CC_EMBED_BINARY_FRAME_TYPE_RGBA8888;
++    header[5] = CC_EMBED_BINARY_PIXEL_FORMAT_RGBA8888;
++    cc_embed_write_u16_le(header + 6, CC_EMBED_BINARY_HEADER_BYTES);
++    cc_embed_write_u32_le(header + 8, payload_length);
++    cc_embed_write_u32_le(header + 12, frame_id);
++    cc_embed_write_u64_le(header + 16, timestamp_ms);
++    cc_embed_write_u16_le(header + 24, width);
++    cc_embed_write_u16_le(header + 26, height);
++    cc_embed_write_u32_le(header + 28, 0);
++}
++
++static int cc_embed_write_frame_bytes(const void *buffer, size_t length)
++{
++#ifndef WINDOWS_COMPILE
++    if (cc_embed_should_use_frame_socket()) {
++        const uint8_t *cursor = (const uint8_t *)buffer;
++        size_t remaining = length;
++        if (cc_embed_frame_socket < 0) {
++            return 0;
++        }
++        while (remaining > 0) {
++            ssize_t written;
++#ifdef MSG_NOSIGNAL
++            written = send(cc_embed_frame_socket, cursor, remaining, MSG_NOSIGNAL);
++#else
++            written = send(cc_embed_frame_socket, cursor, remaining, 0);
++#endif
++            if (written < 0) {
++                if (errno == EINTR) {
++                    continue;
++                }
++                cc_embed_close_frame_socket();
++                cc_embed_emit_status("error", "Could not write embedded frame socket.");
++                return 0;
++            }
++            if (written == 0) {
++                cc_embed_close_frame_socket();
++                cc_embed_emit_status("error", "Embedded frame socket closed.");
++                return 0;
++            }
++            cursor += written;
++            remaining -= (size_t)written;
++        }
++        return 1;
++    }
++#endif
++
++    if (fwrite(buffer, 1, length, stdout) != length) {
++        cc_embed_emit_status("error", "Could not write embedded frame stream.");
++        return 0;
++    }
++    return 1;
++}
++
++static int cc_embed_frame_socket_accepts_frame(size_t frame_length)
++{
++#ifndef WINDOWS_COMPILE
++#ifdef SO_NWRITE
++    int pending_bytes = 0;
++    socklen_t pending_length = sizeof(pending_bytes);
++    if (!cc_embed_should_use_frame_socket()) {
++        return 1;
++    }
++    if (cc_embed_frame_socket < 0) {
++        return 0;
++    }
++    if (getsockopt(cc_embed_frame_socket,
++                   SOL_SOCKET,
++                   SO_NWRITE,
++                   &pending_bytes,
++                   &pending_length) == 0) {
++        size_t pending = pending_bytes > 0 ? (size_t)pending_bytes : 0;
++        if (pending > CC_EMBED_FRAME_SOCKET_BACKLOG_LIMIT_BYTES) {
++            return 0;
++        }
++        if (pending + frame_length > CC_EMBED_FRAME_SOCKET_SEND_BUFFER_BYTES) {
++            return 0;
++        }
++    }
++#else
++    (void)frame_length;
++#endif
++#else
++    (void)frame_length;
++#endif
++    return 1;
++}
++
++static void cc_embed_write_u16_le(uint8_t *target, uint16_t value)
++{
++    target[0] = (uint8_t)(value & 0xff);
++    target[1] = (uint8_t)((value >> 8) & 0xff);
++}
++
++static void cc_embed_write_u32_le(uint8_t *target, uint32_t value)
++{
++    cc_embed_write_u16_le(target, (uint16_t)(value & 0xffff));
++    cc_embed_write_u16_le(target + 2, (uint16_t)((value >> 16) & 0xffff));
++}
++
++static void cc_embed_write_u64_le(uint8_t *target, uint64_t value)
++{
++    cc_embed_write_u32_le(target, (uint32_t)(value & 0xffffffffu));
++    cc_embed_write_u32_le(target + 4, (uint32_t)((value >> 32) & 0xffffffffu));
++}
+diff --git a/src/arch/sdl/ui.c b/src/arch/sdl/ui.c
+--- a/src/arch/sdl/ui.c
++++ b/src/arch/sdl/ui.c
+@@ -37,0 +38 @@
++#include "cc_embed.h"
+@@ -320,0 +322,2 @@ ui_menu_action_t ui_dispatch_events_for_menu_action(void)
++    cc_embed_poll_commands();
++
 diff --git a/src/arch/sdl/sdlmain.c b/src/arch/sdl/sdlmain.c
 --- a/src/arch/sdl/sdlmain.c
 +++ b/src/arch/sdl/sdlmain.c

@@ -54,11 +54,14 @@ test('createViceProcessArgs enables the embedded VICE transport when requested',
   const args = createViceProcessArgs({
     program: '/workspace/out/main.prg',
     viceArgs: ['-model', 'c64'],
-    embed: true
+    embed: true,
+    embedFramePort: 6510
   });
 
   assert.deepEqual(args, [
     '-cc-embed',
+    '-cc-frame-port',
+    '6510',
     '-model',
     'c64',
     '/workspace/out/main.prg'
@@ -68,12 +71,15 @@ test('createViceProcessArgs enables the embedded VICE transport when requested',
 test('createViceProcessArgs does not duplicate an explicit embedded transport flag', () => {
   const args = createViceProcessArgs({
     program: '/workspace/out/main.prg',
-    viceArgs: ['-cc-embed', '-model', 'c64'],
-    embed: true
+    viceArgs: ['-cc-embed', '-cc-frame-port', '6511', '-model', 'c64'],
+    embed: true,
+    embedFramePort: 6510
   });
 
   assert.deepEqual(args, [
     '-cc-embed',
+    '-cc-frame-port',
+    '6511',
     '-model',
     'c64',
     '/workspace/out/main.prg'

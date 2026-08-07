@@ -33,8 +33,11 @@ import {
   DEFAULT_COMMODORE_COMMANDER_VICE_LAUNCH_MODE
 } from '../common/commodore-vice-embed';
 import {
-  getCommodoreCommanderToolPreferences
+  createCommodoreViceEmbeddedInputArgs,
+  getCommodoreCommanderToolPreferences,
+  normalizeViceLaunchMode
 } from '../common/commodore-commander-tool-preferences';
+import { CommodoreViceEmbedServiceImpl } from './commodore-vice-embed-service-impl';
 
 const COMMODORE_MACHINE_PROFILE_PREFERENCE =
   'commodoreCommander.activeMachine';
@@ -49,6 +52,9 @@ export class CommodoreViceDebugAdapterContribution
 
   @inject(PreferenceService)
   protected readonly preferenceService!: PreferenceService;
+
+  @inject(CommodoreViceEmbedServiceImpl)
+  protected readonly viceEmbedService!: CommodoreViceEmbedServiceImpl;
 
   private readonly planner = new KickAssemblerWorkspaceBuildPlanner();
 
@@ -148,10 +154,10 @@ export class CommodoreViceDebugAdapterContribution
           },
           viceLaunchMode: {
             type: 'string',
-            enum: ['patchedView', 'externalWindow'],
+            enum: ['embedded', 'external'],
             default: DEFAULT_COMMODORE_COMMANDER_VICE_LAUNCH_MODE,
             description:
-              `VICE launch surface. patchedView is the intended default embedded view for compatible patched VICE ${COMMODORE_COMMANDER_PATCHED_VICE_BASE_VERSION} runtimes; externalWindow launches stock VICE in its own window.`
+              `VICE launch surface. embedded uses the embedded VICE ${COMMODORE_COMMANDER_PATCHED_VICE_BASE_VERSION} frame/input transport when available; external launches stock VICE in its own window.`
           },
           viceExecutable: {
             type: 'string',
@@ -247,6 +253,21 @@ export class CommodoreViceDebugAdapterContribution
     const debugInfo = config.debugInfo
       ? path.resolve(workspaceRootPath, config.debugInfo)
       : replaceExtension(program, '.dbg');
+    const viceLaunchMode = normalizeViceLaunchMode(
+      config.viceLaunchMode ?? toolPreferences.viceLaunchMode
+    );
+    const viceFramePort = viceLaunchMode === 'embedded'
+      ? await this.viceEmbedService.startExternalFrameTransport()
+      : undefined;
+    const viceArgs = config.viceArgs ??
+      (viceLaunchMode === 'embedded'
+        ? [
+            ...createViceArgs(profile, launch),
+            ...createCommodoreViceEmbeddedInputArgs(
+              toolPreferences.viceEmbeddedInput
+            )
+          ]
+        : createViceArgs(profile, launch));
 
     return {
       ...config,
@@ -262,8 +283,9 @@ export class CommodoreViceDebugAdapterContribution
         : path.dirname(program),
       viceResourcesPath: viceRuntime.resourcesPath,
       viceExecutable: viceRuntime.executable ?? profile.vice.executable,
-      viceLaunchMode: config.viceLaunchMode ?? toolPreferences.viceLaunchMode,
-      viceArgs: config.viceArgs ?? createViceArgs(profile, launch),
+      viceLaunchMode,
+      ...(viceFramePort !== undefined ? { viceFramePort } : {}),
+      viceArgs,
       machineName: profile.displayName,
       stopOnEntry: config.stopOnEntry ?? true
     };

@@ -6,11 +6,19 @@ import { test } from 'node:test';
 
 import {
   COMMODORE_COMMANDER_TOOL_PREFERENCE_SCHEMA,
+  COMMODORE_COMMANDER_VICE_EMBEDDED_CONTROL_PORT_1_DEVICE_PREFERENCE,
+  COMMODORE_COMMANDER_VICE_EMBEDDED_CONTROL_PORT_2_DEVICE_PREFERENCE,
+  COMMODORE_COMMANDER_VICE_EMBEDDED_JOYSTICK_1_DEVICE_PREFERENCE,
+  COMMODORE_COMMANDER_VICE_EMBEDDED_JOYSTICK_2_DEVICE_PREFERENCE,
+  COMMODORE_COMMANDER_VICE_EMBEDDED_KEYBOARD_MAPPING_PREFERENCE,
+  COMMODORE_COMMANDER_VICE_EMBEDDED_MOUSE_GRAB_PREFERENCE,
+  COMMODORE_COMMANDER_VICE_EMBEDDED_MOUSE_PADDLE_PORT_PREFERENCE,
   COMMODORE_COMMANDER_LEGACY_VICE_RUNTIME_PATH_PREFERENCE,
   COMMODORE_COMMANDER_VICE_EXECUTABLE_PREFERENCE,
   COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE,
   COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE,
   COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE,
+  createCommodoreViceEmbeddedInputArgs,
   getCommodoreCommanderToolPreferences
 } from '../common/commodore-commander-tool-preferences';
 import {
@@ -37,7 +45,7 @@ test('VICE settings expose runtime path and hide legacy executable and resources
   );
   assert.deepEqual(
     properties[COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE]?.enum,
-    ['patchedView', 'externalWindow']
+    ['embedded', 'external']
   );
   assert.equal(
     properties[COMMODORE_COMMANDER_VICE_EXECUTABLE_PREFERENCE]?.hidden,
@@ -49,6 +57,22 @@ test('VICE settings expose runtime path and hide legacy executable and resources
   );
   assert.equal(
     properties[COMMODORE_COMMANDER_LEGACY_VICE_RUNTIME_PATH_PREFERENCE]?.hidden,
+    true
+  );
+  assert.equal(
+    properties[COMMODORE_COMMANDER_VICE_EMBEDDED_CONTROL_PORT_1_DEVICE_PREFERENCE]?.default,
+    'default'
+  );
+  assert.equal(
+    properties[COMMODORE_COMMANDER_VICE_EMBEDDED_MOUSE_PADDLE_PORT_PREFERENCE]?.default,
+    'off'
+  );
+  assert.equal(
+    properties[COMMODORE_COMMANDER_VICE_EMBEDDED_MOUSE_GRAB_PREFERENCE]?.default,
+    false
+  );
+  assert.equal(
+    properties[COMMODORE_COMMANDER_VICE_EMBEDDED_MOUSE_GRAB_PREFERENCE]?.hidden,
     true
   );
 });
@@ -76,9 +100,29 @@ test('patched VICE keeps refreshing hidden embedded SDL canvases', async () => {
     patch,
     /sdl_canvas_is_visible\(canvas\) == 0 && !cc_embed_is_enabled\(\)/u
   );
-  assert.match(patch, /CC_EMBED_MIN_FRAME_INTERVAL_MS 100/u);
-  assert.match(patch, /CC_EMBED_DOWNSAMPLE_THRESHOLD_WIDTH 400/u);
+  assert.match(patch, /CC_EMBED_BINARY_MAGIC "CCB1"/u);
+  assert.match(patch, /CC_EMBED_MIN_FRAME_INTERVAL_MS 16/u);
+  assert.match(patch, /CC_EMBED_PRESENTATION_SCALE_FACTOR 2/u);
+  assert.match(patch, /CC_EMBED_FRAME_PORT_FLAG "-cc-frame-port"/u);
   assert.match(patch, /output_width = width \/ sample_step/u);
+  assert.match(patch, /cc_embed_connect_frame_socket/u);
+  assert.match(patch, /cc_embed_write_binary_frame_header/u);
+  assert.match(patch, /cc_embed_write_frame_bytes/u);
+  assert.match(patch, /cc_embed_last_frame_ticks = 0;/u);
+  assert.match(patch, /cc_embed_force_next_frame = 1;/u);
+  assert.match(patch, /cc_embed_skip_current_frame = 1;/u);
+  assert.match(
+    patch,
+    /!cc_embed_force_next_frame && cc_embed_frame_id > 0/u
+  );
+  assert.match(patch, /sdl_ui_activate\(\);/u);
+  assert.match(patch, /cc_embed_handle_mouse\(payload\);/u);
+  assert.match(patch, /cc_embed_push_sdl_mouse_motion/u);
+  assert.match(patch, /SDL_MOUSEBUTTONDOWN/u);
+  assert.match(patch, /return SDLK_F12/u);
+  assert.match(patch, /send\(cc_embed_frame_socket/u);
+  assert.doesNotMatch(patch, /cc_embed_write_base64/u);
+  assert.doesNotMatch(patch, /fwrite\(rgba, 1, length, stdout\)/u);
   assert.match(patch, /cc_embed_publish_frame/u);
 
   const renderIndex = patch.indexOf(
@@ -100,7 +144,7 @@ test('tool preferences prefer VICE runtime path and keep legacy fallbacks', () =
   const values = new Map<string, string>([
     [COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE, ' /new-vice '],
     [COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE, '/legacy-vice'],
-    [COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE, ' externalWindow '],
+    [COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE, ' external '],
     [COMMODORE_COMMANDER_VICE_EXECUTABLE_PREFERENCE, ' x64sc-custom ']
   ]);
 
@@ -117,10 +161,10 @@ test('tool preferences prefer VICE runtime path and keep legacy fallbacks', () =
 
   assert.equal(preferences.viceResourcesPath, '/new-vice');
   assert.equal(preferences.viceExecutable, 'x64sc-custom');
-  assert.equal(preferences.viceLaunchMode, 'externalWindow');
+  assert.equal(preferences.viceLaunchMode, 'external');
 });
 
-test('tool preferences default VICE launch mode to the patched embedded view', () => {
+test('tool preferences default VICE launch mode to the embedded view', () => {
   const preferences = getCommodoreCommanderToolPreferences({
     get: <T>(
       _preferenceName: string,
@@ -129,10 +173,149 @@ test('tool preferences default VICE launch mode to the patched embedded view', (
     ): T | undefined => defaultValue
   });
 
-  assert.equal(preferences.viceLaunchMode, 'patchedView');
+  assert.equal(preferences.viceLaunchMode, 'embedded');
+  assert.deepEqual(preferences.viceEmbeddedInput, {
+    controlPort1Device: 'default',
+    controlPort2Device: 'default',
+    joystick1Device: 'default',
+    joystick2Device: 'default',
+    mousePaddlePort: 'off',
+    mouseGrab: false,
+    keyboardMapping: 'default'
+  });
 });
 
-test('tool preferences fall back to patched VICE view for invalid launch modes', () => {
+test('tool preferences read embedded VICE input settings', () => {
+  const values = new Map<string, string | boolean>([
+    [COMMODORE_COMMANDER_VICE_EMBEDDED_CONTROL_PORT_1_DEVICE_PREFERENCE, ' joystick '],
+    [COMMODORE_COMMANDER_VICE_EMBEDDED_CONTROL_PORT_2_DEVICE_PREFERENCE, 'mouse1351'],
+    [COMMODORE_COMMANDER_VICE_EMBEDDED_JOYSTICK_1_DEVICE_PREFERENCE, 'keyset1'],
+    [COMMODORE_COMMANDER_VICE_EMBEDDED_JOYSTICK_2_DEVICE_PREFERENCE, 'analog0'],
+    [COMMODORE_COMMANDER_VICE_EMBEDDED_MOUSE_PADDLE_PORT_PREFERENCE, '2'],
+    [COMMODORE_COMMANDER_VICE_EMBEDDED_MOUSE_GRAB_PREFERENCE, true],
+    [COMMODORE_COMMANDER_VICE_EMBEDDED_KEYBOARD_MAPPING_PREFERENCE, 'positional']
+  ]);
+
+  const preferences = getCommodoreCommanderToolPreferences({
+    get: <T>(
+      preferenceName: string,
+      defaultValue?: T,
+      _resourceUri?: string
+    ): T | undefined =>
+      (values.has(preferenceName)
+        ? values.get(preferenceName)
+        : defaultValue) as T | undefined
+  });
+
+  assert.deepEqual(preferences.viceEmbeddedInput, {
+    controlPort1Device: 'joystick',
+    controlPort2Device: 'mouse1351',
+    joystick1Device: 'keyset1',
+    joystick2Device: 'analog0',
+    mousePaddlePort: '2',
+    mouseGrab: true,
+    keyboardMapping: 'positional'
+  });
+});
+
+test('tool preferences fall back for invalid embedded VICE input settings', () => {
+  const values = new Map<string, string | boolean>([
+    [COMMODORE_COMMANDER_VICE_EMBEDDED_CONTROL_PORT_1_DEVICE_PREFERENCE, 'lightgun'],
+    [COMMODORE_COMMANDER_VICE_EMBEDDED_JOYSTICK_1_DEVICE_PREFERENCE, 'gamepad9'],
+    [COMMODORE_COMMANDER_VICE_EMBEDDED_MOUSE_PADDLE_PORT_PREFERENCE, '3'],
+    [COMMODORE_COMMANDER_VICE_EMBEDDED_MOUSE_GRAB_PREFERENCE, false],
+    [COMMODORE_COMMANDER_VICE_EMBEDDED_KEYBOARD_MAPPING_PREFERENCE, 'matrix']
+  ]);
+
+  const preferences = getCommodoreCommanderToolPreferences({
+    get: <T>(
+      preferenceName: string,
+      defaultValue?: T,
+      _resourceUri?: string
+    ): T | undefined =>
+      (values.has(preferenceName)
+        ? values.get(preferenceName)
+        : defaultValue) as T | undefined
+  });
+
+  assert.deepEqual(preferences.viceEmbeddedInput, {
+    controlPort1Device: 'default',
+    controlPort2Device: 'default',
+    joystick1Device: 'default',
+    joystick2Device: 'default',
+    mousePaddlePort: 'off',
+    mouseGrab: false,
+    keyboardMapping: 'default'
+  });
+});
+
+test('embedded VICE input settings generate VICE launch arguments', () => {
+  assert.deepEqual(
+    createCommodoreViceEmbeddedInputArgs({
+      controlPort1Device: 'joystick',
+      controlPort2Device: 'mouse1351',
+      joystick1Device: 'keyset1',
+      joystick2Device: 'analog0',
+      mousePaddlePort: '2',
+      mouseGrab: false,
+      keyboardMapping: 'positional'
+    }),
+    [
+      '-controlport1device',
+      '1',
+      '-controlport2device',
+      '2',
+      '-paddles2inputmouse',
+      '-mouse',
+      '-joydev1',
+      '2',
+      '-joydev2',
+      '4',
+      '-keymap',
+      '1'
+    ]
+  );
+  assert.deepEqual(
+    createCommodoreViceEmbeddedInputArgs({
+      controlPort1Device: 'default',
+      controlPort2Device: 'default',
+      joystick1Device: 'default',
+      joystick2Device: 'default',
+      mousePaddlePort: 'off',
+      mouseGrab: false,
+      keyboardMapping: 'default'
+    }),
+    ['-mouse']
+  );
+});
+
+test('tool preferences map legacy VICE launch modes', () => {
+  const embeddedPreferences = getCommodoreCommanderToolPreferences({
+    get: <T>(
+      preferenceName: string,
+      defaultValue?: T,
+      _resourceUri?: string
+    ): T | undefined =>
+      (preferenceName === COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE
+        ? 'patchedView'
+        : defaultValue) as T | undefined
+  });
+  const externalPreferences = getCommodoreCommanderToolPreferences({
+    get: <T>(
+      preferenceName: string,
+      defaultValue?: T,
+      _resourceUri?: string
+    ): T | undefined =>
+      (preferenceName === COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE
+        ? 'externalWindow'
+        : defaultValue) as T | undefined
+  });
+
+  assert.equal(embeddedPreferences.viceLaunchMode, 'embedded');
+  assert.equal(externalPreferences.viceLaunchMode, 'external');
+});
+
+test('tool preferences fall back to embedded VICE view for invalid launch modes', () => {
   const values = new Map<string, string>([
     [COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE, 'sidecar']
   ]);
@@ -148,7 +331,7 @@ test('tool preferences fall back to patched VICE view for invalid launch modes',
         : defaultValue) as T | undefined
   });
 
-  assert.equal(preferences.viceLaunchMode, 'patchedView');
+  assert.equal(preferences.viceLaunchMode, 'embedded');
 });
 
 test('tool preferences keep legacy VICE resources path fallback', () => {

@@ -14,8 +14,17 @@ import {
     type CommodoreViceEmbedStatusEvent,
     type CommodoreViceEmbedStatusState
 } from '../common/commodore-vice-embed-service';
+import {
+    createViceEmbedFrameSocket,
+    type ViceEmbedBinaryFrame
+} from './vice-embed-frame-stream';
 
 export const VICE_EMBEDDED_WIDGET_ID = 'commodore-commander.vice-embedded';
+
+type ViceEmbedRenderableFrame = CommodoreViceEmbedFrameEvent | ViceEmbedBinaryFrame;
+type ViceEmbedFrameBytes =
+    | Uint8Array<ArrayBufferLike>
+    | Uint8ClampedArray<ArrayBufferLike>;
 
 @injectable()
 export class ViceEmbeddedWidget
@@ -25,7 +34,8 @@ export class ViceEmbeddedWidget
     protected readonly viceEmbedService!: CommodoreViceEmbedServiceProxy;
 
     protected canvas: HTMLCanvasElement | undefined;
-    protected frame: CommodoreViceEmbedFrameEvent | undefined;
+    protected frame: ViceEmbedRenderableFrame | undefined;
+    protected frameSocket: WebSocket | undefined;
     protected status: CommodoreViceEmbedStatusState = 'idle';
     protected statusMessage = 'Idle';
     protected lastOutput = '';
@@ -40,11 +50,17 @@ export class ViceEmbeddedWidget
         this.title.closable = true;
         this.addClass('commodore-commander-vice-embedded-widget');
         this.viceEmbedService.setClient(this);
+        this.frameSocket = createViceEmbedFrameSocket(
+            this.onViceEmbedBinaryFrame,
+            this.onViceEmbedFrameSocketError
+        );
         this.update();
     }
 
     override dispose(): void {
         this.viceEmbedService.setClient(undefined);
+        this.frameSocket?.close();
+        this.frameSocket = undefined;
         super.dispose();
     }
 
@@ -74,6 +90,27 @@ export class ViceEmbeddedWidget
         }
     }
 
+    protected readonly onViceEmbedBinaryFrame = (event: ViceEmbedBinaryFrame): void => {
+        const previousFrame = this.frame;
+        const shouldUpdate = this.starting ||
+            this.status !== 'running' ||
+            previousFrame?.width !== event.width ||
+            previousFrame?.height !== event.height;
+        this.frame = event;
+        this.status = 'running';
+        this.statusMessage = 'Emulator running';
+        this.starting = false;
+        this.drawFrame();
+        if (shouldUpdate) {
+            this.update();
+        }
+    };
+
+    protected readonly onViceEmbedFrameSocketError = (message: string): void => {
+        this.lastOutput = `frame socket: ${message}`;
+        this.update();
+    };
+
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.drawFrame();
@@ -91,7 +128,7 @@ export class ViceEmbeddedWidget
                 >
                     <button
                         className='theia-button main'
-                        title='Start patched VICE'
+                        title='Start emulator'
                         disabled={this.starting || this.status === 'running'}
                         onClick={this.startVice}
                         style={styles.button}
@@ -142,7 +179,7 @@ export class ViceEmbeddedWidget
     protected readonly startVice = async (): Promise<void> => {
         this.starting = true;
         this.status = 'starting';
-        this.statusMessage = 'Starting patched VICE.';
+        this.statusMessage = 'Starting emulator.';
         this.update();
         try {
             await this.viceEmbedService.launch();
@@ -204,26 +241,32 @@ export class ViceEmbeddedWidget
             return;
         }
         const expectedLength = frame.width * frame.height * 4;
-        const bytes = decodeBase64(frame.data);
+        const bytes = getFrameBytes(frame);
         if (bytes.length !== expectedLength) {
             this.status = 'error';
             this.statusMessage = `Invalid VICE frame size: ${bytes.length}/${expectedLength}.`;
             this.update();
             return;
         }
-        canvas.width = frame.width;
-        canvas.height = frame.height;
+        if (canvas.width !== frame.width) {
+            canvas.width = frame.width;
+        }
+        if (canvas.height !== frame.height) {
+            canvas.height = frame.height;
+        }
         const context = canvas.getContext('2d');
         if (!context) {
             return;
         }
-        const imageData = new ImageData(
-            new Uint8ClampedArray(bytes),
-            frame.width,
-            frame.height
-        );
+        const imageData = new ImageData(toClampedBytes(bytes), frame.width, frame.height);
         context.putImageData(imageData, 0, 0);
     }
+}
+
+function getFrameBytes(frame: ViceEmbedRenderableFrame): ViceEmbedFrameBytes {
+    return typeof frame.data === 'string'
+        ? decodeBase64(frame.data)
+        : frame.data;
 }
 
 function decodeBase64(value: string): Uint8Array {
@@ -233,6 +276,12 @@ function decodeBase64(value: string): Uint8Array {
         bytes[index] = binary.charCodeAt(index);
     }
     return bytes;
+}
+
+function toClampedBytes(bytes: ViceEmbedFrameBytes): Uint8ClampedArray<ArrayBuffer> {
+    return bytes instanceof Uint8ClampedArray && bytes.buffer instanceof ArrayBuffer
+        ? bytes as Uint8ClampedArray<ArrayBuffer>
+        : new Uint8ClampedArray(bytes) as Uint8ClampedArray<ArrayBuffer>;
 }
 
 const styles = {
@@ -270,17 +319,21 @@ const styles = {
         flex: 1,
         minHeight: 0,
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'center',
         overflow: 'hidden',
-        background: '#050608'
+        background: 'var(--theia-editor-background)'
     } satisfies React.CSSProperties,
     canvas: {
+        display: 'block',
         width: '100%',
         height: '100%',
         objectFit: 'contain',
         imageRendering: 'pixelated',
-        outline: 'none'
+        outline: 'none',
+        border: '1px solid #000',
+        boxSizing: 'border-box',
+        background: '#000'
     } satisfies React.CSSProperties,
     emptyState: {
         position: 'absolute',

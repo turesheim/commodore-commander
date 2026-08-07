@@ -3,6 +3,7 @@ import type { CommodoreMachineLaunchConfiguration } from '@commodore-commander/l
 
 export const CommodoreViceEmbedServicePath = '/services/commodore-commander/vice-embed';
 export const CommodoreViceEmbedService = Symbol('CommodoreViceEmbedService');
+export const CommodoreViceEmbedFrameSocketPath = '/services/commodore-commander/vice-embed/frames';
 
 export const COMMODORE_VICE_EMBED_PROTOCOL = 'commodore-vice-embed-v1';
 export type CommodoreViceEmbedProtocol = typeof COMMODORE_VICE_EMBED_PROTOCOL;
@@ -89,6 +90,13 @@ export interface CommodoreViceEmbedJoystickEvent {
     readonly mask: number;
 }
 
+export interface CommodoreViceEmbedMouseEvent {
+    readonly xRel: number;
+    readonly yRel: number;
+    readonly button?: number;
+    readonly pressed?: boolean;
+}
+
 export interface CommodoreViceEmbedResizeEvent {
     readonly width: number;
     readonly height: number;
@@ -104,7 +112,9 @@ export interface CommodoreViceEmbedService extends RpcServer<CommodoreViceEmbedC
     launch(request?: CommodoreViceEmbedLaunchRequest): Promise<CommodoreViceEmbedLaunchResult>;
     stop(): Promise<void>;
     reset(): Promise<void>;
+    openMenu(): Promise<void>;
     sendKey(event: CommodoreViceEmbedKeyEvent): Promise<void>;
+    sendMouse(event: CommodoreViceEmbedMouseEvent): Promise<void>;
     sendJoystick(event: CommodoreViceEmbedJoystickEvent): Promise<void>;
     resize(event: CommodoreViceEmbedResizeEvent): Promise<void>;
 }
