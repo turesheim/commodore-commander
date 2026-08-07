@@ -12,6 +12,9 @@ import {
   type CommodoreMachineProfileId
 } from '@commodore-commander/language-support';
 import {
+  VICE_EMBED_MOUSE_GRAB_FLAG
+} from '@commodore-commander/debug-adapter';
+import {
   COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE
 } from '../common/commodore-commander-tool-preferences';
 
@@ -25,6 +28,8 @@ export const VICE_DARWIN_ARM64_RESOURCES = path.join(
 );
 
 const VICE_RESOURCES_SUBDIRECTORY = path.join('share', 'vice');
+const VICE_C64_RESOURCE_SUBDIRECTORY = 'C64';
+const VICE_MOUSE_RELEASE_FLAG = '+mouse';
 
 export interface ViceRuntimeResolutionOptions {
   runtimeDirectory?: string;
@@ -88,6 +93,15 @@ export function createViceArgs(
   return args;
 }
 
+export function createEmbeddedViceArgs(
+  viceArgs: readonly string[]
+): string[] {
+  if (hasViceMouseGrabSetting(viceArgs)) {
+    return [...viceArgs];
+  }
+  return [VICE_EMBED_MOUSE_GRAB_FLAG, ...viceArgs];
+}
+
 export async function getViceResourcesPath(
   runtimeDirectory = __dirname
 ): Promise<string> {
@@ -123,7 +137,7 @@ export async function resolveViceRuntime(
 
   if (configuredResourcesPath) {
     throw new Error(
-      `Configured VICE resources path does not contain ${VICE_RESOURCES_SUBDIRECTORY}: ${configuredResourcesPath}.`
+      `Configured VICE resources path does not contain ${VICE_RESOURCES_SUBDIRECTORY} or ${VICE_C64_RESOURCE_SUBDIRECTORY}: ${configuredResourcesPath}.`
     );
   }
 
@@ -178,8 +192,14 @@ function withoutModelArgs(args: readonly string[]): string[] {
   return filtered;
 }
 
+function hasViceMouseGrabSetting(viceArgs: readonly string[]): boolean {
+  return viceArgs.includes(VICE_EMBED_MOUSE_GRAB_FLAG) ||
+    viceArgs.includes(VICE_MOUSE_RELEASE_FLAG);
+}
+
 async function isViceResourcesPath(filePath: string): Promise<boolean> {
-  return pathExists(path.join(filePath, VICE_RESOURCES_SUBDIRECTORY));
+  return (await pathExists(path.join(filePath, VICE_RESOURCES_SUBDIRECTORY))) ||
+    pathExists(path.join(filePath, VICE_C64_RESOURCE_SUBDIRECTORY));
 }
 
 function bundledViceResourceCandidates(runtimeDirectory: string): string[] {

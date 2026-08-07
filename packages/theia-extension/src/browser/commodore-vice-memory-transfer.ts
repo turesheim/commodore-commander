@@ -28,10 +28,10 @@ export function requireViceSession(
 ): DebugSession {
   const session = currentViceSession(debugSessionManager);
   if (!session) {
-    throw new Error('Start a commodore-vice debug session first.');
+    throw new Error('Start a debug session first.');
   }
   if (session.state !== DebugState.Stopped) {
-    throw new Error('Pause or stop at a breakpoint before using VICE memory.');
+    throw new Error('Pause or stop at a breakpoint before using emulator memory.');
   }
   if (!session.capabilities.supportsReadMemoryRequest) {
     throw new Error('The active debug session does not support memory reads.');

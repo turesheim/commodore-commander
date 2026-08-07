@@ -16,14 +16,15 @@ const bundledDocsPath = path.resolve(__dirname, '..', '..', 'bundled-docs');
 const bundledDocsTargetPath = path.resolve(frontendOutputPath, 'assets', 'docs');
 const sidScoreCliJar = 'sidscore-cli-0.7.0.jar';
 const sidScoreAssetsTargetPath = path.resolve(outputPath, 'assets', 'sidscore');
-const viceAppPath = path.resolve(
-    path.dirname(
-        require.resolve(
-            '@commodore-commander/theia-extension/assets/vice/darwin-arm64/VICE.app/Contents/Info.plist'
-        )
-    ),
-    '..'
-);
+const skipViceAssets = process.env.COMMODORE_COMMANDER_SKIP_VICE_ASSETS === '1';
+const viceInfoPlistPath = skipViceAssets
+    ? undefined
+    : require.resolve(
+        '@commodore-commander/theia-extension/assets/vice/darwin-arm64/VICE.app/Contents/Info.plist'
+    );
+const viceAppPath = viceInfoPlistPath
+    ? path.resolve(path.dirname(viceInfoPlistPath), '..')
+    : undefined;
 const viceAppTargetPath = path.resolve(
     outputPath,
     'assets',
@@ -55,6 +56,7 @@ class CopyViceAppBundlePlugin {
             fs.cpSync(viceAppPath, viceAppTargetPath, {
                 recursive: true,
                 preserveTimestamps: true,
+                verbatimSymlinks: true,
                 filter: source => path.basename(source) !== '.DS_Store'
             });
             prepareMacOsAppBundle(viceAppTargetPath);
@@ -223,7 +225,11 @@ nodeConfig.config.plugins.push(
     })
 );
 nodeConfig.config.plugins.push(new CleanSidScoreAssetsPlugin());
-nodeConfig.config.plugins.push(new CopyViceAppBundlePlugin());
+if (skipViceAssets) {
+    console.warn('Skipping bundled VICE app copy.');
+} else {
+    nodeConfig.config.plugins.push(new CopyViceAppBundlePlugin());
+}
 
 module.exports = [
     ...configs,

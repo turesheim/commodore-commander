@@ -106,7 +106,7 @@ export class CommodoreCharacterSetWidget extends ReactWidget {
   protected openColorSelectorRole: ColorRole | undefined;
   protected characterDataAddressInput = '$2000';
   protected memoryTransferScope: CharacterSetViceTransferScope = 'set';
-  protected viceStatus = 'VICE memory actions use the active stopped commodore-vice session.';
+  protected viceStatus = 'Emulator memory actions use the active stopped debug session.';
   protected dirty = false;
   protected loaded = false;
 

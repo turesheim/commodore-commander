@@ -14,6 +14,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import {
   KickAssemblerWorkspaceBuildPlanner,
   loadKickAssemblerBuildConfiguration,
+  type CommodoreMachineLaunchConfiguration,
   type KickAssemblerBuildProgram
 } from '@commodore-commander/language-support';
 
@@ -28,19 +29,31 @@ import {
   type CommodoreViceDebugConfiguration
 } from '../common/commodore-vice-debug';
 import {
-  getCommodoreCommanderToolPreferences
+  COMMODORE_COMMANDER_PATCHED_VICE_BASE_VERSION,
+  DEFAULT_COMMODORE_COMMANDER_VICE_LAUNCH_MODE
+} from '../common/commodore-vice-embed';
+import {
+  getCommodoreCommanderToolPreferences,
+  normalizeViceLaunchMode
 } from '../common/commodore-commander-tool-preferences';
+import { CommodoreViceEmbedServiceImpl } from './commodore-vice-embed-service-impl';
+
+const COMMODORE_MACHINE_PROFILE_PREFERENCE =
+  'commodoreCommander.activeMachine';
 
 @injectable()
 export class CommodoreViceDebugAdapterContribution
   implements DebugAdapterContribution
 {
   readonly type = COMMODORE_VICE_DEBUG_TYPE;
-  readonly label = 'Commodore VICE';
+  readonly label = 'Commodore Commander';
   readonly languages = ['kickassembler'];
 
   @inject(PreferenceService)
   protected readonly preferenceService!: PreferenceService;
+
+  @inject(CommodoreViceEmbedServiceImpl)
+  protected readonly viceEmbedService!: CommodoreViceEmbedServiceImpl;
 
   private readonly planner = new KickAssemblerWorkspaceBuildPlanner();
 
@@ -124,7 +137,7 @@ export class CommodoreViceDebugAdapterContribution
           },
           program: {
             type: 'string',
-            description: 'Path to the PRG file to start in VICE.'
+            description: 'Path to the PRG file to start.'
           },
           debugInfo: {
             type: 'string',
@@ -137,6 +150,13 @@ export class CommodoreViceDebugAdapterContribution
           cwd: {
             type: 'string',
             description: 'Working directory for VICE.'
+          },
+          viceLaunchMode: {
+            type: 'string',
+            enum: ['embedded', 'external'],
+            default: DEFAULT_COMMODORE_COMMANDER_VICE_LAUNCH_MODE,
+            description:
+              `VICE launch surface. embedded uses the embedded VICE ${COMMODORE_COMMANDER_PATCHED_VICE_BASE_VERSION} frame/input transport when available; external launches stock VICE in its own window.`
           },
           viceExecutable: {
             type: 'string',
@@ -182,11 +202,11 @@ export class CommodoreViceDebugAdapterContribution
   getConfigurationSnippets(): IJSONSchemaSnippet[] {
     return [
       {
-        label: 'Commodore VICE: Launch PRG',
+        label: 'Commodore Commander: Launch PRG',
         body: {
           type: COMMODORE_VICE_DEBUG_TYPE,
           request: 'launch',
-          name: 'Debug PRG in VICE',
+          name: 'Debug PRG',
           program: '${workspaceFolder}/out/program.prg',
           debugInfo: '${workspaceFolder}/out/program.dbg',
           sourceRoot: '${workspaceFolder}',
@@ -213,7 +233,9 @@ export class CommodoreViceDebugAdapterContribution
       return undefined;
     }
 
-    const { profile, launch } = resolveViceMachineProfile(config.machine);
+    const activeMachine = config.machine ??
+      this.getActiveMachineConfiguration(workspaceFolderUri);
+    const { profile, launch } = resolveViceMachineProfile(activeMachine);
     await this.preferenceService.ready;
     const toolPreferences = getCommodoreCommanderToolPreferences(
       this.preferenceService,
@@ -230,6 +252,13 @@ export class CommodoreViceDebugAdapterContribution
     const debugInfo = config.debugInfo
       ? path.resolve(workspaceRootPath, config.debugInfo)
       : replaceExtension(program, '.dbg');
+    const viceLaunchMode = normalizeViceLaunchMode(
+      config.viceLaunchMode ?? toolPreferences.viceLaunchMode
+    );
+    const viceFramePort = viceLaunchMode === 'embedded'
+      ? await this.viceEmbedService.startExternalFrameTransport()
+      : undefined;
+    const viceArgs = config.viceArgs ?? createViceArgs(profile, launch);
 
     return {
       ...config,
@@ -245,7 +274,9 @@ export class CommodoreViceDebugAdapterContribution
         : path.dirname(program),
       viceResourcesPath: viceRuntime.resourcesPath,
       viceExecutable: viceRuntime.executable ?? profile.vice.executable,
-      viceArgs: config.viceArgs ?? createViceArgs(profile, launch),
+      viceLaunchMode,
+      ...(viceFramePort !== undefined ? { viceFramePort } : {}),
+      viceArgs,
       machineName: profile.displayName,
       stopOnEntry: config.stopOnEntry ?? true
     };
@@ -260,7 +291,7 @@ export class CommodoreViceDebugAdapterContribution
     return {
       type: COMMODORE_VICE_DEBUG_TYPE,
       request: 'launch',
-      name: `Debug ${program.name} in VICE`,
+      name: `Debug ${program.name}`,
       program: relativeOrAbsolute(workspaceRootPath, runProgramPath),
       debugInfo: relativeOrAbsolute(workspaceRootPath, replaceExtension(runProgramPath, '.dbg')),
       sourceRoot: relativeOrAbsolute(workspaceRootPath, workspaceRootPath),
@@ -273,7 +304,7 @@ export class CommodoreViceDebugAdapterContribution
     return {
       type: COMMODORE_VICE_DEBUG_TYPE,
       request: 'launch',
-      name: 'Debug PRG in VICE',
+      name: 'Debug PRG',
       program: '${workspaceFolder}/out/program.prg',
       debugInfo: '${workspaceFolder}/out/program.dbg',
       sourceRoot: '${workspaceFolder}',
@@ -282,6 +313,19 @@ export class CommodoreViceDebugAdapterContribution
       },
       stopOnEntry: true
     };
+  }
+
+  private getActiveMachineConfiguration(
+    workspaceFolderUri?: string
+  ): CommodoreMachineLaunchConfiguration | undefined {
+    const value = this.preferenceService.get<unknown>(
+      COMMODORE_MACHINE_PROFILE_PREFERENCE,
+      undefined,
+      workspaceFolderUri
+    );
+    return isRecord(value)
+      ? value as unknown as CommodoreMachineLaunchConfiguration
+      : undefined;
   }
 }
 
@@ -303,6 +347,10 @@ function resolveWorkspacePath(rootPath: string, filePath: string): string {
   return path.isAbsolute(filePath)
     ? filePath
     : path.resolve(rootPath, filePath);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function resolveToolPath(rootPath: string, commandOrPath: string): string {

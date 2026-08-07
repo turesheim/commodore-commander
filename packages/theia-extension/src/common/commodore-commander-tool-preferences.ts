@@ -4,6 +4,11 @@ import {
   type PreferenceSchema,
   type PreferenceService
 } from '@theia/core/lib/common/preferences';
+import {
+  COMMODORE_COMMANDER_PATCHED_VICE_BASE_VERSION,
+  DEFAULT_COMMODORE_COMMANDER_VICE_LAUNCH_MODE,
+  type CommodoreCommanderViceLaunchMode
+} from './commodore-vice-embed';
 
 export const COMMODORE_COMMANDER_VICE_EXECUTABLE_PREFERENCE =
   'commodoreCommander.tools.viceExecutable';
@@ -11,6 +16,8 @@ export const COMMODORE_COMMANDER_VICE_RESOURCES_PATH_PREFERENCE =
   'commodoreCommander.tools.viceResourcesPath';
 export const COMMODORE_COMMANDER_VICE_RUNTIME_PATH_PREFERENCE =
   'commodoreCommander.VICE.runtimePath';
+export const COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE =
+  'commodoreCommander.VICE.launchMode';
 export const COMMODORE_COMMANDER_LEGACY_VICE_RUNTIME_PATH_PREFERENCE =
   'commodoreCommander.vice.runtimePath';
 export const COMMODORE_COMMANDER_JAVA_RUNTIME_PREFERENCE =
@@ -23,6 +30,7 @@ export interface CommodoreCommanderToolPreferences {
    */
   viceExecutable?: string;
   viceResourcesPath?: string;
+  viceLaunchMode: CommodoreCommanderViceLaunchMode;
   javaRuntime?: string;
 }
 
@@ -55,9 +63,18 @@ export const COMMODORE_COMMANDER_TOOL_PREFERENCE_SCHEMA: PreferenceSchema = {
       type: 'string',
       default: '',
       markdownDescription:
-        'VICE runtime or installation root. Leave empty to use bundled VICE when available, then standard system locations. Set this to override bundled VICE. The directory must contain `share/vice`; when it also contains `bin`, Commodore Commander selects the machine profile emulator such as `x64sc`, `x128`, or `xvic`.',
+        'External VICE runtime or installation root. Leave empty to use bundled VICE when available, then standard system locations. Set this to override bundled VICE. The directory must contain `share/vice`; when it also contains `bin`, Commodore Commander selects the machine profile emulator such as `x64sc`, `x128`, or `xvic`.',
       description:
-        'VICE runtime or installation root containing share/vice. Leave empty to use bundled VICE when available, then standard system locations.'
+        'External VICE runtime or installation root containing share/vice. Leave empty to use bundled VICE when available, then standard system locations.'
+    },
+    [COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE]: {
+      type: 'string',
+      enum: ['embedded', 'external'],
+      default: DEFAULT_COMMODORE_COMMANDER_VICE_LAUNCH_MODE,
+      markdownDescription:
+        `Default VICE launch surface. \`embedded\` uses Commodore Commander's embedded VICE ${COMMODORE_COMMANDER_PATCHED_VICE_BASE_VERSION} frame/input transport when available. \`external\` launches stock VICE in its own window.`,
+      description:
+        'Default VICE launch surface: embedded VICE view or external VICE window.'
     },
     [COMMODORE_COMMANDER_JAVA_RUNTIME_PREFERENCE]: {
       type: 'string',
@@ -96,6 +113,13 @@ export function getCommodoreCommanderToolPreferences(
   );
 
   return {
+    viceLaunchMode: normalizeViceLaunchMode(
+      preferenceService.get<string>(
+        COMMODORE_COMMANDER_VICE_LAUNCH_MODE_PREFERENCE,
+        DEFAULT_COMMODORE_COMMANDER_VICE_LAUNCH_MODE,
+        resourceUri
+      )
+    ),
     ...optionalPreference(
       'viceExecutable',
       preferenceService.get<string>(
@@ -139,4 +163,21 @@ function firstConfiguredPreference(
     }
   }
   return undefined;
+}
+
+export function normalizeViceLaunchMode(
+  value: string | undefined
+): CommodoreCommanderViceLaunchMode {
+  const normalized = value?.trim();
+  switch (normalized) {
+    case 'embedded':
+    case 'external':
+      return normalized;
+    case 'patchedView':
+      return 'embedded';
+    case 'externalWindow':
+      return 'external';
+    default:
+      return DEFAULT_COMMODORE_COMMANDER_VICE_LAUNCH_MODE;
+  }
 }

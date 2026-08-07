@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { constants } from 'node:fs';
+import { constants, existsSync } from 'node:fs';
 import { access } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,6 +27,18 @@ const expectedProfileIds = [
   'cbm5x0',
   'c64dtv'
 ] as const;
+
+type ViceVideoChipName = 'VICII' | 'TED' | 'VIC' | 'VDC' | 'CRTC';
+
+function expectedUnfilteredViceVideoArgs(
+  ...chips: readonly ViceVideoChipName[]
+): string[] {
+  const args: string[] = [];
+  for (const chip of chips) {
+    args.push(`-${chip}filter`, '0', `-${chip}glfilter`, '0');
+  }
+  return args;
+}
 
 test('Commodore machine profile registry covers the initial machine range', () => {
   assert.deepEqual(COMMODORE_MACHINE_PROFILE_IDS, expectedProfileIds);
@@ -96,35 +108,75 @@ test('Commodore machine profile aliases resolve editor and VICE names', () => {
 
 test('Commodore machine profile VICE metadata maps shared executables and model args', () => {
   assert.equal(getViceExecutableForMachineProfile('c64'), 'x64sc');
+  assert.deepEqual(
+    getCommodoreMachineProfile('c64').vice.defaultArgs,
+    expectedUnfilteredViceVideoArgs('VICII')
+  );
+  assert.deepEqual(
+    getCommodoreMachineProfile('c128').vice.defaultArgs,
+    expectedUnfilteredViceVideoArgs('VICII', 'VDC')
+  );
+  assert.deepEqual(
+    getCommodoreMachineProfile('vic20').vice.defaultArgs,
+    expectedUnfilteredViceVideoArgs('VIC')
+  );
+  assert.deepEqual(getCommodoreMachineProfile('plus4').vice.defaultArgs, [
+    ...expectedUnfilteredViceVideoArgs('TED'),
+    '-model',
+    'plus4'
+  ]);
   assert.equal(getViceExecutableForMachineProfile('c16'), 'xplus4');
   assert.deepEqual(getCommodoreMachineProfile('c16').vice.defaultArgs, [
+    ...expectedUnfilteredViceVideoArgs('TED'),
     '-model',
     'c16'
   ]);
   assert.equal(getViceExecutableForMachineProfile('pet'), 'xpet');
   assert.deepEqual(getCommodoreMachineProfile('pet').vice.defaultArgs, [
+    ...expectedUnfilteredViceVideoArgs('CRTC'),
     '-model',
     '8032'
   ]);
   assert.equal(getViceExecutableForMachineProfile('cbm2'), 'xcbm2');
+  assert.deepEqual(getCommodoreMachineProfile('cbm2').vice.defaultArgs, [
+    ...expectedUnfilteredViceVideoArgs('CRTC'),
+    '-model',
+    '610'
+  ]);
   assert.equal(getViceExecutableForMachineProfile('cbm5x0'), 'xcbm5x0');
+  assert.deepEqual(getCommodoreMachineProfile('cbm5x0').vice.defaultArgs, [
+    ...expectedUnfilteredViceVideoArgs('VICII'),
+    '-model',
+    '510'
+  ]);
+  assert.deepEqual(
+    getCommodoreMachineProfile('c64dtv').vice.defaultArgs,
+    expectedUnfilteredViceVideoArgs('VICII')
+  );
   assert.equal(getCommodoreMachineProfile('c64').vice.defaultModel, 'c64');
   assert.equal(getCommodoreViceModel('plus4', 'plus4ntsc')?.displayName, 'Plus/4 NTSC');
   assert.equal(isCommodoreViceModelForMachineProfile('c64', 'c128dcr'), false);
 });
 
-test('Commodore machine profile VICE executables exist in the bundled macOS runtime', async () => {
-  const viceBinRoot = fileURLToPath(
+const generatedViceBinRoot = process.env.COMMODORE_COMMANDER_VICE_BIN_ROOT
+  ? path.resolve(process.env.COMMODORE_COMMANDER_VICE_BIN_ROOT)
+  : fileURLToPath(
     new URL(
-      '../../../net.sourceforge.vice.cocoa.macosx.aarch64/vice/VICE.app/Contents/Resources/bin/',
+      '../../../tools/vice-embed/dist/darwin-arm64/VICE.app/Contents/Resources/bin/',
       import.meta.url
     )
   );
+
+test('Commodore machine profile VICE executables exist in the generated patched runtime', {
+  skip: existsSync(generatedViceBinRoot)
+    ? false
+    : 'run `make -C tools/vice-embed package` to generate the patched VICE runtime'
+}, async () => {
   const executables = new Set(
     COMMODORE_MACHINE_PROFILES.map((profile) => profile.vice.executable)
   );
 
   for (const executable of executables) {
-    await access(path.join(viceBinRoot, executable), constants.X_OK);
+    await access(path.join(generatedViceBinRoot, executable), constants.X_OK);
   }
 });

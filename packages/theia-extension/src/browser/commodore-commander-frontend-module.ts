@@ -53,6 +53,10 @@ import {
   CommodorePrgService,
   CommodorePrgServicePath
 } from '../common/commodore-prg-service';
+import {
+  CommodoreViceEmbedService,
+  CommodoreViceEmbedServicePath
+} from '../common/commodore-vice-embed-service';
 import { CommodoreCommanderFrontendContribution } from './commodore-commander-frontend-contribution';
 import { CommodoreCommanderGettingStartedWidget } from './commodore-commander-getting-started-widget';
 import {
@@ -267,9 +271,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     .inSingletonScope();
   bind(CommodoreMachineProfileContribution).toSelf().inSingletonScope();
   bind(CommandContribution).toService(CommodoreMachineProfileContribution);
-  bind(TabBarToolbarContribution).toService(
-    CommodoreMachineProfileContribution
-  );
   bind(FrontendApplicationContribution).toService(
     CommodoreMachineProfileContribution
   );
@@ -356,6 +357,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
   bind(FrontendApplicationContribution).toService(
     CommodoreDebugWatchContribution
   );
+  bind(CommodoreViceEmbedService)
+    .toDynamicValue((context) =>
+      WebSocketConnectionProvider.createProxy(
+        context.container,
+        CommodoreViceEmbedServicePath
+      )
+    )
+    .inSingletonScope();
   bind(ViceMemoryWidget).toSelf();
   bind(WidgetFactory)
     .toDynamicValue((context) => ({

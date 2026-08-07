@@ -150,12 +150,12 @@ export class CommodorePrgContribution
     const picks: QuickPickValue<PrgAction>[] = [
       {
         label: 'Run PRG',
-        description: 'Start in VICE',
+        description: 'Start in the emulator',
         value: 'run'
       },
       {
         label: 'Debug PRG',
-        description: 'Start a VICE debug session',
+        description: 'Start a debug session',
         value: 'debug'
       },
       {

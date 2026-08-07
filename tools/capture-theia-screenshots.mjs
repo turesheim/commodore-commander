@@ -10,8 +10,8 @@ import { spawn } from 'node:child_process';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const defaultCaptureWorkspacePath = path.join(repoRoot, '.theia', 'screen-capture');
 const screenCaptureConfigEnv = 'COMMODORE_COMMANDER_SCREEN_CAPTURE_CONFIG';
-const debugLaunchName = 'Debug debug-demo in VICE';
-const visualDebugLaunchName = 'Debug visual-debugger-demo in VICE';
+const debugLaunchName = 'Debug debug-demo';
+const visualDebugLaunchName = 'Debug visual-debugger-demo';
 const defaults = {
   characterSetPath: path.join(defaultCaptureWorkspacePath, 'c64-lower-upper.charset'),
   outputDir: path.join(repoRoot, 'docs'),

@@ -50,6 +50,63 @@ test('createViceProcessArgs includes binary monitor arguments for debug launches
   ]);
 });
 
+test('createViceProcessArgs enables the embedded VICE transport when requested', () => {
+  const args = createViceProcessArgs({
+    program: '/workspace/out/main.prg',
+    viceArgs: ['-model', 'c64'],
+    embed: true,
+    embedFramePort: 6510
+  });
+
+  assert.deepEqual(args, [
+    '-cc-embed',
+    '-cc-frame-port',
+    '6510',
+    '-mouse',
+    '-model',
+    'c64',
+    '/workspace/out/main.prg'
+  ]);
+});
+
+test('createViceProcessArgs allows embedded launch args to override mouse grab', () => {
+  const args = createViceProcessArgs({
+    program: '/workspace/out/main.prg',
+    viceArgs: ['+mouse', '-model', 'c64'],
+    embed: true,
+    embedFramePort: 6510
+  });
+
+  assert.deepEqual(args, [
+    '-cc-embed',
+    '-cc-frame-port',
+    '6510',
+    '+mouse',
+    '-model',
+    'c64',
+    '/workspace/out/main.prg'
+  ]);
+});
+
+test('createViceProcessArgs does not duplicate an explicit embedded transport flag', () => {
+  const args = createViceProcessArgs({
+    program: '/workspace/out/main.prg',
+    viceArgs: ['-cc-embed', '-cc-frame-port', '6511', '-model', 'c64'],
+    embed: true,
+    embedFramePort: 6510
+  });
+
+  assert.deepEqual(args, [
+    '-mouse',
+    '-cc-embed',
+    '-cc-frame-port',
+    '6511',
+    '-model',
+    'c64',
+    '/workspace/out/main.prg'
+  ]);
+});
+
 test('terminateViceProcess sends SIGTERM and waits for process exit', async () => {
   const child = spawn(
     process.execPath,

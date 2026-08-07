@@ -122,7 +122,7 @@ export class CommodoreSpriteWidget extends ReactWidget {
   protected animationTimer: number | undefined;
   protected memoryAddressInput = '$2000';
   protected memoryTransferScope: ViceTransferScope = 'frame';
-  protected viceStatus = 'VICE memory actions use the active stopped commodore-vice session.';
+  protected viceStatus = 'Emulator memory actions use the active stopped debug session.';
   protected dirty = false;
   protected loaded = false;
 
@@ -907,10 +907,10 @@ export class CommodoreSpriteWidget extends ReactWidget {
   protected requireViceSession(write: boolean): DebugSession {
     const session = this.currentViceSession();
     if (!session) {
-      throw new Error('Start a commodore-vice debug session first.');
+      throw new Error('Start a debug session first.');
     }
     if (session.state !== DebugState.Stopped) {
-      throw new Error('Pause or stop at a breakpoint before using VICE memory.');
+      throw new Error('Pause or stop at a breakpoint before using emulator memory.');
     }
     if (!session.capabilities.supportsReadMemoryRequest) {
       throw new Error('The active debug session does not support memory reads.');

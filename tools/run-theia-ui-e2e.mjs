@@ -10,8 +10,8 @@ import { spawn } from 'node:child_process';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const screenCaptureConfigEnv = 'COMMODORE_COMMANDER_SCREEN_CAPTURE_CONFIG';
 const defaultOutputDir = path.join(repoRoot, 'test-results', 'theia-ui-e2e');
-const debugLaunchName = 'UI E2E: Debug debug-demo in VICE';
-const visualDebugLaunchName = 'UI E2E: Debug visual-debugger-demo in VICE';
+const debugLaunchName = 'UI E2E: Debug debug-demo';
+const visualDebugLaunchName = 'UI E2E: Debug visual-debugger-demo';
 const fixtureNames = ['debug-demo', 'visual-debugger-demo'];
 
 async function main() {
@@ -423,6 +423,7 @@ function createLaunchConfiguration(name, fixture, options) {
     program: path.relative(path.dirname(fixture.sourcePath), fixture.programPath),
     debugInfo: path.relative(path.dirname(fixture.sourcePath), fixture.debugInfoPath),
     sourceRoot: '.',
+    viceLaunchMode: 'external',
     machine: {
       profile: 'c64',
       model: 'c64',
@@ -634,7 +635,7 @@ function escapeRegExp(value) {
 function printHelp() {
   console.log(`Usage: npm run test:e2e:theia:ui -- [options]
 
-Runs focused Electron/Theia UI e2e scenarios for the VICE debugger. The command
+Runs focused Electron/Theia UI e2e scenarios for the debugger. The command
 requires a built Electron app and a graphical desktop session.
 
 Options:

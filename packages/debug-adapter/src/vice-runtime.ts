@@ -4,6 +4,12 @@ import net from 'node:net';
 import path from 'node:path';
 import { spawn, type ChildProcess } from 'node:child_process';
 
+import {
+  VICE_EMBED_FLAG,
+  VICE_EMBED_FRAME_PORT_FLAG,
+  VICE_EMBED_MOUSE_GRAB_FLAG
+} from './vice-embed-protocol';
+
 const DEFAULT_TERMINATION_TIMEOUT_MS = 1500;
 const DEFAULT_FORCE_KILL_TIMEOUT_MS = 1000;
 
@@ -14,6 +20,8 @@ export interface ViceProcessLaunchOptions {
   viceExecutable: string;
   viceArgs: readonly string[];
   enableMonitor?: boolean;
+  enableEmbed?: boolean;
+  embedFramePort?: number;
   monitorHost?: string;
   monitorPort?: number;
 }
@@ -35,6 +43,8 @@ export interface ViceProcessTerminateOptions {
 export interface ViceProcessArgsOptions {
   program: string;
   viceArgs: readonly string[];
+  embed?: boolean;
+  embedFramePort?: number;
   monitor?: {
     host: string;
     port: number;
@@ -58,6 +68,8 @@ export async function launchViceProcess(
   const args = createViceProcessArgs({
     program: options.program,
     viceArgs: options.viceArgs,
+    embed: options.enableEmbed,
+    embedFramePort: options.embedFramePort,
     ...(monitorHost && monitorPort !== undefined
       ? { monitor: { host: monitorHost, port: monitorPort } }
       : {})
@@ -69,7 +81,7 @@ export async function launchViceProcess(
       ...process.env,
       VICE_INITIAL_CWD: options.cwd
     },
-    stdio: ['ignore', 'pipe', 'pipe']
+    stdio: [options.enableEmbed ? 'pipe' : 'ignore', 'pipe', 'pipe']
   });
 
   await waitForSpawn(child, command);
@@ -106,6 +118,17 @@ export function createViceProcessArgs(
   options: ViceProcessArgsOptions
 ): string[] {
   const args = [
+    ...(options.embed && !options.viceArgs.includes(VICE_EMBED_FLAG)
+      ? [VICE_EMBED_FLAG]
+      : []),
+    ...(options.embed &&
+      options.embedFramePort !== undefined &&
+      !options.viceArgs.includes(VICE_EMBED_FRAME_PORT_FLAG)
+      ? [VICE_EMBED_FRAME_PORT_FLAG, String(options.embedFramePort)]
+      : []),
+    ...(options.embed && !hasMouseGrabFlag(options.viceArgs)
+      ? [VICE_EMBED_MOUSE_GRAB_FLAG]
+      : []),
     ...options.viceArgs,
     ...configArgs(options.program, options.viceArgs)
   ];
@@ -146,6 +169,11 @@ export async function assertExecutable(
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`${description} is not executable: ${filePath}. ${message}`);
   }
+}
+
+function hasMouseGrabFlag(viceArgs: readonly string[]): boolean {
+  return viceArgs.includes(VICE_EMBED_MOUSE_GRAB_FLAG) ||
+    viceArgs.includes('+mouse');
 }
 
 function configArgs(program: string, viceArgs: readonly string[]): string[] {

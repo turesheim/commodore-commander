@@ -102,6 +102,63 @@ runtime seams are TypeScript-only:
   `packages/debug-adapter/src/vice-runtime.ts` and
   `packages/debug-adapter/src/vice-monitor.ts`
 
+## Embedded VICE Direction
+
+The default VICE launch surface should be the embedded view, represented by
+`commodoreCommander.VICE.launchMode = "embedded"`. Stock external VICE must
+remain available through `external` and through the existing
+`commodoreCommander.VICE.runtimePath`, `viceExecutable`, and `viceResourcesPath`
+overrides.
+
+The patched runtime baseline is VICE 3.10.0. In the SourceForge SVN browser the
+release is tagged as `v3.10`, with source under
+`https://sourceforge.net/p/vice-emu/code/HEAD/tree/tags/v3.10/vice/`.
+
+RetroDebugger demonstrates the viable embedding model: it embeds/forks the VICE
+engine and renders emulator frames directly while forwarding keyboard and
+joystick input into VICE internals. Commodore Commander should follow that
+capability model, but keep the emulator external-process-oriented: run a
+patched VICE/helper process that exposes a local frame/input transport to the
+Theia view instead of linking VICE into the Electron process.
+
+The patched runtime contract should provide:
+
+- a video frame stream suitable for a Theia canvas without using binary-monitor
+  Display Get polling
+- keyboard matrix, joystick, mouse, and later peripheral input injection while
+  the CPU is running
+- optional binary-monitor/DAP attachment for debugging the same running machine
+- explicit fallback to stock external VICE when a compatible patched runtime is
+  not available
+
+The first implementation pass adds the Theia-side service and canvas:
+
+- `packages/theia-extension/src/common/commodore-vice-embed-service.ts`
+  defines the frame/input RPC contract
+- `packages/theia-extension/src/node/commodore-vice-embed-service-impl.ts`
+  launches a patched SDL VICE process, owns the local frame socket, and bridges
+  its low-rate stdin/stdout control protocol
+- `packages/theia-extension/src/browser/vice-embedded-widget.tsx` renders the
+  latest `rgba8888` frame on a focusable canvas and forwards keyboard input
+- `tools/vice-embed/vice-3.10.0-commodore-embed.patch` applies the matching
+  native SDL hook patch to VICE 3.10.0
+- `tools/vice-embed/Makefile` exports, patches, builds, stages, signs, and
+  verifies the patched macOS Apple Silicon runtime used by the product asset
+  sync
+
+The current native patch emits `CCB1` binary frame records with a fixed
+little-endian header followed by native/logical `rgba8888` bytes. Large SDL 2x
+presentation surfaces are collapsed to the logical pixel grid before transport
+so the high-rate path moves a C64 frame as 384x272 instead of 768x544. The
+Theia backend opens a local TCP socket, launches VICE with
+`-cc-frame-port <port>`, parses those records from the accepted socket, and
+forwards them to the browser over a dedicated binary WebSocket. The high-rate
+display path therefore does not depend on DAP custom events or DAP stdout
+handling. Debug launches reserve this backend frame socket before VICE starts,
+and the debug adapter does not forward video frames as DAP events. stdout
+remains for status/logging and for compatibility with older or manual embedded
+launches that still emit `CCB1` records there.
+
 ## Testing Notes
 
 The TypeScript seams are easier to test because:
@@ -136,6 +193,7 @@ This pass still does not include:
 
 - cycle-accurate execution-history stack reconstruction for non-`JSR` or
   asynchronous interrupt provenance
+- joystick, mouse, and other peripheral input in the native embedded VICE patch
 - arbitrary textual monitor checkpoint action commands; the binary monitor path
   supports conditions, while logpoints are adapter-managed
 - non-macOS embedded VICE payloads

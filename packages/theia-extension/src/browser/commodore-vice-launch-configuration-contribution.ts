@@ -135,13 +135,13 @@ export class CommodoreViceLaunchConfigurationContribution
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.messageService.error(`Could not start VICE debug session: ${message}`);
+      this.messageService.error(`Could not start debug session: ${message}`);
     }
   }
 
   async startProgram(programUri: URI, noDebug: boolean): Promise<void> {
     if (programUri.scheme !== 'file') {
-      throw new Error('VICE can only launch local PRG files.');
+      throw new Error('The emulator can only launch local PRG files.');
     }
 
     const workspaceRootUri = this.workspaceService.getWorkspaceRootUri(programUri);
@@ -207,10 +207,10 @@ export class CommodoreViceLaunchConfigurationContribution
   ): Promise<DebugConfigurationSessionOptions | undefined> {
     const launchUri = this.getLaunchJsonUri(workspaceRootUri);
     const launchExists = await this.fileService.exists(launchUri);
-    const action = launchExists ? 'add a VICE launch configuration to' : 'create';
+    const action = launchExists ? 'add a launch configuration to' : 'create';
     const confirmed = await new ConfirmDialog({
-      title: 'Commodore VICE Launch Configuration',
-      msg: `No VICE launch configuration exists for ${resourceUri.path.base}. ` +
+      title: 'Commodore Debug Launch Configuration',
+      msg: `No debug launch configuration exists for ${resourceUri.path.base}. ` +
         `Do you want to ${action} ${launchUri.path.toString()} and start this program?`,
       ok: 'Create and Start',
       cancel: 'Cancel'
@@ -251,7 +251,7 @@ export class CommodoreViceLaunchConfigurationContribution
       type: COMMODORE_VICE_DEBUG_TYPE,
       request: 'launch',
       name: this.uniqueConfigurationName(
-        `Debug ${runProgram.programName} in VICE`,
+        `Debug ${runProgram.programName}`,
         existingNames
       ),
       program,
@@ -274,7 +274,7 @@ export class CommodoreViceLaunchConfigurationContribution
     return {
       type: COMMODORE_VICE_DEBUG_TYPE,
       request: 'launch',
-      name: `${noDebug ? 'Run' : 'Debug'} ${programName} in VICE`,
+      name: `${noDebug ? 'Run' : 'Debug'} ${programName}`,
       program: programPath,
       debugInfo: replaceExtension(programPath, '.dbg'),
       sourceRoot: this.workspaceService.getWorkspaceRootUri(programUri)

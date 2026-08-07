@@ -22,3 +22,5 @@ target
 /packages/language-support/dist/
 /.theia/
 /example-workspace/out
+/tools/vice-embed/build/
+/tools/vice-embed/dist/
