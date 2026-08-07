@@ -16,13 +16,24 @@ test('VICE canvas scaling keeps narrow 80-column frames at native size', () => {
   );
 });
 
-test('VICE canvas scaling uses the largest integer scale that fits readable frames', () => {
+test('VICE canvas scaling fills available space when upscaling readable frames', () => {
   assert.deepEqual(
     calculateViceCanvasDisplaySize(320, 200, 900, 700),
     {
-      width: 640,
-      height: 400,
-      scale: 2
+      width: 900,
+      height: 563,
+      scale: 2.8125
+    }
+  );
+});
+
+test('VICE canvas scaling fills the machine view without integer-step gaps', () => {
+  assert.deepEqual(
+    calculateViceCanvasDisplaySize(384, 272, 907, 668),
+    {
+      width: 907,
+      height: 642,
+      scale: 907 / 384
     }
   );
 });
