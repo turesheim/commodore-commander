@@ -566,6 +566,70 @@ function createCaptureConfig(options) {
         ]
       },
       {
+        outputPath: path.join(
+          options.outputDir,
+          'theia-vice-emulator-debugging.png'
+        ),
+        sourcePath: options.debugSourcePath,
+        marker: debugBasicReadyBreakpoint,
+        steps: [
+          { type: 'openDebugView' },
+          { type: 'openEmulatorView' },
+          {
+            type: 'setSourceBreakpoint',
+            marker: debugBasicReadyBreakpoint
+          },
+          {
+            type: 'startLaunchConfiguration',
+            name: debugLaunchName,
+            configuration: createDebugLaunchConfiguration(options),
+            workspaceFolderUri: pathToFileURL(options.workspacePath).href
+          },
+          {
+            type: 'waitForC64BasicReady',
+            timeoutMs: options.timeoutMs
+          },
+          {
+            type: 'openSourceFile',
+            filePath: options.debugSourcePath
+          },
+          {
+            type: 'setEditorMarker',
+            marker: debugBasicReadyBreakpoint
+          },
+          { type: 'collapseBottomPanel' },
+          { type: 'openEmulatorView' },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-machine-profile-widget',
+            text: 'FPS',
+            timeoutMs: options.timeoutMs
+          },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-machine-profile-widget',
+            text: 'Press F12 for emulated machine menu.',
+            timeoutMs: options.timeoutMs
+          },
+          {
+            type: 'openSourceFile',
+            filePath: options.debugSourcePath
+          },
+          {
+            type: 'setEditorMarker',
+            marker: debugBasicReadyBreakpoint
+          },
+          { type: 'wait', ms: 250 }
+        ],
+        afterSteps: [
+          {
+            type: 'executeCommand',
+            commandId: 'workbench.action.debug.stop'
+          },
+          { type: 'wait', ms: 500 }
+        ]
+      },
+      {
         outputPath: path.join(options.outputDir, 'theia-vice-debugging.png'),
         sourcePath: options.debugSourcePath,
         marker: debugBasicReadyBreakpoint,

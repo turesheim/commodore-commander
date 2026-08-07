@@ -69,11 +69,13 @@ type ElectronScreenCaptureStep =
       readonly type: 'continueDebugSession';
       readonly reason?: string;
     }
+  | { readonly type: 'collapseBottomPanel' }
   | { readonly type: 'openSourceFile'; readonly filePath: string }
   | { readonly type: 'runEditorAction'; readonly actionId: string }
   | { readonly type: 'showMnemonicHover' }
   | { readonly type: 'showReferences' }
   | { readonly type: 'openDebugView' }
+  | { readonly type: 'openEmulatorView' }
   | { readonly type: 'openC64VisualDebugger' }
   | { readonly type: 'openMemoryView' }
   | { readonly type: 'openOutlineView' }
@@ -311,6 +313,19 @@ async function runScreenCaptureStep(
       }
       return;
     }
+    case 'collapseBottomPanel': {
+      const collapsed = await callScreenCaptureApi<boolean>(
+        window,
+        'collapseBottomPanel',
+        [],
+        false,
+        timeoutMs
+      );
+      if (!collapsed) {
+        throw new Error('Unable to collapse bottom panel.');
+      }
+      return;
+    }
     case 'openSourceFile': {
       const opened = await callScreenCaptureApi<boolean>(
         window,
@@ -373,6 +388,19 @@ async function runScreenCaptureStep(
       );
       if (!opened) {
         throw new Error('Unable to open debug view.');
+      }
+      return;
+    }
+    case 'openEmulatorView': {
+      const opened = await callScreenCaptureApi<boolean>(
+        window,
+        'openEmulatorView',
+        [],
+        false,
+        timeoutMs
+      );
+      if (!opened) {
+        throw new Error('Unable to open emulator view.');
       }
       return;
     }

@@ -105,9 +105,23 @@ Note that export to SID/ASM is not a very efficient format. If you need to optim
 
 Commodore Commander contributes a Theia-native `commodore-vice` [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/) (DAP) adapter for launching PRG files in [VICE](https://vice-emu.sourceforge.io). Launch configurations can be provided in `.theia/launch.json`, generated from the active [Kick Assembler](https://theweb.dk/KickAssembler/Main.html#frontpage) file, or discovered from `commodore-commander.build.json`.
 
+Press **F5** from a Kick Assembler source file to build the active program,
+start a `commodore-vice` debug session, and attach Theia's debugger to VICE's
+binary monitor. The embedded **Emulator** view is the live VICE display used by
+the session, so keyboard input goes to the emulated machine when the canvas has
+focus. Use **CAPTURE** to send keyboard input to the emulator and when a
+program needs relative mouse or paddle input. Use **RESET** to reset the active
+machine, **F12** to open the VICE menu, and **Esc** to release pointer lock.
+**Ctrl+F5** starts the same PRG without the debugger; in that mode breakpoints,
+stepping, watchpoints, and memory inspection are disabled.
+
+![Theia embedded VICE emulator while debugging a Kick Assembler program](docs/theia-vice-emulator-debugging.png)
+
 ![Theia debugging a Kick Assembler program through VICE](docs/theia-vice-debugging.png)
 
-The screenshot above starts a named `.theia/launch.json` configuration, waits for VICE to stop after the BASIC ready screen is painted, and shows C64 screen RAM rendered through the Memory view.
+The debugger screenshot starts a named `.theia/launch.json` configuration,
+waits for VICE to stop after the BASIC ready screen is painted, and shows C64
+screen RAM rendered through the Memory view.
 
 ### Implemented debugger features:
 
@@ -203,6 +217,10 @@ npm run screenshots:theia
 ```
 
 The capture script launches the Electron app with a temporary screen-capture configuration and writes the screenshots under `docs/`. The generated screen-capture workspace lives under `.theia/screen-capture` so the capture pass does not edit the checked-in test fixtures or trigger the Kick Assembler build watcher.
+The debugger capture builds and launches the `debug-demo` fixture, waits until
+BASIC has painted the ready screen, and captures both the embedded Emulator
+view and the Memory view for the README.
+
 The visual-debugger capture builds and launches the `visual-debugger-demo`
 fixture, waits until BASIC has painted the ready screen, prepares sprite state
 through DAP memory writes without clearing screen RAM, and switches through the
