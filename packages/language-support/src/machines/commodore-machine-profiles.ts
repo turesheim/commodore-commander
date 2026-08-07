@@ -187,12 +187,24 @@ export const DEFAULT_COMMODORE_MACHINE_PROFILE_ID: CommodoreMachineProfileId =
 
 type ViceVideoChipName = 'VICII' | 'TED' | 'VIC' | 'VDC' | 'Crtc';
 
-function unfilteredViceVideoArgs(
+function plainViceVideoArgs(
   ...chips: readonly ViceVideoChipName[]
 ): string[] {
   const args: string[] = [];
   for (const chip of chips) {
-    args.push(`-${chip}filter`, '0', `-${chip}glfilter`, '0');
+    args.push(
+      `+${chip}dsize`,
+      `+${chip}dscan`,
+      `-${chip}filter`,
+      '0',
+      `-${chip}glfilter`,
+      '0'
+    );
+    if (chip === 'VDC') {
+      args.push('+VDCstretchvertical');
+    } else if (chip === 'Crtc') {
+      args.push('+CRTCstretchvertical');
+    }
   }
   return args;
 }
@@ -546,7 +558,7 @@ export const COMMODORE_MACHINE_PROFILES: readonly CommodoreMachineProfile[] =
       vice: {
         executable: 'x64sc',
         resourceDirectory: 'C64',
-        defaultArgs: unfilteredViceVideoArgs('VICII'),
+        defaultArgs: plainViceVideoArgs('VICII'),
         defaultModel: 'c64',
         models: C64_VICE_MODELS,
         description: 'Accurate C64 emulator.'
@@ -662,7 +674,7 @@ export const COMMODORE_MACHINE_PROFILES: readonly CommodoreMachineProfile[] =
       vice: {
         executable: 'x128',
         resourceDirectory: 'C128',
-        defaultArgs: unfilteredViceVideoArgs('VICII', 'VDC'),
+        defaultArgs: plainViceVideoArgs('VICII', 'VDC'),
         defaultModel: 'c128',
         models: C128_VICE_MODELS
       },
@@ -746,7 +758,7 @@ export const COMMODORE_MACHINE_PROFILES: readonly CommodoreMachineProfile[] =
       vice: {
         executable: 'xvic',
         resourceDirectory: 'VIC20',
-        defaultArgs: unfilteredViceVideoArgs('VIC'),
+        defaultArgs: plainViceVideoArgs('VIC'),
         defaultModel: 'vic20',
         models: VIC20_VICE_MODELS
       },
@@ -836,7 +848,7 @@ export const COMMODORE_MACHINE_PROFILES: readonly CommodoreMachineProfile[] =
       vice: {
         executable: 'xplus4',
         resourceDirectory: 'PLUS4',
-        defaultArgs: [...unfilteredViceVideoArgs('TED'), '-model', 'plus4'],
+        defaultArgs: [...plainViceVideoArgs('TED'), '-model', 'plus4'],
         defaultModel: 'plus4',
         models: TED_VICE_MODELS
       },
@@ -913,7 +925,7 @@ export const COMMODORE_MACHINE_PROFILES: readonly CommodoreMachineProfile[] =
       vice: {
         executable: 'xplus4',
         resourceDirectory: 'PLUS4',
-        defaultArgs: [...unfilteredViceVideoArgs('TED'), '-model', 'c16'],
+        defaultArgs: [...plainViceVideoArgs('TED'), '-model', 'c16'],
         defaultModel: 'c16',
         models: TED_VICE_MODELS
       },
@@ -982,7 +994,7 @@ export const COMMODORE_MACHINE_PROFILES: readonly CommodoreMachineProfile[] =
       vice: {
         executable: 'xpet',
         resourceDirectory: 'PET',
-        defaultArgs: [...unfilteredViceVideoArgs('Crtc'), '-model', '8032'],
+        defaultArgs: [...plainViceVideoArgs('Crtc'), '-model', '8032'],
         defaultModel: '8032',
         models: PET_VICE_MODELS
       },
@@ -1063,7 +1075,7 @@ export const COMMODORE_MACHINE_PROFILES: readonly CommodoreMachineProfile[] =
       vice: {
         executable: 'xcbm2',
         resourceDirectory: 'CBM-II',
-        defaultArgs: [...unfilteredViceVideoArgs('Crtc'), '-model', '610'],
+        defaultArgs: [...plainViceVideoArgs('Crtc'), '-model', '610'],
         defaultModel: '610',
         models: CBM2_VICE_MODELS
       },
@@ -1147,7 +1159,7 @@ export const COMMODORE_MACHINE_PROFILES: readonly CommodoreMachineProfile[] =
       vice: {
         executable: 'xcbm5x0',
         resourceDirectory: 'CBM-II',
-        defaultArgs: [...unfilteredViceVideoArgs('VICII'), '-model', '510'],
+        defaultArgs: [...plainViceVideoArgs('VICII'), '-model', '510'],
         defaultModel: '510',
         models: CBM5X0_VICE_MODELS
       },
@@ -1258,7 +1270,7 @@ export const COMMODORE_MACHINE_PROFILES: readonly CommodoreMachineProfile[] =
       vice: {
         executable: 'x64dtv',
         resourceDirectory: 'C64DTV',
-        defaultArgs: unfilteredViceVideoArgs('VICII'),
+        defaultArgs: plainViceVideoArgs('VICII'),
         defaultModel: 'v2',
         models: C64DTV_VICE_MODELS
       },

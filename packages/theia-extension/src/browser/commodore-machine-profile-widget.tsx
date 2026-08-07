@@ -910,6 +910,7 @@ export class CommodoreMachineProfileWidget
     if (!context) {
       return;
     }
+    context.imageSmoothingEnabled = false;
     const imageData = new ImageData(toClampedBytes(bytes), frame.width, frame.height);
     context.putImageData(imageData, 0, 0);
   }
@@ -919,6 +920,7 @@ export class CommodoreMachineProfileWidget
     if (!context) {
       return;
     }
+    context.imageSmoothingEnabled = false;
     context.fillStyle = '#000';
     context.fillRect(0, 0, canvas.width, canvas.height);
   }

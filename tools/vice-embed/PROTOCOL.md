@@ -45,6 +45,7 @@ offset  size  value
 The native patch emits complete SDL `rgba8888` frames without downsampling or
 compression; the browser canvas is responsible for presentation scaling.
 Commodore Commander default launches also disable VICE render filters and
+double-size/double-scan host scaling, disable CRTC/VDC vertical stretch, and
 request nearest GL filtering for the active video chip. Frame emission is
 limited to a minimum interval of 16 ms to avoid flooding the frame transport
 during warp or over-rendering. `CommodoreViceEmbedServiceImpl` opens the local

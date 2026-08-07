@@ -258,6 +258,7 @@ export class ViceEmbeddedWidget
         if (!context) {
             return;
         }
+        context.imageSmoothingEnabled = false;
         const imageData = new ImageData(toClampedBytes(bytes), frame.width, frame.height);
         context.putImageData(imageData, 0, 0);
     }
