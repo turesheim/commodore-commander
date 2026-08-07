@@ -47,9 +47,8 @@ compression; the browser canvas is responsible for presentation scaling.
 Commodore Commander default launches also disable VICE render filters and
 request nearest GL filtering for the active video chip. SDL fullscreen custom
 resolution is not used by the embedded view. The UI uses pixelated browser
-upscaling to fit the available view and gives small native frames at least a 2x
-readable presentation size while keeping wide frames at native size instead of
-applying fractional downscaling.
+upscaling to fit the available view while keeping wide frames at native size
+instead of applying fractional downscaling.
 Frame emission is limited to a minimum interval of 16 ms to avoid flooding the
 frame transport during warp or over-rendering. `CommodoreViceEmbedServiceImpl`
 opens the local frame socket, launches VICE with its port, parses the binary

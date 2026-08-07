@@ -38,13 +38,13 @@ test('VICE canvas scaling fills the machine view without integer-step gaps', () 
   );
 });
 
-test('VICE canvas scaling keeps small native frames readable when height is constrained', () => {
+test('VICE canvas scaling fits small native frames when height is constrained', () => {
   assert.deepEqual(
     calculateViceCanvasDisplaySize(352, 266, 695, 409),
     {
-      width: 704,
-      height: 532,
-      scale: 2
+      width: 541,
+      height: 409,
+      scale: 409 / 266
     }
   );
 });
