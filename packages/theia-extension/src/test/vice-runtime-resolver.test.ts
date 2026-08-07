@@ -280,24 +280,21 @@ test('tool preferences keep lowercase VICE runtime path fallback', () => {
   assert.equal(preferences.viceResourcesPath, '/lowercase-vice');
 });
 
-test('createViceArgs keeps plain display defaults before model and explicit args', () => {
+test('createViceArgs keeps unfiltered display defaults before model and explicit args', () => {
   const args = createViceArgs(getCommodoreMachineProfile('pet'), {
     profile: 'pet',
     model: '8296',
-    viceArgs: ['-Crtcfilter', '1']
+    viceArgs: ['-CRTCfilter', '1']
   });
 
   assert.deepEqual(args, [
-    '+Crtcdsize',
-    '+Crtcdscan',
-    '-Crtcfilter',
+    '-CRTCfilter',
     '0',
-    '-Crtcglfilter',
+    '-CRTCglfilter',
     '0',
-    '+CRTCstretchvertical',
     '-model',
     '8296',
-    '-Crtcfilter',
+    '-CRTCfilter',
     '1'
   ]);
 });

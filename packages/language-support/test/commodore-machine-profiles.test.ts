@@ -28,26 +28,14 @@ const expectedProfileIds = [
   'c64dtv'
 ] as const;
 
-type ViceVideoChipName = 'VICII' | 'TED' | 'VIC' | 'VDC' | 'Crtc';
+type ViceVideoChipName = 'VICII' | 'TED' | 'VIC' | 'VDC' | 'CRTC';
 
-function expectedPlainViceVideoArgs(
+function expectedUnfilteredViceVideoArgs(
   ...chips: readonly ViceVideoChipName[]
 ): string[] {
   const args: string[] = [];
   for (const chip of chips) {
-    args.push(
-      `+${chip}dsize`,
-      `+${chip}dscan`,
-      `-${chip}filter`,
-      '0',
-      `-${chip}glfilter`,
-      '0'
-    );
-    if (chip === 'VDC') {
-      args.push('+VDCstretchvertical');
-    } else if (chip === 'Crtc') {
-      args.push('+CRTCstretchvertical');
-    }
+    args.push(`-${chip}filter`, '0', `-${chip}glfilter`, '0');
   }
   return args;
 }
@@ -122,48 +110,48 @@ test('Commodore machine profile VICE metadata maps shared executables and model 
   assert.equal(getViceExecutableForMachineProfile('c64'), 'x64sc');
   assert.deepEqual(
     getCommodoreMachineProfile('c64').vice.defaultArgs,
-    expectedPlainViceVideoArgs('VICII')
+    expectedUnfilteredViceVideoArgs('VICII')
   );
   assert.deepEqual(
     getCommodoreMachineProfile('c128').vice.defaultArgs,
-    expectedPlainViceVideoArgs('VICII', 'VDC')
+    expectedUnfilteredViceVideoArgs('VICII', 'VDC')
   );
   assert.deepEqual(
     getCommodoreMachineProfile('vic20').vice.defaultArgs,
-    expectedPlainViceVideoArgs('VIC')
+    expectedUnfilteredViceVideoArgs('VIC')
   );
   assert.deepEqual(getCommodoreMachineProfile('plus4').vice.defaultArgs, [
-    ...expectedPlainViceVideoArgs('TED'),
+    ...expectedUnfilteredViceVideoArgs('TED'),
     '-model',
     'plus4'
   ]);
   assert.equal(getViceExecutableForMachineProfile('c16'), 'xplus4');
   assert.deepEqual(getCommodoreMachineProfile('c16').vice.defaultArgs, [
-    ...expectedPlainViceVideoArgs('TED'),
+    ...expectedUnfilteredViceVideoArgs('TED'),
     '-model',
     'c16'
   ]);
   assert.equal(getViceExecutableForMachineProfile('pet'), 'xpet');
   assert.deepEqual(getCommodoreMachineProfile('pet').vice.defaultArgs, [
-    ...expectedPlainViceVideoArgs('Crtc'),
+    ...expectedUnfilteredViceVideoArgs('CRTC'),
     '-model',
     '8032'
   ]);
   assert.equal(getViceExecutableForMachineProfile('cbm2'), 'xcbm2');
   assert.deepEqual(getCommodoreMachineProfile('cbm2').vice.defaultArgs, [
-    ...expectedPlainViceVideoArgs('Crtc'),
+    ...expectedUnfilteredViceVideoArgs('CRTC'),
     '-model',
     '610'
   ]);
   assert.equal(getViceExecutableForMachineProfile('cbm5x0'), 'xcbm5x0');
   assert.deepEqual(getCommodoreMachineProfile('cbm5x0').vice.defaultArgs, [
-    ...expectedPlainViceVideoArgs('VICII'),
+    ...expectedUnfilteredViceVideoArgs('VICII'),
     '-model',
     '510'
   ]);
   assert.deepEqual(
     getCommodoreMachineProfile('c64dtv').vice.defaultArgs,
-    expectedPlainViceVideoArgs('VICII')
+    expectedUnfilteredViceVideoArgs('VICII')
   );
   assert.equal(getCommodoreMachineProfile('c64').vice.defaultModel, 'c64');
   assert.equal(getCommodoreViceModel('plus4', 'plus4ntsc')?.displayName, 'Plus/4 NTSC');

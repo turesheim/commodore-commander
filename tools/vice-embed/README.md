@@ -69,10 +69,10 @@ The current patch is intentionally narrow:
   frame emission to a minimum interval of 16 ms, which is fast enough for 50 Hz
   display while still avoiding unbounded frame traffic during warp or
   over-rendering.
-- Commodore Commander default launch arguments disable VICE render filters,
-  double-size/double-scan host scaling, CRTC/VDC vertical stretch, and request
-  nearest GL filtering for the active video chip. The browser canvas is
-  responsible for presentation scaling.
+- Commodore Commander default launch arguments disable VICE render filters and
+  request nearest GL filtering for the active video chip. The browser canvas is
+  responsible for presentation scaling; SDL fullscreen custom resolution is not
+  used by the embedded view.
 - The Theia backend opens a local frame socket, passes it to VICE with
   `-cc-frame-port <port>`, parses binary frames from that socket, and forwards
   them to the browser over a dedicated binary WebSocket. stdout remains for
