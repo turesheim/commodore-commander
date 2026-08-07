@@ -85,9 +85,10 @@ test('patched VICE keeps refreshing hidden embedded SDL canvases', async () => {
   );
   assert.match(patch, /CC_EMBED_BINARY_MAGIC "CCB1"/u);
   assert.match(patch, /CC_EMBED_MIN_FRAME_INTERVAL_MS 16/u);
-  assert.match(patch, /CC_EMBED_PRESENTATION_SCALE_FACTOR 2/u);
+  assert.match(patch, /CC_EMBED_FRAME_SOCKET_SEND_BUFFER_BYTES \(4 \* 1024 \* 1024\)/u);
   assert.match(patch, /CC_EMBED_FRAME_PORT_FLAG "-cc-frame-port"/u);
-  assert.match(patch, /output_width = width \/ sample_step/u);
+  assert.match(patch, /length = \(size_t\)width \* \(size_t\)height \* 4/u);
+  assert.doesNotMatch(patch, /sample_step/u);
   assert.match(patch, /cc_embed_connect_frame_socket/u);
   assert.match(patch, /cc_embed_write_binary_frame_header/u);
   assert.match(patch, /cc_embed_write_frame_bytes/u);

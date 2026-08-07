@@ -64,12 +64,11 @@ The current patch is intentionally narrow:
 - Reset commands trigger a normal machine CPU reset.
 - Joystick commands are reserved by the protocol but are not implemented in the
   native patch yet.
-- Frame output uses a binary `CCB1` header followed by native/logical
-  `rgba8888` bytes. When SDL renders a large 2x presentation surface, the patch
-  samples every second pixel so a C64 frame is transported as 384x272 instead
-  of 768x544. The native patch limits frame emission to a minimum interval of
-  16 ms, which is fast enough for 50 Hz display while still avoiding unbounded
-  frame traffic during warp or over-rendering.
+- Frame output uses a binary `CCB1` header followed by complete SDL
+  `rgba8888` bytes without downsampling or compression. The native patch limits
+  frame emission to a minimum interval of 16 ms, which is fast enough for 50 Hz
+  display while still avoiding unbounded frame traffic during warp or
+  over-rendering.
 - The Theia backend opens a local frame socket, passes it to VICE with
   `-cc-frame-port <port>`, parses binary frames from that socket, and forwards
   them to the browser over a dedicated binary WebSocket. stdout remains for

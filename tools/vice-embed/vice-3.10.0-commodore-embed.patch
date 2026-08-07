@@ -141,11 +141,8 @@ new file mode 100644
 +#define CC_EMBED_BINARY_FRAME_TYPE_RGBA8888 1
 +#define CC_EMBED_BINARY_PIXEL_FORMAT_RGBA8888 1
 +#define CC_EMBED_MIN_FRAME_INTERVAL_MS 16
-+#define CC_EMBED_PRESENTATION_SCALE_THRESHOLD_WIDTH 400
-+#define CC_EMBED_PRESENTATION_SCALE_THRESHOLD_HEIGHT 300
-+#define CC_EMBED_PRESENTATION_SCALE_FACTOR 2
-+#define CC_EMBED_FRAME_SOCKET_SEND_BUFFER_BYTES (1024 * 1024)
-+#define CC_EMBED_FRAME_SOCKET_BACKLOG_LIMIT_BYTES (512 * 1024)
++#define CC_EMBED_FRAME_SOCKET_SEND_BUFFER_BYTES (4 * 1024 * 1024)
++#define CC_EMBED_FRAME_SOCKET_BACKLOG_LIMIT_BYTES (2 * 1024 * 1024)
 +
 +static int cc_embed_enabled = 0;
 +static int cc_embed_frame_port = 0;
@@ -300,9 +297,6 @@ new file mode 100644
 +    uint8_t *target;
 +    int x;
 +    int y;
-+    int sample_step;
-+    int output_width;
-+    int output_height;
 +    uint32_t now;
 +    size_t length;
 +
@@ -325,13 +319,7 @@ new file mode 100644
 +    cc_embed_force_next_frame = 0;
 +    cc_embed_last_frame_ticks = now;
 +
-+    sample_step = (width > CC_EMBED_PRESENTATION_SCALE_THRESHOLD_WIDTH ||
-+                   height > CC_EMBED_PRESENTATION_SCALE_THRESHOLD_HEIGHT)
-+        ? CC_EMBED_PRESENTATION_SCALE_FACTOR
-+        : 1;
-+    output_width = width / sample_step;
-+    output_height = height / sample_step;
-+    length = (size_t)output_width * (size_t)output_height * 4;
++    length = (size_t)width * (size_t)height * 4;
 +    rgba = (uint8_t *)malloc(length);
 +    if (rgba == NULL) {
 +        cc_embed_emit_status("error", "Could not allocate embedded frame buffer.");
@@ -340,14 +328,14 @@ new file mode 100644
 +
 +    target = rgba;
 +    source = (const uint8_t *)pixels;
-+    for (y = 0; y < output_height; y++) {
-+        const uint8_t *row = source + (pitch * y * sample_step);
-+        for (x = 0; x < output_width; x++) {
++    for (y = 0; y < height; y++) {
++        const uint8_t *row = source + (pitch * y);
++        for (x = 0; x < width; x++) {
 +            uint8_t r;
 +            uint8_t g;
 +            uint8_t b;
 +            uint8_t a;
-+            uint32_t pixel = cc_embed_get_pixel(row, x * sample_step, format);
++            uint32_t pixel = cc_embed_get_pixel(row, x, format);
 +            SDL_GetRGBA(pixel, format, &r, &g, &b, &a);
 +            *target++ = r;
 +            *target++ = g;
@@ -360,8 +348,8 @@ new file mode 100644
 +    (void)cc_embed_write_binary_frame(
 +        cc_embed_frame_id,
 +        (uint64_t)now,
-+        (uint16_t)output_width,
-+        (uint16_t)output_height,
++        (uint16_t)width,
++        (uint16_t)height,
 +        rgba,
 +        length);
 +    free(rgba);

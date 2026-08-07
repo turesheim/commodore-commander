@@ -42,19 +42,17 @@ offset  size  value
 32      n     raw RGBA bytes, width * height * 4
 ```
 
-The native patch emits logical/native `rgba8888` frames. When SDL presents a
-large 2x surface such as 768x544, the patch samples every second pixel and
-transports 384x272 instead; this preserves the C64 pixel grid while avoiding
-double-sized presentation pixels on the transport. Frame emission is limited to a
-minimum interval of 16 ms to avoid flooding the frame transport during warp or
-over-rendering. `CommodoreViceEmbedServiceImpl` opens the local frame socket,
-launches VICE with its port, parses the binary records from that socket, and
-publishes them to the browser over `/services/commodore-commander/vice-embed/frames`
-as binary WebSocket messages. The service still accepts `CCB1` records on
-stdout as a compatibility fallback, but the high-rate display path does not
-depend on DAP or the DAP stdout channel. Debug launches reserve the same backend
-frame socket before VICE starts; the debug adapter never forwards video frames
-as DAP events.
+The native patch emits complete SDL `rgba8888` frames without downsampling or
+compression; the browser canvas is responsible for presentation scaling. Frame
+emission is limited to a minimum interval of 16 ms to avoid flooding the frame
+transport during warp or over-rendering. `CommodoreViceEmbedServiceImpl` opens
+the local frame socket, launches VICE with its port, parses the binary records
+from that socket, and publishes them to the browser over
+`/services/commodore-commander/vice-embed/frames` as binary WebSocket messages.
+The service still accepts `CCB1` records on stdout as a compatibility fallback,
+but the high-rate display path does not depend on DAP or the DAP stdout channel.
+Debug launches reserve the same backend frame socket before VICE starts; the
+debug adapter never forwards video frames as DAP events.
 
 ## Commodore Commander to VICE
 
