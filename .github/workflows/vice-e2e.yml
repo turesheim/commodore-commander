@@ -49,7 +49,11 @@ jobs:
           cache: npm
 
       - name: Install npm dependencies
-        run: npm ci --workspace @commodore-commander/debug-adapter --include-workspace-root=false
+        run: |
+          npm ci --workspace @commodore-commander/debug-adapter --include-workspace-root=false --no-audit || {
+            npm cache verify
+            npm ci --workspace @commodore-commander/debug-adapter --include-workspace-root=false --no-audit
+          }
 
       - name: Install VICE
         run: |
@@ -150,7 +154,11 @@ jobs:
           TMPDIR: ${{ runner.temp }}
           TMP: ${{ runner.temp }}
           TEMP: ${{ runner.temp }}
-        run: npm ci
+        run: |
+          npm ci --no-audit || {
+            npm cache verify
+            npm ci --no-audit
+          }
 
       - name: Build Theia Electron app
         env:
