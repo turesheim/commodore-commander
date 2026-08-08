@@ -36,6 +36,17 @@ npm run vice:package
 npm run vice:assets
 ```
 
+The Theia extension build also checks this staged runtime. If
+`tools/vice-embed/dist/darwin-arm64/VICE.app` is missing, or older than the
+VICE patch or Makefile, `packages/theia-extension/scripts/sync-vice-assets.mjs`
+automatically runs:
+
+```sh
+make -C tools/vice-embed package
+```
+
+before copying the runtime into `packages/theia-extension/assets`.
+
 The Makefile exports VICE `v3.10` from SourceForge SVN, applies
 `vice-3.10.0-commodore-embed.patch`, runs VICE autotools/configure, builds,
 installs to a local prefix, stages a `VICE.app` layout, bundles non-system
@@ -45,9 +56,10 @@ Homebrew/local dylibs when possible, ad-hoc signs on macOS, and verifies that
 The patch adds a small SDL-only transport enabled with `-cc-embed`. The patched
 emulator still runs as an external process, but its SDL window is hidden while
 it publishes rendered frames to a local loopback socket and accepts control
-input on stdin. Commodore Commander launches that independent frame socket from
-`CommodoreViceEmbedServiceImpl` and paints the latest frame into the Machine
-view canvas without routing display updates through DAP.
+input on an inherited command file descriptor. Commodore Commander launches
+that independent frame socket from `CommodoreViceEmbedServiceImpl` and paints
+the latest frame into the Machine view canvas without routing display updates
+through DAP.
 
 The current patch is intentionally narrow:
 
@@ -55,12 +67,22 @@ The current patch is intentionally narrow:
 - Hidden embedded SDL windows still run through the canvas refresh path so
   frames are emitted without showing the native window.
 - Keyboard input reuses the SDL keyboard path in `src/arch/sdl/kbd.c`.
+  Commodore Commander normalizes browser-visible printable keys to VICE's stock
+  SDL symbolic US keymap (`-keymap 0 -keyboardmapping 0`). Unsupported printable
+  host characters are ignored explicitly instead of falling through to
+  positional keyCode mapping. Host Shift and Option are treated as host input
+  details, not user-facing Commodore Shift chords. A narrow C64 matrix fallback
+  handles keys the SDL symbolic map cannot reconstruct from browser events,
+  including shifted top-row symbols, C64 F1-F8 shifted function-key pairs, the
+  Nordic Mac `¤` to C64 `$`, C64 up-arrow/pi, DEL/Backspace, cursor keys, and
+  `<`/`>`.
 - Mouse input is sent as relative movement and button commands from the browser
   pointer-lock capture path and is pushed into VICE's SDL event queue.
 - The embedded transport can open VICE's SDL menu directly. Theia maps F12 to
   that command when the embedded emulator is active. While that menu is active,
-  the patch polls stdin from the menu event loop and turns embedded keyboard
-  commands into SDL key events so the menu can be controlled from Theia.
+  embedded keyboard commands are turned into SDL key events so the menu can be
+  controlled from Theia. Command input is consumed from VICE's SDL/main loop so
+  SDL and AppKit operations stay on the main thread.
 - Reset commands trigger a normal machine CPU reset.
 - Joystick commands are reserved by the protocol but are not implemented in the
   native patch yet.
@@ -80,11 +102,12 @@ The current patch is intentionally narrow:
   device selection remains controlled by VICE's own menu or explicit launch
   arguments.
 - The Theia backend opens a local frame socket, passes it to VICE with
-  `-cc-frame-port <port>`, parses binary frames from that socket, and forwards
-  them to the browser over a dedicated binary WebSocket. stdout remains for
-  JSON status/logging and as a compatibility fallback for manual `-cc-embed`
-  launches without a frame port. Debug launches use the same frame socket; the
-  debug adapter does not forward video frames as DAP events.
+  `-cc-frame-port <port>`, passes command input with `-cc-command-fd 3`, parses
+  binary frames from that socket, and forwards them to the browser over a
+  dedicated binary WebSocket. stdout remains for JSON status/logging and as a
+  compatibility fallback for manual `-cc-embed` launches without a frame port.
+  Debug launches use the same frame socket and command fd; the debug adapter
+  does not forward video frames as DAP events.
 
 After building patched VICE, point `commodoreCommander.VICE.runtimePath` at the
 runtime root that contains `share/vice`, or run `make -C tools/vice-embed assets`
@@ -94,3 +117,5 @@ For CI lanes that deliberately use an external system VICE instead of a bundled
 runtime, set `COMMODORE_COMMANDER_SKIP_VICE_ASSETS=1` during the Theia build.
 For local experiments with a separately built app bundle, set
 `COMMODORE_COMMANDER_PATCHED_VICE_APP=/path/to/VICE.app`.
+To copy an existing staged runtime without triggering the automatic stale check,
+set `COMMODORE_COMMANDER_SKIP_VICE_AUTO_REBUILD=1`.

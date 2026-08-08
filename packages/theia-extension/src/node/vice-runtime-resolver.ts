@@ -30,6 +30,10 @@ export const VICE_DARWIN_ARM64_RESOURCES = path.join(
 const VICE_RESOURCES_SUBDIRECTORY = path.join('share', 'vice');
 const VICE_C64_RESOURCE_SUBDIRECTORY = 'C64';
 const VICE_MOUSE_RELEASE_FLAG = '+mouse';
+const VICE_KEYMAP_INDEX_FLAG = '-keymap';
+const VICE_SYMBOLIC_KEYMAP_INDEX = '0';
+const VICE_KEYBOARD_MAPPING_FLAG = '-keyboardmapping';
+const VICE_US_KEYBOARD_MAPPING = '0';
 
 export interface ViceRuntimeResolutionOptions {
   runtimeDirectory?: string;
@@ -96,10 +100,14 @@ export function createViceArgs(
 export function createEmbeddedViceArgs(
   viceArgs: readonly string[]
 ): string[] {
-  if (hasViceMouseGrabSetting(viceArgs)) {
-    return [...viceArgs];
-  }
-  return [VICE_EMBED_MOUSE_GRAB_FLAG, ...viceArgs];
+  return [
+    ...(hasViceMouseGrabSetting(viceArgs) ? [] : [VICE_EMBED_MOUSE_GRAB_FLAG]),
+    ...viceArgs,
+    VICE_KEYMAP_INDEX_FLAG,
+    VICE_SYMBOLIC_KEYMAP_INDEX,
+    VICE_KEYBOARD_MAPPING_FLAG,
+    VICE_US_KEYBOARD_MAPPING
+  ];
 }
 
 export async function getViceResourcesPath(

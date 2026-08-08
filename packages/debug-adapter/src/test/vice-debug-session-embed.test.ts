@@ -322,9 +322,10 @@ const frameSocket = net.createConnection({
   });
 });
 
+const commandInput = resolveCommandInput();
 let input = '';
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', (chunk) => {
+commandInput.setEncoding('utf8');
+commandInput.on('data', (chunk) => {
   input += chunk;
   let newlineIndex = input.indexOf('\\n');
   while (newlineIndex >= 0) {
@@ -355,6 +356,17 @@ process.stdin.on('data', (chunk) => {
 });
 
 setInterval(() => {}, 1000);
+
+function resolveCommandInput() {
+  const commandFdIndex = process.argv.indexOf('-cc-command-fd');
+  if (commandFdIndex >= 0 && process.argv[commandFdIndex + 1]) {
+    const fd = Number(process.argv[commandFdIndex + 1]);
+    if (Number.isInteger(fd) && fd >= 0) {
+      return fs.createReadStream(null, { fd, autoClose: false });
+    }
+  }
+  return process.stdin;
+}
 
 function sendBinaryFrame(socket, frame) {
   const header = Buffer.alloc(32);

@@ -85,6 +85,9 @@ import {
   CommodoreMachineProfileSelectionService
 } from './commodore-machine-profile-selection';
 import {
+  COMMODORE_EMULATOR_SHORTCUT_PREFERENCE_BINDING
+} from './commodore-emulator-shortcuts';
+import {
   CommodoreMachineProfileWidget
 } from './commodore-machine-profile-widget';
 import { CommodoreCommanderScreenCaptureContribution } from './commodore-commander-screen-capture-contribution';
@@ -257,6 +260,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
   bind(CommandContribution).toService(CommodoreCommanderWelcomeContribution);
   bind(PreferenceContribution).toConstantValue(
     COMMODORE_MACHINE_PROFILE_PREFERENCE_BINDING
+  );
+  bind(PreferenceContribution).toConstantValue(
+    COMMODORE_EMULATOR_SHORTCUT_PREFERENCE_BINDING
   );
   bind(PreferenceContribution).toConstantValue(
     COMMODORE_COMMANDER_TOOL_PREFERENCE_BINDING

@@ -90,7 +90,7 @@ diff --git a/src/arch/sdl/cc_embed.c b/src/arch/sdl/cc_embed.c
 new file mode 100644
 --- /dev/null
 +++ b/src/arch/sdl/cc_embed.c
-@@ -0,0 +1,779 @@
+@@ -0,0 +1,946 @@
 +/*
 + * cc_embed.c - Commodore Commander VICE embedding transport.
 + *
@@ -133,6 +133,7 @@ new file mode 100644
 +
 +#define CC_EMBED_FLAG "-cc-embed"
 +#define CC_EMBED_FRAME_PORT_FLAG "-cc-frame-port"
++#define CC_EMBED_COMMAND_FD_FLAG "-cc-command-fd"
 +#define CC_EMBED_PREFIX "CCV1 "
 +#define CC_EMBED_PROTOCOL "commodore-vice-embed-v1"
 +#define CC_EMBED_LINE_BYTES 4096
@@ -143,9 +144,13 @@ new file mode 100644
 +#define CC_EMBED_MIN_FRAME_INTERVAL_MS 16
 +#define CC_EMBED_FRAME_SOCKET_SEND_BUFFER_BYTES (4 * 1024 * 1024)
 +#define CC_EMBED_FRAME_SOCKET_BACKLOG_LIMIT_BYTES (2 * 1024 * 1024)
++#define CC_EMBED_MATRIX_SHIFT_KEY SDLK_RSHIFT
++#define CC_EMBED_C64_MATRIX_ROWS 8
++#define CC_EMBED_C64_MATRIX_COLS 8
 +
 +static int cc_embed_enabled = 0;
 +static int cc_embed_frame_port = 0;
++static int cc_embed_command_fd = 0;
 +static int cc_embed_frame_socket = -1;
 +static uint32_t cc_embed_frame_id = 0;
 +static uint32_t cc_embed_last_frame_ticks = 0;
@@ -153,10 +158,14 @@ new file mode 100644
 +static int cc_embed_skip_current_frame = 0;
 +static char cc_embed_line[CC_EMBED_LINE_BYTES];
 +static size_t cc_embed_line_len = 0;
++static int cc_embed_matrix_shift_count = 0;
++static int cc_embed_matrix_key_down[CC_EMBED_C64_MATRIX_ROWS][CC_EMBED_C64_MATRIX_COLS];
++static int cc_embed_matrix_key_shift_down[CC_EMBED_C64_MATRIX_ROWS][CC_EMBED_C64_MATRIX_COLS];
 +
 +static void cc_embed_emit_hello(void);
 +static void cc_embed_emit_status(const char *state, const char *message);
-+static void cc_embed_set_stdin_nonblocking(void);
++static void cc_embed_set_fd_nonblocking(int fd);
++static int cc_embed_read_commands(void);
 +static void cc_embed_connect_frame_socket(void);
 +static void cc_embed_close_frame_socket(void);
 +static int cc_embed_should_use_frame_socket(void);
@@ -166,9 +175,20 @@ new file mode 100644
 +static void cc_embed_handle_key(const char *payload);
 +static void cc_embed_handle_mouse(const char *payload);
 +static void cc_embed_push_sdl_key(SDLKey key, SDLMod mod, int pressed);
++static int cc_embed_apply_matrix_key(SDLKey key,
++                                     SDLMod mod,
++                                     int row,
++                                     int col,
++                                     int shift,
++                                     int pressed);
++static void cc_embed_set_matrix_shift(int pressed);
 +static void cc_embed_apply_mouse_motion(int xrel, int yrel);
 +static void cc_embed_apply_mouse_button(int button, int pressed);
 +static int cc_embed_json_bool(const char *json, const char *name, int *value);
++static int cc_embed_json_bool_or_fallback(const char *json,
++                                         const char *primary_name,
++                                         const char *fallback_name,
++                                         int *value);
 +static int cc_embed_json_int(const char *json, const char *name, int *value);
 +static int cc_embed_json_has_string(const char *json, const char *name, const char *value);
 +static SDLKey cc_embed_dom_key_to_sdl(int key_code, const char *payload);
@@ -220,6 +240,19 @@ new file mode 100644
 +            }
 +            continue;
 +        }
++        if (strcmp(args[source], CC_EMBED_COMMAND_FD_FLAG) == 0) {
++            if (source + 1 < *argc) {
++                char *endptr;
++                long parsed_fd = strtol(args[source + 1], &endptr, 10);
++                if (endptr != args[source + 1] &&
++                    parsed_fd >= 0 &&
++                    parsed_fd <= 255) {
++                    cc_embed_command_fd = (int)parsed_fd;
++                }
++                source++;
++            }
++            continue;
++        }
 +        args[target++] = args[source];
 +    }
 +    args[target] = NULL;
@@ -230,7 +263,7 @@ new file mode 100644
 +    }
 +
 +    setvbuf(stdout, NULL, _IONBF, 0);
-+    cc_embed_set_stdin_nonblocking();
++    cc_embed_set_fd_nonblocking(cc_embed_command_fd);
 +    cc_embed_connect_frame_socket();
 +    cc_embed_emit_hello();
 +    if (cc_embed_should_use_frame_socket() && !cc_embed_frame_socket_connected()) {
@@ -247,27 +280,34 @@ new file mode 100644
 +
 +void cc_embed_poll_commands(void)
 +{
++    (void)cc_embed_read_commands();
++}
++
++static int cc_embed_read_commands(void)
++{
 +#ifndef WINDOWS_COMPILE
 +    char buffer[512];
 +    ssize_t count;
 +    ssize_t index;
++    int read_any = 0;
 +
 +    if (!cc_embed_enabled) {
-+        return;
++        return 0;
 +    }
 +
 +    for (;;) {
-+        count = read(STDIN_FILENO, buffer, sizeof(buffer));
++        count = read(cc_embed_command_fd, buffer, sizeof(buffer));
 +        if (count < 0) {
 +            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
-+                return;
++                return read_any;
 +            }
 +            cc_embed_emit_status("error", "Could not read embedded input stream.");
-+            return;
++            return read_any;
 +        }
 +        if (count == 0) {
-+            return;
++            return read_any;
 +        }
++        read_any = 1;
 +
 +        for (index = 0; index < count; index++) {
 +            char c = buffer[index];
@@ -283,6 +323,8 @@ new file mode 100644
 +            }
 +        }
 +    }
++#else
++    return 0;
 +#endif
 +}
 +
@@ -379,12 +421,12 @@ new file mode 100644
 +           message);
 +}
 +
-+static void cc_embed_set_stdin_nonblocking(void)
++static void cc_embed_set_fd_nonblocking(int fd)
 +{
 +#ifndef WINDOWS_COMPILE
-+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
++    int flags = fcntl(fd, F_GETFL, 0);
 +    if (flags >= 0) {
-+        (void)fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
++        (void)fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 +    }
 +#endif
 +}
@@ -434,6 +476,7 @@ new file mode 100644
 +    }
 +
 +    cc_embed_frame_socket = socket_fd;
++    cc_embed_set_fd_nonblocking(cc_embed_frame_socket);
 +#endif
 +}
 +
@@ -492,35 +535,71 @@ new file mode 100644
 +static void cc_embed_handle_key(const char *payload)
 +{
 +    int key_code = 0;
++    int sdl_key_code = 0;
++    int use_sdl_key_code = 0;
++    int use_key_code = 0;
++    int matrix_row = -1;
++    int matrix_col = -1;
++    int matrix_shift = 0;
++    int use_matrix_key = 0;
 +    int pressed = 0;
 +    int modifier = 0;
 +    SDLKey key;
 +    SDLMod mod = KMOD_NONE;
 +
-+    if (!cc_embed_json_int(payload, "\"keyCode\"", &key_code)) {
++    use_sdl_key_code = cc_embed_json_int(payload, "\"sdlKeyCode\"", &sdl_key_code);
++    use_key_code = cc_embed_json_int(payload, "\"keyCode\"", &key_code);
++    use_matrix_key = cc_embed_json_int(payload, "\"matrixRow\"", &matrix_row) &&
++                     cc_embed_json_int(payload, "\"matrixCol\"", &matrix_col);
++    if (!use_sdl_key_code && !use_key_code && !use_matrix_key) {
 +        return;
 +    }
 +    if (!cc_embed_json_bool(payload, "\"pressed\"", &pressed)) {
 +        return;
 +    }
-+
-+    key = cc_embed_dom_key_to_sdl(key_code, payload);
-+    if (key == SDLK_UNKNOWN) {
-+        return;
++    if (!cc_embed_json_bool(payload, "\"matrixShift\"", &matrix_shift)) {
++        matrix_shift = 0;
 +    }
 +
-+    if (cc_embed_json_bool(payload, "\"shift\"", &modifier) && modifier) {
++    key = SDLK_UNKNOWN;
++    if (use_sdl_key_code) {
++        key = (SDLKey)sdl_key_code;
++    } else if (use_key_code) {
++        key = cc_embed_dom_key_to_sdl(key_code, payload);
++    }
++
++    if (cc_embed_json_bool_or_fallback(payload,
++                                       use_sdl_key_code ? "\"sdlShift\"" : NULL,
++                                       "\"shift\"",
++                                       &modifier) && modifier) {
 +        mod |= KMOD_LSHIFT;
 +    }
-+    if (cc_embed_json_bool(payload, "\"ctrl\"", &modifier) && modifier) {
++    if (cc_embed_json_bool_or_fallback(payload,
++                                       use_sdl_key_code ? "\"sdlCtrl\"" : NULL,
++                                       "\"ctrl\"",
++                                       &modifier) && modifier) {
 +        mod |= KMOD_LCTRL;
 +    }
-+    if (cc_embed_json_bool(payload, "\"alt\"", &modifier) && modifier) {
++    if (cc_embed_json_bool_or_fallback(payload,
++                                       use_sdl_key_code ? "\"sdlAlt\"" : NULL,
++                                       "\"alt\"",
++                                       &modifier) && modifier) {
 +        mod |= KMOD_LALT;
 +    }
 +
 +    if (sdl_menu_state) {
-+        cc_embed_push_sdl_key(key, mod, pressed);
++        if (key != SDLK_UNKNOWN) {
++            cc_embed_push_sdl_key(key, mod, pressed);
++        }
++        return;
++    }
++
++    if (key == SDLK_UNKNOWN) {
++        return;
++    }
++
++    if (use_matrix_key &&
++        cc_embed_apply_matrix_key(key, mod, matrix_row, matrix_col, matrix_shift, pressed)) {
 +        return;
 +    }
 +
@@ -564,6 +643,54 @@ new file mode 100644
 +    SDL_PushEvent(&event);
 +}
 +
++static int cc_embed_apply_matrix_key(SDLKey key,
++                                     SDLMod mod,
++                                     int row,
++                                     int col,
++                                     int shift,
++                                     int pressed)
++{
++    int had_shift;
++
++    if (row < 0 || row >= CC_EMBED_C64_MATRIX_ROWS ||
++        col < 0 || col >= CC_EMBED_C64_MATRIX_COLS) {
++        return 0;
++    }
++
++    shift = shift ? 1 : 0;
++    if (pressed) {
++        if (!cc_embed_matrix_key_down[row][col]) {
++            cc_embed_matrix_key_down[row][col] = 1;
++            cc_embed_matrix_key_shift_down[row][col] = shift;
++            if (shift && cc_embed_matrix_shift_count++ == 0) {
++                cc_embed_set_matrix_shift(1);
++            }
++        } else if (shift && !cc_embed_matrix_key_shift_down[row][col]) {
++            cc_embed_matrix_key_shift_down[row][col] = 1;
++            if (cc_embed_matrix_shift_count++ == 0) {
++                cc_embed_set_matrix_shift(1);
++            }
++        }
++        cc_embed_push_sdl_key(key, mod, 1);
++        return 1;
++    }
++
++    had_shift = cc_embed_matrix_key_shift_down[row][col];
++    cc_embed_matrix_key_down[row][col] = 0;
++    cc_embed_matrix_key_shift_down[row][col] = 0;
++    cc_embed_push_sdl_key(key, mod, 0);
++    if (had_shift && cc_embed_matrix_shift_count > 0 &&
++        --cc_embed_matrix_shift_count == 0) {
++        cc_embed_set_matrix_shift(0);
++    }
++    return 1;
++}
++
++static void cc_embed_set_matrix_shift(int pressed)
++{
++    cc_embed_push_sdl_key(CC_EMBED_MATRIX_SHIFT_KEY, KMOD_NONE, pressed);
++}
++
 +static void cc_embed_apply_mouse_motion(int xrel, int yrel)
 +{
 +    if (_mouse_enabled) {
@@ -601,6 +728,17 @@ new file mode 100644
 +        return 1;
 +    }
 +    return 0;
++}
++
++static int cc_embed_json_bool_or_fallback(const char *json,
++                                         const char *primary_name,
++                                         const char *fallback_name,
++                                         int *value)
++{
++    if (primary_name != NULL && cc_embed_json_bool(json, primary_name, value)) {
++        return 1;
++    }
++    return cc_embed_json_bool(json, fallback_name, value);
 +}
 +
 +static int cc_embed_json_int(const char *json, const char *name, int *value)
@@ -661,6 +799,8 @@ new file mode 100644
 +            return SDLK_RIGHT;
 +        case 40:
 +            return SDLK_DOWN;
++        case 46:
++            return SDLK_DELETE;
 +        case 112:
 +            return SDLK_F1;
 +        case 113:
@@ -685,6 +825,28 @@ new file mode 100644
 +            return SDLK_F11;
 +        case 123:
 +            return SDLK_F12;
++        case 186:
++            return (SDLKey)';';
++        case 187:
++            return (SDLKey)'=';
++        case 188:
++            return (SDLKey)',';
++        case 189:
++            return (SDLKey)'-';
++        case 190:
++            return (SDLKey)'.';
++        case 191:
++            return (SDLKey)'/';
++        case 192:
++            return (SDLKey)'`';
++        case 219:
++            return (SDLKey)'[';
++        case 220:
++            return (SDLKey)'\\';
++        case 221:
++            return (SDLKey)']';
++        case 222:
++            return (SDLKey)'\'';
 +        default:
 +            break;
 +    }
@@ -796,6 +958,11 @@ new file mode 100644
 +                if (errno == EINTR) {
 +                    continue;
 +                }
++                if (errno == EAGAIN || errno == EWOULDBLOCK) {
++                    cc_embed_close_frame_socket();
++                    cc_embed_emit_status("error", "Embedded frame socket would block.");
++                    return 0;
++                }
 +                cc_embed_close_frame_socket();
 +                cc_embed_emit_status("error", "Could not write embedded frame socket.");
 +                return 0;
@@ -875,7 +1042,18 @@ diff --git a/src/arch/sdl/ui.c b/src/arch/sdl/ui.c
 +++ b/src/arch/sdl/ui.c
 @@ -37,0 +38 @@
 +#include "cc_embed.h"
+@@ -261,0 +263,2 @@ void ui_dispatch_events(void)
++    cc_embed_poll_commands();
++
 @@ -320,0 +322,2 @@ ui_menu_action_t ui_dispatch_events_for_menu_action(void)
++    cc_embed_poll_commands();
++
+diff --git a/src/arch/sdl/vsyncarch.c b/src/arch/sdl/vsyncarch.c
+--- a/src/arch/sdl/vsyncarch.c
++++ b/src/arch/sdl/vsyncarch.c
+@@ -31,0 +32 @@
++#include "cc_embed.h"
+@@ -84,0 +86,2 @@ void vsyncarch_presync(void)
 +    cc_embed_poll_commands();
 +
 diff --git a/src/arch/sdl/sdlmain.c b/src/arch/sdl/sdlmain.c

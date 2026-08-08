@@ -35,6 +35,12 @@ const source = process.env.COMMODORE_COMMANDER_PATCHED_VICE_APP
     'darwin-arm64',
     'VICE.app'
   );
+const usesExternalViceApp = Boolean(process.env.COMMODORE_COMMANDER_PATCHED_VICE_APP);
+const viceEmbedDir = path.join(repoRoot, 'tools', 'vice-embed');
+const viceEmbedBuildInputs = [
+  path.join(viceEmbedDir, 'Makefile'),
+  path.join(viceEmbedDir, 'vice-3.10.0-commodore-embed.patch')
+];
 const target = path.join(
   scriptDir,
   '..',
@@ -57,6 +63,10 @@ await cp(sidScoreCliSource, sidScoreCliTarget, {
 if (process.env.COMMODORE_COMMANDER_SKIP_VICE_ASSETS === '1') {
   console.warn('Skipping bundled VICE asset sync.');
   process.exit(0);
+}
+
+if (!usesExternalViceApp && process.env.COMMODORE_COMMANDER_SKIP_VICE_AUTO_REBUILD !== '1') {
+  await ensurePatchedVicePackage(source);
 }
 
 if (!(await pathExists(source))) {
@@ -127,6 +137,38 @@ async function makeWritable(entryPath) {
   );
 }
 
+async function ensurePatchedVicePackage(appPath) {
+  if (!(await isPatchedVicePackageStale(appPath))) {
+    return;
+  }
+
+  console.warn(
+    'Patched embedded VICE is missing or stale; rebuilding with `make -C tools/vice-embed package`.'
+  );
+  await runInherited('make', ['-C', viceEmbedDir, 'package']);
+}
+
+async function isPatchedVicePackageStale(appPath) {
+  const packageStamp = path.join(
+    appPath,
+    'Contents',
+    'Resources',
+    '.commodore-commander-patched-vice'
+  );
+  if (!(await pathExists(packageStamp))) {
+    return true;
+  }
+
+  const stampStats = await lstat(packageStamp);
+  for (const input of viceEmbedBuildInputs) {
+    const inputStats = await lstat(input);
+    if (inputStats.mtimeMs > stampStats.mtimeMs) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function run(command, args) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -145,6 +187,24 @@ function run(command, args) {
           `${command} ${args.join(' ')} failed with ${
             signal ?? `exit ${code}`
           }${output ? `\n${output}` : ''}`
+        )
+      );
+    });
+  });
+}
+
+function runInherited(command, args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: 'inherit' });
+    child.once('error', reject);
+    child.once('exit', (code, signal) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+      reject(
+        new Error(
+          `${command} ${args.join(' ')} failed with ${signal ?? `exit ${code}`}`
         )
       );
     });

@@ -1,6 +1,7 @@
 import path from 'node:path';
 import type { ChildProcess } from 'node:child_process';
 import { readdir } from 'node:fs/promises';
+import type { Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 
 import type { DebugProtocol } from '@vscode/debugprotocol';
@@ -156,6 +157,7 @@ interface MemoryDisassemblySource {
 export class ViceDebugSession {
   private monitor: ViceMonitorConnection | undefined;
   private child: ChildProcess | undefined;
+  private viceCommandInput: Writable | undefined;
   private debugInfo: KickAssemblerDebugInfo | undefined;
   private programImage: PrgImage | undefined;
   private programDisassembly: PrgDisassemblySource | undefined;
@@ -348,6 +350,7 @@ export class ViceDebugSession {
     this.nextSourceReference = MEMORY_DISASSEMBLY_SOURCE_REFERENCE_BASE;
     this.traceHistory.clear();
     this.viceEmbedStdoutBuffer = Buffer.alloc(0);
+    this.viceCommandInput = undefined;
     this.droppedViceEmbedFrameNoticeSent = false;
 
     if (path.extname(program).toLowerCase() === '.prg') {
@@ -381,6 +384,7 @@ export class ViceDebugSession {
       enableMonitor: useMonitor
     });
     this.child = launch.child;
+    this.viceCommandInput = launch.commandInput;
     this.child.stdout?.on('data', (chunk) => this.handleViceStdout(chunk));
     this.child.stderr?.on('data', (chunk) => {
       const text = chunk.toString();
@@ -392,15 +396,12 @@ export class ViceDebugSession {
         this.sendViceEmbedEvent({
           type: 'status',
           state: exitCode === 0 ? 'stopped' : 'error',
-          message: exitCode === 0
-            ? 'Emulator stopped.'
-            : exitCode === null
-              ? 'Emulator quit with unknown exit code'
-              : `Emulator quit with exit code ${exitCode}`,
+          message: formatViceProcessCloseMessage(exitCode, signal),
           exitCode,
           signal
         });
       }
+      this.viceCommandInput = undefined;
       this.endSession();
     });
 
@@ -578,11 +579,11 @@ export class ViceDebugSession {
   }
 
   private sendViceEmbedCommand(command: ViceEmbedCommand): boolean {
-    const stdin = this.child?.stdin;
-    if (!stdin?.writable) {
+    const commandInput = this.viceCommandInput ?? this.child?.stdin;
+    if (!commandInput?.writable) {
       return false;
     }
-    stdin.write(encodeViceEmbedCommand(command), 'utf8');
+    commandInput.write(encodeViceEmbedCommand(command), 'utf8');
     return true;
   }
 
@@ -1167,6 +1168,7 @@ export class ViceDebugSession {
     const monitor = this.monitor;
     const terminateDebuggee = this.shouldTerminateDebuggee(request);
     this.monitor = undefined;
+    this.viceCommandInput = undefined;
 
     if (terminateDebuggee && child) {
       // Avoid VICE's graceful shutdown paths here; macOS x64sc can crash during exit cleanup.
@@ -2435,6 +2437,22 @@ function sourceForPath(sourcePath: string): DebugProtocol.Source {
     name: sourceNameForPath(sourcePath),
     path: dapSourcePath(sourcePath)
   };
+}
+
+function formatViceProcessCloseMessage(
+  exitCode: number | null,
+  signal: NodeJS.Signals | null
+): string {
+  if (exitCode === 0) {
+    return 'Emulator stopped.';
+  }
+  if (exitCode !== null) {
+    return `Emulator quit with exit code ${exitCode}`;
+  }
+  if (signal) {
+    return `Emulator quit after signal ${signal}`;
+  }
+  return 'Emulator quit with unknown exit code';
 }
 
 function loadedDebugInfoSources(

@@ -75,10 +75,12 @@ type ElectronScreenCaptureStep =
   | { readonly type: 'showReferences' }
   | { readonly type: 'openDebugView' }
   | { readonly type: 'openC64VisualDebugger' }
+  | { readonly type: 'openMachineView' }
   | { readonly type: 'openMemoryView' }
   | { readonly type: 'openOutlineView' }
   | { readonly type: 'openSidSfxEditor' }
   | { readonly type: 'prepareC64VisualDebuggerDemoState' }
+  | { readonly type: 'powerOffMachine' }
   | { readonly type: 'revealMemoryTextColumn' }
   | {
       readonly type: 'editInputValue';
@@ -96,6 +98,10 @@ type ElectronScreenCaptureStep =
       readonly marker?: ScreenCaptureMarker;
     }
   | { readonly type: 'showScreenMemory' }
+  | {
+      readonly type: 'showMachineVirtualKeyboard';
+      readonly timeoutMs?: number;
+    }
   | {
       readonly type: 'showMemoryRange';
       readonly expression: string;
@@ -389,6 +395,19 @@ async function runScreenCaptureStep(
       }
       return;
     }
+    case 'openMachineView': {
+      const opened = await callScreenCaptureApi<boolean>(
+        window,
+        'openMachineView',
+        [],
+        false,
+        timeoutMs
+      );
+      if (!opened) {
+        throw new Error('Unable to open Machine view.');
+      }
+      return;
+    }
     case 'openMemoryView': {
       const opened = await callScreenCaptureApi<boolean>(
         window,
@@ -425,6 +444,19 @@ async function runScreenCaptureStep(
       );
       if (!opened) {
         throw new Error('Unable to open SID SFX editor.');
+      }
+      return;
+    }
+    case 'powerOffMachine': {
+      const poweredOff = await callScreenCaptureApi<boolean>(
+        window,
+        'powerOffMachine',
+        [],
+        false,
+        timeoutMs
+      );
+      if (!poweredOff) {
+        throw new Error('Unable to power off Machine view emulator.');
       }
       return;
     }
@@ -500,6 +532,20 @@ async function runScreenCaptureStep(
       );
       if (!shown) {
         throw new Error('Unable to show screen memory preset.');
+      }
+      return;
+    }
+    case 'showMachineVirtualKeyboard': {
+      const waitTimeoutMs = step.timeoutMs ?? timeoutMs;
+      const shown = await callScreenCaptureApi<boolean>(
+        window,
+        'showMachineVirtualKeyboard',
+        [waitTimeoutMs],
+        false,
+        waitTimeoutMs + 1000
+      );
+      if (!shown) {
+        throw new Error('Unable to show Machine view virtual keyboard.');
       }
       return;
     }

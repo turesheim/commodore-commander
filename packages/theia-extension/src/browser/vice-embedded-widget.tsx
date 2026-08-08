@@ -22,6 +22,10 @@ import {
     calculateViceCanvasDisplaySize,
     type ViceCanvasDisplaySize
 } from './vice-canvas-scaling';
+import {
+    createViceEmbedKeyEvent,
+    isViceEmbedCommodoreFunctionKeyEvent
+} from './vice-keyboard-mapping';
 
 export const VICE_EMBEDDED_WIDGET_ID = 'commodore-commander.vice-embedded';
 
@@ -47,6 +51,7 @@ export class ViceEmbeddedWidget
     protected statusMessage = 'Idle';
     protected lastOutput = '';
     protected starting = false;
+    protected hostCommodorePressed = false;
 
     @postConstruct()
     protected init(): void {
@@ -61,10 +66,14 @@ export class ViceEmbeddedWidget
             this.onViceEmbedBinaryFrame,
             this.onViceEmbedFrameSocketError
         );
+        document.addEventListener('keydown', this.handleDocumentKeyDown, true);
+        document.addEventListener('keyup', this.handleDocumentKeyUp, true);
         this.update();
     }
 
     override dispose(): void {
+        document.removeEventListener('keydown', this.handleDocumentKeyDown, true);
+        document.removeEventListener('keyup', this.handleDocumentKeyUp, true);
         this.resizeObserver?.disconnect();
         this.resizeObserver = undefined;
         this.viceEmbedService.setClient(undefined);
@@ -298,23 +307,70 @@ export class ViceEmbeddedWidget
         this.sendKeyEvent(event, false);
     };
 
+    protected readonly handleDocumentKeyDown = (event: KeyboardEvent): void => {
+        this.handleCommodoreFunctionKey(event, true);
+    };
+
+    protected readonly handleDocumentKeyUp = (event: KeyboardEvent): void => {
+        this.handleCommodoreFunctionKey(event, false);
+    };
+
+    protected handleCommodoreFunctionKey(
+        event: KeyboardEvent,
+        pressed: boolean
+    ): boolean {
+        if (
+            this.status !== 'running' ||
+            this.starting ||
+            !isViceEmbedCommodoreFunctionKeyEvent(event) ||
+            !this.hasKeyboardFocus(event)
+        ) {
+            return false;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        void this.viceEmbedService.sendKey(createViceEmbedKeyEvent(event, pressed));
+        return true;
+    }
+
+    protected hasKeyboardFocus(event: KeyboardEvent): boolean {
+        const target = event.target;
+        if (target instanceof Node && this.node.contains(target)) {
+            return true;
+        }
+        const activeElement = document.activeElement;
+        return activeElement instanceof Node && this.node.contains(activeElement);
+    }
+
     protected sendKeyEvent(event: React.KeyboardEvent<HTMLCanvasElement>, pressed: boolean): void {
         if (!event.metaKey) {
             event.preventDefault();
             event.stopPropagation();
         }
-        const keyEvent: CommodoreViceEmbedKeyEvent = {
-            code: event.code,
-            key: event.key,
-            keyCode: event.keyCode,
-            pressed,
-            repeat: event.repeat,
-            shift: event.shiftKey,
-            ctrl: event.ctrlKey,
-            alt: event.altKey,
-            meta: event.metaKey
-        };
+        if (isHostCommodoreKeyEvent(event)) {
+            this.hostCommodorePressed = pressed;
+        }
+        const keyEvent: CommodoreViceEmbedKeyEvent =
+            createViceEmbedKeyEvent(this.keyboardEventForEmulator(event), pressed);
         void this.viceEmbedService.sendKey(keyEvent);
+    }
+
+    protected keyboardEventForEmulator(
+        event: React.KeyboardEvent<HTMLCanvasElement> | KeyboardEvent
+    ): React.KeyboardEvent<HTMLCanvasElement> | KeyboardEvent | NormalizedKeyboardEventLike {
+        if (
+            this.hostCommodorePressed &&
+            event.altKey &&
+            !isHostCommodoreKeyEvent(event)
+        ) {
+            const unmodified = unmodifiedKeyboardEventFromCode(event);
+            if (unmodified) {
+                return unmodified;
+            }
+        }
+        return event;
     }
 
     protected drawFrame(): void {
@@ -366,6 +422,79 @@ function toClampedBytes(bytes: ViceEmbedFrameBytes): Uint8ClampedArray<ArrayBuff
     return bytes instanceof Uint8ClampedArray && bytes.buffer instanceof ArrayBuffer
         ? bytes as Uint8ClampedArray<ArrayBuffer>
         : new Uint8ClampedArray(bytes) as Uint8ClampedArray<ArrayBuffer>;
+}
+
+interface NormalizedKeyboardEventLike {
+    readonly code: string;
+    readonly key: string;
+    readonly keyCode: number;
+    readonly repeat: boolean;
+    readonly shiftKey: boolean;
+    readonly ctrlKey: boolean;
+    readonly altKey: boolean;
+    readonly metaKey: boolean;
+}
+
+function isHostCommodoreKeyEvent(
+    event: Pick<KeyboardEvent, 'code'>
+): boolean {
+    return event.code === 'AltLeft';
+}
+
+function unmodifiedKeyboardEventFromCode(
+    event: Pick<KeyboardEvent, 'code' | 'repeat' | 'shiftKey' | 'ctrlKey' | 'metaKey'>
+): NormalizedKeyboardEventLike | undefined {
+    const key = unmodifiedKeyFromCode(event.code);
+    if (!key) {
+        return undefined;
+    }
+    return {
+        code: event.code,
+        key,
+        keyCode: key.length === 1 ? key.toUpperCase().charCodeAt(0) : 0,
+        repeat: event.repeat,
+        shiftKey: event.shiftKey,
+        ctrlKey: event.ctrlKey,
+        altKey: false,
+        metaKey: event.metaKey
+    };
+}
+
+function unmodifiedKeyFromCode(code: string): string | undefined {
+    const letterMatch = /^Key([A-Z])$/u.exec(code);
+    if (letterMatch) {
+        return letterMatch[1].toLowerCase();
+    }
+    const digitMatch = /^Digit(\d)$/u.exec(code);
+    if (digitMatch) {
+        return digitMatch[1];
+    }
+    switch (code) {
+        case 'Space':
+            return ' ';
+        case 'Comma':
+            return ',';
+        case 'Period':
+            return '.';
+        case 'Slash':
+            return '/';
+        case 'Semicolon':
+            return ';';
+        case 'Quote':
+            return "'";
+        case 'BracketLeft':
+            return '[';
+        case 'BracketRight':
+            return ']';
+        case 'Minus':
+            return '-';
+        case 'Equal':
+            return '=';
+        case 'Backslash':
+            return '\\';
+        default:
+            return undefined;
+    }
 }
 
 const styles = {
