@@ -60,6 +60,18 @@ test('virtual keyboard cursor keys use compact arrow labels', () => {
   }
 });
 
+test('virtual keyboard layout titles follow the active machine profile', () => {
+  assert.equal(getCommodoreVirtualKeyboardLayout('c64').title, 'C64 Keyboard');
+  assert.equal(getCommodoreVirtualKeyboardLayout('c64dtv').title, 'C64DTV Keyboard');
+  assert.equal(getCommodoreVirtualKeyboardLayout('c128').title, 'C128 Keyboard');
+  assert.equal(getCommodoreVirtualKeyboardLayout('vic20').title, 'VIC-20 Keyboard');
+  assert.equal(getCommodoreVirtualKeyboardLayout('plus4').title, 'Plus/4 Keyboard');
+  assert.equal(getCommodoreVirtualKeyboardLayout('c16').title, 'C16 Keyboard');
+  assert.equal(getCommodoreVirtualKeyboardLayout('pet').title, 'PET Keyboard');
+  assert.equal(getCommodoreVirtualKeyboardLayout('cbm2').title, 'CBM-II Keyboard');
+  assert.equal(getCommodoreVirtualKeyboardLayout('cbm5x0').title, 'CBM 5x0 Keyboard');
+});
+
 test('C64 virtual keyboard control layer follows PETSCII control codes', () => {
   const layout = getCommodoreVirtualKeyboardLayout('c64');
 
@@ -91,7 +103,7 @@ test('PET virtual keyboard layout uses the business keyboard family', () => {
   const layout = getCommodoreVirtualKeyboardLayout('pet');
   const labels = layoutLabels(layout);
 
-  assert.equal(layout.title, 'Business Keyboard');
+  assert.equal(layout.title, 'PET Keyboard');
   assert.ok(labels.includes('KEYPAD 0'));
   assert.ok(labels.includes('KEYPAD ENTER'));
 });

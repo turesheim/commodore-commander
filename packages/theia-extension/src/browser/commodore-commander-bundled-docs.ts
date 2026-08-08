@@ -73,7 +73,7 @@ export const BUNDLED_DOCUMENTS: readonly BundledDocumentationEntry[] = [
   {
     path: 'keyboard-mapping.md',
     label: 'Embedded Emulator Keyboard Mapping',
-    details: 'How Mac keys, PETSCII, and C64 symbols are translated'
+    details: 'How Mac keys, PETSCII, and Commodore symbols are translated'
   },
   {
     path: 'character-set-format.md',

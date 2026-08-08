@@ -27,13 +27,14 @@ test('bundled documentation registry includes the embedded keyboard mapping guid
   assert.match(guide, /Nordic ISO Mac/u);
   assert.match(guide, /Option\+P/u);
   assert.match(guide, /2191/u);
+  assert.match(guide, /not a C64-only tool/u);
   assert.match(guide, /Left Option\/Alt is mapped to the Commodore `C=` key/u);
-  assert.match(guide, /Mac F1-F8 map to Commodore F1-F8/u);
+  assert.match(guide, /Mac F1-F8 map to the active Commodore profile's function keys/u);
   assert.match(guide, /captured before\s+Theia keybindings/u);
   assert.match(guide, /F9-F12 are not Commodore function keys/u);
   assert.match(guide, /F11 toggles a\s+compact virtual keyboard overlay/u);
   assert.match(guide, /virtual keyboard shortcut\s+applies whenever an embedded emulator is running/u);
-  assert.match(guide, /Mouse clicks on virtual keys/u);
+  assert.match(guide, /Mouse clicks on virtual\s+keys/u);
   assert.match(guide, /Commodore logo key/u);
   assert.match(guide, /Drag the\s+top edge of the virtual keyboard/u);
   assert.match(guide, /Commodore extended colors/u);

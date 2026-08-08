@@ -3,6 +3,12 @@
 Commodore Commander maps embedded emulator typing from the character your Mac
 keyboard produces, not from the physical Commodore key position.
 
+The virtual keyboard overlay is selected from the active machine profile. It is
+not a C64-only tool: C64, C64DTV, C128, VIC-20, Plus/4, C16, PET, CBM-II, and
+CBM 5x0 profiles all expose a Commodore keyboard layout. Some of the detailed
+translation rules below are C64-family specific because VICE exposes compatible
+SDL/key-matrix behavior for those machines.
+
 This matters on non-US layouts. On a Nordic ISO Mac keyboard, for example,
 Shift+0 produces `=`, so the embedded emulator receives the Commodore `=` key.
 Pressing plain `0` receives Commodore `0`.
@@ -16,8 +22,9 @@ target Commodore keyboard.
 
 Users do not need to know or press Commodore Shift for normal symbols. Mac
 Shift is treated as a host-side way to produce characters. When the requested
-Commodore symbol requires Shift on a C64 keyboard, Commodore Commander
-synthesizes that emulated Shift internally for that single key press.
+Commodore symbol requires Shift on the active machine keyboard, Commodore
+Commander synthesizes that emulated Shift internally for that single key press
+where the embedded VICE key path can represent it.
 
 Left Option/Alt is mapped to the Commodore `C=` key when the embedded emulator
 has focus. Right Option remains host-only, so it can still be used for normal
@@ -26,11 +33,11 @@ Mac keyboard-layout symbols where the browser reports it separately.
 For example:
 
 - Pressing Shift+2 on a Nordic Mac keyboard produces `"`. Commodore Commander
-  sends the C64 key combination that creates `"`.
+  sends the Commodore key combination that creates `"`.
 - Pressing Shift+7 on a Nordic Mac keyboard produces `/`. Commodore Commander
-  sends the C64 `/` key, not the shifted C64 `?` key.
+  sends the Commodore `/` key, not a shifted `?` key.
 - Pressing Shift+, on a Nordic Mac keyboard produces `;`. Commodore Commander
-  sends the C64 `;` key, not the shifted C64 `]` key.
+  sends the Commodore `;` key, not a shifted `]` key.
 
 Standalone host Shift and Right Option key presses are ignored by the text-entry
 mapping so they do not latch or confuse the emulated Commodore keyboard. Left
@@ -38,8 +45,8 @@ Option is the explicit Commodore modifier.
 
 ## PETSCII
 
-Commodore computers do not use ASCII internally. The C64 screen editor and
-KERNAL interpret the keyboard matrix and then produce PETSCII characters.
+Commodore computers do not use ASCII internally. The emulated KERNAL and
+screen editor interpret keyboard state and then produce PETSCII characters.
 
 Commodore Commander therefore does not send PETSCII bytes directly when you
 type in the embedded emulator. It sends keyboard state to VICE, and the
@@ -49,8 +56,8 @@ like keyboard input rather than pasted text.
 
 ## Common Nordic ISO Mac Cases
 
-The following mappings are handled explicitly for the embedded C64 keyboard
-path:
+The following C64-family mappings are handled explicitly for the embedded VICE
+keyboard path:
 
 | Mac-produced character | Commodore result | Notes |
 | --- | --- | --- |
@@ -79,17 +86,18 @@ the known shifted positions.
 
 ## Producing Pi And Up-Arrow On macOS
 
-The C64 pi and up-arrow symbols are not printed on modern Mac keycaps, but they
-can still be entered from macOS:
+The pi and up-arrow symbols used by Commodore keyboards are not printed on
+modern Mac keycaps, but they can still be entered from macOS:
 
 - `π`: On most Apple keyboard layouts, press Right Option+P if your keyboard
   has a separate right Option key. Left Option is reserved for Commodore `C=`
   while the emulator has focus. If your active layout does not produce pi this
   way, use the virtual keyboard or the Character Viewer with
   Control+Command+Space and search for `pi`.
-- C64 up-arrow: Type the character `^` and Commodore Commander maps it to the
-  C64 up-arrow key. On Nordic ISO Mac layouts, `^` is commonly a dead accent:
-  press the caret/dead-circumflex key, then press Space to commit a plain `^`.
+- Up-arrow: Type the character `^` and Commodore Commander maps it to the
+  Commodore up-arrow key. On Nordic ISO Mac layouts, `^` is commonly a dead
+  accent: press the caret/dead-circumflex key, then press Space to commit a
+  plain `^`.
 - `↑`: Commodore Commander also accepts the real Unicode up-arrow. Use the
   Character Viewer with Control+Command+Space and search for `up arrow`, or
   enable the macOS Unicode Hex Input source and hold Option while typing `2191`.
@@ -100,9 +108,10 @@ convenient shortcut for the symbol.
 
 ## Function Keys
 
-Mac F1-F8 map to Commodore F1-F8 in the embedded emulator. The C64 has four
-physical function keys, with the even-numbered functions produced by shifting
-the same key. Commodore Commander handles that internally:
+Mac F1-F8 map to the active Commodore profile's function keys in the embedded
+emulator where that profile exposes those functions. The C64-family keyboard
+has four physical function keys, with the even-numbered functions produced by
+shifting the same key. Commodore Commander handles that internally:
 
 | Mac key | Commodore result | Notes |
 | --- | --- | --- |
@@ -140,20 +149,21 @@ Shortcut values use a simple key-combination format such as `F11`, `F12`,
 applies whenever an embedded emulator is running. The VICE menu shortcut
 applies when the embedded emulator has focus or mouse capture is active.
 
-When the virtual keyboard is visible, physical typing highlights the Commodore
-key that is actually being driven. Mouse clicks on virtual keys send the same
-normalized keyboard events to the emulator. Click `SHIFT`, `CTRL`, or the
-Commodore logo key to latch that modifier for the next mouse key press. Holding
-a physical Shift, Control, or Left Option key previews the same layer. Drag the
-top edge of the virtual keyboard to move it out of the way.
+When the virtual keyboard is visible, physical typing highlights the key in the
+active Commodore profile that is actually being driven. Mouse clicks on virtual
+keys send the same normalized keyboard events to the emulator. Click `SHIFT`,
+`CTRL`, or the Commodore logo key to latch that modifier for the next mouse key
+press. Holding a physical Shift, Control, or Left Option key previews the same
+layer. Drag the top edge of the virtual keyboard to move it out of the way.
 
 The virtual keycap shows the symbol or action that will be sent for the active
-layer and hides the normal key label while the layer is active. The C64 layout
-includes Shift graphics, Commodore/PETSCII graphics, CTRL color controls,
-Commodore extended colors, and reverse-video controls. Graphic keycaps are
-rendered from the bundled C64 uppercase/graphics character ROM as SVG paths, so
-they match the C64 screen glyphs instead of relying on approximate Unicode
-characters.
+layer and hides the normal key label while the layer is active. The C64-family
+layout includes Shift graphics, Commodore/PETSCII graphics, CTRL color
+controls, Commodore extended colors, and reverse-video controls. Graphic
+keycaps are rendered from the bundled C64 uppercase/graphics character ROM as
+SVG paths, so they match the C64 screen glyphs instead of relying on approximate
+Unicode characters. Other machine profiles use their own visible keyboard
+layouts and can grow more machine-specific PETSCII detail independently.
 
 The C64 `CTRL` layer follows PETSCII control codes. This means some labels are
 effects rather than letters: `CTRL+E` selects white text, `CTRL+S` sends HOME,
@@ -164,8 +174,10 @@ screen-editor label.
 
 ## Editing And Cursor Keys
 
-Backspace and Delete both map to the C64 delete key. Insert maps to shifted
-C64 delete. Cursor keys map to the C64 cursor keys:
+Backspace, Delete, Insert, and cursor keys are mapped through the active
+Commodore profile. On C64-family profiles, Backspace and Delete both map to the
+C64 delete key, Insert maps to shifted C64 delete, and cursor keys map to the
+C64 cursor keys:
 
 | Mac key | Commodore result |
 | --- | --- |

@@ -239,6 +239,12 @@ const C64_LAYOUT: CommodoreVirtualKeyboardLayout = {
   ]
 };
 
+const C64DTV_LAYOUT: CommodoreVirtualKeyboardLayout = {
+  ...C64_LAYOUT,
+  id: 'c64dtv',
+  title: 'C64DTV Keyboard'
+};
+
 const C128_LAYOUT: CommodoreVirtualKeyboardLayout = {
   ...C64_LAYOUT,
   id: 'c128',
@@ -267,7 +273,7 @@ const VIC20_LAYOUT: CommodoreVirtualKeyboardLayout = {
 
 const TED_LAYOUT: CommodoreVirtualKeyboardLayout = {
   id: 'ted',
-  title: 'Plus/4 And C16 Keyboard',
+  title: 'TED Keyboard',
   rows: [
     [
       fn('ted-f1', 'F1', 'F4'),
@@ -346,6 +352,18 @@ const TED_LAYOUT: CommodoreVirtualKeyboardLayout = {
       sys('ted-delete', 'DEL', 'INST', 1.35, namedInput('Backspace'), namedInput('Insert'))
     ]
   ]
+};
+
+const PLUS4_LAYOUT: CommodoreVirtualKeyboardLayout = {
+  ...TED_LAYOUT,
+  id: 'plus4',
+  title: 'Plus/4 Keyboard'
+};
+
+const C16_LAYOUT: CommodoreVirtualKeyboardLayout = {
+  ...TED_LAYOUT,
+  id: 'c16',
+  title: 'C16 Keyboard'
 };
 
 const BUSINESS_LAYOUT: CommodoreVirtualKeyboardLayout = {
@@ -447,24 +465,46 @@ const BUSINESS_LAYOUT: CommodoreVirtualKeyboardLayout = {
   ]
 };
 
+const PET_LAYOUT: CommodoreVirtualKeyboardLayout = {
+  ...BUSINESS_LAYOUT,
+  id: 'pet',
+  title: 'PET Keyboard'
+};
+
+const CBM2_LAYOUT: CommodoreVirtualKeyboardLayout = {
+  ...BUSINESS_LAYOUT,
+  id: 'cbm2',
+  title: 'CBM-II Keyboard'
+};
+
+const CBM5X0_LAYOUT: CommodoreVirtualKeyboardLayout = {
+  ...BUSINESS_LAYOUT,
+  id: 'cbm5x0',
+  title: 'CBM 5x0 Keyboard'
+};
+
 export function getCommodoreVirtualKeyboardLayout(
   profileId: CommodoreMachineProfileId
 ): CommodoreVirtualKeyboardLayout {
   switch (profileId) {
     case 'c64':
-    case 'c64dtv':
       return C64_LAYOUT;
+    case 'c64dtv':
+      return C64DTV_LAYOUT;
     case 'c128':
       return C128_LAYOUT;
     case 'vic20':
       return VIC20_LAYOUT;
     case 'plus4':
+      return PLUS4_LAYOUT;
     case 'c16':
-      return TED_LAYOUT;
+      return C16_LAYOUT;
     case 'pet':
+      return PET_LAYOUT;
     case 'cbm2':
+      return CBM2_LAYOUT;
     case 'cbm5x0':
-      return BUSINESS_LAYOUT;
+      return CBM5X0_LAYOUT;
   }
 }
 
