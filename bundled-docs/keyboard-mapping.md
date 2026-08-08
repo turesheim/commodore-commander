@@ -4,7 +4,7 @@ Commodore Commander maps embedded emulator typing from the character your Mac
 keyboard produces, not from the physical Commodore key position.
 
 The virtual keyboard overlay is selected from the active machine profile. It is
-not a C64-only tool: C64, C64DTV, C128, VIC-20, Plus/4, C16, PET, CBM-II, and
+currently supporting: C64, C64DTV, C128, VIC-20, Plus/4, C16, PET, CBM-II, and
 CBM 5x0 profiles all expose a Commodore keyboard layout. Some of the detailed
 translation rules below are C64-family specific because VICE exposes compatible
 SDL/key-matrix behavior for those machines.
