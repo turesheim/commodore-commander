@@ -8,6 +8,8 @@ currently supporting: C64, C64DTV, C128, VIC-20, Plus/4, C16, PET, CBM-II, and
 CBM 5x0 profiles all expose a Commodore keyboard layout. Some of the detailed
 translation rules below are C64-family specific because VICE exposes compatible
 SDL/key-matrix behavior for those machines.
+The embedded keyboard mapper is not a C64-only tool; it follows the active
+Commodore machine profile where the profile exposes enough keyboard detail.
 
 This matters on non-US layouts. On a Nordic ISO Mac keyboard, for example,
 Shift+0 produces `=`, so the embedded emulator receives the Commodore `=` key.
