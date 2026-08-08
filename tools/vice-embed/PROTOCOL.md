@@ -2,8 +2,8 @@
 
 The patched VICE process uses two transport records:
 
-- `CCV1 ` newline-delimited JSON on stdout/stdin for control, status, and
-  compatibility events.
+- `CCV1 ` newline-delimited JSON on stdout for status and compatibility
+  events, and on the command input stream for control.
 - `CCB1` binary frame records for rendered pixels. When Commodore Commander
   launches VICE, these records are sent over a local loopback TCP socket passed
   as `-cc-frame-port <port>`. A stdout fallback remains for manual/older
@@ -61,11 +61,46 @@ debug adapter never forwards video frames as DAP events.
 
 ## Commodore Commander to VICE
 
+Commodore Commander launches patched VICE with `-cc-command-fd 3` and writes
+commands to that inherited file descriptor. Patched VICE still falls back to
+stdin for manual launches that omit the flag.
+
 Keyboard:
 
 ```json
-CCV1 {"type":"key","code":"KeyA","key":"a","keyCode":65,"pressed":true,"repeat":false,"shift":false,"ctrl":false,"alt":false,"meta":false}
+CCV1 {"type":"key","code":"Quote","key":"\"","keyCode":222,"sdlKeyCode":50,"matrixRow":7,"matrixCol":3,"matrixShift":true,"pressed":true,"repeat":false,"shift":true,"ctrl":false,"alt":false,"meta":false,"sdlShift":false,"sdlCtrl":false,"sdlAlt":false}
 ```
+
+`code`, `key`, `keyCode`, and the browser modifiers are retained for
+compatibility. Current patched VICE builds prefer `sdlKeyCode` and the `sdl*`
+modifiers so the browser can translate printable symbols from the active host
+keyboard layout before VICE applies its SDL keyboard map. Commodore Commander
+launches embedded VICE with the stock SDL symbolic keymap (`-keymap 0`) and US
+host mapping (`-keyboardmapping 0`) because the browser has already normalized
+the active host layout. Browser Shift and Option are host input details; they
+are not exposed to users as Commodore Shift or Commodore key chords in the
+normal text-entry path.
+These fields are SDL key identities, not PETSCII bytes. The emulated machine
+and its active KERNAL/screen-editor state remain responsible for producing
+PETSCII characters from the resulting keyboard matrix state.
+Printable input is symbolic: if the host layout reports `=`, Commodore
+Commander sends the C64 `=` key; if it reports `0`, it sends C64 `0`. For
+layouts or synthetic events that report a shifted `Digit*` as the unshifted
+digit, Commodore Commander applies a small Nordic ISO Mac fallback for the
+reported cases, such as Shift+2 producing the C64 quote glyph, Shift+4
+producing C64 `$`, and Shift+0 producing the C64 equals key. The Nordic Mac
+currency sign `¤` is also mapped to C64 `$` as the closest available Commodore
+symbol. Printable host characters that are not available on the target
+Commodore keyboard are sent as `sdlKeyCode: 0`, which patched VICE treats as
+an explicit no-op instead of falling back to legacy keyCode position mapping.
+For C64 keys that the SDL symbolic keymap cannot reconstruct from a browser
+printable key, such as shifted top-row symbols, C64 F1-F8 shifted function-key
+pairs, `<`, `>`, `?`, the C64 up-arrow, pi, DEL/Backspace, Insert, and the
+cursor keys, Commodore Commander also sends `matrixRow`, `matrixCol`, and
+optional `matrixShift`. Patched VICE uses those fields during normal emulation
+to route the key through VICE's SDL keyboard event queue with the required
+emulated Shift state, while still using the SDL key fields when the VICE SDL
+menu is active.
 
 Joystick:
 
@@ -110,8 +145,9 @@ active device. Embedded Commodore Commander launches enable VICE mouse grab by
 default so browser pointer-lock mouse commands reach that path; VICE menu or
 explicit launch arguments still control which input device is attached. The
 menu command activates VICE's SDL main menu directly. Theia maps F12 to that
-command when the embedded emulator is active. While the SDL menu is active, the
-patch polls stdin from the menu event loop and pushes browser keyboard commands
-into SDL so the menu remains controllable from the embedded canvas. Joystick
+command when the embedded emulator is active. A native command reader consumes
+the command stream independently of render cadence; while the SDL menu is
+active, browser keyboard commands are pushed into SDL so the menu remains
+controllable from the embedded canvas. Joystick
 and resize messages are part of the contract so the Theia service API will not
 need to change when those native hooks are added.

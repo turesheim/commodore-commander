@@ -123,6 +123,13 @@ The debugger screenshot starts a named `.theia/launch.json` configuration,
 waits for VICE to stop after the BASIC ready screen is painted, and shows C64
 screen RAM rendered through the Memory view.
 
+![Embedded Commodore virtual keyboard overlay](docs/theia-c64-virtual-keyboard.png)
+
+The Machine view includes a compact virtual keyboard overlay for the active
+Commodore profile, shown here with a C64 session. The overlay follows the same
+PETSCII-aware keyboard mapping as physical input and can be toggled with F11
+while an embedded emulator is running.
+
 ### Implemented debugger features:
 
 - launch and terminate VICE from Theia's built-in Run and Debug commands

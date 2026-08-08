@@ -3,6 +3,7 @@ import { access } from 'node:fs/promises';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import type * as http from 'node:http';
 import type * as https from 'node:https';
+import type { Writable } from 'node:stream';
 import {
     createServer,
     type AddressInfo,
@@ -53,6 +54,8 @@ import {
 const DEFAULT_VICE_EMULATOR = 'x64sc';
 const EMBED_FLAG = '-cc-embed';
 const EMBED_FRAME_PORT_FLAG = '-cc-frame-port';
+const EMBED_COMMAND_FD_FLAG = '-cc-command-fd';
+const EMBED_COMMAND_FD = 3;
 const MAX_UNFRAMED_STDOUT_BYTES = 32 * 1024 * 1024;
 const MAX_FRAME_TRANSPORT_BUFFER_BYTES = 32 * 1024 * 1024;
 const MIN_FRAME_SOCKET_BACKPRESSURE_BYTES = 256 * 1024;
@@ -74,6 +77,7 @@ export class CommodoreViceEmbedServiceImpl
 
     protected client: CommodoreViceEmbedClient | undefined;
     protected viceProcess: ChildProcessWithoutNullStreams | undefined;
+    protected viceCommandInput: Writable | undefined;
     protected stdoutBuffer = Buffer.alloc(0);
     protected viceFrameServer: NetServer | undefined;
     protected viceFrameSocket: Socket | undefined;
@@ -168,13 +172,14 @@ export class CommodoreViceEmbedServiceImpl
         try {
             child = spawn(launch.command, launch.args, {
                 cwd: launch.cwd,
-                stdio: 'pipe'
+                stdio: ['pipe', 'pipe', 'pipe', 'pipe']
             });
         } catch (error) {
             this.closeViceFrameTransport();
             throw error;
         }
         this.viceProcess = child;
+        this.viceCommandInput = resolveViceCommandInput(child);
 
         child.stdout.on('data', (chunk: Buffer) => this.handleStdout(chunk));
         child.stderr.on('data', (chunk: Buffer) => {
@@ -194,21 +199,19 @@ export class CommodoreViceEmbedServiceImpl
             });
             this.closeViceFrameTransport();
             this.viceProcess = undefined;
+            this.viceCommandInput = undefined;
         });
         child.on('close', (exitCode: number | null, signal: NodeJS.Signals | null) => {
             if (this.viceProcess !== child) {
                 return;
             }
             this.viceProcess = undefined;
+            this.viceCommandInput = undefined;
             this.stdoutBuffer = Buffer.alloc(0);
             this.closeViceFrameTransport();
             this.emitStatus({
                 state: exitCode === 0 ? 'stopped' : 'error',
-                message: exitCode === 0
-                    ? 'Emulator stopped.'
-                    : exitCode === null
-                        ? 'Emulator quit with unknown exit code'
-                        : `Emulator quit with exit code ${exitCode}`,
+                message: formatViceProcessCloseMessage(exitCode, signal),
                 pid: child.pid,
                 exitCode,
                 signal
@@ -285,6 +288,8 @@ export class CommodoreViceEmbedServiceImpl
             EMBED_FLAG,
             EMBED_FRAME_PORT_FLAG,
             String(framePort),
+            EMBED_COMMAND_FD_FLAG,
+            String(EMBED_COMMAND_FD),
             ...viceArgs,
             ...(request.program ? [request.program] : [])
         ];
@@ -469,15 +474,17 @@ export class CommodoreViceEmbedServiceImpl
 
     protected sendCommand(command: CommodoreViceEmbedCommand): void {
         const child = this.viceProcess;
-        if (!child || child.killed || !child.stdin.writable) {
+        const commandInput = this.viceCommandInput ?? child?.stdin;
+        if (!child || child.killed || !commandInput?.writable) {
             return;
         }
-        child.stdin.write(encodeViceEmbedCommand(command), 'utf8');
+        commandInput.write(encodeViceEmbedCommand(command), 'utf8');
     }
 
     protected stopProcess(): void {
         const child = this.viceProcess;
         this.viceProcess = undefined;
+        this.viceCommandInput = undefined;
         this.stdoutBuffer = Buffer.alloc(0);
         this.closeViceFrameTransport();
         if (!child || child.killed) {
@@ -578,6 +585,37 @@ export class CommodoreViceEmbedServiceImpl
             this.logger.warn(event.message ?? 'Patched VICE embed reported an error.');
         }
     }
+}
+
+function formatViceProcessCloseMessage(
+    exitCode: number | null,
+    signal: NodeJS.Signals | null
+): string {
+    if (exitCode === 0) {
+        return 'Emulator stopped.';
+    }
+    if (exitCode !== null) {
+        return `Emulator quit with exit code ${exitCode}`;
+    }
+    if (signal) {
+        return `Emulator quit after signal ${signal}`;
+    }
+    return 'Emulator quit with unknown exit code';
+}
+
+function resolveViceCommandInput(
+    child: ChildProcessWithoutNullStreams
+): Writable {
+    const commandInput = child.stdio[EMBED_COMMAND_FD];
+    return isWritableStream(commandInput) ? commandInput : child.stdin;
+}
+
+function isWritableStream(value: unknown): value is Writable {
+    return Boolean(
+        value &&
+        typeof (value as Writable).write === 'function' &&
+        typeof (value as Writable).writable === 'boolean'
+    );
 }
 
 function isFrameSocketRequest(requestUrl: string | undefined): boolean {

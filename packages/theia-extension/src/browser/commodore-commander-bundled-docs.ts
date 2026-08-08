@@ -71,6 +71,11 @@ export const BUNDLED_DOCUMENTS: readonly BundledDocumentationEntry[] = [
     details: 'Step-by-step debugger workflow and watchpoints'
   },
   {
+    path: 'keyboard-mapping.md',
+    label: 'Embedded Emulator Keyboard Mapping',
+    details: 'How Mac keys, PETSCII, and Commodore symbols are translated'
+  },
+  {
     path: 'character-set-format.md',
     label: 'Character Set Format',
     details: 'Native charset JSON layout and export formats'

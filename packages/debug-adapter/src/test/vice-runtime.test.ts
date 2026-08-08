@@ -62,9 +62,15 @@ test('createViceProcessArgs enables the embedded VICE transport when requested',
     '-cc-embed',
     '-cc-frame-port',
     '6510',
+    '-cc-command-fd',
+    '3',
     '-mouse',
     '-model',
     'c64',
+    '-keymap',
+    '0',
+    '-keyboardmapping',
+    '0',
     '/workspace/out/main.prg'
   ]);
 });
@@ -81,9 +87,40 @@ test('createViceProcessArgs allows embedded launch args to override mouse grab',
     '-cc-embed',
     '-cc-frame-port',
     '6510',
+    '-cc-command-fd',
+    '3',
     '+mouse',
     '-model',
     'c64',
+    '-keymap',
+    '0',
+    '-keyboardmapping',
+    '0',
+    '/workspace/out/main.prg'
+  ]);
+});
+
+test('createViceProcessArgs pins embedded keyboard mapping after config files', () => {
+  const args = createViceProcessArgs({
+    program: '/workspace/out/main.prg',
+    viceArgs: ['-config', '/workspace/vice.ini'],
+    embed: true,
+    embedFramePort: 6510
+  });
+
+  assert.deepEqual(args, [
+    '-cc-embed',
+    '-cc-frame-port',
+    '6510',
+    '-cc-command-fd',
+    '3',
+    '-mouse',
+    '-config',
+    '/workspace/vice.ini',
+    '-keymap',
+    '0',
+    '-keyboardmapping',
+    '0',
     '/workspace/out/main.prg'
   ]);
 });
@@ -91,7 +128,15 @@ test('createViceProcessArgs allows embedded launch args to override mouse grab',
 test('createViceProcessArgs does not duplicate an explicit embedded transport flag', () => {
   const args = createViceProcessArgs({
     program: '/workspace/out/main.prg',
-    viceArgs: ['-cc-embed', '-cc-frame-port', '6511', '-model', 'c64'],
+    viceArgs: [
+      '-cc-embed',
+      '-cc-frame-port',
+      '6511',
+      '-cc-command-fd',
+      '4',
+      '-model',
+      'c64'
+    ],
     embed: true,
     embedFramePort: 6510
   });
@@ -101,8 +146,14 @@ test('createViceProcessArgs does not duplicate an explicit embedded transport fl
     '-cc-embed',
     '-cc-frame-port',
     '6511',
+    '-cc-command-fd',
+    '4',
     '-model',
     'c64',
+    '-keymap',
+    '0',
+    '-keyboardmapping',
+    '0',
     '/workspace/out/main.prg'
   ]);
 });

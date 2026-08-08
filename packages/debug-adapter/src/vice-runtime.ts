@@ -3,11 +3,18 @@ import { access, constants } from 'node:fs/promises';
 import net from 'node:net';
 import path from 'node:path';
 import { spawn, type ChildProcess } from 'node:child_process';
+import type { Writable } from 'node:stream';
 
 import {
+  VICE_EMBED_COMMAND_FD,
+  VICE_EMBED_COMMAND_FD_FLAG,
   VICE_EMBED_FLAG,
   VICE_EMBED_FRAME_PORT_FLAG,
-  VICE_EMBED_MOUSE_GRAB_FLAG
+  VICE_EMBED_KEYBOARD_MAPPING_FLAG,
+  VICE_EMBED_KEYMAP_INDEX_FLAG,
+  VICE_EMBED_MOUSE_GRAB_FLAG,
+  VICE_EMBED_SYMBOLIC_KEYMAP_INDEX,
+  VICE_EMBED_US_KEYBOARD_MAPPING
 } from './vice-embed-protocol';
 
 const DEFAULT_TERMINATION_TIMEOUT_MS = 1500;
@@ -32,6 +39,7 @@ export interface ViceProcessLaunchResult {
   monitorPort?: number;
   command: string;
   args: readonly string[];
+  commandInput?: Writable;
 }
 
 export interface ViceProcessTerminateOptions {
@@ -81,16 +89,22 @@ export async function launchViceProcess(
       ...process.env,
       VICE_INITIAL_CWD: options.cwd
     },
-    stdio: [options.enableEmbed ? 'pipe' : 'ignore', 'pipe', 'pipe']
+    stdio: options.enableEmbed
+      ? ['pipe', 'pipe', 'pipe', 'pipe']
+      : ['ignore', 'pipe', 'pipe']
   });
 
   await waitForSpawn(child, command);
+  const commandInput = options.enableEmbed
+    ? resolveViceCommandInput(child)
+    : undefined;
   return {
     child,
     monitorHost,
     monitorPort,
     command,
-    args
+    args,
+    ...(commandInput ? { commandInput } : {})
   };
 }
 
@@ -126,11 +140,22 @@ export function createViceProcessArgs(
       !options.viceArgs.includes(VICE_EMBED_FRAME_PORT_FLAG)
       ? [VICE_EMBED_FRAME_PORT_FLAG, String(options.embedFramePort)]
       : []),
+    ...(options.embed && !options.viceArgs.includes(VICE_EMBED_COMMAND_FD_FLAG)
+      ? [VICE_EMBED_COMMAND_FD_FLAG, String(VICE_EMBED_COMMAND_FD)]
+      : []),
     ...(options.embed && !hasMouseGrabFlag(options.viceArgs)
       ? [VICE_EMBED_MOUSE_GRAB_FLAG]
       : []),
     ...options.viceArgs,
-    ...configArgs(options.program, options.viceArgs)
+    ...configArgs(options.program, options.viceArgs),
+    ...(options.embed
+      ? [
+          VICE_EMBED_KEYMAP_INDEX_FLAG,
+          VICE_EMBED_SYMBOLIC_KEYMAP_INDEX,
+          VICE_EMBED_KEYBOARD_MAPPING_FLAG,
+          VICE_EMBED_US_KEYBOARD_MAPPING
+        ]
+      : [])
   ];
 
   if (options.monitor) {
@@ -227,6 +252,19 @@ function waitForClose(child: ChildProcess, timeoutMs: number): Promise<boolean> 
 
 function hasExited(child: ChildProcess): boolean {
   return child.exitCode !== null || child.signalCode !== null;
+}
+
+function resolveViceCommandInput(child: ChildProcess): Writable | undefined {
+  const commandInput = child.stdio[VICE_EMBED_COMMAND_FD];
+  return isWritableStream(commandInput) ? commandInput : child.stdin ?? undefined;
+}
+
+function isWritableStream(value: unknown): value is Writable {
+  return Boolean(
+    value &&
+    typeof (value as Writable).write === 'function' &&
+    typeof (value as Writable).writable === 'boolean'
+  );
 }
 
 function findAvailablePort(host: string): Promise<number> {

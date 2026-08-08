@@ -92,9 +92,15 @@ test('patched VICE keeps refreshing hidden embedded SDL canvases', async () => {
   assert.match(patch, /CC_EMBED_MIN_FRAME_INTERVAL_MS 16/u);
   assert.match(patch, /CC_EMBED_FRAME_SOCKET_SEND_BUFFER_BYTES \(4 \* 1024 \* 1024\)/u);
   assert.match(patch, /CC_EMBED_FRAME_PORT_FLAG "-cc-frame-port"/u);
+  assert.match(patch, /CC_EMBED_COMMAND_FD_FLAG "-cc-command-fd"/u);
+  assert.doesNotMatch(patch, /SDL_CreateThread\(cc_embed_command_thread_main/u);
+  assert.doesNotMatch(patch, /cc_embed_command_thread/u);
+  assert.match(patch, /read\(cc_embed_command_fd, buffer, sizeof\(buffer\)\)/u);
   assert.match(patch, /length = \(size_t\)width \* \(size_t\)height \* 4/u);
   assert.doesNotMatch(patch, /sample_step/u);
   assert.match(patch, /cc_embed_connect_frame_socket/u);
+  assert.match(patch, /cc_embed_set_fd_nonblocking\(cc_embed_frame_socket\);/u);
+  assert.match(patch, /errno == EAGAIN \|\| errno == EWOULDBLOCK/u);
   assert.match(patch, /cc_embed_write_binary_frame_header/u);
   assert.match(patch, /cc_embed_write_frame_bytes/u);
   assert.match(patch, /cc_embed_last_frame_ticks = 0;/u);
@@ -105,12 +111,35 @@ test('patched VICE keeps refreshing hidden embedded SDL canvases', async () => {
     /!cc_embed_force_next_frame && cc_embed_frame_id > 0/u
   );
   assert.match(patch, /sdl_ui_activate\(\);/u);
+  assert.match(
+    patch,
+    /void ui_dispatch_events\(void\)[\s\S]*cc_embed_poll_commands\(\);/u
+  );
+  assert.match(
+    patch,
+    /void vsyncarch_presync\(void\)[\s\S]*cc_embed_poll_commands\(\);/u
+  );
   assert.match(patch, /cc_embed_handle_mouse\(payload\);/u);
   assert.match(patch, /#include "mouse\.h"/u);
   assert.match(patch, /#include "mousedrv\.h"/u);
+  assert.match(patch, /CC_EMBED_MATRIX_SHIFT_KEY SDLK_RSHIFT/u);
+  assert.match(patch, /matrixRow/u);
+  assert.match(patch, /matrixCol/u);
+  assert.match(patch, /matrixShift/u);
+  assert.match(patch, /cc_embed_apply_matrix_key/u);
+  assert.match(patch, /cc_embed_push_sdl_key\(key, mod, 1\);/u);
+  assert.match(patch, /cc_embed_push_sdl_key\(CC_EMBED_MATRIX_SHIFT_KEY/u);
+  assert.doesNotMatch(patch, /keyboard_set_keyarr/u);
   assert.match(patch, /cc_embed_apply_mouse_motion\(xrel, yrel\);/u);
   assert.match(patch, /mouse_move\(\(float\)xrel, \(float\)yrel\);/u);
   assert.match(patch, /mouse_button\(button, pressed\);/u);
+  assert.match(patch, /sdlKeyCode/u);
+  assert.match(
+    patch,
+    /\+\s+if \(use_sdl_key_code\) \{[\s\S]*\+\s+key = \(SDLKey\)sdl_key_code;[\s\S]*\+\s+\} else if \(use_key_code\) \{/u
+  );
+  assert.match(patch, /cc_embed_json_bool_or_fallback/u);
+  assert.match(patch, /case 222:\n\+            return \(SDLKey\)'\\'';/u);
   assert.doesNotMatch(patch, /cc_embed_push_sdl_mouse_motion/u);
   assert.doesNotMatch(patch, /SDL_MOUSEMOTION/u);
   assert.match(patch, /diff --git a\/src\/sid\/sid\.c/u);
@@ -303,15 +332,15 @@ test('createViceArgs keeps unfiltered display defaults before model and explicit
 test('createEmbeddedViceArgs enables VICE mouse grab for captured input', () => {
   assert.deepEqual(
     createEmbeddedViceArgs(['-model', 'c64']),
-    ['-mouse', '-model', 'c64']
+    ['-mouse', '-model', 'c64', '-keymap', '0', '-keyboardmapping', '0']
   );
   assert.deepEqual(
     createEmbeddedViceArgs(['+mouse', '-model', 'c64']),
-    ['+mouse', '-model', 'c64']
+    ['+mouse', '-model', 'c64', '-keymap', '0', '-keyboardmapping', '0']
   );
   assert.deepEqual(
     createEmbeddedViceArgs(['-mouse', '-model', 'c64']),
-    ['-mouse', '-model', 'c64']
+    ['-mouse', '-model', 'c64', '-keymap', '0', '-keyboardmapping', '0']
   );
 });
 

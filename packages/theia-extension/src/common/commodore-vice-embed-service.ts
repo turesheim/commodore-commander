@@ -77,12 +77,23 @@ export interface CommodoreViceEmbedKeyEvent {
     readonly code: string;
     readonly key: string;
     readonly keyCode: number;
+    /** SDL keysym for VICE. 0 explicitly suppresses legacy keyCode fallback. */
+    readonly sdlKeyCode?: number;
+    /** C64 keyboard matrix row for keys needing matrix-aware SDL fallback handling. */
+    readonly matrixRow?: number;
+    /** C64 keyboard matrix column for keys needing matrix-aware SDL fallback handling. */
+    readonly matrixCol?: number;
+    /** Inject the C64 shift key while applying the matrix-aware fallback key. */
+    readonly matrixShift?: boolean;
     readonly pressed: boolean;
     readonly repeat?: boolean;
     readonly shift?: boolean;
     readonly ctrl?: boolean;
     readonly alt?: boolean;
     readonly meta?: boolean;
+    readonly sdlShift?: boolean;
+    readonly sdlCtrl?: boolean;
+    readonly sdlAlt?: boolean;
 }
 
 export interface CommodoreViceEmbedJoystickEvent {
