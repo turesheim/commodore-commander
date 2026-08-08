@@ -23,11 +23,11 @@ export function calculateViceCanvasDisplaySize(
     availableWidth / frameWidth,
     availableHeight / frameHeight
   );
-  const scale = Math.max(1, fitScale);
+  const scale = fitScale;
 
   return {
-    width: Math.round(frameWidth * scale),
-    height: Math.round(frameHeight * scale),
+    width: Math.max(1, Math.round(frameWidth * scale)),
+    height: Math.max(1, Math.round(frameHeight * scale)),
     scale
   };
 }

@@ -5,13 +5,13 @@ import {
   calculateViceCanvasDisplaySize
 } from '../browser/vice-canvas-scaling';
 
-test('VICE canvas scaling keeps narrow 80-column frames at native size', () => {
+test('VICE canvas scaling downscales frames wider than the machine view', () => {
   assert.deepEqual(
     calculateViceCanvasDisplaySize(640, 250, 614, 460),
     {
-      width: 640,
-      height: 250,
-      scale: 1
+      width: 614,
+      height: 240,
+      scale: 614 / 640
     }
   );
 });
@@ -45,6 +45,17 @@ test('VICE canvas scaling fits small native frames when height is constrained', 
       width: 541,
       height: 409,
       scale: 409 / 266
+    }
+  );
+});
+
+test('VICE canvas scaling keeps a visible size in very small machine views', () => {
+  assert.deepEqual(
+    calculateViceCanvasDisplaySize(640, 250, 1, 1),
+    {
+      width: 1,
+      height: 1,
+      scale: 1 / 640
     }
   );
 });
