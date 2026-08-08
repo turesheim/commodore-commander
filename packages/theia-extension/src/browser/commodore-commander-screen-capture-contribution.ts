@@ -31,8 +31,10 @@ import {
   C64_VISUAL_DEBUGGER_WIDGET_ID,
   C64VisualDebuggerWidget
 } from './c64-visual-debugger-widget';
+import {
+  COMMODORE_MACHINE_PROFILE_WIDGET_ID
+} from './commodore-machine-profile-selection';
 import { SID_SFX_EDITOR_WIDGET_ID } from './sid-sfx-editor-widget';
-import { COMMODORE_MACHINE_PROFILE_WIDGET_ID } from './commodore-machine-profile-selection';
 import { CommodoreMachineProfileWidget } from './commodore-machine-profile-widget';
 
 export const SCREEN_CAPTURE_STATE_KEY = '__commodoreCommanderScreenCapture';
