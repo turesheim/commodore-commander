@@ -15,23 +15,14 @@ configuration. If your workspace does not have one yet, Commodore Commander can
 create `commodore-commander.build.json` the first time it needs build or launch
 data.
 
-For the best source-level debugging experience, make sure the active build
-profile creates debug information:
+For the best source-level debugging experience, use a debug-capable build
+profile for the active program:
 
-- `debugDump: true` makes Kick Assembler create the `.dbg` file used for
-  source line mapping, `.break`, and `.watch` entries.
-- `viceSymbols: true` makes Kick Assembler create the `.vs` VICE symbol file.
-  VICE reads this file natively through `-moncommands`, including labels and
-  `break` commands. Commodore Commander passes the adjacent `.vs` file to VICE
-  for debug launches when it is available. If it is missing, the adapter falls
-  back to a generated labels-only monitor command file derived from `.dbg`
-  labels.
-- DAP source breakpoints are installed through the binary monitor while VICE
-  is stopped at startup. VICE does not read Kick Assembler `.dbg` files
-  directly.
-- `symbolFile: true` remains useful for manual symbol files and monitor
-  workflows outside the adapter-managed debug session.
-- `runProgram` should point to the PRG that VICE will launch.
+- Build debug information should be enabled so the debugger can map source
+  lines, labels, `.break`, and `.watch` entries.
+- VICE symbol export should be enabled so labels and source-authored
+  breakpoints are available to the emulator.
+- The launch configuration should match the PRG produced by the active build.
 
 See [Build Configuration](build-configuration.md) for project and launch
 configuration details.
@@ -81,12 +72,12 @@ memory views, watchpoints, and stepping are not available.
 
 ## Source Breakpoints
 
-Source breakpoints are backed by Kick Assembler `.dbg` line mappings. If you
-click a nearby comment or blank line, the debugger can bind the breakpoint to
-the next mapped instruction line in the same source file.
+Source breakpoints use the source map produced by the active build. If you click
+a nearby comment or blank line, the debugger can bind the breakpoint to the
+next mapped instruction line in the same source file.
 
-1. Start or prepare a debug session with a `.dbg` file available.
-2. Open a source file that belongs to the debug dump.
+1. Start or prepare a debug session after a successful debug build.
+2. Open a source file that belongs to the launched program.
 3. Click the editor gutter beside an assembled instruction line.
 4. Start or continue the session.
 5. When the CPU reaches the mapped address, execution stops and Theia shows the
@@ -94,18 +85,16 @@ the next mapped instruction line in the same source file.
 
 If a breakpoint cannot be installed, hover or inspect it in the Breakpoints view
 for the message. The usual reason is that the source line did not map to a
-generated address in the active `.dbg` file.
+generated address for the active program.
 
 Editor breakpoints are managed by Commodore Commander and installed through
-VICE's binary monitor. They are not written into the Kick Assembler `.vs`
-file. If you add them before launch, they are installed on the first CPU halt;
-if you add them while the program is running, they are installed through the
-same binary monitor connection.
+VICE's binary monitor. If you add them before launch, they are installed on the
+first CPU halt; if you add them while the program is running, they are installed
+through the same binary monitor connection.
 
 Kick Assembler `.break` directives are also supported. Write them in assembly
-source code; when the source is compiled, Kick Assembler emits them into the
-`.dbg` `<Breakpoints>` section and can emit matching `break` commands into the
-`.vs` file that VICE reads through `-moncommands`.
+source code; when the source is compiled, the debugger and emulator can use
+those source-authored breakpoints.
 
 ## Conditional Source Breakpoints
 
@@ -241,8 +230,8 @@ $0400
 ```
 
 In Watch context, a label or address shows the current byte value at that
-address. Kick Assembler `.watch` entries from debug dumps also appear as a live
-memory scope in the Variables view.
+address. Kick Assembler `.watch` entries also appear as a live memory scope in
+the Variables view.
 
 ## Memory Watchpoints
 
@@ -382,7 +371,7 @@ When execution is stopped:
 3. Edit a register value directly in the Variables view when needed.
 4. Expand **Kick Assembler Labels** to inspect known label addresses.
 5. Expand **Kick Assembler Watches** to inspect `.watch` memory values from the
-   debug dump.
+   active program.
 6. Use the Call Stack view to navigate source-backed stack frames.
 
 The stack trace always includes the current PC frame. Caller frames are
@@ -418,7 +407,7 @@ text for bug reports or local debugging notes.
 
 The direction column uses compact protocol labels:
 
-- `LOG` adapter notes, such as selected `.vs` files, `setBreakpoints`,
+- `LOG` adapter notes, such as loaded debug information, `setBreakpoints`,
   `configurationDone`, and breakpoint synchronization.
 - `TX` commands sent to VICE through the binary monitor.
 - `RX` responses and asynchronous events received from VICE.
@@ -434,10 +423,9 @@ such as an unmapped source line in the active debug info.
 
 If source breakpoints stay unverified:
 
-1. Confirm that the active build creates a `.dbg` file.
-2. Confirm that the launched PRG matches the debug dump.
-3. Confirm that the source file path in the `.dbg` file can be resolved from
-   `sourceRoot`, the workspace, or the PRG directory.
+1. Confirm that the active build creates debug information.
+2. Confirm that the selected launch configuration matches the program you built.
+3. Confirm that the source file belongs to the active program.
 4. Move the breakpoint to an assembled instruction line or a nearby line above
    it.
 
@@ -457,8 +445,7 @@ If watchpoints do not install:
 If breakpoints verify but do not stop:
 
 1. Open the **VICE Monitor** view.
-2. Confirm that VICE was given the adjacent Kick Assembler `.vs` file or a
-   generated monitor command file.
+2. Confirm that startup logs show debug information for the intended program.
 3. Confirm that DAP-created breakpoints produce `CHECKPOINT_SET` commands and
    `CHECKPOINT_INFO` responses after `configurationDone`.
 4. Continue execution and check for a later `CHECKPOINT_INFO` response with

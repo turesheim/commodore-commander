@@ -428,6 +428,21 @@ export class ViceDebugSession {
       );
       this.debugInfo = loadedDebugInfo?.info;
       this.debugInfoPath = loadedDebugInfo?.path;
+      if (this.debugInfo && this.debugInfoPath) {
+        this.sendViceMonitorLog({
+          category: 'user',
+          message:
+            `Loaded Kick Assembler debug info ${this.debugInfoPath} ` +
+            `(${this.debugInfo.sources.length} source(s), ` +
+            `${this.debugInfo.lineMappings.length} line mapping(s), ` +
+            `${this.debugInfo.breakpoints.length} .dbg breakpoint(s)).`
+        });
+      } else {
+        this.sendViceMonitorLog({
+          category: 'user',
+          message: 'No Kick Assembler debug info loaded; source breakpoints cannot be mapped.'
+        });
+      }
     }
     const monitorCommandSelection =
       useMonitor
@@ -759,35 +774,63 @@ export class ViceDebugSession {
       path: string;
       info: KickAssemblerDebugInfo;
       overlap: number;
-      configured: boolean;
     } | undefined;
     const failures: string[] = [];
 
+    if (configuredDebugInfoPath) {
+      try {
+        const info = await loadKickAssemblerDebugInfo(configuredDebugInfoPath, { sourceRoots });
+        const overlap = debugInfoProgramOverlap(info, this.programImage);
+        this.connection.sendOutput(
+          `Using configured Kick Assembler debug info ${configuredDebugInfoPath}\n`
+        );
+        if (this.programImage && overlap === 0) {
+          this.connection.sendOutput(
+            `Kick Assembler debug info ${configuredDebugInfoPath} has no address ranges overlapping ` +
+              `${path.basename(program)} ($${hexWord(this.programImage.loadAddress)}-$${hexWord(this.programImage.endAddress)}); ` +
+              'stack frames will use disassembly where source cannot be mapped.\n',
+            'stderr'
+          );
+        }
+        return {
+          path: configuredDebugInfoPath,
+          info
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        failures.push(`${configuredDebugInfoPath}: ${message}`);
+      }
+    }
+
     for (const candidate of candidates) {
+      if (
+        configuredDebugInfoPath !== undefined &&
+        samePath(candidate, configuredDebugInfoPath)
+      ) {
+        continue;
+      }
       try {
         const info = await loadKickAssemblerDebugInfo(candidate, { sourceRoots });
         const overlap = debugInfoProgramOverlap(info, this.programImage);
-        const configured = configuredDebugInfoPath !== undefined &&
-          samePath(candidate, configuredDebugInfoPath);
         if (
           !best ||
-          overlap > best.overlap ||
-          (overlap === best.overlap && configured && !best.configured)
+          overlap > best.overlap
         ) {
-          best = { path: candidate, info, overlap, configured };
+          best = { path: candidate, info, overlap };
         }
       } catch (error) {
-        if (
-          configuredDebugInfoPath !== undefined &&
-          samePath(candidate, configuredDebugInfoPath)
-        ) {
-          const message = error instanceof Error ? error.message : String(error);
-          failures.push(`${candidate}: ${message}`);
-        }
+        // Fallback candidates are best-effort; unreadable unrelated .dbg files
+        // should not make the debug session noisy.
       }
     }
 
     if (best) {
+      if (failures.length > 0) {
+        this.connection.sendOutput(
+          `Could not read configured Kick Assembler debug info: ${failures.join('; ')}\n`,
+          'stderr'
+        );
+      }
       if (!configuredDebugInfoPath || !samePath(best.path, configuredDebugInfoPath)) {
         this.connection.sendOutput(
           `Using Kick Assembler debug info ${best.path}\n`
@@ -1855,7 +1898,7 @@ export class ViceDebugSession {
     breakpoint.message = unsupportedMessage ??
       (mapping
         ? undefined
-        : 'No Kick Assembler debug mapping for this source line in the active debug info.');
+        : `No Kick Assembler debug mapping for this source line in ${this.debugInfoPath ?? 'the active debug info'}.`);
 
     return previousMapping !== breakpoint.mapping ||
       previousVerified !== breakpoint.verified ||
@@ -2896,7 +2939,7 @@ function sourceForPath(sourcePath: string): DebugProtocol.Source {
 
 function breakpointDescription(breakpoint: InstalledBreakpoint): string {
   if (breakpoint.dapVisible) {
-    return `source breakpoint #${breakpoint.id} ${sourceNameForPath(breakpoint.sourcePath)}:${breakpoint.line}`;
+    return `source breakpoint #${breakpoint.id} ${dapSourcePath(breakpoint.sourcePath)}:${breakpoint.line}`;
   }
   return `Kick Assembler .dbg breakpoint #${breakpoint.id}`;
 }

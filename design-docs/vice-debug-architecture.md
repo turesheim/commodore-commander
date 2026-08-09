@@ -48,7 +48,9 @@ This layer owns:
   `commodoreViceMonitorLog` DAP custom events, using `LOG` adapter notes,
   `TX` outbound commands, and `RX` inbound responses
 - Kick Assembler `.dbg` source/label/line mapping; `.dbg` files are produced
-  by Kick Assembler `-debugdump`
+  by Kick Assembler `-debugdump`. The configured debug dump is authoritative
+  for source breakpoint mapping; nearby debug dumps are fallback discovery only
+  when no configured `.dbg` can be read
 - VICE process launch with Kick Assembler `.vs` VICE symbol files passed
   through `-moncommands` when present, plus `-binarymonitor`,
   `-binarymonitoraddress`, and `-initbreak ready` for debugging. VICE reads

@@ -257,6 +257,42 @@ viceTest('hits screencolors source breakpoints in embedded VICE mode', async (t,
   assert.equal(topFrame.line, executableLine);
 });
 
+viceTest('prefers configured debug info over nearby overlapping debug dumps', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  await writeFile(
+    path.join(session.fixture.directory, 'misleading.dbg'),
+    createMisleadingDebugInfo(
+      path.join(session.fixture.directory, 'misleading.asm')
+    ),
+    'utf8'
+  );
+  await initializeAndLaunch(session);
+
+  const breakpointLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+  const breakpoint = await setSourceBreakpoint(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  if (stopped.body?.hitBreakpointIds) {
+    assert.deepEqual(stopped.body.hitBreakpointIds, [breakpoint.id]);
+  }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, breakpointLine);
+});
+
 viceTest('keeps embedded VICE stopped while Theia finishes breakpoint setup', async (t, vice) => {
   const session = await launchFixture(t, vice, 'screencolors', {
     embedded: true
@@ -914,4 +950,39 @@ function sanitizeArtifactName(name: string): string {
     .replace(/[^a-z0-9._-]+/gu, '-')
     .replace(/^-|-$/gu, '')
     .slice(0, 120);
+}
+
+function createMisleadingDebugInfo(sourcePath: string): string {
+  const rows: string[] = [];
+  for (let address = 0x0800, line = 1; address <= 0x1025; address += 1, line += 1) {
+    rows.push(
+      `         ${formatDebugAddress(address)},${formatDebugAddress(address)},1,${line},1,${line},3`
+    );
+  }
+  return `<C64debugger version="1.0">
+   <Sources values="INDEX,FILE">
+      1,${sourcePath}
+   </Sources>
+
+   <Segment name="Default" dest="" values="START,END,FILE_IDX,LINE1,COL1,LINE2,COL2">
+      <Block name="Misleading">
+${rows.join('\n')}
+      </Block>
+   </Segment>
+
+   <Labels values="SEGMENT,ADDRESS,NAME,START,END,FILE_IDX,LINE1,COL1,LINE2,COL2">
+   </Labels>
+
+   <Breakpoints values="SEGMENT,ADDRESS,ARGUMENT">
+   </Breakpoints>
+
+   <Watchpoints values="SEGMENT,ADDRESS1,ADDRESS2,ARGUMENT">
+   </Watchpoints>
+
+</C64debugger>
+`;
+}
+
+function formatDebugAddress(address: number): string {
+  return `$${address.toString(16).padStart(4, '0')}`;
 }

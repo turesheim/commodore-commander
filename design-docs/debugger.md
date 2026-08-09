@@ -34,9 +34,10 @@ binary monitor.
   Those files are parsed by the adapter to map source lines, labels, loaded
   sources, stack frame locations, breakpoint locations, source breakpoints,
   and `.break` debug-info breakpoints.
-- Debug launches prefer the configured `.dbg` file but also search the PRG
-  directory and nearby output folders for debug dumps whose address ranges
-  overlap the launched PRG.
+- Debug launches use the configured `.dbg` file when it can be read. The PRG
+  directory and nearby output folders are searched only as fallback recovery
+  when no configured debug dump is available; otherwise unrelated programs that
+  occupy the same C64 address range can steal source breakpoint mappings.
 - VICE consumes Kick Assembler `.vs` VICE symbol files natively through
   `-moncommands`; it does not consume `.dbg` files directly. For debug
   launches, the adapter looks for the `.vs` file next to the selected `.dbg`
@@ -204,8 +205,10 @@ tab-separated text.
 
 The view uses compact direction labels:
 
-- `LOG` adapter decisions such as selected `.vs` monitor command files,
-  `setBreakpoints`, `configurationDone`, and checkpoint synchronization
+- `LOG` adapter decisions such as the loaded `.dbg`, selected `.vs` monitor
+  command files, `setBreakpoints`, `configurationDone`, and checkpoint
+  synchronization. Skipped source breakpoints include the full source path and
+  active debug-info path so wrong-debug-dump selection is visible in copied logs
 - `TX` binary monitor command frames sent to VICE
 - `RX` binary monitor response and asynchronous event frames received from
   VICE
