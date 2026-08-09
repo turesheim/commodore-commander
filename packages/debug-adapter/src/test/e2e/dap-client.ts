@@ -87,6 +87,21 @@ export class DapClient {
     return this.stdoutOutputs.join('');
   }
 
+  events<TEvent extends DebugProtocol.Event = DebugProtocol.Event>(
+    event: string,
+    predicate?: (message: TEvent) => boolean
+  ): TEvent[] {
+    return this.transcript
+      .map((entry) => entry.message)
+      .filter((message): message is DebugProtocol.Event =>
+        message.type === 'event'
+      )
+      .filter((message): message is TEvent =>
+        message.event === event &&
+        (!predicate || predicate(message as TEvent))
+      );
+  }
+
   request<TBody = unknown>(
     command: string,
     args?: unknown,

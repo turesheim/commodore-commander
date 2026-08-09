@@ -1105,13 +1105,8 @@ export class ViceDebugSession {
       breakpoints: requestedBreakpoints.map((sourceBreakpoint) => {
         const programmedId = programmedBreakpointId(sourceBreakpoint);
         if (programmedId !== undefined) {
-          const breakpoint = this.debugInfoBreakpoints.find((candidate) =>
-            candidate.id === programmedId
-          );
-          if (breakpoint) {
-            breakpoint.enabled = sourceBreakpointEnabled(sourceBreakpoint);
-            void this.synchronizeProgrammedBreakpointCheckpoint(breakpoint);
-          }
+          // Theia's standard DAP request omits disabled markers, so the
+          // custom full-state sync owns programmed breakpoint toggling.
           return this.toProgrammedDapBreakpoint(
             programmedId,
             args.source,

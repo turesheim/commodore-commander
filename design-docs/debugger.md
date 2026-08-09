@@ -98,8 +98,12 @@ binary monitor.
   remove when a DAP adapter resolves a breakpoint to a different executable
   line. The full source-breakpoint state sync carries a marker flag so the
   adapter toggles these entries with `CHECKPOINT_TOGGLE` but never reconciles
-  them as UI-owned checkpoints. VICE checkpoint numbers for `.vs`-owned
-  programmed breakpoints
+  them as UI-owned checkpoints. The standard DAP `setBreakpoints` request is
+  not authoritative for programmed breakpoints: Theia omits disabled markers
+  from that request, so the adapter reports programmed breakpoint status in
+  the response but does not refresh, toggle, or re-emit programmed breakpoint
+  state from that path. VICE checkpoint numbers for `.vs`-owned programmed
+  breakpoints
   are monitor-local and volatile: before toggling one from the UI, the adapter
   refreshes the association with `CHECKPOINT_LIST`; if VICE rejects a toggle
   because the remembered object no longer exists, the adapter clears the stale

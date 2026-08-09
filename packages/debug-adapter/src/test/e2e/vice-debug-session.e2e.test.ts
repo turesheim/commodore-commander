@@ -678,6 +678,10 @@ viceTest('toggles programmed breakpoints without deleting VICE checkpoints', asy
   assert.equal(programmedBreakpoint.line, executableLine);
   assert.equal(typeof programmedBreakpoint.checkpointNumber, 'number');
 
+  const checkpointListsBeforeSetBreakpoints = viceMonitorCommandEventCount(
+    session.client,
+    'CHECKPOINT_LIST'
+  );
   const installedResponse = await sendSetBreakpoints(
     session.client,
     session.fixture.source,
@@ -685,6 +689,12 @@ viceTest('toggles programmed breakpoints without deleting VICE checkpoints', asy
       programmedSourceBreakpoint(programmedBreakpoint),
       { line: remainingLine }
     ]
+  );
+  await delay(250);
+  assert.equal(
+    viceMonitorCommandEventCount(session.client, 'CHECKPOINT_LIST'),
+    checkpointListsBeforeSetBreakpoints,
+    'standard DAP setBreakpoints must not refresh .vs-owned programmed breakpoints'
   );
   assert.equal(installedResponse.breakpoints.length, 2);
   assert.equal(installedResponse.breakpoints[0]?.id, programmedBreakpoint.id);
@@ -1123,6 +1133,22 @@ async function listenOnLoopback(server: net.Server): Promise<number> {
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function viceMonitorCommandEventCount(
+  client: DapClient,
+  name: string
+): number {
+  return client.events<DebugProtocol.Event>(
+    COMMODORE_VICE_MONITOR_LOG_EVENT,
+    (event) => {
+      const body = event.body as {
+        category?: string;
+        name?: string;
+      } | undefined;
+      return body?.category === 'input' && body.name === name;
+    }
+  ).length;
 }
 
 async function configurationDoneAndWaitStopped(
