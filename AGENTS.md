@@ -7,6 +7,9 @@ This repository contains a Theia based IDE for building applications for the Com
 ## Working rules
 
 - Prefer small, reviewable changes over large speculative rewrites.
+- Work in the repository checkout the user is actively using. Do not create or
+  keep feature work in a separate worktree, temporary checkout, or copied
+  repository unless you ask first and the user explicitly agrees.
 - Preserve domain behavior and protocol knowledge whenever possible.
 - Keep existing code working unless the task explicitly targets migration scaffolding.
 - Do not replace Eclipse-specific code with guessed Theia code unless the mapping is obvious and low-risk.
