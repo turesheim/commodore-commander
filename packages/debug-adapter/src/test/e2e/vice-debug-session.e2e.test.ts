@@ -28,6 +28,7 @@ interface LaunchedFixtureSession {
   client: DapClient;
   fixture: PreparedFixture;
   vice: ViceE2eEnvironment;
+  viceArgs?: readonly string[];
   viceFramePort?: number;
 }
 
@@ -243,6 +244,35 @@ viceTest('keeps embedded VICE stopped while Theia finishes breakpoint setup', as
 viceTest('hits Kick Assembler debug-info breakpoints', async (t, vice) => {
   const session = await launchFixture(t, vice, 'screencolors');
   await addDebugInfoBreakpoint(session.fixture.debugInfo, '$1009');
+  await initializeAndLaunch(session);
+
+  const executableLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    executableLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  assert.equal(stopped.body?.hitBreakpointIds, undefined);
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, executableLine);
+});
+
+viceTest('stops on VICE monitor command breakpoints from explicit moncommands', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  const monitorCommands = path.join(session.fixture.directory, 'screencolors.vs');
+  await writeFile(monitorCommands, 'break 1009\n', 'utf8');
+  session.viceArgs = [
+    ...session.vice.viceArgs,
+    '-moncommands',
+    monitorCommands
+  ];
   await initializeAndLaunch(session);
 
   const executableLine = await fixtureLine(
@@ -493,13 +523,8 @@ async function launchFixture(
   t: TestContext,
   vice: ViceE2eEnvironment,
   fixtureName: DebugAdapterFixtureName,
-  options: { embedded?: boolean } = {}
-): Promise<{
-  client: DapClient;
-  fixture: PreparedFixture;
-  vice: ViceE2eEnvironment;
-  viceFramePort?: number;
-}> {
+  options: { embedded?: boolean; viceArgs?: readonly string[] } = {}
+): Promise<LaunchedFixtureSession> {
   const fixture = await prepareFixture(vice.packageRoot, fixtureName);
   const artifactDirectory = path.join(
     vice.repoRoot,
@@ -527,6 +552,7 @@ async function launchFixture(
     client,
     fixture,
     vice,
+    ...(options.viceArgs ? { viceArgs: options.viceArgs } : {}),
     ...(viceFramePort !== undefined ? { viceFramePort } : {})
   };
 }
@@ -565,7 +591,7 @@ async function launchInitializedFixture(
         stopOnEntry: true,
         viceResourcesPath: session.vice.viceResourcesPath,
         viceExecutable: session.vice.viceExecutable,
-        viceArgs: session.vice.viceArgs,
+        viceArgs: session.viceArgs ?? session.vice.viceArgs,
         ...(session.viceFramePort !== undefined
           ? {
               viceLaunchMode: 'embedded',

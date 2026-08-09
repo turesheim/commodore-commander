@@ -47,6 +47,10 @@ binary monitor.
   When the source is compiled, Kick Assembler emits them into the `.dbg`
   `<Breakpoints>` block. The adapter installs those entries as VICE execution
   checkpoints but does not surface them as Theia gutter breakpoints.
+- Explicit VICE monitor command files can also install breakpoints outside the
+  adapter's checkpoint map, for example Kick Assembler `.vs` files containing
+  `break` commands. Unknown VICE checkpoint hits are reported as DAP
+  `breakpoint` stops instead of being auto-resumed.
 - DAP source breakpoints are remembered when Theia sends `setBreakpoints`,
   even if that happens before `launch` has loaded Kick Assembler debug info.
   The adapter advertises `supportsConfigurationDoneRequest` so Theia completes

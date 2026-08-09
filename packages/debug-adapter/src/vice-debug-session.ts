@@ -801,9 +801,9 @@ export class ViceDebugSession {
 
   private async configurationDoneRequest(request: DapRequest): Promise<void> {
     this.configurationDone = true;
-    this.connection.sendResponse(request);
     if (this.launchArguments?.noDebug) {
       this.resumeMonitor();
+      this.connection.sendResponse(request);
       return;
     }
     if (!this.dapStopped && !this.handlingStop) {
@@ -822,6 +822,7 @@ export class ViceDebugSession {
         this.handlingStop = false;
       }
     }
+    this.connection.sendResponse(request);
   }
 
   private async setBreakpoints(request: DapRequest): Promise<void> {
@@ -1994,10 +1995,6 @@ export class ViceDebugSession {
     const dataBreakpoint = this.checkpointToDataBreakpoint.get(checkpoint.number);
     let shouldResume = false;
     this.lastHitShouldLog = false;
-
-    if (!sourceBreakpoint && !dataBreakpoint) {
-      return true;
-    }
 
     if (sourceBreakpoint) {
       sourceBreakpoint.hitCount += 1;
