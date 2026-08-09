@@ -1,4 +1,4 @@
-import { DebugSourceBreakpoint } from '@theia/debug/lib/browser/model/debug-source-breakpoint';
+import type { DebugSourceBreakpoint } from '@theia/debug/lib/browser/model/debug-source-breakpoint';
 import type { SourceBreakpoint } from '@theia/debug/lib/browser/breakpoint/breakpoint-marker';
 
 import { isProgrammedSourceBreakpoint } from './commodore-vice-programmed-breakpoint-state';
@@ -11,52 +11,51 @@ type PatchableDebugSourceBreakpoint = DebugSourceBreakpoint & {
   [PATCHED]?: true;
 };
 
-type BreakpointManagerWithProgrammedRemoval = {
-  withProgrammedBreakpointRemovalAllowed?: <T>(callback: () => T) => T;
-};
-
 type DebugSourceBreakpointWithDoRemove = DebugSourceBreakpoint & {
   doRemove(origins: SourceBreakpoint[]): SourceBreakpoint[] | undefined;
 };
 
 export function installDebugSourceBreakpointTogglePatch(): void {
+  const { DebugSourceBreakpoint } = require(
+    '@theia/debug/lib/browser/model/debug-source-breakpoint'
+  ) as typeof import('@theia/debug/lib/browser/model/debug-source-breakpoint');
   const prototype = DebugSourceBreakpoint.prototype as PatchableDebugSourceBreakpoint;
   if (prototype[PATCHED]) {
     return;
   }
   prototype[PATCHED] = true;
-  prototype.setEnabled = function setEnabled(enabled: boolean): void {
-    const originIds = new Set(this.origins.map((origin) => origin.id));
-    const breakpoints = this.breakpoints.getBreakpoints(this.uri);
-    let shouldUpdate = false;
-    for (const breakpoint of breakpoints) {
-      if (originIds.has(breakpoint.id) && breakpoint.enabled !== enabled) {
-        breakpoint.enabled = enabled;
-        shouldUpdate = true;
-      }
+  prototype.setEnabled = setEnabledPreservingMarkerIds;
+  prototype.remove = removeIgnoringProgrammedBreakpoints;
+}
+
+export function setEnabledPreservingMarkerIds(
+  this: DebugSourceBreakpoint,
+  enabled: boolean
+): void {
+  const originIds = new Set(this.origins.map((origin) => origin.id));
+  const breakpoints = this.breakpoints.getBreakpoints(this.uri);
+  let shouldUpdate = false;
+  for (const breakpoint of breakpoints) {
+    if (originIds.has(breakpoint.id) && breakpoint.enabled !== enabled) {
+      breakpoint.enabled = enabled;
+      shouldUpdate = true;
     }
-    if (shouldUpdate) {
-      this.breakpoints.setBreakpoints(this.uri, breakpoints);
-    }
-  };
-  prototype.remove = function remove(): void {
-    const sourceBreakpoint = this as DebugSourceBreakpointWithDoRemove;
-    const breakpoints = sourceBreakpoint.doRemove(sourceBreakpoint.origins);
-    if (!breakpoints) {
-      return;
-    }
-    const breakpointManager =
-      this.breakpoints as BreakpointManagerWithProgrammedRemoval;
-    const removeBreakpoints = () => {
-      this.breakpoints.setBreakpoints(this.uri, breakpoints);
-    };
-    if (
-      this.origins.some(isProgrammedSourceBreakpoint) &&
-      typeof breakpointManager.withProgrammedBreakpointRemovalAllowed === 'function'
-    ) {
-      breakpointManager.withProgrammedBreakpointRemovalAllowed(removeBreakpoints);
-      return;
-    }
-    removeBreakpoints();
-  };
+  }
+  if (shouldUpdate) {
+    this.breakpoints.setBreakpoints(this.uri, breakpoints);
+  }
+}
+
+export function removeIgnoringProgrammedBreakpoints(
+  this: DebugSourceBreakpoint
+): void {
+  if (this.origins.some(isProgrammedSourceBreakpoint)) {
+    return;
+  }
+  const sourceBreakpoint = this as DebugSourceBreakpointWithDoRemove;
+  const breakpoints = sourceBreakpoint.doRemove(sourceBreakpoint.origins);
+  if (!breakpoints) {
+    return;
+  }
+  this.breakpoints.setBreakpoints(this.uri, breakpoints);
 }
