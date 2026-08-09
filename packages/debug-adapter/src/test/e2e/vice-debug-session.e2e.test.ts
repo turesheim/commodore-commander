@@ -83,6 +83,61 @@ viceTest('hits source breakpoints through a real VICE monitor session', async (t
   assert.equal(topFrame.line, breakpointLine);
 });
 
+viceTest('installs source breakpoints sent before launch', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'debug-demo');
+  await session.client.request<DebugProtocol.Capabilities>(
+    'initialize',
+    {
+      adapterID: 'commodore-vice',
+      linesStartAt1: true,
+      columnsStartAt1: true,
+      supportsMemoryEvent: true,
+      supportsInvalidatedEvent: true
+    } satisfies DebugProtocol.InitializeRequestArguments
+  );
+
+  const breakpointLine = await fixtureLine(
+    session.fixture.source,
+    'jsr MarkStepTarget'
+  );
+  const pendingBreakpointResponse =
+    await sendSetBreakpoints(session.client, session.fixture.source, [
+      { line: breakpointLine }
+    ]);
+  const pendingBreakpoint = pendingBreakpointResponse.breakpoints[0];
+  assert.ok(pendingBreakpoint, 'expected one source breakpoint response');
+  assert.equal(pendingBreakpoint.verified, false);
+
+  const changedBreakpoint = session.client.waitForEvent<DebugProtocol.BreakpointEvent>(
+    'breakpoint',
+    (event) => {
+      const body = event.body;
+      return body?.reason === 'changed' &&
+        body.breakpoint.id === pendingBreakpoint.id &&
+        body.breakpoint.verified === true;
+    },
+    E2E_TIMEOUT_MS
+  );
+
+  await launchInitializedFixture(session);
+  const changed = await changedBreakpoint;
+  assert.equal(changed.body?.breakpoint.line, breakpointLine);
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  if (stopped.body?.hitBreakpointIds) {
+    assert.deepEqual(stopped.body.hitBreakpointIds, [pendingBreakpoint.id]);
+  }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, breakpointLine);
+});
+
 viceTest('resolves screencolors comment breakpoints to executable lines', async (t, vice) => {
   const session = await launchFixture(t, vice, 'screencolors');
   await initializeAndLaunch(session);
@@ -454,6 +509,13 @@ async function initializeAndLaunch(
     } satisfies DebugProtocol.InitializeRequestArguments
   );
 
+  await launchInitializedFixture(session);
+  return capabilities;
+}
+
+async function launchInitializedFixture(
+  session: LaunchedFixtureSession
+): Promise<void> {
   const initialized = session.client.waitForEvent('initialized');
   await Promise.all([
     initialized,
@@ -479,8 +541,6 @@ async function initializeAndLaunch(
       E2E_TIMEOUT_MS
     )
   ]);
-
-  return capabilities;
 }
 
 async function addDebugInfoBreakpoint(
@@ -529,27 +589,35 @@ async function setSourceBreakpoint(
   line: number,
   options: Pick<DebugProtocol.SourceBreakpoint, 'condition' | 'hitCondition' | 'logMessage'> = {}
 ): Promise<DebugProtocol.Breakpoint> {
-  const response = await client.request<DebugProtocol.SetBreakpointsResponse['body']>(
+  const response = await sendSetBreakpoints(client, sourcePath, [
+    {
+      line,
+      ...options
+    }
+  ]);
+  const breakpoint = response.breakpoints[0];
+  assert.ok(breakpoint, 'expected one source breakpoint response');
+  assert.equal(breakpoint.verified, true, breakpoint.message);
+  return breakpoint;
+}
+
+async function sendSetBreakpoints(
+  client: DapClient,
+  sourcePath: string,
+  breakpoints: DebugProtocol.SourceBreakpoint[]
+): Promise<DebugProtocol.SetBreakpointsResponse['body']> {
+  return client.request<DebugProtocol.SetBreakpointsResponse['body']>(
     'setBreakpoints',
     {
       source: {
         name: path.basename(sourcePath),
         path: sourcePath
       },
-      breakpoints: [
-        {
-          line,
-          ...options
-        }
-      ],
-      lines: [line],
+      breakpoints,
+      lines: breakpoints.map((breakpoint) => breakpoint.line),
       sourceModified: false
     } satisfies DebugProtocol.SetBreakpointsArguments
   );
-  const breakpoint = response.breakpoints[0];
-  assert.ok(breakpoint, 'expected one source breakpoint response');
-  assert.equal(breakpoint.verified, true, breakpoint.message);
-  return breakpoint;
 }
 
 async function continueAndWaitStopped(

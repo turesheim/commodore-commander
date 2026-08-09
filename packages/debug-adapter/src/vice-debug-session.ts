@@ -128,6 +128,7 @@ interface InstalledBreakpointBase {
 interface InstalledSourceBreakpoint extends InstalledBreakpointBase {
   sourcePath: string;
   line: number;
+  sourceBreakpoint: DebugProtocol.SourceBreakpoint;
   dapVisible: true;
 }
 
@@ -399,6 +400,7 @@ export class ViceDebugSession {
         sourceRoot
       );
       this.debugInfoBreakpoints = this.createDebugInfoBreakpoints(this.debugInfo);
+      this.refreshSourceBreakpointMappings(true);
     }
 
     const launch = await launchViceProcess({
@@ -1234,35 +1236,21 @@ export class ViceDebugSession {
     breakpointSpec: DebugProtocol.SourceBreakpoint
   ): Promise<InstalledSourceBreakpoint> {
     const line = breakpointSpec.line;
-    const mapping = findNearestLineMappingForSourceLine(
-      this.debugInfo,
-      sourcePath,
-      line
-    );
     const condition = normalizeViceCondition(breakpointSpec.condition);
     const hitCondition = parseHitCondition(breakpointSpec.hitCondition);
-    const unsupportedMessage = unsupportedBreakpointMessage(
-      breakpointSpec,
-      condition,
-      hitCondition
-    );
     const breakpoint: InstalledBreakpoint = {
       id: this.nextBreakpointId,
       sourcePath,
       line,
+      sourceBreakpoint: breakpointSpec,
       dapVisible: true,
-      ...(mapping ? { mapping } : {}),
       ...(condition ? { condition } : {}),
       ...(hitCondition ? { hitCondition } : {}),
       ...(breakpointSpec.logMessage ? { logMessage: breakpointSpec.logMessage } : {}),
       hitCount: 0,
-      verified: Boolean(mapping) && !unsupportedMessage,
-      ...(unsupportedMessage
-        ? { message: unsupportedMessage }
-        : mapping
-          ? {}
-          : { message: 'No Kick Assembler debug mapping for this line.' })
+      verified: false
     };
+    this.refreshSourceBreakpointMapping(breakpoint);
     this.nextBreakpointId += 1;
 
     if (this.initialBreakpointSyncDone) {
@@ -1453,6 +1441,7 @@ export class ViceDebugSession {
     if (this.initialBreakpointSyncDone) {
       return;
     }
+    this.refreshSourceBreakpointMappings(true);
     await this.reinstallAllBreakpointCheckpoints();
     this.initialBreakpointSyncDone = true;
   }
@@ -1542,6 +1531,47 @@ export class ViceDebugSession {
       ...this.debugInfoBreakpoints,
       ...[...this.breakpointsBySource.values()].flat()
     ];
+  }
+
+  private refreshSourceBreakpointMappings(notifyChanged = false): void {
+    for (const breakpoint of [...this.breakpointsBySource.values()].flat()) {
+      if (this.refreshSourceBreakpointMapping(breakpoint) && notifyChanged) {
+        this.connection.sendEvent(
+          'breakpoint',
+          {
+            reason: 'changed',
+            breakpoint: this.toDapBreakpoint(breakpoint)
+          } satisfies DebugProtocol.BreakpointEvent['body']
+        );
+      }
+    }
+  }
+
+  private refreshSourceBreakpointMapping(
+    breakpoint: InstalledSourceBreakpoint
+  ): boolean {
+    const previousMapping = breakpoint.mapping;
+    const previousVerified = breakpoint.verified;
+    const previousMessage = breakpoint.message;
+    const mapping = findNearestLineMappingForSourceLine(
+      this.debugInfo,
+      breakpoint.sourcePath,
+      breakpoint.line
+    );
+    const unsupportedMessage = unsupportedBreakpointMessage(
+      breakpoint.sourceBreakpoint,
+      breakpoint.condition,
+      breakpoint.hitCondition
+    );
+
+    breakpoint.mapping = mapping;
+    breakpoint.verified = Boolean(mapping) && !unsupportedMessage;
+    breakpoint.message = unsupportedMessage ??
+      (mapping ? undefined : 'No Kick Assembler debug mapping for this line.');
+
+    return previousMapping !== breakpoint.mapping ||
+      previousVerified !== breakpoint.verified ||
+      previousMessage !== breakpoint.message;
   }
 
   private toDapBreakpoint(

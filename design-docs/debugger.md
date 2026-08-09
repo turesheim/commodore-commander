@@ -33,10 +33,13 @@ binary monitor.
   When the source is compiled, Kick Assembler emits them into the `.dbg`
   `<Breakpoints>` block. The adapter installs those entries as VICE execution
   checkpoints but does not surface them as Theia gutter breakpoints.
-- Initial DAP source breakpoints are remembered when Theia sends
-  `setBreakpoints` and synchronized with VICE at the first stopped monitor
-  state before the initial resume. This avoids installing checkpoints too early
-  in embedded/autostart launch timing.
+- DAP source breakpoints are remembered when Theia sends `setBreakpoints`,
+  even if that happens before `launch` has loaded Kick Assembler debug info.
+  After `.dbg` loading, the adapter re-resolves pending source breakpoints,
+  sends DAP breakpoint-changed events for newly verified bindings, and
+  synchronizes VICE checkpoints at the first stopped monitor state before the
+  initial resume. This avoids losing breakpoints in embedded/autostart launch
+  timing.
 - If a requested source breakpoint line has no exact mapping, the adapter can
   bind it to the next nearby mapped line in the same source file. This supports
   common editor clicks on comments or blank lines immediately above executable
@@ -166,10 +169,11 @@ emulator is running.
   views. It runs locally through `npm run test:e2e:theia:ui` after the Electron
   app is built and in GitHub Actions on Linux under Xvfb.
 - Debug-adapter VICE e2e fixtures cover `debug-demo`,
-  `visual-debugger-demo`, and `screencolors`; `screencolors` specifically
-  covers comment-line breakpoint binding against Kick Assembler `<Segment>`
-  mappings, embedded VICE breakpoint startup, and `.break` debug-info
-  breakpoint installation from `.dbg` `<Breakpoints>`.
+  `visual-debugger-demo`, and `screencolors`; `debug-demo` covers regular
+  source breakpoints, including source breakpoints sent before `launch`, while
+  `screencolors` covers comment-line breakpoint binding against Kick Assembler
+  `<Segment>` mappings, embedded VICE breakpoint startup, and `.break`
+  debug-info breakpoint installation from `.dbg` `<Breakpoints>`.
 - Build-before-debug has Theia task-provider and generated `preLaunchTask`
   wiring for Kick Assembler builds. Remaining work is run-picker and
   build-policy behavior for configured runs, plus any clean-task workflow that
