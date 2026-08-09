@@ -1,12 +1,19 @@
 import assert from 'node:assert/strict';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
+import net from 'node:net';
 import path from 'node:path';
 import { test, type TestContext } from 'node:test';
 
 import type { DebugProtocol } from '@vscode/debugprotocol';
 
 import { DapClient } from './dap-client';
-import { fixtureLine, prepareFixture, type PreparedFixture } from './fixtures';
+import {
+  fixtureLine,
+  prepareFixture,
+  type DebugAdapterFixtureName,
+  type PreparedFixture
+} from './fixtures';
+import { COMMODORE_VICE_MONITOR_LOG_EVENT } from '../../vice-monitor-log';
 import { readC64VisualSnapshot } from './visual-snapshot';
 import {
   resolveViceE2eEnvironment,
@@ -15,8 +22,37 @@ import {
 
 const THREAD_ID = 1;
 const E2E_TIMEOUT_MS = 45_000;
+const PROGRAMMED_BREAKPOINT_RAW_ID = 'commodoreViceProgrammedBreakpointId';
+const PROGRAMMED_BREAKPOINT_RAW_ADDRESS =
+  'commodoreViceProgrammedBreakpointAddress';
 
 const { environment, skipReason } = resolveViceE2eEnvironment();
+
+interface LaunchedFixtureSession {
+  client: DapClient;
+  fixture: PreparedFixture;
+  vice: ViceE2eEnvironment;
+  viceArgs?: readonly string[];
+  viceFramePort?: number;
+  debugInfo?: string | false;
+}
+
+interface LaunchFixtureOptions {
+  embedded?: boolean;
+  includeMonitorCommands?: boolean;
+  viceArgs?: readonly string[];
+}
+
+interface ProgrammedBreakpointDescriptor {
+  id: number;
+  address: string;
+  enabled: boolean;
+  installed: boolean;
+  canRemove: false;
+  source?: DebugProtocol.Source;
+  line?: number;
+  checkpointNumber?: number;
+}
 
 viceTest('launches VICE and stops on entry', async (t, vice) => {
   const session = await launchFixture(t, vice, 'debug-demo');
@@ -26,6 +62,7 @@ viceTest('launches VICE and stops on entry', async (t, vice) => {
   assert.equal(capabilities.supportsWriteMemoryRequest, true);
   assert.equal(capabilities.supportsDataBreakpoints, true);
   assert.equal(capabilities.supportsLogPoints, true);
+  assert.equal(capabilities.supportsConfigurationDoneRequest, true);
 
   const stopped = await configurationDoneAndWaitStopped(session.client);
   assert.equal(stopped.body?.reason, 'entry');
@@ -54,6 +91,382 @@ viceTest('hits source breakpoints through a real VICE monitor session', async (t
     session.fixture.source,
     breakpointLine
   );
+  const checkpointSetLog = session.client.waitForEvent<DebugProtocol.Event>(
+    COMMODORE_VICE_MONITOR_LOG_EVENT,
+    (event) => {
+      const body = event.body as {
+        category?: string;
+        name?: string;
+        message?: string;
+      } | undefined;
+      return body?.category === 'input' &&
+        body.name === 'CHECKPOINT_SET' &&
+        body.message?.includes('CHECKPOINT_SET') === true;
+    },
+    E2E_TIMEOUT_MS
+  );
+
+  await configurationDoneAndWaitStopped(session.client);
+  await checkpointSetLog;
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  if (stopped.body?.hitBreakpointIds) {
+    assert.deepEqual(stopped.body.hitBreakpointIds, [breakpoint.id]);
+  }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, breakpointLine);
+});
+
+viceTest('installs source breakpoints sent before launch', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'debug-demo');
+  await session.client.request<DebugProtocol.Capabilities>(
+    'initialize',
+    {
+      adapterID: 'commodore-vice',
+      linesStartAt1: true,
+      columnsStartAt1: true,
+      supportsMemoryEvent: true,
+      supportsInvalidatedEvent: true
+    } satisfies DebugProtocol.InitializeRequestArguments
+  );
+
+  const breakpointLine = await fixtureLine(
+    session.fixture.source,
+    'jsr MarkStepTarget'
+  );
+  const pendingBreakpointResponse =
+    await sendSetBreakpoints(session.client, session.fixture.source, [
+      { line: breakpointLine }
+    ]);
+  const pendingBreakpoint = pendingBreakpointResponse.breakpoints[0];
+  assert.ok(pendingBreakpoint, 'expected one source breakpoint response');
+  assert.equal(pendingBreakpoint.verified, false);
+
+  const changedBreakpoint = session.client.waitForEvent<DebugProtocol.BreakpointEvent>(
+    'breakpoint',
+    (event) => {
+      const body = event.body;
+      return body?.reason === 'changed' &&
+        body.breakpoint.id === pendingBreakpoint.id &&
+        body.breakpoint.verified === true;
+    },
+    E2E_TIMEOUT_MS
+  );
+
+  await launchInitializedFixture(session);
+  const changed = await changedBreakpoint;
+  assert.equal(changed.body?.breakpoint.line, breakpointLine);
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  if (stopped.body?.hitBreakpointIds) {
+    assert.deepEqual(stopped.body.hitBreakpointIds, [pendingBreakpoint.id]);
+  }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, breakpointLine);
+});
+
+viceTest('installs source breakpoints added while VICE is running', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'debug-demo');
+  await initializeAndLaunch(session);
+  await configurationDoneAndWaitStopped(session.client);
+
+  const breakpointLine = await fixtureLine(
+    session.fixture.source,
+    'jmp Hold'
+  );
+
+  await session.client.request<DebugProtocol.ContinueResponse['body']>(
+    'continue',
+    { threadId: THREAD_ID } satisfies DebugProtocol.ContinueArguments
+  );
+  await delay(250);
+
+  const breakpoint = await setSourceBreakpoint(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+  const { stopped, topFrame } = await waitUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    breakpointLine,
+    (candidate) =>
+      candidate.body?.hitBreakpointIds?.includes(breakpoint.id!) === true
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  assert.deepEqual(stopped.body?.hitBreakpointIds, [breakpoint.id]);
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, breakpointLine);
+});
+
+viceTest('removes source breakpoints cleared through setBreakpoints', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  await initializeAndLaunch(session);
+
+  const removedLine = await fixtureLine(
+    session.fixture.source,
+    'lda #INNER_MAX'
+  );
+  const remainingLine = await fixtureLine(
+    session.fixture.source,
+    'bne CrazyBorderLoop'
+  );
+  const installedResponse = await sendSetBreakpoints(
+    session.client,
+    session.fixture.source,
+    [
+      { line: removedLine },
+      { line: remainingLine }
+    ]
+  );
+  assert.equal(installedResponse.breakpoints.length, 2);
+  assert.equal(installedResponse.breakpoints[0]?.verified, true);
+  assert.equal(installedResponse.breakpoints[1]?.verified, true);
+
+  await configurationDoneAndWaitStopped(session.client);
+
+  const checkpointDeleteLog = session.client.waitForEvent<DebugProtocol.Event>(
+    COMMODORE_VICE_MONITOR_LOG_EVENT,
+    (event) => {
+      const body = event.body as {
+        category?: string;
+        name?: string;
+        message?: string;
+      } | undefined;
+      return body?.category === 'input' &&
+        body.name === 'CHECKPOINT_DELETE' &&
+        body.message?.includes('CHECKPOINT_DELETE') === true;
+    },
+    E2E_TIMEOUT_MS
+  );
+  const updatedResponse = await sendSetBreakpoints(
+    session.client,
+    session.fixture.source,
+    [{ line: remainingLine }]
+  );
+  await checkpointDeleteLog;
+  const remainingBreakpoint = updatedResponse.breakpoints[0];
+  assert.ok(remainingBreakpoint, 'expected remaining source breakpoint response');
+  assert.equal(remainingBreakpoint.verified, true, remainingBreakpoint.message);
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const stopped = await continueAndWaitStopped(session.client);
+    const topFrame = await topStackFrame(session.client);
+    if (
+      topFrame.source?.path === session.fixture.source &&
+      topFrame.line === removedLine
+    ) {
+      throw new Error(`Removed breakpoint still stopped at line ${removedLine}.`);
+    }
+    if (
+      topFrame.source?.path === session.fixture.source &&
+      topFrame.line === remainingLine
+    ) {
+      assert.equal(stopped.body?.reason, 'breakpoint');
+      if (stopped.body?.hitBreakpointIds) {
+        assert.deepEqual(stopped.body.hitBreakpointIds, [remainingBreakpoint.id]);
+      }
+      return;
+    }
+  }
+  throw new Error(`Did not stop at remaining breakpoint line ${remainingLine}.`);
+});
+
+viceTest('disables source breakpoints through Theia state without deleting checkpoints', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  await initializeAndLaunch(session);
+
+  const disabledLine = await fixtureLine(
+    session.fixture.source,
+    'lda #INNER_MAX'
+  );
+  const remainingLine = await fixtureLine(
+    session.fixture.source,
+    'bne CrazyBorderLoop'
+  );
+  const breakpointStates = [
+    { line: disabledLine, enabled: true, markerId: 'disabled-marker' },
+    { line: remainingLine, enabled: true, markerId: 'remaining-marker' }
+  ];
+  await syncSourceBreakpointStates(
+    session.client,
+    session.fixture.source,
+    breakpointStates
+  );
+  const installedResponse = await sendSetBreakpoints(
+    session.client,
+    session.fixture.source,
+    [
+      { line: disabledLine },
+      { line: remainingLine }
+    ]
+  );
+  assert.equal(installedResponse.breakpoints.length, 2);
+
+  await configurationDoneAndWaitStopped(session.client);
+
+  const checkpointToggleLog = session.client.waitForEvent<DebugProtocol.Event>(
+    COMMODORE_VICE_MONITOR_LOG_EVENT,
+    (event) => {
+      const body = event.body as {
+        category?: string;
+        name?: string;
+        message?: string;
+      } | undefined;
+      return body?.category === 'input' &&
+        body.name === 'CHECKPOINT_TOGGLE' &&
+        body.message?.includes('enabled=0') === true;
+    },
+    E2E_TIMEOUT_MS
+  );
+  const checkpointDeleteLog = session.client.waitForEvent<DebugProtocol.Event>(
+    COMMODORE_VICE_MONITOR_LOG_EVENT,
+    (event) => {
+      const body = event.body as {
+        category?: string;
+        name?: string;
+        message?: string;
+      } | undefined;
+      return body?.category === 'input' &&
+        body.name === 'CHECKPOINT_DELETE' &&
+        body.message?.includes('CHECKPOINT_DELETE') === true;
+    },
+    750
+  ).then(() => true, () => false);
+
+  const updatedResponse = await sendSetBreakpoints(
+    session.client,
+    session.fixture.source,
+    [{ line: remainingLine }]
+  );
+  await syncSourceBreakpointStates(
+    session.client,
+    session.fixture.source,
+    [
+      { line: disabledLine, enabled: false, markerId: 'disabled-marker' },
+      { line: remainingLine, enabled: true, markerId: 'remaining-marker' }
+    ]
+  );
+  await checkpointToggleLog;
+  assert.equal(await checkpointDeleteLog, false);
+
+  const remainingBreakpoint = updatedResponse.breakpoints[0];
+  assert.ok(remainingBreakpoint, 'expected remaining source breakpoint response');
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    remainingLine
+  );
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, remainingLine);
+});
+
+viceTest('resolves screencolors comment breakpoints to executable lines', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  await initializeAndLaunch(session);
+
+  const commentLine = await fixtureLine(
+    session.fixture.source,
+    '// back to top of loop'
+  );
+  const executableLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+  const breakpoint = await setSourceBreakpoint(
+    session.client,
+    session.fixture.source,
+    commentLine
+  );
+
+  assert.equal(breakpoint.line, executableLine);
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    executableLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  if (stopped.body?.hitBreakpointIds) {
+    assert.deepEqual(stopped.body.hitBreakpointIds, [breakpoint.id]);
+  }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, executableLine);
+});
+
+embeddedViceTest('hits screencolors source breakpoints in embedded VICE mode', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors', {
+    embedded: true
+  });
+  await initializeAndLaunch(session);
+
+  const commentLine = await fixtureLine(
+    session.fixture.source,
+    '// back to top of loop'
+  );
+  const executableLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+  const breakpoint = await setSourceBreakpoint(
+    session.client,
+    session.fixture.source,
+    commentLine
+  );
+
+  assert.equal(breakpoint.line, executableLine);
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    executableLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  if (stopped.body?.hitBreakpointIds) {
+    assert.deepEqual(stopped.body.hitBreakpointIds, [breakpoint.id]);
+  }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, executableLine);
+});
+
+viceTest('prefers configured debug info over nearby overlapping debug dumps', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  await writeFile(
+    path.join(session.fixture.directory, 'misleading.dbg'),
+    createMisleadingDebugInfo(
+      path.join(session.fixture.directory, 'misleading.asm')
+    ),
+    'utf8'
+  );
+  await initializeAndLaunch(session);
+
+  const breakpointLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+  const breakpoint = await setSourceBreakpoint(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
 
   await configurationDoneAndWaitStopped(session.client);
   const { stopped, topFrame } = await continueUntilTopFrame(
@@ -68,6 +481,315 @@ viceTest('hits source breakpoints through a real VICE monitor session', async (t
   }
   assert.equal(topFrame.source?.path, session.fixture.source);
   assert.equal(topFrame.line, breakpointLine);
+});
+
+viceTest('uses exact program debug info when launch omits debug info', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  session.debugInfo = false;
+  await writeFile(
+    path.join(session.fixture.directory, 'misleading.dbg'),
+    createMisleadingDebugInfo(
+      path.join(session.fixture.directory, 'misleading.asm')
+    ),
+    'utf8'
+  );
+  await initializeAndLaunch(session);
+
+  const breakpointLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+  const breakpoint = await setSourceBreakpoint(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  if (stopped.body?.hitBreakpointIds) {
+    assert.deepEqual(stopped.body.hitBreakpointIds, [breakpoint.id]);
+  }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, breakpointLine);
+});
+
+viceTest('ignores configured debug info that does not match the launched PRG', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  const misleadingDebugInfo = path.join(session.fixture.directory, 'misleading.dbg');
+  session.debugInfo = misleadingDebugInfo;
+  await writeFile(
+    misleadingDebugInfo,
+    createMisleadingDebugInfo(
+      path.join(session.fixture.directory, 'misleading.asm')
+    ),
+    'utf8'
+  );
+  await initializeAndLaunch(session);
+
+  assert.match(
+    session.client.outputText,
+    /Configured Kick Assembler debug info .*misleading\.dbg does not match launched PRG .*screencolors\.prg/u
+  );
+
+  const breakpointLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+  const breakpoint = await setSourceBreakpoint(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  if (stopped.body?.hitBreakpointIds) {
+    assert.deepEqual(stopped.body.hitBreakpointIds, [breakpoint.id]);
+  }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, breakpointLine);
+});
+
+embeddedViceTest('keeps embedded VICE stopped while Theia finishes breakpoint setup', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors', {
+    embedded: true
+  });
+  await initializeAndLaunch(session);
+
+  const commentLine = await fixtureLine(
+    session.fixture.source,
+    '// back to top of loop'
+  );
+  const executableLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+  const breakpoint = await setSourceBreakpoint(
+    session.client,
+    session.fixture.source,
+    commentLine
+  );
+
+  assert.equal(breakpoint.line, executableLine);
+  await delay(1500);
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    executableLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  if (stopped.body?.hitBreakpointIds) {
+    assert.deepEqual(stopped.body.hitBreakpointIds, [breakpoint.id]);
+  }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, executableLine);
+});
+
+viceTest('hits Kick Assembler debug-info breakpoints', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  await initializeAndLaunch(session);
+
+  const executableLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    executableLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  assert.equal(stopped.body?.hitBreakpointIds, undefined);
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, executableLine);
+});
+
+viceTest('stops on VICE monitor command breakpoints from explicit moncommands', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors', {
+    includeMonitorCommands: true
+  });
+  assert.ok(session.fixture.monitorCommands, 'expected screencolors.vs fixture');
+  session.viceArgs = [
+    ...session.vice.viceArgs,
+    '-moncommands',
+    session.fixture.monitorCommands
+  ];
+  await initializeAndLaunch(session);
+
+  const executableLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    executableLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  assert.equal(stopped.body?.hitBreakpointIds, undefined);
+  assert.match(
+    session.client.outputText,
+    /Skipped 1 Kick Assembler \.dbg breakpoint already present/u
+  );
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, executableLine);
+});
+
+viceTest('toggles programmed breakpoints without deleting VICE checkpoints', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors', {
+    includeMonitorCommands: true
+  });
+  await initializeAndLaunch(session);
+
+  const executableLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+  const remainingLine = await fixtureLine(
+    session.fixture.source,
+    'bne CrazyBorderLoop'
+  );
+  await configurationDoneAndWaitStopped(session.client);
+
+  const listResponse = await session.client.request<{
+    breakpoints: ProgrammedBreakpointDescriptor[];
+  }>('commodore-vice/listProgrammedBreakpoints');
+  const programmedBreakpoint = listResponse.breakpoints[0];
+  assert.ok(programmedBreakpoint, 'expected one programmed breakpoint');
+  assert.equal(programmedBreakpoint.address, '$1009');
+  assert.equal(programmedBreakpoint.canRemove, false);
+  assert.equal(programmedBreakpoint.enabled, true);
+  assert.equal(programmedBreakpoint.installed, true);
+  assert.equal(programmedBreakpoint.source?.path, session.fixture.source);
+  assert.equal(programmedBreakpoint.line, executableLine);
+  assert.equal(typeof programmedBreakpoint.checkpointNumber, 'number');
+
+  const checkpointListsBeforeSetBreakpoints = viceMonitorCommandEventCount(
+    session.client,
+    'CHECKPOINT_LIST'
+  );
+  const installedResponse = await sendSetBreakpoints(
+    session.client,
+    session.fixture.source,
+    [
+      programmedSourceBreakpoint(programmedBreakpoint),
+      { line: remainingLine }
+    ]
+  );
+  await delay(250);
+  assert.equal(
+    viceMonitorCommandEventCount(session.client, 'CHECKPOINT_LIST'),
+    checkpointListsBeforeSetBreakpoints,
+    'standard DAP setBreakpoints must not refresh .vs-owned programmed breakpoints'
+  );
+  assert.equal(installedResponse.breakpoints.length, 2);
+  assert.equal(installedResponse.breakpoints[0]?.id, programmedBreakpoint.id);
+  assert.equal(installedResponse.breakpoints[0]?.line, executableLine);
+  assert.equal(installedResponse.breakpoints[1]?.verified, true);
+
+  const checkpointToggleLog = session.client.waitForEvent<DebugProtocol.Event>(
+    COMMODORE_VICE_MONITOR_LOG_EVENT,
+    (event) => {
+      const body = event.body as {
+        category?: string;
+        name?: string;
+        message?: string;
+      } | undefined;
+      return body?.category === 'input' &&
+        body.name === 'CHECKPOINT_TOGGLE' &&
+        body.message?.includes('enabled=0') === true;
+    },
+    E2E_TIMEOUT_MS
+  );
+  const checkpointDeleteLog = session.client.waitForEvent<DebugProtocol.Event>(
+    COMMODORE_VICE_MONITOR_LOG_EVENT,
+    (event) => {
+      const body = event.body as {
+        category?: string;
+        name?: string;
+        message?: string;
+      } | undefined;
+      return body?.category === 'input' &&
+        body.name === 'CHECKPOINT_DELETE' &&
+        body.message?.includes('CHECKPOINT_DELETE') === true;
+    },
+    750
+  ).then(() => true, () => false);
+
+  await syncSourceBreakpointStates(
+    session.client,
+    session.fixture.source,
+    [
+      {
+        ...programmedSourceBreakpoint(programmedBreakpoint),
+        enabled: false,
+        markerId: 'programmed-marker'
+      },
+      {
+        line: remainingLine,
+        enabled: true,
+        markerId: 'remaining-marker'
+      }
+    ]
+  );
+  await checkpointToggleLog;
+  assert.equal(await checkpointDeleteLog, false);
+});
+
+viceTest('passes adjacent Kick Assembler VICE symbol files to VICE', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors', {
+    includeMonitorCommands: true
+  });
+  assert.ok(session.fixture.monitorCommands, 'expected screencolors.vs fixture');
+  await initializeAndLaunch(session);
+
+  assert.ok(
+    session.client.outputText.includes(session.fixture.monitorCommands),
+    'expected launch output to include adjacent .vs monitor command file'
+  );
+  assert.match(
+    session.client.outputText,
+    /Skipped 1 Kick Assembler \.dbg breakpoint already present/u
+  );
+
+  const executableLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    executableLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  assert.equal(stopped.body?.hitBreakpointIds, undefined);
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, executableLine);
 });
 
 viceTest('steps into, steps out of, and steps over source calls', async (t, vice) => {
@@ -283,10 +1005,29 @@ function viceTest(
   name: string,
   fn: (t: TestContext, vice: ViceE2eEnvironment) => Promise<void>
 ): void {
+  viceTestWithSkip(name, skipReason, fn);
+}
+
+function embeddedViceTest(
+  name: string,
+  fn: (t: TestContext, vice: ViceE2eEnvironment) => Promise<void>
+): void {
+  const embeddedSkipReason = skipReason ??
+    (environment?.embeddedTransportSupported
+      ? undefined
+      : 'VICE executable does not support Commodore Commander embedded transport');
+  viceTestWithSkip(name, embeddedSkipReason, fn);
+}
+
+function viceTestWithSkip(
+  name: string,
+  testSkipReason: string | undefined,
+  fn: (t: TestContext, vice: ViceE2eEnvironment) => Promise<void>
+): void {
   test(
     name,
     {
-      skip: skipReason,
+      skip: testSkipReason,
       timeout: E2E_TIMEOUT_MS + 15_000
     },
     async (t) => {
@@ -299,13 +1040,12 @@ function viceTest(
 async function launchFixture(
   t: TestContext,
   vice: ViceE2eEnvironment,
-  fixtureName: 'debug-demo' | 'visual-debugger-demo'
-): Promise<{
-  client: DapClient;
-  fixture: PreparedFixture;
-  vice: ViceE2eEnvironment;
-}> {
-  const fixture = await prepareFixture(vice.packageRoot, fixtureName);
+  fixtureName: DebugAdapterFixtureName,
+  options: LaunchFixtureOptions = {}
+): Promise<LaunchedFixtureSession> {
+  const fixture = await prepareFixture(vice.packageRoot, fixtureName, {
+    includeMonitorCommands: options.includeMonitorCommands
+  });
   const artifactDirectory = path.join(
     vice.repoRoot,
     'test-results',
@@ -318,21 +1058,28 @@ async function launchFixture(
     artifactDirectory,
     requestTimeoutMs: E2E_TIMEOUT_MS
   });
+  const embeddedFrameServer = options.embedded ? net.createServer((socket) => {
+    socket.on('data', () => undefined);
+  }) : undefined;
+  const viceFramePort = embeddedFrameServer
+    ? await listenOnLoopback(embeddedFrameServer)
+    : undefined;
   t.after(async () => {
     await client.stop();
+    embeddedFrameServer?.close();
   });
   return {
     client,
     fixture,
-    vice
+    vice,
+    ...(options.viceArgs ? { viceArgs: options.viceArgs } : {}),
+    ...(viceFramePort !== undefined ? { viceFramePort } : {})
   };
 }
 
-async function initializeAndLaunch(session: {
-  client: DapClient;
-  fixture: PreparedFixture;
-  vice: ViceE2eEnvironment;
-}): Promise<DebugProtocol.Capabilities> {
+async function initializeAndLaunch(
+  session: LaunchedFixtureSession
+): Promise<DebugProtocol.Capabilities> {
   const capabilities = await session.client.request<DebugProtocol.Capabilities>(
     'initialize',
     {
@@ -344,6 +1091,13 @@ async function initializeAndLaunch(session: {
     } satisfies DebugProtocol.InitializeRequestArguments
   );
 
+  await launchInitializedFixture(session);
+  return capabilities;
+}
+
+async function launchInitializedFixture(
+  session: LaunchedFixtureSession
+): Promise<void> {
   const initialized = session.client.waitForEvent('initialized');
   await Promise.all([
     initialized,
@@ -351,20 +1105,60 @@ async function initializeAndLaunch(session: {
       'launch',
       {
         program: session.fixture.program,
-        debugInfo: session.fixture.debugInfo,
+        ...(session.debugInfo === false
+          ? {}
+          : { debugInfo: session.debugInfo ?? session.fixture.debugInfo }),
         sourceRoot: session.fixture.directory,
         cwd: session.fixture.directory,
         stopOnEntry: true,
         viceResourcesPath: session.vice.viceResourcesPath,
         viceExecutable: session.vice.viceExecutable,
-        viceArgs: session.vice.viceArgs,
+        viceArgs: session.viceArgs ?? session.vice.viceArgs,
+        ...(session.viceFramePort !== undefined
+          ? {
+              viceLaunchMode: 'embedded',
+              viceFramePort: session.viceFramePort
+            }
+          : {}),
         machineName: 'VICE e2e C64'
       },
       E2E_TIMEOUT_MS
     )
   ]);
+}
 
-  return capabilities;
+async function listenOnLoopback(server: net.Server): Promise<number> {
+  return new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (!address || typeof address === 'string') {
+        reject(new Error('Embedded frame server did not bind to a TCP port.'));
+        return;
+      }
+      resolve(address.port);
+    });
+  });
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function viceMonitorCommandEventCount(
+  client: DapClient,
+  name: string
+): number {
+  return client.events<DebugProtocol.Event>(
+    COMMODORE_VICE_MONITOR_LOG_EVENT,
+    (event) => {
+      const body = event.body as {
+        category?: string;
+        name?: string;
+      } | undefined;
+      return body?.category === 'input' && body.name === name;
+    }
+  ).length;
 }
 
 async function configurationDoneAndWaitStopped(
@@ -384,27 +1178,66 @@ async function setSourceBreakpoint(
   line: number,
   options: Pick<DebugProtocol.SourceBreakpoint, 'condition' | 'hitCondition' | 'logMessage'> = {}
 ): Promise<DebugProtocol.Breakpoint> {
-  const response = await client.request<DebugProtocol.SetBreakpointsResponse['body']>(
+  const response = await sendSetBreakpoints(client, sourcePath, [
+    {
+      line,
+      ...options
+    }
+  ]);
+  const breakpoint = response.breakpoints[0];
+  assert.ok(breakpoint, 'expected one source breakpoint response');
+  assert.equal(breakpoint.verified, true, breakpoint.message);
+  return breakpoint;
+}
+
+async function sendSetBreakpoints(
+  client: DapClient,
+  sourcePath: string,
+  breakpoints: DebugProtocol.SourceBreakpoint[]
+): Promise<DebugProtocol.SetBreakpointsResponse['body']> {
+  return client.request<DebugProtocol.SetBreakpointsResponse['body']>(
     'setBreakpoints',
     {
       source: {
         name: path.basename(sourcePath),
         path: sourcePath
       },
-      breakpoints: [
-        {
-          line,
-          ...options
-        }
-      ],
-      lines: [line],
+      breakpoints,
+      lines: breakpoints.map((breakpoint) => breakpoint.line),
       sourceModified: false
     } satisfies DebugProtocol.SetBreakpointsArguments
   );
-  const breakpoint = response.breakpoints[0];
-  assert.ok(breakpoint, 'expected one source breakpoint response');
-  assert.equal(breakpoint.verified, true, breakpoint.message);
-  return breakpoint;
+}
+
+async function syncSourceBreakpointStates(
+  client: DapClient,
+  sourcePath: string,
+  breakpoints: Array<DebugProtocol.SourceBreakpoint & {
+    enabled: boolean;
+    markerId: string;
+  }>
+): Promise<DebugProtocol.SetBreakpointsResponse['body']> {
+  return client.request<DebugProtocol.SetBreakpointsResponse['body']>(
+    'commodore-vice/syncSourceBreakpoints',
+    {
+      source: {
+        name: path.basename(sourcePath),
+        path: sourcePath
+      },
+      breakpoints,
+      sourceModified: false
+    }
+  );
+}
+
+function programmedSourceBreakpoint(
+  breakpoint: ProgrammedBreakpointDescriptor
+): DebugProtocol.SourceBreakpoint {
+  return {
+    line: breakpoint.line!,
+    [PROGRAMMED_BREAKPOINT_RAW_ID]: breakpoint.id,
+    [PROGRAMMED_BREAKPOINT_RAW_ADDRESS]: breakpoint.address
+  } as DebugProtocol.SourceBreakpoint;
 }
 
 async function continueAndWaitStopped(
@@ -439,6 +1272,37 @@ async function continueUntilTopFrame(
     if (topFrame.source?.path === sourcePath && topFrame.line === line) {
       return { stopped, topFrame };
     }
+  }
+  throw new Error(`Did not stop at ${sourcePath}:${line}.`);
+}
+
+async function waitUntilTopFrame(
+  client: DapClient,
+  sourcePath: string,
+  line: number,
+  predicate: (stopped: DebugProtocol.StoppedEvent) => boolean = () => true
+): Promise<{
+  stopped: DebugProtocol.StoppedEvent;
+  topFrame: DebugProtocol.StackFrame;
+}> {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const stopped = await client.waitForEvent<DebugProtocol.StoppedEvent>(
+      'stopped',
+      undefined,
+      E2E_TIMEOUT_MS
+    );
+    const topFrame = await topStackFrame(client);
+    if (
+      topFrame.source?.path === sourcePath &&
+      topFrame.line === line &&
+      predicate(stopped)
+    ) {
+      return { stopped, topFrame };
+    }
+    await client.request<DebugProtocol.ContinueResponse['body']>(
+      'continue',
+      { threadId: THREAD_ID } satisfies DebugProtocol.ContinueArguments
+    );
   }
   throw new Error(`Did not stop at ${sourcePath}:${line}.`);
 }
@@ -510,4 +1374,39 @@ function sanitizeArtifactName(name: string): string {
     .replace(/[^a-z0-9._-]+/gu, '-')
     .replace(/^-|-$/gu, '')
     .slice(0, 120);
+}
+
+function createMisleadingDebugInfo(sourcePath: string): string {
+  const rows: string[] = [];
+  for (let address = 0x0800, line = 1; address <= 0x1025; address += 1, line += 1) {
+    rows.push(
+      `         ${formatDebugAddress(address)},${formatDebugAddress(address)},1,${line},1,${line},3`
+    );
+  }
+  return `<C64debugger version="1.0">
+   <Sources values="INDEX,FILE">
+      1,${sourcePath}
+   </Sources>
+
+   <Segment name="Default" dest="" values="START,END,FILE_IDX,LINE1,COL1,LINE2,COL2">
+      <Block name="Misleading">
+${rows.join('\n')}
+      </Block>
+   </Segment>
+
+   <Labels values="SEGMENT,ADDRESS,NAME,START,END,FILE_IDX,LINE1,COL1,LINE2,COL2">
+   </Labels>
+
+   <Breakpoints values="SEGMENT,ADDRESS,ARGUMENT">
+   </Breakpoints>
+
+   <Watchpoints values="SEGMENT,ADDRESS1,ADDRESS2,ARGUMENT">
+   </Watchpoints>
+
+</C64debugger>
+`;
+}
+
+function formatDebugAddress(address: number): string {
+  return `$${address.toString(16).padStart(4, '0')}`;
 }

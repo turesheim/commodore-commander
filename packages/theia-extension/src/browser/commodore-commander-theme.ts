@@ -485,6 +485,172 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   color: var(--cc-sidscore-protocol-received);
 }
 
+.cc-vice-monitor-log-widget {
+  min-width: 420px;
+}
+
+.cc-vice-monitor-log {
+  --cc-vice-monitor-background: var(--theia-panel-background, var(--theia-editor-background));
+  --cc-vice-monitor-foreground: var(--theia-foreground);
+  --cc-vice-monitor-muted: var(--theia-descriptionForeground);
+  --cc-vice-monitor-border: var(--theia-panel-border, var(--theia-editorGroup-border, var(--theia-contrastBorder, var(--cc-vice-monitor-muted))));
+  --cc-vice-monitor-surface: var(--theia-editorWidget-background, var(--cc-vice-monitor-background));
+  --cc-vice-monitor-header-background: color-mix(
+    in srgb,
+    var(--cc-vice-monitor-surface) 86%,
+    var(--cc-vice-monitor-background)
+  );
+  --cc-vice-monitor-row-border: color-mix(
+    in srgb,
+    var(--cc-vice-monitor-border) 62%,
+    transparent
+  );
+  --cc-vice-monitor-user: var(--theia-descriptionForeground, var(--cc-vice-monitor-foreground));
+  --cc-vice-monitor-input: var(--theia-terminal-ansiGreen, var(--theia-charts-green, var(--theia-textLink-foreground, var(--cc-vice-monitor-foreground))));
+  --cc-vice-monitor-output: var(--theia-terminal-ansiBlue, var(--theia-charts-blue, var(--theia-textLink-foreground, var(--cc-vice-monitor-foreground))));
+  --cc-vice-monitor-error: var(--theia-errorForeground, var(--theia-terminal-ansiRed, #f14c4c));
+  background: var(--cc-vice-monitor-background);
+  color: var(--cc-vice-monitor-foreground);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.cc-vice-monitor-log__toolbar {
+  align-items: center;
+  background: var(--cc-vice-monitor-header-background);
+  border-bottom: 1px solid var(--cc-vice-monitor-border);
+  color: var(--cc-vice-monitor-muted);
+  display: flex;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 10px;
+}
+
+.cc-vice-monitor-log__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-vice-monitor-log__count {
+  color: var(--cc-vice-monitor-muted);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+.cc-vice-monitor-log__copy,
+.cc-vice-monitor-log__clear {
+  flex: 0 0 auto;
+  min-height: 24px;
+}
+
+.cc-vice-monitor-log__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.cc-vice-monitor-log__empty {
+  color: var(--cc-vice-monitor-muted);
+  font-size: 12px;
+  padding: 10px;
+}
+
+.cc-vice-monitor-log__table {
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 980px;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.cc-vice-monitor-log__table th,
+.cc-vice-monitor-log__table td {
+  border-bottom: 1px solid var(--cc-vice-monitor-row-border);
+  overflow: hidden;
+  padding: 4px 8px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-vice-monitor-log__table th {
+  background: var(--cc-vice-monitor-header-background);
+  color: var(--cc-vice-monitor-muted);
+  font-size: 11px;
+  font-weight: 700;
+  position: sticky;
+  text-transform: uppercase;
+  top: 0;
+  z-index: 1;
+}
+
+.cc-vice-monitor-log__table th:nth-child(1) {
+  width: 72px;
+}
+
+.cc-vice-monitor-log__table th:nth-child(2) {
+  width: 52px;
+}
+
+.cc-vice-monitor-log__table th:nth-child(3),
+.cc-vice-monitor-log__table th:nth-child(5) {
+  width: 72px;
+}
+
+.cc-vice-monitor-log__table th:nth-child(4) {
+  width: 188px;
+}
+
+.cc-vice-monitor-log__table th:nth-child(7) {
+  width: 260px;
+}
+
+.cc-vice-monitor-log__message,
+.cc-vice-monitor-log__payload {
+  font-family: monospace;
+}
+
+.cc-vice-monitor-log__payload {
+  color: var(--cc-vice-monitor-muted);
+}
+
+.cc-vice-monitor-log__direction {
+  border-radius: 3px;
+  display: inline-block;
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  min-width: 32px;
+  text-align: center;
+}
+
+.cc-vice-monitor-log__direction--user {
+  background: color-mix(in srgb, var(--cc-vice-monitor-user) 18%, transparent);
+  color: var(--cc-vice-monitor-user);
+}
+
+.cc-vice-monitor-log__direction--input {
+  background: color-mix(in srgb, var(--cc-vice-monitor-input) 18%, transparent);
+  color: var(--cc-vice-monitor-input);
+}
+
+.cc-vice-monitor-log__direction--output {
+  background: color-mix(in srgb, var(--cc-vice-monitor-output) 18%, transparent);
+  color: var(--cc-vice-monitor-output);
+}
+
+.cc-vice-monitor-log__row--error .cc-vice-monitor-log__message,
+.cc-vice-monitor-log__row--error .cc-vice-monitor-log__payload {
+  color: var(--cc-vice-monitor-error);
+}
+
 .cc-sid-instrument-widget,
 .cc-sid-sfx-widget {
   min-width: 280px;

@@ -66,6 +66,14 @@ connection setup, event ordering, and teardown.
   decoding, screen memory, color RAM, sprite pointer/state, and visual-debugger
   snapshot assumptions.
 
+- `fixtures/screencolors`
+  Golden source, PRG, and DBG for breakpoint binding against a small looping
+  program. It covers Kick Assembler debug dumps with an empty `<Breakpoints>`
+  block and verifies that a breakpoint on a nearby comment line resolves to the
+  next executable `<Segment>` line mapping. The e2e suite also injects a
+  `.break`-style `<Breakpoints>` row for this fixture and verifies that the
+  adapter installs it as a VICE checkpoint.
+
 ## Run Commands
 
 Default behavior compiles and skips the real VICE tests:

@@ -25,6 +25,12 @@
       "profile": "debug"
     },
     {
+      "runProgram": "out/screencolors.prg",
+      "name": "screencolors",
+      "root": "kickassembler/screencolors.asm",
+      "profile": "debug"
+    },
+    {
       "runProgram": "out/arkadrum.prg",
       "name": "martin-galway-arkadrum",
       "root": "music/MartinGalway/arkadrum.asm",

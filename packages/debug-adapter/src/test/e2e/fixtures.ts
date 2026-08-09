@@ -5,13 +5,24 @@ import path from 'node:path';
 export interface PreparedFixture {
   debugInfo: string;
   directory: string;
+  monitorCommands?: string;
   program: string;
   source: string;
 }
 
+export interface PrepareFixtureOptions {
+  includeMonitorCommands?: boolean;
+}
+
+export type DebugAdapterFixtureName =
+  | 'debug-demo'
+  | 'visual-debugger-demo'
+  | 'screencolors';
+
 export async function prepareFixture(
   packageRoot: string,
-  fixtureName: 'debug-demo' | 'visual-debugger-demo'
+  fixtureName: DebugAdapterFixtureName,
+  options: PrepareFixtureOptions = {}
 ): Promise<PreparedFixture> {
   const sourceRoot = path.join(
     packageRoot,
@@ -25,10 +36,12 @@ export async function prepareFixture(
   const sourceFile = `${baseName}.asm`;
   const programFile = `${baseName}.prg`;
   const debugInfoFile = `${baseName}.dbg`;
+  const monitorCommandFile = `${baseName}.vs`;
   const directory = await mkdtemp(path.join(tmpdir(), `cc-vice-e2e-${fixtureName}-`));
   const source = path.join(directory, sourceFile);
   const program = path.join(directory, programFile);
   const debugInfo = path.join(directory, debugInfoFile);
+  const monitorCommands = path.join(directory, monitorCommandFile);
 
   await Promise.all([
     copyFile(path.join(sourceRoot, sourceFile), source),
@@ -42,9 +55,17 @@ export async function prepareFixture(
     'utf8'
   );
 
+  const copiedMonitorCommands = options.includeMonitorCommands
+    ? await copyOptionalFixtureFile(
+        path.join(sourceRoot, monitorCommandFile),
+        monitorCommands
+      )
+    : undefined;
+
   return {
     debugInfo,
     directory,
+    ...(copiedMonitorCommands ? { monitorCommands } : {}),
     program,
     source
   };
@@ -80,4 +101,24 @@ function rewritePrimarySource(
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+}
+
+async function copyOptionalFixtureFile(
+  source: string,
+  target: string
+): Promise<boolean> {
+  try {
+    await copyFile(source, target);
+    return true;
+  } catch (error) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 'ENOENT'
+    ) {
+      return false;
+    }
+    throw error;
+  }
 }

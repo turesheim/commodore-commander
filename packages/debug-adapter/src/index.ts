@@ -21,8 +21,14 @@ export {
 export {
   ViceMonitorConnection,
   ViceMonitorCommandId,
-  type ViceMonitorEvent
+  type ViceMonitorEvent,
+  type ViceMonitorTrafficEvent
 } from './vice-monitor';
+export {
+  COMMODORE_VICE_MONITOR_LOG_EVENT,
+  type ViceMonitorLogCategory,
+  type ViceMonitorLogEvent
+} from './vice-monitor-log';
 export {
   disassemble6502,
   type Disassembled6502Instruction

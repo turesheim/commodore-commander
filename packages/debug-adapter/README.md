@@ -12,7 +12,8 @@ What is here:
 - launch-time `.dbg` discovery that falls back from the configured debug-info
   path to nearby PRG/output debug dumps with matching address ranges
 - a DAP stdio transport and VICE debug session
-- VICE process launch with binary monitor wiring for debugging
+- VICE process launch with Kick Assembler `.vs` monitor-command discovery and
+  binary monitor wiring for debugging
 - `noDebug` launch support for Theia/VS Code Start Without Debugging flows,
   starting VICE without the binary monitor or `-initbreak`
 - VICE monitor protocol IDs, request builders, frame decoding, and response

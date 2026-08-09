@@ -259,7 +259,18 @@ export class CommodoreViceEmbedServiceImpl
     }
 
     async startExternalFrameTransport(): Promise<number> {
-        this.stopProcess();
+        if (this.viceProcess) {
+            this.stopProcess();
+        }
+        if (this.viceFrameSocket) {
+            throw new Error(
+                'Embedded VICE frame transport is already connected to an emulator.'
+            );
+        }
+        const existingPort = this.currentViceFrameServerPort();
+        if (existingPort !== undefined) {
+            return existingPort;
+        }
         return this.startViceFrameServer(true);
     }
 
@@ -556,6 +567,13 @@ export class CommodoreViceEmbedServiceImpl
             this.viceFrameServer.close();
             this.viceFrameServer = undefined;
         }
+    }
+
+    protected currentViceFrameServerPort(): number | undefined {
+        const address = this.viceFrameServer?.address();
+        return address && typeof address !== 'string'
+            ? address.port
+            : undefined;
     }
 
     protected broadcastBinaryFrame(record: Buffer): void {

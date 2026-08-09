@@ -1,5 +1,6 @@
 import { accessSync, constants } from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 export interface ViceE2eEnvironment {
   repoRoot: string;
@@ -7,6 +8,7 @@ export interface ViceE2eEnvironment {
   viceResourcesPath: string;
   viceExecutable: string;
   viceArgs: readonly string[];
+  embeddedTransportSupported: boolean;
 }
 
 export function resolveViceE2eEnvironment(): {
@@ -54,7 +56,8 @@ export function resolveViceE2eEnvironment(): {
       packageRoot,
       viceResourcesPath,
       viceExecutable,
-      viceArgs: parseViceArgs(process.env.VICE_ARGS)
+      viceArgs: parseViceArgs(process.env.VICE_ARGS),
+      embeddedTransportSupported: supportsEmbeddedTransport(viceBinary)
     }
   };
 }
@@ -106,4 +109,13 @@ function isExecutable(filePath: string): boolean {
   } catch {
     return false;
   }
+}
+
+export function supportsEmbeddedTransport(viceBinary: string): boolean {
+  const result = spawnSync(viceBinary, ['-cc-embed', '-help'], {
+    encoding: 'utf8',
+    timeout: 5_000
+  });
+  const output = `${result.stdout ?? ''}\n${result.stderr ?? ''}`;
+  return !/Unknown option '-cc-embed'/u.test(output);
 }

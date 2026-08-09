@@ -79,6 +79,17 @@ export type ViceMonitorEvent =
   | { type: 'error'; requestId: number; responseType: number; errorCode: number; body: ViceMonitorBytes }
   | { type: 'unhandled'; requestId: number; responseType: number; body: ViceMonitorBytes };
 
+export interface ViceMonitorTrafficEvent {
+  category: 'input' | 'output';
+  requestId: number;
+  code: number;
+  name: string;
+  bodyLength: number;
+  bodyPreview: string;
+  message: string;
+  errorCode?: number;
+}
+
 interface Waiter {
   requestId: number;
   predicate: (event: ViceMonitorEvent) => boolean;
@@ -113,6 +124,7 @@ export interface ViceMonitorRegisterSetValue {
 
 export class ViceMonitorConnection {
   private readonly emitter = new EventEmitter();
+  private readonly trafficEmitter = new EventEmitter();
   private readonly waiters = new Set<Waiter>();
   private buffer = Buffer.alloc(0);
   private requestId = 0;
@@ -151,6 +163,10 @@ export class ViceMonitorConnection {
     this.emitter.on('event', listener);
   }
 
+  onTraffic(listener: (event: ViceMonitorTrafficEvent) => void): void {
+    this.trafficEmitter.on('traffic', listener);
+  }
+
   send(commandId: ViceMonitorCommandId, body: ViceMonitorBytes = Buffer.alloc(0)): number {
     if (this.closed) {
       throw new Error('VICE monitor connection is closed.');
@@ -173,6 +189,7 @@ export class ViceMonitorConnection {
     frame.writeUInt32LE(requestId, 6);
     frame.writeUInt8(commandId, 10);
     body.copy(frame, 11);
+    this.emitTraffic(createCommandTrafficEvent(requestId, commandId, body));
     this.socket.write(frame);
   }
 
@@ -233,24 +250,34 @@ export class ViceMonitorConnection {
   private drain(): void {
     while (this.buffer.length >= RESPONSE_HEADER_LENGTH) {
       if (this.buffer.readUInt8(0) !== STX) {
-        this.emit({
+        const event: ViceMonitorEvent = {
           type: 'error',
           requestId: 0,
           responseType: 0,
           errorCode: 0xff,
           body: Buffer.from(`Unexpected VICE monitor STX byte: ${this.buffer.readUInt8(0)}`)
-        });
+        };
+        this.emitTraffic(createResponseTrafficEvent(
+          { responseType: 0, errorCode: 0xff, requestId: 0, body: event.body },
+          event
+        ));
+        this.emit(event);
         this.buffer = Buffer.alloc(0);
         return;
       }
       if (this.buffer.readUInt8(1) !== API_VERSION) {
-        this.emit({
+        const event: ViceMonitorEvent = {
           type: 'error',
           requestId: 0,
           responseType: 0,
           errorCode: 0xfe,
           body: Buffer.from(`Unsupported VICE monitor API version: ${this.buffer.readUInt8(1)}`)
-        });
+        };
+        this.emitTraffic(createResponseTrafficEvent(
+          { responseType: 0, errorCode: 0xfe, requestId: 0, body: event.body },
+          event
+        ));
+        this.emit(event);
         this.buffer = Buffer.alloc(0);
         return;
       }
@@ -266,8 +293,15 @@ export class ViceMonitorConnection {
       const requestId = this.buffer.readUInt32LE(8);
       const body = this.buffer.subarray(RESPONSE_HEADER_LENGTH, frameLength);
       this.buffer = this.buffer.subarray(frameLength);
-      this.emit(mapFrame({ responseType, errorCode, requestId, body }));
+      const frame = { responseType, errorCode, requestId, body };
+      const event = mapFrame(frame);
+      this.emitTraffic(createResponseTrafficEvent(frame, event));
+      this.emit(event);
     }
+  }
+
+  private emitTraffic(event: ViceMonitorTrafficEvent): void {
+    this.trafficEmitter.emit('traffic', event);
   }
 
   private emit(event: ViceMonitorEvent): void {
@@ -414,6 +448,15 @@ export const ViceMonitorRequests = {
     const body = Buffer.alloc(4);
     body.writeUInt32LE(checkpointNumber, 0);
     return [ViceMonitorCommandId.CHECKPOINT_DELETE, body];
+  },
+  toggleCheckpoint: (
+    checkpointNumber: number,
+    enabled: boolean
+  ): [ViceMonitorCommandId, ViceMonitorBytes] => {
+    const body = Buffer.alloc(5);
+    body.writeUInt32LE(checkpointNumber, 0);
+    body.writeUInt8(enabled ? 0x01 : 0x00, 4);
+    return [ViceMonitorCommandId.CHECKPOINT_TOGGLE, body];
   },
   setCheckpointCondition: (
     checkpointNumber: number,
@@ -618,6 +661,199 @@ function parseMemory(requestId: number, body: ViceMonitorBytes): ViceMonitorEven
 
 function isKnownCommandId(value: number): boolean {
   return Object.values(ViceMonitorCommandId).includes(value as ViceMonitorCommandId);
+}
+
+function createCommandTrafficEvent(
+  requestId: number,
+  commandId: ViceMonitorCommandId,
+  body: ViceMonitorBytes
+): ViceMonitorTrafficEvent {
+  const name = monitorCommandName(commandId);
+  return {
+    category: 'input',
+    requestId,
+    code: commandId,
+    name,
+    bodyLength: body.length,
+    bodyPreview: formatMonitorBodyPreview(body),
+    message: describeMonitorCommand(requestId, commandId, name, body)
+  };
+}
+
+function createResponseTrafficEvent(
+  frame: {
+    responseType: number;
+    errorCode: number;
+    requestId: number;
+    body: ViceMonitorBytes;
+  },
+  event: ViceMonitorEvent
+): ViceMonitorTrafficEvent {
+  const name = monitorResponseName(frame.responseType);
+  return {
+    category: 'output',
+    requestId: frame.requestId,
+    code: frame.responseType,
+    name,
+    bodyLength: frame.body.length,
+    bodyPreview: formatMonitorBodyPreview(frame.body),
+    message: describeMonitorResponse(frame.requestId, name, event),
+    ...(frame.errorCode !== 0 ? { errorCode: frame.errorCode } : {})
+  };
+}
+
+function describeMonitorCommand(
+  requestId: number,
+  commandId: ViceMonitorCommandId,
+  name: string,
+  body: ViceMonitorBytes
+): string {
+  const prefix = `#${requestId} ${name}`;
+  switch (commandId) {
+    case ViceMonitorCommandId.CHECKPOINT_SET:
+      return `${prefix} ${describeCheckpointSetBody(body)}`;
+    case ViceMonitorCommandId.CHECKPOINT_DELETE:
+      return body.length >= 4
+        ? `${prefix} checkpoint ${body.readUInt32LE(0)}`
+        : prefix;
+    case ViceMonitorCommandId.CHECKPOINT_TOGGLE:
+      return body.length >= 5
+        ? `${prefix} checkpoint ${body.readUInt32LE(0)} enabled=${body.readUInt8(4)}`
+        : prefix;
+    case ViceMonitorCommandId.CHECKPOINT_CONDITION_SET:
+      return body.length >= 5
+        ? `${prefix} checkpoint ${body.readUInt32LE(0)} ${describeConditionBody(body)}`
+        : prefix;
+    case ViceMonitorCommandId.MEMORY_GET:
+      return `${prefix} ${describeMemoryGetBody(body)}`;
+    case ViceMonitorCommandId.MEMORY_SET:
+      return `${prefix} ${describeMemorySetBody(body)}`;
+    case ViceMonitorCommandId.ADVANCE_INSTRUCTIONS:
+      return body.length >= 3
+        ? `${prefix} count=${body.readUInt16LE(1)} stepOver=${body.readUInt8(0)}`
+        : prefix;
+    default:
+      return prefix;
+  }
+}
+
+function describeMonitorResponse(
+  requestId: number,
+  name: string,
+  event: ViceMonitorEvent
+): string {
+  const prefix = `#${requestId} ${name}`;
+  switch (event.type) {
+    case 'checkpoint':
+      return `${prefix} ${describeCheckpoint(event.checkpoint)}`;
+    case 'memory':
+      return `${prefix} ${event.bytes.length}/${event.declaredByteCount} bytes`;
+    case 'register-descriptors':
+      return `${prefix} ${event.registers.length} register descriptors`;
+    case 'register-values':
+      return `${prefix} ${event.registers.length} register values`;
+    case 'banks':
+      return `${prefix} ${event.banks.length} banks`;
+    case 'ack':
+      return `${prefix} ack ${monitorCommandName(event.commandId)}`;
+    case 'error':
+      return `${prefix} error ${event.errorCode} (${monitorErrorReason(event.errorCode)})`;
+    case 'unhandled':
+      return `${prefix} unhandled`;
+    default:
+      return prefix;
+  }
+}
+
+function monitorCommandName(code: number): string {
+  return ViceMonitorCommandId[code as ViceMonitorCommandId] ?? formatByteCode(code);
+}
+
+function monitorResponseName(code: number): string {
+  return ViceMonitorResponseId[code as ViceMonitorResponseId] ??
+    monitorCommandName(code);
+}
+
+function formatMonitorBodyPreview(body: ViceMonitorBytes, maxBytes = 64): string {
+  if (body.length === 0) {
+    return '';
+  }
+  const bytes = [...body.subarray(0, maxBytes)]
+    .map((value) => value.toString(16).padStart(2, '0'))
+    .join(' ');
+  return body.length > maxBytes ? `${bytes} ...` : bytes;
+}
+
+function describeCheckpointSetBody(body: ViceMonitorBytes): string {
+  if (body.length < 9) {
+    return '';
+  }
+  const access = body.readUInt8(6);
+  return [
+    `${formatWord(body.readUInt16LE(0))}-${formatWord(body.readUInt16LE(2))}`,
+    `stop=${body.readUInt8(4)}`,
+    `enabled=${body.readUInt8(5)}`,
+    `load=${access & 0x01 ? 1 : 0}`,
+    `store=${access & 0x02 ? 1 : 0}`,
+    `exec=${access & 0x04 ? 1 : 0}`,
+    `temp=${body.readUInt8(7)}`,
+    `mem=${body.readUInt8(8)}`
+  ].join(' ');
+}
+
+function describeConditionBody(body: ViceMonitorBytes): string {
+  const conditionLength = body.readUInt8(4);
+  if (conditionLength === 0 || body.length < 5 + conditionLength) {
+    return '';
+  }
+  return body.subarray(5, 5 + conditionLength).toString('utf8');
+}
+
+function describeMemoryGetBody(body: ViceMonitorBytes): string {
+  if (body.length < 8) {
+    return '';
+  }
+  return [
+    `${formatWord(body.readUInt16LE(1))}-${formatWord(body.readUInt16LE(3))}`,
+    `sideEffects=${body.readUInt8(0)}`,
+    `mem=${body.readUInt8(5)}`,
+    `bank=${body.readUInt16LE(6)}`
+  ].join(' ');
+}
+
+function describeMemorySetBody(body: ViceMonitorBytes): string {
+  if (body.length < 8) {
+    return '';
+  }
+  return [
+    `${formatWord(body.readUInt16LE(1))}-${formatWord(body.readUInt16LE(3))}`,
+    `${Math.max(0, body.length - 8)} bytes`,
+    `sideEffects=${body.readUInt8(0)}`,
+    `mem=${body.readUInt8(5)}`,
+    `bank=${body.readUInt16LE(6)}`
+  ].join(' ');
+}
+
+function describeCheckpoint(checkpoint: ViceMonitorCheckpoint): string {
+  return [
+    `checkpoint ${checkpoint.number}`,
+    `${formatWord(checkpoint.startAddress)}-${formatWord(checkpoint.endAddress)}`,
+    `hit=${checkpoint.hit ? 1 : 0}`,
+    `stop=${checkpoint.stop ? 1 : 0}`,
+    `enabled=${checkpoint.enabled ? 1 : 0}`,
+    `load=${checkpoint.load ? 1 : 0}`,
+    `store=${checkpoint.store ? 1 : 0}`,
+    `exec=${checkpoint.exec ? 1 : 0}`,
+    `temp=${checkpoint.temporary ? 1 : 0}`
+  ].join(' ');
+}
+
+function formatByteCode(code: number): string {
+  return `0x${(code & 0xff).toString(16).padStart(2, '0')}`;
+}
+
+function formatWord(value: number): string {
+  return `$${(value & 0xffff).toString(16).padStart(4, '0')}`;
 }
 
 function readLittleEndian(bytes: Buffer): number {

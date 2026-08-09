@@ -41,6 +41,8 @@ import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-s
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate/textmate-contribution';
 import { PreviewHandler } from '@theia/preview/lib/browser/preview-handler';
 import { PreviewLinkNormalizer } from '@theia/preview/lib/browser/preview-link-normalizer';
+import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
+import { BreakpointManager } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
 
 import {
   KickAssemblerBuildService,
@@ -116,14 +118,24 @@ import {
   type CommodoreSpriteWidgetOptions
 } from './commodore-sprite-widget';
 import { CommodorePrgContribution } from './commodore-prg-contribution';
+import { CommodoreViceBreakpointManager } from './commodore-vice-breakpoint-manager';
 import { CommodoreDebugWatchContribution } from './commodore-debug-watch-contribution';
+import { CommodoreViceBreakpointStateContribution } from './commodore-vice-breakpoint-state-contribution';
 import { CommodoreViceLaunchConfigurationContribution } from './commodore-vice-launch-configuration-contribution';
+import {
+  installDebugSourceBreakpointTogglePatch
+} from './commodore-vice-debug-source-breakpoint-patch';
 import { CommodoreCommanderWelcomeContribution } from './commodore-commander-welcome-contribution';
 import { ViceMemoryContribution } from './vice-memory-contribution';
 import {
   VICE_MEMORY_WIDGET_ID,
   ViceMemoryWidget
 } from './vice-memory-widget';
+import { ViceMonitorLogContribution } from './vice-monitor-log-contribution';
+import {
+  VICE_MONITOR_LOG_WIDGET_ID,
+  ViceMonitorLogWidget
+} from './vice-monitor-log-widget';
 import { C64VisualDebuggerContribution } from './c64-visual-debugger-contribution';
 import {
   C64_VISUAL_DEBUGGER_WIDGET_ID,
@@ -189,8 +201,12 @@ const commodoreCommanderToolbarDefaults: typeof ToolbarDefaults = () => {
 };
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
+  installDebugSourceBreakpointTogglePatch();
   rebind(MonacoThemingService)
     .to(CommodoreCommanderThemingService)
+    .inSingletonScope();
+  rebind(BreakpointManager)
+    .to(CommodoreViceBreakpointManager)
     .inSingletonScope();
   bind(CommodoreCommanderThemeStyleParticipant).toSelf().inSingletonScope();
   bind(ColorContribution).toService(CommodoreCommanderThemeStyleParticipant);
@@ -363,6 +379,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
   bind(FrontendApplicationContribution).toService(
     CommodoreDebugWatchContribution
   );
+  bind(CommodoreViceBreakpointStateContribution).toSelf().inSingletonScope();
+  bind(DebugContribution).toService(CommodoreViceBreakpointStateContribution);
   bind(CommodoreViceEmbedService)
     .toDynamicValue((context) =>
       WebSocketConnectionProvider.createProxy(
@@ -380,6 +398,15 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     .inSingletonScope();
   bindViewContribution(bind, ViceMemoryContribution);
   bind(FrontendApplicationContribution).toService(ViceMemoryContribution);
+  bind(ViceMonitorLogWidget).toSelf();
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: VICE_MONITOR_LOG_WIDGET_ID,
+      createWidget: () => context.container.get(ViceMonitorLogWidget)
+    }))
+    .inSingletonScope();
+  bindViewContribution(bind, ViceMonitorLogContribution);
+  bind(FrontendApplicationContribution).toService(ViceMonitorLogContribution);
   bind(C64VisualDebuggerWidget).toSelf();
   bind(WidgetFactory)
     .toDynamicValue((context) => ({
