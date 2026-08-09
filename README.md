@@ -10,40 +10,17 @@ The _Commodore Commander_ aims to be a useful addition to this ecosystem of tool
 
 ![Theia 6502 mnemonic reference hover](docs/theia-mnemonic-hover.png)
 
-Supported editor features:
+Commodore Commander adds Kick Assembler language support to Theia, including
+syntax highlighting, symbol/directive/include completion, 6502 mnemonic help,
+hover/reference navigation, rename, outline/workspace symbols, semantic
+highlighting, folding, formatting, and quick fixes. The Active Machine selector
+filters machine-specific reference symbols and feeds the emulator-oriented
+workflow used by builds and debugging.
 
-- syntax highlighting and language configuration for Kick Assembler source files
-- symbol completion for labels, constants, variables, namespaces, macros, functions, structs, enums, and generated structural symbols
-- directive completion for `.byte`, `.const`, `.macro`, `.segment`, `#import`, `#importonce`, and related Kick Assembler directives
-- include-path completion from the current folder and workspace Kick Assembler files
-- 6502 mnemonic completion plus addressing-mode snippets such as `#$00`, `$0000,x`, and `($00),y`
-- hover, go to definition, and find references for project symbols, 6502 mnemonics, and C64 I/O reference symbols
-- rename symbol across the current workspace scan
-- document symbols, workspace symbols, semantic highlighting, folding, document formatting, and quick fixes
-- Kick Assembler builds with project configuration for named programs, build profiles, library roots, output folders, debug/symbol switches, generated assets, discovered standalone assembly files, and headless CI use
-
-Using the editor features:
-
-- Content assist is available with **Ctrl+Space** and also appears while typing common Kick Assembler triggers such as `.`, `#`, `"`, `/`, and 6502 mnemonic operands. It suggests directives, labels, constants, variables, macros, include paths, 6502 mnemonics, and only the addressing modes valid for the selected mnemonic when the bundled 6502 reference is loaded.
-- Mnemonic content assist is backed by `packages/language-support/reference/6502.xml`. The details panel includes the mnemonic description, affected flags, legal addressing modes, example syntax, and opcode values from that reference.
-- Cmd-click a symbol or 6502 mnemonic on macOS, or Ctrl-click on Windows/Linux, to jump to its definition/reference entry. The same lookup is available from the context menu with **Go to Definition**.
-- **Find References** lists project uses for labels and symbols, plus reference occurrences for known 6502 mnemonics and C64 I/O symbols.
-- Hover a 6502 mnemonic or C64 I/O symbol to see the reference entry inline. Mnemonic hovers include opcode tables and diagrams where the bundled reference provides them.
-- **Rename Symbol** updates labels and supported Kick Assembler symbols across the current workspace scan. It intentionally does not rewrite text inside comments or string literals.
-- The outline and workspace symbol commands expose labels, constants, variables, namespaces, macros, functions, structs, enums, segments, and other structural symbols.
-- Document formatting normalizes indentation inside blocks and spacing around common declarations while preserving source order and comments.
-- Folding groups namespaces, macros, functions, structs, enums, conditional blocks, block comments, and import runs.
-- Quick fixes currently focus on structural source repairs such as converting unquoted import paths to canonical quoted `#import "..."` form.
-
-Build configuration:
-
-- The Theia build service and the headless CLI read `commodore-commander.build.json`, `.commodore-commander.build.json`, or `.commodore-commander/build.json` from the workspace root.
-- The config supports named programs, profiles, optional runs, configurable KickAss and Java runtimes, multiple library roots, output folders, run-program paths, symbol/debug flags, custom assembler arguments, explicit root programs, optional program machine sections, and generated-asset rebuild triggers.
-- Missing workspace configs, explicit default profiles, and standalone programs are created on demand by the Theia backend; the status bar exposes the active build profile picker.
-- Running and debugging now use Theia's native Start Debugging and Start Without Debugging commands with `commodore-vice` launch configurations.
-- From an active assembler source, F5/Ctrl+F5 can offer to create or append a matching `.theia/launch.json` entry and then start it through Theia's debug session manager.
-- Generated launch entries use a program or run `machine` override when one is configured. Without one, the debug adapter falls back to the default C64 profile; wiring the workspace Active Machine into generated launch entries is still future task/launch work.
-- The right toolbar exposes Active Machine selection for reference filtering and machine-profile UI.
+For day-to-day source editing workflows, see
+[Editing User Guide](bundled-docs/editing-user-guide.md). Build profiles,
+program discovery, generated launch entries, and headless use are covered in
+[Build Configuration](bundled-docs/build-configuration.md).
 
 ## Character set editor
 
