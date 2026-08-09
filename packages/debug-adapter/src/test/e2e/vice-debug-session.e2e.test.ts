@@ -34,6 +34,17 @@ interface LaunchedFixtureSession {
   debugInfo?: string | false;
 }
 
+interface ProgrammedBreakpointDescriptor {
+  id: number;
+  address: string;
+  enabled: boolean;
+  installed: boolean;
+  canRemove: false;
+  source?: DebugProtocol.Source;
+  line?: number;
+  checkpointNumber?: number;
+}
+
 viceTest('launches VICE and stops on entry', async (t, vice) => {
   const session = await launchFixture(t, vice, 'debug-demo');
   const capabilities = await initializeAndLaunch(session);
@@ -627,6 +638,81 @@ viceTest('stops on VICE monitor command breakpoints from explicit moncommands', 
   );
   assert.equal(topFrame.source?.path, session.fixture.source);
   assert.equal(topFrame.line, executableLine);
+});
+
+viceTest('toggles programmed breakpoints without deleting VICE checkpoints', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  const monitorCommands = path.join(session.fixture.directory, 'screencolors.vs');
+  await writeFile(monitorCommands, 'break 1009\n', 'utf8');
+  await addDebugInfoBreakpoint(session.fixture.debugInfo, '$1009');
+  session.viceArgs = [
+    ...session.vice.viceArgs,
+    '-moncommands',
+    monitorCommands
+  ];
+  await initializeAndLaunch(session);
+
+  const executableLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+  await configurationDoneAndWaitStopped(session.client);
+
+  const listResponse = await session.client.request<{
+    breakpoints: ProgrammedBreakpointDescriptor[];
+  }>('commodore-vice/listProgrammedBreakpoints');
+  const programmedBreakpoint = listResponse.breakpoints[0];
+  assert.ok(programmedBreakpoint, 'expected one programmed breakpoint');
+  assert.equal(programmedBreakpoint.address, '$1009');
+  assert.equal(programmedBreakpoint.canRemove, false);
+  assert.equal(programmedBreakpoint.enabled, true);
+  assert.equal(programmedBreakpoint.installed, true);
+  assert.equal(programmedBreakpoint.source?.path, session.fixture.source);
+  assert.equal(programmedBreakpoint.line, executableLine);
+  assert.equal(typeof programmedBreakpoint.checkpointNumber, 'number');
+
+  const checkpointToggleLog = session.client.waitForEvent<DebugProtocol.Event>(
+    COMMODORE_VICE_MONITOR_LOG_EVENT,
+    (event) => {
+      const body = event.body as {
+        category?: string;
+        name?: string;
+        message?: string;
+      } | undefined;
+      return body?.category === 'input' &&
+        body.name === 'CHECKPOINT_TOGGLE' &&
+        body.message?.includes('enabled=0') === true;
+    },
+    E2E_TIMEOUT_MS
+  );
+  const checkpointDeleteLog = session.client.waitForEvent<DebugProtocol.Event>(
+    COMMODORE_VICE_MONITOR_LOG_EVENT,
+    (event) => {
+      const body = event.body as {
+        category?: string;
+        name?: string;
+        message?: string;
+      } | undefined;
+      return body?.category === 'input' &&
+        body.name === 'CHECKPOINT_DELETE' &&
+        body.message?.includes('CHECKPOINT_DELETE') === true;
+    },
+    750
+  ).then(() => true, () => false);
+
+  const toggleResponse = await session.client.request<{
+    breakpoint: ProgrammedBreakpointDescriptor;
+  }>(
+    'commodore-vice/setProgrammedBreakpointEnabled',
+    {
+      id: programmedBreakpoint.id,
+      enabled: false
+    }
+  );
+  await checkpointToggleLog;
+  assert.equal(toggleResponse.breakpoint.enabled, false);
+  assert.equal(toggleResponse.breakpoint.canRemove, false);
+  assert.equal(await checkpointDeleteLog, false);
 });
 
 viceTest('passes adjacent Kick Assembler VICE symbol files to VICE', async (t, vice) => {

@@ -104,6 +104,7 @@ const VICE_MONITOR_CONNECT_DELAY_MS = 100;
 const WATCH_MEMORY_PREVIEW_BYTES = 64;
 const TRACE_HISTORY_CAPACITY = 200;
 const MAX_EMBED_STDOUT_BUFFER_BYTES = 32 * 1024 * 1024;
+const PROGRAMMED_BREAKPOINTS_EVENT = 'commodoreViceProgrammedBreakpoints';
 
 export interface ViceDebugLaunchArguments
   extends DebugProtocol.LaunchRequestArguments {
@@ -146,6 +147,7 @@ interface InstalledSourceBreakpoint extends InstalledBreakpointBase {
 
 interface InstalledDebugInfoBreakpoint extends InstalledBreakpointBase {
   debugBreakpoint: KickAssemblerDebugBreakpoint;
+  monitorCommandOwned: boolean;
   dapVisible: false;
 }
 
@@ -200,6 +202,20 @@ interface CommodoreSourceBreakpointStateArguments {
   source: DebugProtocol.Source;
   breakpoints?: CommodoreSourceBreakpointState[];
   sourceModified?: boolean;
+}
+
+interface ProgrammedBreakpointDescriptor {
+  id: number;
+  address: string;
+  enabled: boolean;
+  installed: boolean;
+  canRemove: false;
+  source?: DebugProtocol.Source;
+  line?: number;
+  column?: number;
+  endLine?: number;
+  endColumn?: number;
+  checkpointNumber?: number;
 }
 
 export class ViceDebugSession {
@@ -313,6 +329,12 @@ export class ViceDebugSession {
           break;
         case 'commodore-vice/banksAvailable':
           await this.banksAvailable(request);
+          break;
+        case 'commodore-vice/listProgrammedBreakpoints':
+          await this.listProgrammedBreakpoints(request);
+          break;
+        case 'commodore-vice/setProgrammedBreakpointEnabled':
+          await this.setProgrammedBreakpointEnabled(request);
           break;
         case 'disassemble':
           await this.disassemble(request);
@@ -1435,6 +1457,43 @@ export class ViceDebugSession {
     });
   }
 
+  private async listProgrammedBreakpoints(request: DapRequest): Promise<void> {
+    await this.refreshProgrammedBreakpointCheckpointNumbers();
+    this.connection.sendResponse(request, {
+      breakpoints: this.programmedBreakpointDescriptors()
+    });
+  }
+
+  private async setProgrammedBreakpointEnabled(request: DapRequest): Promise<void> {
+    const args = request.arguments as { id?: unknown; enabled?: unknown } | undefined;
+    const id = typeof args?.id === 'number' ? args.id : undefined;
+    const enabled = typeof args?.enabled === 'boolean' ? args.enabled : undefined;
+    if (id === undefined || enabled === undefined) {
+      throw new Error('Programmed breakpoint toggle requires id and enabled arguments.');
+    }
+
+    const breakpoint = this.debugInfoBreakpoints.find((candidate) =>
+      candidate.id === id
+    );
+    if (!breakpoint) {
+      throw new Error(`Unknown programmed breakpoint ${id}.`);
+    }
+
+    await this.refreshProgrammedBreakpointCheckpointNumbers();
+    if (breakpoint.checkpointNumber === undefined) {
+      throw new Error(
+        `Programmed breakpoint ${id} has not been associated with a VICE checkpoint.`
+      );
+    }
+
+    breakpoint.enabled = enabled;
+    await this.toggleBreakpointCheckpoint(breakpoint, enabled);
+    this.emitProgrammedBreakpoints();
+    this.connection.sendResponse(request, {
+      breakpoint: this.programmedBreakpointDescriptor(breakpoint)
+    });
+  }
+
   private async disassemble(request: DapRequest): Promise<void> {
     const args = request.arguments as DebugProtocol.DisassembleArguments;
     const instructionStart = parseMemoryReference(args.memoryReference) +
@@ -1853,14 +1912,13 @@ export class ViceDebugSession {
     debugInfo: KickAssemblerDebugInfo | undefined,
     externalBreakpointAddresses: ReadonlySet<number> = new Set()
   ): InstalledDebugInfoBreakpoint[] {
-    const breakpoints = (debugInfo?.breakpoints ?? []).filter(
-      (debugBreakpoint) =>
-        !externalBreakpointAddresses.has(debugBreakpoint.address & 0xffff)
-    );
-    const skipped = (debugInfo?.breakpoints.length ?? 0) - breakpoints.length;
+    const breakpoints = debugInfo?.breakpoints ?? [];
+    const skipped = breakpoints.filter((debugBreakpoint) =>
+      externalBreakpointAddresses.has(debugBreakpoint.address & 0xffff)
+    ).length;
     if (skipped > 0) {
       this.connection.sendOutput(
-        `Skipped ${skipped} Kick Assembler .dbg breakpoint${skipped === 1 ? '' : 's'} already present in VICE monitor commands.\n`
+        `Skipped ${skipped} Kick Assembler .dbg breakpoint${skipped === 1 ? '' : 's'} already present in VICE monitor commands; tracking as programmed breakpoint${skipped === 1 ? '' : 's'}.\n`
       );
     }
 
@@ -1875,6 +1933,9 @@ export class ViceDebugSession {
         debugBreakpoint,
         dapVisible: false,
         address: debugBreakpoint.address,
+        monitorCommandOwned: externalBreakpointAddresses.has(
+          debugBreakpoint.address & 0xffff
+        ),
         ...(mapping ? { mapping } : {}),
         enabled: true,
         hitCount: 0,
@@ -1900,6 +1961,8 @@ export class ViceDebugSession {
     });
     await this.reinstallAllBreakpointCheckpoints();
     this.initialBreakpointSyncDone = true;
+    await this.refreshProgrammedBreakpointCheckpointNumbers();
+    this.emitProgrammedBreakpoints();
   }
 
   private async reinstallAllBreakpointCheckpoints(): Promise<void> {
@@ -1988,6 +2051,9 @@ export class ViceDebugSession {
     if (breakpoint.checkpointNumber !== undefined) {
       return `already installed as VICE checkpoint ${breakpoint.checkpointNumber}`;
     }
+    if (!breakpoint.dapVisible && breakpoint.monitorCommandOwned) {
+      return 'programmed breakpoint is owned by the VICE monitor command file';
+    }
     if (breakpoint.message) {
       return breakpoint.message;
     }
@@ -2006,6 +2072,9 @@ export class ViceDebugSession {
   private async deleteBreakpointCheckpoint(
     breakpoint: InstalledBreakpoint
   ): Promise<void> {
+    if (!breakpoint.dapVisible && breakpoint.monitorCommandOwned) {
+      return;
+    }
     const checkpointNumber = breakpoint.checkpointNumber;
     if (checkpointNumber === undefined) {
       return;
@@ -2048,6 +2117,7 @@ export class ViceDebugSession {
         3000
       );
       breakpoint.checkpointEnabled = enabled;
+      breakpoint.enabled = enabled;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.sendViceMonitorLog({
@@ -2335,6 +2405,7 @@ export class ViceDebugSession {
         } satisfies DebugProtocol.ContinuedEvent['body']);
         break;
       case 'checkpoint':
+        this.associateProgrammedBreakpointCheckpoint(event.checkpoint);
         if (event.checkpoint.hit) {
           this.lastHitCheckpoint = event.checkpoint;
           this.lastHitShouldResume = this.handleCheckpointHit(event.checkpoint);
@@ -2490,6 +2561,107 @@ export class ViceDebugSession {
   private resumeMonitor(): void {
     const [command, body] = ViceMonitorRequests.resume();
     this.monitor?.send(command, body);
+  }
+
+  private associateProgrammedBreakpointCheckpoint(
+    checkpoint: ViceMonitorCheckpoint
+  ): void {
+    const existing = this.checkpointToBreakpoint.get(checkpoint.number);
+    if (existing) {
+      existing.checkpointEnabled = checkpoint.enabled;
+      if (!existing.dapVisible) {
+        existing.enabled = checkpoint.enabled;
+        this.emitProgrammedBreakpoints();
+      }
+      return;
+    }
+
+    const breakpoint = this.debugInfoBreakpoints.find((candidate) =>
+      candidate.monitorCommandOwned &&
+      candidate.checkpointNumber === undefined &&
+      candidate.address !== undefined &&
+      normalizeAddress(candidate.address) === checkpoint.startAddress &&
+      checkpoint.exec &&
+      !checkpoint.load &&
+      !checkpoint.store
+    );
+    if (!breakpoint) {
+      return;
+    }
+    breakpoint.checkpointNumber = checkpoint.number;
+    breakpoint.checkpointEnabled = checkpoint.enabled;
+    breakpoint.enabled = checkpoint.enabled;
+    breakpoint.verified = true;
+    breakpoint.message = undefined;
+    this.checkpointToBreakpoint.set(checkpoint.number, breakpoint);
+    this.emitProgrammedBreakpoints();
+  }
+
+  private async refreshProgrammedBreakpointCheckpointNumbers(): Promise<void> {
+    if (!this.monitor || this.debugInfoBreakpoints.length === 0) {
+      return;
+    }
+    const needsRefresh = this.debugInfoBreakpoints.some((breakpoint) =>
+      breakpoint.monitorCommandOwned &&
+      breakpoint.checkpointNumber === undefined
+    );
+    if (!needsRefresh) {
+      return;
+    }
+
+    const [command, body] = ViceMonitorRequests.listCheckpoints();
+    this.monitor.send(command, body);
+    const deadline = Date.now() + 500;
+    while (
+      Date.now() < deadline &&
+      this.debugInfoBreakpoints.some((breakpoint) =>
+        breakpoint.monitorCommandOwned &&
+        breakpoint.checkpointNumber === undefined
+      )
+    ) {
+      await delay(25);
+    }
+  }
+
+  private emitProgrammedBreakpoints(): void {
+    this.connection.sendEvent(PROGRAMMED_BREAKPOINTS_EVENT, {
+      breakpoints: this.programmedBreakpointDescriptors()
+    });
+  }
+
+  private programmedBreakpointDescriptors(): ProgrammedBreakpointDescriptor[] {
+    return this.debugInfoBreakpoints
+      .map((breakpoint) => this.programmedBreakpointDescriptor(breakpoint));
+  }
+
+  private programmedBreakpointDescriptor(
+    breakpoint: InstalledDebugInfoBreakpoint
+  ): ProgrammedBreakpointDescriptor {
+    const source = breakpoint.mapping
+      ? findSourceForMapping(this.debugInfo, breakpoint.mapping)
+      : undefined;
+    const sourcePath = this.debugInfo && source
+      ? resolveSourceEntryPath(this.debugInfo, source)
+      : undefined;
+    return {
+      id: breakpoint.id,
+      address: `$${hexWord(breakpoint.address ?? breakpoint.debugBreakpoint.address)}`,
+      enabled: breakpoint.enabled,
+      installed: breakpoint.checkpointNumber !== undefined,
+      canRemove: false,
+      ...(sourcePath && breakpoint.mapping
+        ? {
+            source: sourceForPath(sourcePath),
+            line: breakpoint.mapping.startLine,
+            column: breakpoint.mapping.startColumn,
+            endLine: breakpoint.mapping.endLine,
+            endColumn: breakpoint.mapping.endColumn
+          }
+        : {}),
+      ...(breakpoint.checkpointNumber === undefined
+        ? {}
+        : { checkpointNumber: breakpoint.checkpointNumber })
+    };
   }
 
   private handleCheckpointHit(checkpoint: ViceMonitorCheckpoint): boolean {
@@ -3456,6 +3628,10 @@ function uniquePathList(paths: readonly (string | undefined)[]): string[] {
     result.push(candidate);
   }
   return result;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function normalizeSourceKey(sourcePath: string): string {

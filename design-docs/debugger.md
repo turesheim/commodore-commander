@@ -80,7 +80,14 @@ binary monitor.
   available, the adapter can install `.dbg` breakpoint entries as a fallback.
   Source-authored programmed breakpoints are not deleted through UI
   breakpoint removal; removing the `.break` directive from source and
-  rebuilding removes them from the authoritative `.vs` file.
+  rebuilding removes them from the authoritative `.vs` file. The Theia
+  extension exposes these source-owned breakpoints through a dedicated
+  Programmed Breakpoints view instead of registering them with Theia's normal
+  mutable breakpoint manager. The view disables removal and only allows
+  enable/disable; toggles are sent to the adapter as custom requests and
+  applied to the VICE checkpoint with `CHECKPOINT_TOGGLE`. Fallback `.dbg`
+  breakpoint entries installed by the adapter use the same non-removable UI
+  path.
 - Explicit VICE monitor command files can also install breakpoints outside the
   adapter's checkpoint map, for example Kick Assembler `.vs` files containing
   `break` commands. Unknown VICE checkpoint hits are reported as DAP
@@ -233,11 +240,16 @@ For breakpoint diagnosis, the expected startup sequence is a `.vs` selection
 note when a Kick Assembler VICE symbol file exists, a `configurationDone` note,
 one or more `CHECKPOINT_SET` commands for DAP-managed source or `.dbg`
 breakpoints, and `CHECKPOINT_INFO` responses that return the installed VICE
-checkpoint numbers. A later breakpoint hit should appear as a `CHECKPOINT_INFO`
-response with `hit=1`. If a remembered breakpoint is not installable, the
-adapter logs a `LOG` row with the skip reason before returning without a
-`CHECKPOINT_SET`. Disabling an installed UI breakpoint should produce
-`CHECKPOINT_TOGGLE enabled=0`; removing it should produce `CHECKPOINT_DELETE`.
+checkpoint numbers. Source-owned `.break` entries installed by the `.vs` file
+are discovered with `CHECKPOINT_LIST` and associated with their `.dbg` mappings
+by address, not reinstalled by the adapter. A later breakpoint hit should
+appear as a `CHECKPOINT_INFO` response with `hit=1`. If a remembered breakpoint
+is not installable, the adapter logs a `LOG` row with the skip reason before
+returning without a `CHECKPOINT_SET`. Disabling an installed UI breakpoint or
+source-owned programmed breakpoint should produce `CHECKPOINT_TOGGLE enabled=0`;
+removing an installed UI breakpoint should produce `CHECKPOINT_DELETE`.
+Programmed breakpoints must not produce
+`CHECKPOINT_DELETE` from UI removal controls.
 
 ## Remaining Work
 

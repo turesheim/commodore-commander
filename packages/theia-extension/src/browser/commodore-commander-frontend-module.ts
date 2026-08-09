@@ -131,6 +131,11 @@ import {
   VICE_MONITOR_LOG_WIDGET_ID,
   ViceMonitorLogWidget
 } from './vice-monitor-log-widget';
+import { ViceProgrammedBreakpointsContribution } from './vice-programmed-breakpoints-contribution';
+import {
+  VICE_PROGRAMMED_BREAKPOINTS_WIDGET_ID,
+  ViceProgrammedBreakpointsWidget
+} from './vice-programmed-breakpoints-widget';
 import { C64VisualDebuggerContribution } from './c64-visual-debugger-contribution';
 import {
   C64_VISUAL_DEBUGGER_WIDGET_ID,
@@ -398,6 +403,17 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     .inSingletonScope();
   bindViewContribution(bind, ViceMonitorLogContribution);
   bind(FrontendApplicationContribution).toService(ViceMonitorLogContribution);
+  bind(ViceProgrammedBreakpointsWidget).toSelf();
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: VICE_PROGRAMMED_BREAKPOINTS_WIDGET_ID,
+      createWidget: () => context.container.get(ViceProgrammedBreakpointsWidget)
+    }))
+    .inSingletonScope();
+  bindViewContribution(bind, ViceProgrammedBreakpointsContribution);
+  bind(FrontendApplicationContribution).toService(
+    ViceProgrammedBreakpointsContribution
+  );
   bind(C64VisualDebuggerWidget).toSelf();
   bind(WidgetFactory)
     .toDynamicValue((context) => ({

@@ -94,7 +94,9 @@ through the same binary monitor connection.
 
 Kick Assembler `.break` directives are also supported. Write them in assembly
 source code; when the source is compiled, the debugger and emulator can use
-those source-authored breakpoints.
+those source-authored breakpoints. They appear in the **Programmed
+Breakpoints** view, where they can be enabled or disabled. Delete the source
+directive and rebuild when you want to remove one.
 
 ## Conditional Source Breakpoints
 

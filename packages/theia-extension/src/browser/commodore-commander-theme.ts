@@ -651,6 +651,139 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   color: var(--cc-vice-monitor-error);
 }
 
+.cc-vice-programmed-breakpoints-widget {
+  min-width: 360px;
+}
+
+.cc-vice-programmed-breakpoints {
+  --cc-vice-programmed-background: var(--theia-panel-background, var(--theia-editor-background));
+  --cc-vice-programmed-foreground: var(--theia-foreground);
+  --cc-vice-programmed-muted: var(--theia-descriptionForeground);
+  --cc-vice-programmed-border: var(--theia-panel-border, var(--theia-editorGroup-border, var(--theia-contrastBorder, var(--cc-vice-programmed-muted))));
+  --cc-vice-programmed-surface: var(--theia-editorWidget-background, var(--cc-vice-programmed-background));
+  --cc-vice-programmed-header-background: color-mix(
+    in srgb,
+    var(--cc-vice-programmed-surface) 86%,
+    var(--cc-vice-programmed-background)
+  );
+  --cc-vice-programmed-row-border: color-mix(
+    in srgb,
+    var(--cc-vice-programmed-border) 62%,
+    transparent
+  );
+  --cc-vice-programmed-error: var(--theia-errorForeground, var(--theia-terminal-ansiRed, #f14c4c));
+  background: var(--cc-vice-programmed-background);
+  color: var(--cc-vice-programmed-foreground);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.cc-vice-programmed-breakpoints__toolbar {
+  align-items: center;
+  background: var(--cc-vice-programmed-header-background);
+  border-bottom: 1px solid var(--cc-vice-programmed-border);
+  color: var(--cc-vice-programmed-muted);
+  display: flex;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 10px;
+}
+
+.cc-vice-programmed-breakpoints__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-vice-programmed-breakpoints__count {
+  color: var(--cc-vice-programmed-muted);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+.cc-vice-programmed-breakpoints__refresh {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 5px;
+  min-height: 24px;
+}
+
+.cc-vice-programmed-breakpoints__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.cc-vice-programmed-breakpoints__empty,
+.cc-vice-programmed-breakpoints__error {
+  color: var(--cc-vice-programmed-muted);
+  font-size: 12px;
+  padding: 10px;
+}
+
+.cc-vice-programmed-breakpoints__error {
+  color: var(--cc-vice-programmed-error);
+}
+
+.cc-vice-programmed-breakpoints__table {
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 620px;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.cc-vice-programmed-breakpoints__table th,
+.cc-vice-programmed-breakpoints__table td {
+  border-bottom: 1px solid var(--cc-vice-programmed-row-border);
+  overflow: hidden;
+  padding: 4px 8px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-vice-programmed-breakpoints__table th {
+  background: var(--cc-vice-programmed-header-background);
+  color: var(--cc-vice-programmed-muted);
+  font-size: 11px;
+  font-weight: 700;
+  position: sticky;
+  text-transform: uppercase;
+  top: 0;
+  z-index: 1;
+}
+
+.cc-vice-programmed-breakpoints__table th:nth-child(1),
+.cc-vice-programmed-breakpoints__table th:nth-child(5) {
+  width: 54px;
+}
+
+.cc-vice-programmed-breakpoints__table th:nth-child(3),
+.cc-vice-programmed-breakpoints__table th:nth-child(4) {
+  width: 96px;
+}
+
+.cc-vice-programmed-breakpoints__address,
+.cc-vice-programmed-breakpoints__checkpoint {
+  font-family: monospace;
+}
+
+.cc-vice-programmed-breakpoints__remove {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 22px;
+  min-width: 28px;
+  padding: 0 6px;
+}
+
 .cc-sid-instrument-widget,
 .cc-sid-sfx-widget {
   min-width: 280px;
