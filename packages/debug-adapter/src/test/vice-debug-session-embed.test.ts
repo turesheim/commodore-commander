@@ -50,7 +50,7 @@ test('embedded launch uses direct frame transport and reset commands', async (t)
     requestTimeoutMs: 5000
   });
 
-  await client.request<DebugProtocol.Capabilities>(
+  const capabilities = await client.request<DebugProtocol.Capabilities>(
     'initialize',
     {
       adapterID: 'commodore-vice',
@@ -58,6 +58,7 @@ test('embedded launch uses direct frame transport and reset commands', async (t)
       columnsStartAt1: true
     } satisfies DebugProtocol.InitializeRequestArguments
   );
+  assert.equal(capabilities.supportsConfigurationDoneRequest, true);
 
   const initialized = client.waitForEvent('initialized');
   const hello = client.waitForEvent<ViceEmbedDebugEvent>(

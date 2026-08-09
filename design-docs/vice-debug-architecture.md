@@ -49,10 +49,10 @@ This layer owns:
 - VICE process launch with `.dbg`-derived temporary monitor label commands
   passed through `-moncommands`, plus `-binarymonitor`,
   `-binarymonitoraddress`, and `-initbreak ready` for debugging. The temporary
-  monitor command file ends with a one-shot `until` handoff, usually the BASIC
-  `SYS` target parsed from the PRG, so the binary monitor can synchronize DAP
-  breakpoints at program entry. `noDebug` launches omit the monitor command
-  file, binary monitor, and initial break
+  monitor command file loads labels only; it does not resume execution. The
+  binary monitor synchronizes DAP breakpoints while VICE is still stopped at
+  startup after Theia sends `configurationDone`. `noDebug` launches omit the
+  monitor command file, binary monitor, and initial break
 - DAP request handling for launch, source breakpoints, conditional
   breakpoints, hit conditions, logpoints/tracepoints, data breakpoints,
   conditional watchpoints, continue, pause, step in, step over, step out, stack
@@ -67,6 +67,8 @@ The Theia extension now contributes:
 
 - debug type `commodore-vice`
 - launch configuration schema and snippets
+- `supportsConfigurationDoneRequest` in the adapter capabilities so Theia
+  sends `configurationDone` after source breakpoint setup
 - `sourceRoot` launch configuration support so relative `.dbg` source entries
   can be resolved against the workspace
 - workspace-derived launch configurations from

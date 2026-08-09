@@ -269,8 +269,7 @@ export function findNearestLabelBeforeAddress(
 }
 
 export function createViceMonitorLabelCommands(
-  debugInfo: KickAssemblerDebugInfo | undefined,
-  options: { handoffAddress?: number } = {}
+  debugInfo: KickAssemblerDebugInfo | undefined
 ): string {
   const labels = (debugInfo?.labels ?? [])
     .map((label) => ({
@@ -297,10 +296,6 @@ export function createViceMonitorLabelCommands(
     seen.add(key);
     commands.push(`al C:${formatViceAddress(label.address)} ${label.name}`);
   }
-  if (options.handoffAddress !== undefined) {
-    commands.push(`until ${formatViceAddress(options.handoffAddress)}`);
-  }
-
   return commands.length > 1 ? `${commands.join('\n')}\n` : '';
 }
 

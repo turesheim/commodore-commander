@@ -6,7 +6,6 @@ import { test } from 'node:test';
 
 import {
   createPrgDisassemblySource,
-  findBasicSysTarget,
   findPrgDisassemblyLine,
   loadPrgImage,
   prgContainsAddress,
@@ -27,42 +26,6 @@ test('loadPrgImage reads the PRG load address and body range', async () => {
   assert.equal(prgContainsAddress(image, 0x0801), true);
   assert.equal(prgContainsAddress(image, 0x0803), true);
   assert.equal(prgContainsAddress(image, 0x0804), false);
-});
-
-test('findBasicSysTarget reads C64 BASIC SYS stubs', () => {
-  assert.equal(
-    findBasicSysTarget({
-      path: '/workspace/demo.prg',
-      loadAddress: 0x0801,
-      endAddress: 0x080f,
-      bytes: Buffer.from([
-        0x0e, 0x08,
-        0x0a, 0x00,
-        0x9e,
-        0x20, 0x28, 0x34, 0x30, 0x39, 0x36, 0x29,
-        0x00,
-        0x00, 0x00
-      ])
-    }),
-    4096
-  );
-  assert.equal(
-    findBasicSysTarget({
-      path: '/workspace/demo.prg',
-      loadAddress: 0x0800,
-      endAddress: 0x080f,
-      bytes: Buffer.from([
-        0x00,
-        0x0e, 0x08,
-        0x0a, 0x00,
-        0x9e,
-        0x20, 0x28, 0x34, 0x30, 0x39, 0x36, 0x29,
-        0x00,
-        0x00, 0x00
-      ])
-    }),
-    4096
-  );
 });
 
 test('createPrgDisassemblySource maps C64 addresses to generated source lines', () => {

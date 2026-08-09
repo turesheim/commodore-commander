@@ -41,7 +41,6 @@ import {
 } from './vice-monitor';
 import {
   createPrgDisassemblySource,
-  findBasicSysTarget,
   findPrgDisassemblyLine,
   loadPrgImage,
   prgContainsAddress,
@@ -767,18 +766,7 @@ export class ViceDebugSession {
       return undefined;
     }
 
-    const handoffAddress = this.viceMonitorCommandHandoffAddress(debugInfo);
-    if (handoffAddress === undefined) {
-      this.connection.sendOutput(
-        'Could not prepare VICE monitor labels because no startup handoff address could be resolved.\n',
-        'stderr'
-      );
-      return undefined;
-    }
-
-    const commands = createViceMonitorLabelCommands(debugInfo, {
-      handoffAddress
-    });
+    const commands = createViceMonitorLabelCommands(debugInfo);
     if (!commands) {
       return undefined;
     }
@@ -791,16 +779,6 @@ export class ViceDebugSession {
       `Prepared VICE monitor labels from Kick Assembler debug info: ${commandFile}\n`
     );
     return commandFile;
-  }
-
-  private viceMonitorCommandHandoffAddress(
-    debugInfo: KickAssemblerDebugInfo | undefined
-  ): number | undefined {
-    const basicSysTarget = findBasicSysTarget(this.programImage);
-    if (prgContainsAddress(this.programImage, basicSysTarget ?? -1)) {
-      return basicSysTarget;
-    }
-    return firstMappedProgramAddress(debugInfo, this.programImage);
   }
 
   private async cleanupViceMonitorCommandDirectory(): Promise<void> {
@@ -828,9 +806,11 @@ export class ViceDebugSession {
       this.resumeMonitor();
       return;
     }
-    if (this.initialStopSeen && !this.dapStopped && !this.handlingStop) {
+    if (!this.dapStopped && !this.handlingStop) {
       this.handlingStop = true;
       try {
+        this.initialStopSeen = true;
+        this.stopped = true;
         await this.refreshStoppedState();
         await this.synchronizeInitialBreakpoints();
         if (this.launchArguments?.stopOnEntry === false) {
@@ -2829,22 +2809,6 @@ function debugInfoProgramOverlap(
     mapping.endAddress >= image.loadAddress &&
     mapping.startAddress <= image.endAddress
   ).length;
-}
-
-function firstMappedProgramAddress(
-  debugInfo: KickAssemblerDebugInfo | undefined,
-  image: PrgImage | undefined
-): number | undefined {
-  if (!debugInfo || !image) {
-    return undefined;
-  }
-  return debugInfo.lineMappings
-    .filter((mapping) =>
-      mapping.startAddress >= image.loadAddress &&
-      mapping.startAddress <= image.endAddress
-    )
-    .sort((left, right) => left.startAddress - right.startAddress)[0]
-    ?.startAddress;
 }
 
 function replaceExtension(filePath: string, extension: string): string {

@@ -22,9 +22,9 @@ profile creates debug information:
   source line mapping, labels, `.break`, and `.watch` entries.
 - Commodore Commander reads that `.dbg` file and passes derived VICE monitor
   label commands to VICE with `-moncommands` for debug launches. The generated
-  command file uses a temporary startup handoff so DAP breakpoints can still be
-  installed through the binary monitor before user code runs. VICE does not read
-  Kick Assembler `.dbg` files directly.
+  command file loads labels only; DAP source and `.break` breakpoints are
+  installed through the binary monitor while VICE is stopped at startup. VICE
+  does not read Kick Assembler `.dbg` files directly.
 - `symbolFile: true` and `viceSymbols: true` remain useful for manual symbol
   files and monitor workflows outside the adapter-managed debug session.
 - `runProgram` should point to the PRG that VICE will launch.

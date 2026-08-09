@@ -39,6 +39,7 @@ viceTest('launches VICE and stops on entry', async (t, vice) => {
   assert.equal(capabilities.supportsWriteMemoryRequest, true);
   assert.equal(capabilities.supportsDataBreakpoints, true);
   assert.equal(capabilities.supportsLogPoints, true);
+  assert.equal(capabilities.supportsConfigurationDoneRequest, true);
 
   const stopped = await configurationDoneAndWaitStopped(session.client);
   assert.equal(stopped.body?.reason, 'entry');
@@ -188,6 +189,41 @@ viceTest('hits screencolors source breakpoints in embedded VICE mode', async (t,
   );
 
   assert.equal(breakpoint.line, executableLine);
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    executableLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  if (stopped.body?.hitBreakpointIds) {
+    assert.deepEqual(stopped.body.hitBreakpointIds, [breakpoint.id]);
+  }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, executableLine);
+});
+
+viceTest('keeps embedded VICE stopped while Theia finishes breakpoint setup', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors', {
+    embedded: true
+  });
+  await initializeAndLaunch(session);
+
+  const commentLine = await fixtureLine(
+    session.fixture.source,
+    '// back to top of loop'
+  );
+  const executableLine = commentLine + 1;
+  const breakpoint = await setSourceBreakpoint(
+    session.client,
+    session.fixture.source,
+    commentLine
+  );
+
+  assert.equal(breakpoint.line, executableLine);
+  await delay(1500);
 
   await configurationDoneAndWaitStopped(session.client);
   const { stopped, topFrame } = await continueUntilTopFrame(
@@ -570,6 +606,10 @@ async function listenOnLoopback(server: net.Server): Promise<number> {
       resolve(address.port);
     });
   });
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function configurationDoneAndWaitStopped(

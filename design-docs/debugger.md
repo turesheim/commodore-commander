@@ -35,12 +35,11 @@ binary monitor.
 - VICE does not consume Kick Assembler `.dbg` files directly. For debug
   launches, the adapter derives a temporary VICE monitor command file from
   the selected `.dbg` labels and passes it to VICE with `-moncommands`. The
-  generated file ends with a temporary `until` handoff address, normally the
-  BASIC `SYS` target parsed from the launched PRG, so VICE exits the textual
-  monitor after loading labels and stops once at program entry for binary
-  monitor synchronization. Source and `.break` breakpoints are still installed
-  through the binary monitor. An explicit `-moncommands` entry in `viceArgs`
-  is left untouched.
+  generated file does not resume the machine; VICE remains under the
+  `-initbreak ready` startup stop while Theia sends breakpoints and the adapter
+  installs VICE checkpoints through the binary monitor. Source and `.break`
+  breakpoints are still installed through the binary monitor. An explicit
+  `-moncommands` entry in `viceArgs` is left untouched.
 - Source breakpoints use `<Segment>` line mappings from Kick Assembler debug
   dumps. The `.dbg` `<Breakpoints>` block may be empty for ordinary editor
   breakpoints; it is not required for DAP source breakpoints.
@@ -50,11 +49,12 @@ binary monitor.
   checkpoints but does not surface them as Theia gutter breakpoints.
 - DAP source breakpoints are remembered when Theia sends `setBreakpoints`,
   even if that happens before `launch` has loaded Kick Assembler debug info.
-  After `.dbg` loading, the adapter re-resolves pending source breakpoints,
-  sends DAP breakpoint-changed events for newly verified bindings, and
-  synchronizes VICE checkpoints at the first stopped monitor state before the
-  initial resume. This avoids losing breakpoints in embedded/autostart launch
-  timing.
+  The adapter advertises `supportsConfigurationDoneRequest` so Theia completes
+  breakpoint setup with `configurationDone`. After `.dbg` loading, the adapter
+  re-resolves pending source breakpoints, sends DAP breakpoint-changed events
+  for newly verified bindings, and synchronizes VICE checkpoints at the first
+  stopped monitor state before the initial resume. This avoids losing
+  breakpoints in embedded/autostart launch timing.
 - VICE can report more than one startup stop while `-moncommands` and
   `-initbreak ready` settle. The adapter serializes initial stop handling and
   only reports one DAP `stopped` event until the client continues or steps.
