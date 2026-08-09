@@ -1688,9 +1688,13 @@ export class ViceDebugSession {
       return;
     }
     this.refreshSourceBreakpointMappings(true);
+    const breakpoints = this.allInstalledBreakpoints();
+    const installableCount = breakpoints.filter((breakpoint) =>
+      !this.breakpointCheckpointSkipReason(breakpoint)
+    ).length;
     this.sendViceMonitorLog({
       category: 'user',
-      message: `Synchronizing ${this.allInstalledBreakpoints().length} breakpoint checkpoint(s) with VICE.`
+      message: `Synchronizing ${breakpoints.length} registered breakpoint(s) with VICE; ${installableCount} currently installable.`
     });
     await this.reinstallAllBreakpointCheckpoints();
     this.initialBreakpointSyncDone = true;
@@ -1708,7 +1712,7 @@ export class ViceDebugSession {
 
   private async installPendingBreakpointCheckpoints(): Promise<void> {
     for (const breakpoint of this.allInstalledBreakpoints()) {
-      if (!breakpoint.checkpointNumber) {
+      if (breakpoint.checkpointNumber === undefined) {
         await this.installBreakpointCheckpoint(breakpoint);
       }
     }
@@ -1718,13 +1722,19 @@ export class ViceDebugSession {
     breakpoint: InstalledBreakpoint
   ): Promise<void> {
     const range = breakpointAddressRange(breakpoint);
-    if (
-      !this.monitor ||
-      breakpoint.checkpointNumber ||
-      !breakpoint.verified ||
-      breakpoint.message ||
-      !range
-    ) {
+    const skipReason = this.breakpointCheckpointSkipReason(breakpoint, range);
+    if (skipReason) {
+      this.sendViceMonitorLog({
+        category: 'user',
+        message: `Skipping ${breakpointDescription(breakpoint)}: ${skipReason}.`
+      });
+      return;
+    }
+    if (!range) {
+      return;
+    }
+    const monitor = this.monitor;
+    if (!monitor) {
       return;
     }
 
@@ -1742,7 +1752,7 @@ export class ViceDebugSession {
         category: 'user',
         message: `Installing ${breakpointDescription(breakpoint)} at $${hexWord(range.startAddress)}-$${hexWord(range.endAddress)}.`
       });
-      const response = await this.monitor.sendAndWait(
+      const response = await monitor.sendAndWait(
         command,
         body,
         (event) => event.type === 'checkpoint',
@@ -1762,6 +1772,28 @@ export class ViceDebugSession {
       breakpoint.verified = false;
       breakpoint.message = error instanceof Error ? error.message : String(error);
     }
+  }
+
+  private breakpointCheckpointSkipReason(
+    breakpoint: InstalledBreakpoint,
+    range = breakpointAddressRange(breakpoint)
+  ): string | undefined {
+    if (!this.monitor) {
+      return 'VICE monitor is not connected';
+    }
+    if (breakpoint.checkpointNumber !== undefined) {
+      return `already installed as VICE checkpoint ${breakpoint.checkpointNumber}`;
+    }
+    if (breakpoint.message) {
+      return breakpoint.message;
+    }
+    if (!breakpoint.verified) {
+      return 'breakpoint is not verified';
+    }
+    if (!range) {
+      return 'no mapped C64 address range';
+    }
+    return undefined;
   }
 
   private async deleteBreakpointCheckpoint(
@@ -1821,7 +1853,9 @@ export class ViceDebugSession {
     breakpoint.mapping = mapping;
     breakpoint.verified = Boolean(mapping) && !unsupportedMessage;
     breakpoint.message = unsupportedMessage ??
-      (mapping ? undefined : 'No Kick Assembler debug mapping for this line.');
+      (mapping
+        ? undefined
+        : 'No Kick Assembler debug mapping for this source line in the active debug info.');
 
     return previousMapping !== breakpoint.mapping ||
       previousVerified !== breakpoint.verified ||

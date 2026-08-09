@@ -92,7 +92,8 @@ The Theia extension now contributes:
   upper/graphics and lower/upper charset selection plus labeled control bytes
 - a VICE Monitor view available from Theia's View list that subscribes to the
   adapter's `commodoreViceMonitorLog` custom events and shows binary monitor
-  command/response traffic for breakpoint and monitor diagnostics
+  command/response traffic for breakpoint and monitor diagnostics, with a
+  clipboard export for sharing the current log
 - a Debug breakpoints menu action for managing persistent memory watchpoints,
   including add, enable/disable, edit, delete, clear, and active-session
   reinstall operations

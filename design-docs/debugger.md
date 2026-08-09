@@ -199,7 +199,8 @@ emulator is running.
 The VICE Monitor view is a bottom-panel diagnostic view for the active
 `commodore-vice` debug session. It does not open another monitor socket.
 Instead, the debug adapter mirrors its session-owned binary monitor traffic as
-DAP custom events.
+DAP custom events. The view can copy the current log to the clipboard as
+tab-separated text.
 
 The view uses compact direction labels:
 
@@ -214,7 +215,9 @@ note when a Kick Assembler VICE symbol file exists, a `configurationDone` note,
 one or more `CHECKPOINT_SET` commands for DAP-managed source or `.dbg`
 breakpoints, and `CHECKPOINT_INFO` responses that return the installed VICE
 checkpoint numbers. A later breakpoint hit should appear as a `CHECKPOINT_INFO`
-response with `hit=1`.
+response with `hit=1`. If a remembered breakpoint is not installable, the
+adapter logs a `LOG` row with the skip reason before returning without a
+`CHECKPOINT_SET`.
 
 ## Remaining Work
 

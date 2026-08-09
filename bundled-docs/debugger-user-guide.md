@@ -413,7 +413,8 @@ stopping a debug session terminates the emulator process owned by that session.
 Open the **VICE Monitor** view from the Theia view list when breakpoint
 installation or monitor traffic needs inspection. It shows the debug adapter's
 session-owned binary monitor traffic; it does not create another VICE monitor
-connection.
+connection. Use **Copy to Clipboard** to copy the current log as tab-separated
+text for bug reports or local debugging notes.
 
 The direction column uses compact protocol labels:
 
@@ -425,7 +426,9 @@ The direction column uses compact protocol labels:
 When source breakpoints are working, startup should show `CHECKPOINT_SET`
 commands after `configurationDone`, followed by `CHECKPOINT_INFO` responses
 with VICE checkpoint numbers. A triggered breakpoint appears as a
-`CHECKPOINT_INFO` response with `hit=1`.
+`CHECKPOINT_INFO` response with `hit=1`. If no `CHECKPOINT_SET` commands are
+sent, look for `LOG` rows that explain why a remembered breakpoint was skipped,
+such as an unmapped source line in the active debug info.
 
 ## Troubleshooting
 

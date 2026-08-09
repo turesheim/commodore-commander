@@ -1,8 +1,10 @@
 import * as React from 'react';
 
 import { codicon, ReactWidget } from '@theia/core/lib/browser';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { Message } from '@theia/core/lib/browser/widgets/widget';
-import { injectable } from '@theia/core/shared/inversify';
+import { MessageService } from '@theia/core/lib/common/message-service';
+import { inject, injectable } from '@theia/core/shared/inversify';
 
 import type {
   CommodoreViceMonitorLogCategory,
@@ -21,6 +23,12 @@ interface CommodoreViceMonitorLogEntry extends CommodoreViceMonitorLogEvent {
 
 @injectable()
 export class ViceMonitorLogWidget extends ReactWidget {
+  @inject(ClipboardService)
+  protected readonly clipboardService!: ClipboardService;
+
+  @inject(MessageService)
+  protected readonly messageService!: MessageService;
+
   protected entries: CommodoreViceMonitorLogEntry[] = [];
   protected nextEntryId = 1;
 
@@ -54,6 +62,23 @@ export class ViceMonitorLogWidget extends ReactWidget {
     this.update();
   }
 
+  protected async copyEntriesToClipboard(): Promise<void> {
+    if (this.entries.length === 0) {
+      return;
+    }
+    try {
+      await this.clipboardService.writeText(this.serializeEntries());
+      this.messageService.info(
+        `Copied ${this.entries.length} VICE monitor log ` +
+          `${this.entries.length === 1 ? 'entry' : 'entries'} to clipboard.`
+      );
+    } catch (error) {
+      this.messageService.error(
+        `Unable to copy VICE monitor log: ${errorMessage(error)}`
+      );
+    }
+  }
+
   protected override onUpdateRequest(msg: Message): void {
     super.onUpdateRequest(msg);
 
@@ -73,6 +98,15 @@ export class ViceMonitorLogWidget extends ReactWidget {
           <span className='cc-vice-monitor-log__count'>
             {this.entries.length}
           </span>
+          <button
+            className='theia-button secondary cc-vice-monitor-log__copy'
+            disabled={this.entries.length === 0}
+            onClick={() => void this.copyEntriesToClipboard()}
+            title='Copy VICE monitor protocol messages to the clipboard'
+            type='button'
+          >
+            Copy to Clipboard
+          </button>
           <button
             className='theia-button secondary cc-vice-monitor-log__clear'
             disabled={this.entries.length === 0}
@@ -116,17 +150,13 @@ export class ViceMonitorLogWidget extends ReactWidget {
   }
 
   protected renderEntryRow(entry: CommodoreViceMonitorLogEntry): React.ReactNode {
-    const timestamp = entry.timestamp ? Date.parse(entry.timestamp) : Number.NaN;
-    const time = Number.isNaN(timestamp)
-      ? formatTime(entry.receivedAt)
-      : formatTime(timestamp);
     const hasError = entry.errorCode !== undefined && entry.errorCode !== 0;
     return (
       <tr
         className={hasError ? 'cc-vice-monitor-log__row--error' : undefined}
         key={entry.id}
       >
-        <td title={entry.timestamp}>{time}</td>
+        <td title={entry.timestamp}>{formatEntryTime(entry)}</td>
         <td>
           <span
             className={`cc-vice-monitor-log__direction cc-vice-monitor-log__direction--${entry.category}`}
@@ -155,6 +185,35 @@ export class ViceMonitorLogWidget extends ReactWidget {
       </tr>
     );
   }
+
+  protected serializeEntries(): string {
+    return [
+      [
+        'Time',
+        'Dir',
+        'Req',
+        'Type',
+        'Code',
+        'Error',
+        'Bytes',
+        'Message',
+        'Payload'
+      ].join('\t'),
+      ...this.entries.map((entry) => [
+        formatEntryTime(entry),
+        directionLabel(entry.category),
+        formatOptionalNumber(entry.requestId),
+        entry.name ?? '',
+        entry.code === undefined
+          ? ''
+          : `0x${entry.code.toString(16).padStart(2, '0')}`,
+        formatOptionalNumber(entry.errorCode),
+        formatOptionalNumber(entry.bodyLength),
+        entry.message,
+        entry.bodyPreview ?? ''
+      ].map(escapeTsvValue).join('\t'))
+    ].join('\n');
+  }
 }
 
 function formatTime(timestamp: number): string {
@@ -164,6 +223,24 @@ function formatTime(timestamp: number): string {
     date.getMinutes(),
     date.getSeconds()
   ].map((part) => part.toString().padStart(2, '0')).join(':');
+}
+
+function formatEntryTime(entry: CommodoreViceMonitorLogEntry): string {
+  const timestamp = entry.timestamp ? Date.parse(entry.timestamp) : Number.NaN;
+  return Number.isNaN(timestamp)
+    ? formatTime(entry.receivedAt)
+    : formatTime(timestamp);
+}
+
+function formatOptionalNumber(value: number | undefined): string {
+  return value === undefined ? '' : String(value);
+}
+
+function escapeTsvValue(value: string): string {
+  return value
+    .replace(/\t/gu, ' ')
+    .replace(/\r\n/gu, ' ')
+    .replace(/[\r\n]/gu, ' ');
 }
 
 function directionLabel(category: CommodoreViceMonitorLogCategory): string {
@@ -186,4 +263,8 @@ function directionTitle(category: CommodoreViceMonitorLogCategory): string {
     case 'user':
       return 'adapter note';
   }
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

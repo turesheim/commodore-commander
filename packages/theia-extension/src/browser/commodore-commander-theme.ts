@@ -543,6 +543,7 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   margin-left: auto;
 }
 
+.cc-vice-monitor-log__copy,
 .cc-vice-monitor-log__clear {
   flex: 0 0 auto;
   min-height: 24px;
