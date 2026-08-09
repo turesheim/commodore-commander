@@ -26,6 +26,13 @@ binary monitor.
 - Debug launches prefer the configured `.dbg` file but also search the PRG
   directory and nearby output folders for debug dumps whose address ranges
   overlap the launched PRG.
+- Source breakpoints use `<Segment>` line mappings from Kick Assembler debug
+  dumps. The `.dbg` `<Breakpoints>` block may be empty for ordinary editor
+  breakpoints; it is not required for DAP source breakpoints.
+- If a requested source breakpoint line has no exact mapping, the adapter can
+  bind it to the next nearby mapped line in the same source file. This supports
+  common editor clicks on comments or blank lines immediately above executable
+  assembler statements while still rejecting distant unmapped lines.
 - For C64 launches, the adapter loads bundled VICE BASIC/KERNAL ROM images and
   parses VICE monitor aliases from `share/vice/C64/c64mem.sym` to expose
   generated ROM disassembly sources for OS addresses. `c64mem.sym` is VICE
@@ -50,6 +57,8 @@ Protocol reference: [VICE Manual, Binary monitor](https://vice-emu.sourceforge.i
 - Launch and terminate VICE through Theia.
 - Start Without Debugging through DAP `noDebug`, without `-binarymonitor`.
 - Source breakpoints backed by Kick Assembler `.dbg` line mappings.
+- Nearby unmapped source breakpoint lines resolved to the next mapped
+  executable line.
 - Conditional source breakpoints through VICE checkpoint conditions.
 - Hit-count source breakpoints interpreted by the adapter before surfacing a
   stop to the DAP client.
@@ -147,6 +156,10 @@ emulator is running.
   byte editing, and the C64 Visual Debugger overview, sprite, screen, and CIA
   views. It runs locally through `npm run test:e2e:theia:ui` after the Electron
   app is built and in GitHub Actions on Linux under Xvfb.
+- Debug-adapter VICE e2e fixtures cover `debug-demo`,
+  `visual-debugger-demo`, and `screencolors`; `screencolors` specifically
+  covers comment-line breakpoint binding against Kick Assembler `<Segment>`
+  mappings when the `.dbg` `<Breakpoints>` block is empty.
 - Build-before-debug has Theia task-provider and generated `preLaunchTask`
   wiring for Kick Assembler builds. Remaining work is run-picker and
   build-policy behavior for configured runs, plus any clean-task workflow that

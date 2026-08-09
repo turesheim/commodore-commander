@@ -9,9 +9,14 @@ export interface PreparedFixture {
   source: string;
 }
 
+export type DebugAdapterFixtureName =
+  | 'debug-demo'
+  | 'visual-debugger-demo'
+  | 'screencolors';
+
 export async function prepareFixture(
   packageRoot: string,
-  fixtureName: 'debug-demo' | 'visual-debugger-demo'
+  fixtureName: DebugAdapterFixtureName
 ): Promise<PreparedFixture> {
   const sourceRoot = path.join(
     packageRoot,

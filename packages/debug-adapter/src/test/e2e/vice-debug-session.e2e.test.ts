@@ -6,7 +6,12 @@ import { test, type TestContext } from 'node:test';
 import type { DebugProtocol } from '@vscode/debugprotocol';
 
 import { DapClient } from './dap-client';
-import { fixtureLine, prepareFixture, type PreparedFixture } from './fixtures';
+import {
+  fixtureLine,
+  prepareFixture,
+  type DebugAdapterFixtureName,
+  type PreparedFixture
+} from './fixtures';
 import { readC64VisualSnapshot } from './visual-snapshot';
 import {
   resolveViceE2eEnvironment,
@@ -68,6 +73,38 @@ viceTest('hits source breakpoints through a real VICE monitor session', async (t
   }
   assert.equal(topFrame.source?.path, session.fixture.source);
   assert.equal(topFrame.line, breakpointLine);
+});
+
+viceTest('resolves screencolors comment breakpoints to executable lines', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  await initializeAndLaunch(session);
+
+  const commentLine = await fixtureLine(
+    session.fixture.source,
+    '// back to top of loop'
+  );
+  const executableLine = commentLine + 1;
+  const breakpoint = await setSourceBreakpoint(
+    session.client,
+    session.fixture.source,
+    commentLine
+  );
+
+  assert.equal(breakpoint.line, executableLine);
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    executableLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  if (stopped.body?.hitBreakpointIds) {
+    assert.deepEqual(stopped.body.hitBreakpointIds, [breakpoint.id]);
+  }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, executableLine);
 });
 
 viceTest('steps into, steps out of, and steps over source calls', async (t, vice) => {
@@ -299,7 +336,7 @@ function viceTest(
 async function launchFixture(
   t: TestContext,
   vice: ViceE2eEnvironment,
-  fixtureName: 'debug-demo' | 'visual-debugger-demo'
+  fixtureName: DebugAdapterFixtureName
 ): Promise<{
   client: DapClient;
   fixture: PreparedFixture;
