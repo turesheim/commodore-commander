@@ -192,6 +192,79 @@ viceTest('installs source breakpoints added while VICE is running', async (t, vi
   assert.equal(topFrame.line, breakpointLine);
 });
 
+viceTest('removes source breakpoints cleared through setBreakpoints', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  await initializeAndLaunch(session);
+
+  const removedLine = await fixtureLine(
+    session.fixture.source,
+    'lda #INNER_MAX'
+  );
+  const remainingLine = await fixtureLine(
+    session.fixture.source,
+    'bne CrazyBorderLoop'
+  );
+  const installedResponse = await sendSetBreakpoints(
+    session.client,
+    session.fixture.source,
+    [
+      { line: removedLine },
+      { line: remainingLine }
+    ]
+  );
+  assert.equal(installedResponse.breakpoints.length, 2);
+  assert.equal(installedResponse.breakpoints[0]?.verified, true);
+  assert.equal(installedResponse.breakpoints[1]?.verified, true);
+
+  await configurationDoneAndWaitStopped(session.client);
+
+  const checkpointDeleteLog = session.client.waitForEvent<DebugProtocol.Event>(
+    COMMODORE_VICE_MONITOR_LOG_EVENT,
+    (event) => {
+      const body = event.body as {
+        category?: string;
+        name?: string;
+        message?: string;
+      } | undefined;
+      return body?.category === 'input' &&
+        body.name === 'CHECKPOINT_DELETE' &&
+        body.message?.includes('CHECKPOINT_DELETE') === true;
+    },
+    E2E_TIMEOUT_MS
+  );
+  const updatedResponse = await sendSetBreakpoints(
+    session.client,
+    session.fixture.source,
+    [{ line: remainingLine }]
+  );
+  await checkpointDeleteLog;
+  const remainingBreakpoint = updatedResponse.breakpoints[0];
+  assert.ok(remainingBreakpoint, 'expected remaining source breakpoint response');
+  assert.equal(remainingBreakpoint.verified, true, remainingBreakpoint.message);
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const stopped = await continueAndWaitStopped(session.client);
+    const topFrame = await topStackFrame(session.client);
+    if (
+      topFrame.source?.path === session.fixture.source &&
+      topFrame.line === removedLine
+    ) {
+      throw new Error(`Removed breakpoint still stopped at line ${removedLine}.`);
+    }
+    if (
+      topFrame.source?.path === session.fixture.source &&
+      topFrame.line === remainingLine
+    ) {
+      assert.equal(stopped.body?.reason, 'breakpoint');
+      if (stopped.body?.hitBreakpointIds) {
+        assert.deepEqual(stopped.body.hitBreakpointIds, [remainingBreakpoint.id]);
+      }
+      return;
+    }
+  }
+  throw new Error(`Did not stop at remaining breakpoint line ${remainingLine}.`);
+});
+
 viceTest('resolves screencolors comment breakpoints to executable lines', async (t, vice) => {
   const session = await launchFixture(t, vice, 'screencolors');
   await initializeAndLaunch(session);

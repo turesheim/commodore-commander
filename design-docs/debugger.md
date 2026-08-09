@@ -62,7 +62,10 @@ binary monitor.
   VICE is ready are mapped through `.dbg` and submitted as binary-monitor
   execution checkpoints on the first CPU halt. Breakpoints added after the
   machine is already running are submitted through the binary monitor as soon
-  as the monitor connection is available.
+  as the monitor connection is available. When Theia sends a replacement
+  `setBreakpoints` list for a source file, checkpoints for removed UI
+  breakpoints are deleted through the binary monitor and the adapter waits for
+  the VICE `CHECKPOINT_DELETE` acknowledgement before replying.
 - Kick Assembler `.break` directives are written in assembly source code.
   When the source is compiled, Kick Assembler emits them into the `.dbg`
   `<Breakpoints>` block and may also emit matching `break` commands in the

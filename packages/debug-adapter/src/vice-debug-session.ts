@@ -1664,13 +1664,10 @@ export class ViceDebugSession {
     for (const checkpointNumber of breakpoint.checkpointNumbers) {
       this.checkpointToDataBreakpoint.delete(checkpointNumber);
       this.checkpointToDataBreakpointAccess.delete(checkpointNumber);
-      if (!this.monitor) {
-        continue;
-      }
-      const [command, body] = ViceMonitorRequests.deleteCheckpoint(
-        checkpointNumber
+      await this.deleteCheckpoint(
+        checkpointNumber,
+        `memory ${watchpointAccessLabel(breakpoint.accessType)} watchpoint ${watchpointRangeLabel(breakpoint)}`
       );
-      this.monitor.send(command, body);
     }
     breakpoint.checkpointNumbers = [];
   }
@@ -1853,11 +1850,42 @@ export class ViceDebugSession {
     }
     this.checkpointToBreakpoint.delete(checkpointNumber);
     breakpoint.checkpointNumber = undefined;
-    if (!this.monitor) {
+    await this.deleteCheckpoint(checkpointNumber, breakpointDescription(breakpoint));
+  }
+
+  private async deleteCheckpoint(
+    checkpointNumber: number,
+    description: string
+  ): Promise<void> {
+    const monitor = this.monitor;
+    if (!monitor) {
       return;
     }
     const [command, body] = ViceMonitorRequests.deleteCheckpoint(checkpointNumber);
-    this.monitor.send(command, body);
+    try {
+      this.sendViceMonitorLog({
+        category: 'user',
+        message: `Removing ${description} from VICE checkpoint ${checkpointNumber}.`
+      });
+      await monitor.sendAndWait(
+        command,
+        body,
+        (event) =>
+          event.type === 'ack' &&
+          event.commandId === ViceMonitorCommandId.CHECKPOINT_DELETE,
+        3000
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.sendViceMonitorLog({
+        category: 'user',
+        message: `Could not remove VICE checkpoint ${checkpointNumber}: ${message}`
+      });
+      this.connection.sendOutput(
+        `Could not remove VICE checkpoint ${checkpointNumber}: ${message}\n`,
+        'stderr'
+      );
+    }
   }
 
   private allInstalledBreakpoints(): InstalledBreakpoint[] {
