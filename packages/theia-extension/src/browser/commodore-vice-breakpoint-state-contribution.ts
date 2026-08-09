@@ -21,12 +21,19 @@ import {
   type CommodoreViceProgrammedBreakpoint,
   type CommodoreViceProgrammedBreakpointsEvent
 } from '../common/commodore-vice-programmed-breakpoints';
-import { CommodoreViceBreakpointManager } from './commodore-vice-breakpoint-manager';
+import {
+  isProgrammedSourceBreakpoint,
+  programmedBreakpointId,
+  pruneHiddenProgrammedBreakpointIds,
+  rememberHiddenProgrammedBreakpointIds,
+  visibleProgrammedBreakpoints
+} from './commodore-vice-programmed-breakpoint-state';
 
 const SYNC_SOURCE_BREAKPOINTS_REQUEST = 'commodore-vice/syncSourceBreakpoints';
 
 interface ProgrammedBreakpointSessionState {
   readonly programmedBreakpointsById: Map<number, CommodoreViceProgrammedBreakpoint>;
+  readonly hiddenProgrammedBreakpointIds: Set<number>;
   updatingProgrammedMarkers: boolean;
 }
 
@@ -48,6 +55,7 @@ export class CommodoreViceBreakpointStateContribution implements DebugContributi
     const toDispose = new DisposableCollection();
     const state: ProgrammedBreakpointSessionState = {
       programmedBreakpointsById: new Map(),
+      hiddenProgrammedBreakpointIds: new Set(),
       updatingProgrammedMarkers: false
     };
     toDispose.push(
@@ -78,7 +86,7 @@ export class CommodoreViceBreakpointStateContribution implements DebugContributi
     event: SourceBreakpointsChangeEvent
   ): Promise<void> {
     if (event.removed.some(isProgrammedSourceBreakpoint)) {
-      this.restoreRemovedProgrammedBreakpoints(state, event.uri, event.removed);
+      this.rememberHiddenProgrammedBreakpoints(state, event.removed);
     }
     await this.syncSourceBreakpoints(connection, event.uri);
   }
@@ -95,6 +103,10 @@ export class CommodoreViceBreakpointStateContribution implements DebugContributi
       return;
     }
     state.programmedBreakpointsById.clear();
+    pruneHiddenProgrammedBreakpointIds(
+      state.hiddenProgrammedBreakpointIds,
+      body.breakpoints
+    );
     for (const breakpoint of body.breakpoints) {
       state.programmedBreakpointsById.set(breakpoint.id, breakpoint);
     }
@@ -105,7 +117,12 @@ export class CommodoreViceBreakpointStateContribution implements DebugContributi
     state: ProgrammedBreakpointSessionState,
     breakpoints: readonly CommodoreViceProgrammedBreakpoint[]
   ): void {
-    const breakpointsByUri = groupProgrammedBreakpointsByUri(breakpoints);
+    const breakpointsByUri = groupProgrammedBreakpointsByUri(
+      visibleProgrammedBreakpoints(
+        breakpoints,
+        state.hiddenProgrammedBreakpointIds
+      )
+    );
     const uriStrings = new Set<string>([
       ...breakpointsByUri.keys(),
       ...this.programmedBreakpointMarkerUris()
@@ -131,46 +148,22 @@ export class CommodoreViceBreakpointStateContribution implements DebugContributi
             createProgrammedSourceBreakpoint(uri, breakpoint, existing)
           );
         }
-        this.withProgrammedBreakpointRemovalAllowed(() => {
-          this.breakpointManager.setBreakpoints(uri, nextBreakpoints);
-        });
+        this.breakpointManager.setBreakpoints(uri, nextBreakpoints);
       }
     } finally {
       state.updatingProgrammedMarkers = false;
     }
   }
 
-  protected restoreRemovedProgrammedBreakpoints(
+  protected rememberHiddenProgrammedBreakpoints(
     state: ProgrammedBreakpointSessionState,
-    uri: URI,
     removed: readonly SourceBreakpoint[]
   ): void {
-    const restored = removed
-      .filter(isProgrammedSourceBreakpoint)
-      .map((breakpoint) =>
-        restoredProgrammedSourceBreakpoint(
-          uri,
-          breakpoint,
-          state.programmedBreakpointsById.get(programmedBreakpointId(breakpoint)!)
-        )
-      );
-    if (restored.length === 0) {
-      return;
-    }
-
-    state.updatingProgrammedMarkers = true;
-    try {
-      const existing = this.breakpointManager.getBreakpoints(uri);
-      const restoredLines = new Set(restored.map((breakpoint) => breakpoint.raw.line));
-      this.breakpointManager.setBreakpoints(uri, [
-        ...existing.filter((breakpoint) =>
-          !restoredLines.has(breakpoint.raw.line)
-        ),
-        ...restored
-      ]);
-    } finally {
-      state.updatingProgrammedMarkers = false;
-    }
+    rememberHiddenProgrammedBreakpointIds(
+      state.hiddenProgrammedBreakpointIds,
+      state.programmedBreakpointsById,
+      removed
+    );
   }
 
   protected removeProgrammedBreakpointMarkers(
@@ -181,18 +174,17 @@ export class CommodoreViceBreakpointStateContribution implements DebugContributi
     try {
       for (const uriString of uriStrings) {
         const uri = new URI(uriString);
-        this.withProgrammedBreakpointRemovalAllowed(() => {
-          this.breakpointManager.setBreakpoints(
-            uri,
-            this.breakpointManager
-              .getBreakpoints(uri)
-              .filter((breakpoint) => !isProgrammedSourceBreakpoint(breakpoint))
-          );
-        });
+        this.breakpointManager.setBreakpoints(
+          uri,
+          this.breakpointManager
+            .getBreakpoints(uri)
+            .filter((breakpoint) => !isProgrammedSourceBreakpoint(breakpoint))
+        );
       }
     } finally {
       state.updatingProgrammedMarkers = false;
       state.programmedBreakpointsById.clear();
+      state.hiddenProgrammedBreakpointIds.clear();
     }
   }
 
@@ -237,14 +229,6 @@ export class CommodoreViceBreakpointStateContribution implements DebugContributi
     }
   }
 
-  private withProgrammedBreakpointRemovalAllowed(callback: () => void): void {
-    const breakpointManager = this.breakpointManager;
-    if (breakpointManager instanceof CommodoreViceBreakpointManager) {
-      breakpointManager.withProgrammedBreakpointRemovalAllowed(callback);
-      return;
-    }
-    callback();
-  }
 }
 
 function toSourceBreakpointState(
@@ -297,40 +281,6 @@ function createProgrammedSourceBreakpoint(
     enabled: breakpoint.enabled,
     raw
   };
-}
-
-function restoredProgrammedSourceBreakpoint(
-  uri: URI,
-  removed: SourceBreakpoint,
-  descriptor: CommodoreViceProgrammedBreakpoint | undefined
-): SourceBreakpoint {
-  const raw = removed.raw as ProgrammedBreakpointRaw;
-  const restoredRaw: ProgrammedBreakpointRaw = {
-    line: descriptor?.line ?? raw.line,
-    [COMMODORE_VICE_PROGRAMMED_BREAKPOINT_RAW_ID]:
-      descriptor?.id ?? raw[COMMODORE_VICE_PROGRAMMED_BREAKPOINT_RAW_ID],
-    [COMMODORE_VICE_PROGRAMMED_BREAKPOINT_RAW_ADDRESS]:
-      descriptor?.address ?? raw[COMMODORE_VICE_PROGRAMMED_BREAKPOINT_RAW_ADDRESS]
-  };
-  return {
-    ...SourceBreakpoint.create(uri, restoredRaw, removed),
-    enabled: removed.enabled,
-    raw: restoredRaw
-  };
-}
-
-function isProgrammedSourceBreakpoint(
-  breakpoint: SourceBreakpoint
-): boolean {
-  return programmedBreakpointId(breakpoint) !== undefined;
-}
-
-function programmedBreakpointId(
-  breakpoint: SourceBreakpoint
-): number | undefined {
-  const id =
-    (breakpoint.raw as ProgrammedBreakpointRaw)[COMMODORE_VICE_PROGRAMMED_BREAKPOINT_RAW_ID];
-  return typeof id === 'number' ? id : undefined;
 }
 
 function asProgrammedBreakpointsEvent(
