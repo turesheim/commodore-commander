@@ -55,7 +55,7 @@ export class ViceMonitorLogContribution
   }
 
   async onDidInitializeLayout(_app: FrontendApplication): Promise<void> {
-    await this.openView();
+    await this.openView({ reveal: true });
   }
 
   protected async handleDebugSessionCustomEvent(
@@ -71,7 +71,7 @@ export class ViceMonitorLogContribution
     if (!logEvent) {
       return;
     }
-    const widget = this.tryGetWidget() ?? await this.openView({ reveal: false });
+    const widget = this.tryGetWidget() ?? await this.openView({ reveal: true });
     widget.appendEntry(logEvent);
   }
 }

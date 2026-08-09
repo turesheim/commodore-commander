@@ -169,11 +169,11 @@ function formatTime(timestamp: number): string {
 function directionLabel(category: CommodoreViceMonitorLogCategory): string {
   switch (category) {
     case 'input':
-      return '<<<';
+      return 'TX';
     case 'output':
-      return '>>>';
+      return 'RX';
     case 'user':
-      return '===';
+      return 'LOG';
   }
 }
 

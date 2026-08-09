@@ -45,8 +45,8 @@ This layer owns:
 - monitor event mapping for stop/resume, checkpoint, register, and memory
   responses
 - binary monitor diagnostic events mirrored to Theia as
-  `commodoreViceMonitorLog` DAP custom events, using `===` adapter notes,
-  `<<<` outbound commands, and `>>>` inbound responses
+  `commodoreViceMonitorLog` DAP custom events, using `LOG` adapter notes,
+  `TX` outbound commands, and `RX` inbound responses
 - Kick Assembler `.dbg` source/label/line mapping; `.dbg` files are produced
   by Kick Assembler `-debugdump`
 - VICE process launch with Kick Assembler `.vs` VICE symbol files passed

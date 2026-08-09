@@ -415,13 +415,12 @@ installation or monitor traffic needs inspection. It shows the debug adapter's
 session-owned binary monitor traffic; it does not create another VICE monitor
 connection.
 
-The direction column uses the same convention as the original Eclipse-based
-debugger:
+The direction column uses compact protocol labels:
 
-- `===` adapter notes, such as selected `.vs` files, `setBreakpoints`,
+- `LOG` adapter notes, such as selected `.vs` files, `setBreakpoints`,
   `configurationDone`, and breakpoint synchronization.
-- `<<<` commands sent to VICE through the binary monitor.
-- `>>>` responses and asynchronous events received from VICE.
+- `TX` commands sent to VICE through the binary monitor.
+- `RX` responses and asynchronous events received from VICE.
 
 When source breakpoints are working, startup should show `CHECKPOINT_SET`
 commands after `configurationDone`, followed by `CHECKPOINT_INFO` responses

@@ -22,8 +22,8 @@ binary monitor.
   resume, and process shutdown.
 - The adapter emits a `commodoreViceMonitorLog` DAP custom event for VICE
   binary monitor diagnostics. The Theia VICE Monitor view consumes those
-  events and shows adapter notes (`===`), outbound monitor commands (`<<<`),
-  and inbound monitor responses (`>>>`) with request IDs, command/response
+  events and shows adapter notes (`LOG`), outbound monitor commands (`TX`),
+  and inbound monitor responses (`RX`) with request IDs, command/response
   names, byte counts, decoded summaries, and hex payload previews.
 - For embedded debug launches, the Theia backend owns one reserved VICE frame
   transport per Commodore Commander instance, while the debug adapter owns the
@@ -201,12 +201,12 @@ The VICE Monitor view is a bottom-panel diagnostic view for the active
 Instead, the debug adapter mirrors its session-owned binary monitor traffic as
 DAP custom events.
 
-The view preserves the Eclipse-era direction markers:
+The view uses compact direction labels:
 
-- `===` adapter decisions such as selected `.vs` monitor command files,
+- `LOG` adapter decisions such as selected `.vs` monitor command files,
   `setBreakpoints`, `configurationDone`, and checkpoint synchronization
-- `<<<` binary monitor command frames sent to VICE
-- `>>>` binary monitor response and asynchronous event frames received from
+- `TX` binary monitor command frames sent to VICE
+- `RX` binary monitor response and asynchronous event frames received from
   VICE
 
 For breakpoint diagnosis, the expected startup sequence is a `.vs` selection
