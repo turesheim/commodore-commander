@@ -61,6 +61,11 @@ export interface BundledDocumentationEntry {
 // copied into the product, but should not appear as standalone help items.
 export const BUNDLED_DOCUMENTS: readonly BundledDocumentationEntry[] = [
   {
+    path: 'editing-user-guide.md',
+    label: 'Editing User Guide',
+    details: 'Source editing, lookup, rename and build feedback workflows'
+  },
+  {
     path: 'build-configuration.md',
     label: 'Build Configuration',
     details: 'How to configure profiles, targets and launching'

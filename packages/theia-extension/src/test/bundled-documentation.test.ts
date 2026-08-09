@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { access, readFile } from 'node:fs/promises';
+import { access, readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { test } from 'node:test';
 
@@ -44,7 +44,34 @@ test('bundled documentation registry includes the embedded keyboard mapping guid
   assert.match(guide, /commodoreCommander\.emulator\.viceMenuShortcut/u);
 });
 
-test('registered bundled Markdown documents exist in bundled-docs', async () => {
+test('bundled documentation registry includes the editing user guide', async () => {
+  const registrySource = await readFile(
+    path.resolve(
+      __dirname,
+      '..',
+      '..',
+      'src',
+      'browser',
+      'commodore-commander-bundled-docs.ts'
+    ),
+    'utf8'
+  );
+  const docsRoot = path.resolve(__dirname, '..', '..', '..', '..', 'bundled-docs');
+
+  assert.match(registrySource, /path:\s*'editing-user-guide\.md'/u);
+  assert.match(registrySource, /label:\s*'Editing User Guide'/u);
+  await access(path.join(docsRoot, 'editing-user-guide.md'));
+
+  const guide = await readFile(path.join(docsRoot, 'editing-user-guide.md'), 'utf8');
+  assert.match(guide, /Ctrl\+Space/u);
+  assert.match(guide, /Go to Definition/u);
+  assert.match(guide, /Find References/u);
+  assert.match(guide, /Rename Symbol/u);
+  assert.match(guide, /Active Machine/u);
+  assert.match(guide, /Build Configuration/u);
+});
+
+test('all bundled Markdown documents are registered and exist in bundled-docs', async () => {
   const registrySource = await readFile(
     path.resolve(
       __dirname,
@@ -60,9 +87,13 @@ test('registered bundled Markdown documents exist in bundled-docs', async () => 
   const registeredMarkdownPaths = Array.from(
     registrySource.matchAll(/path:\s*'([^']+\.md)'/gu),
     match => match[1]
-  );
+  ).sort();
+  const bundledMarkdownPaths = (await readdir(docsRoot))
+    .filter(entry => entry.endsWith('.md'))
+    .sort();
 
   assert.ok(registeredMarkdownPaths.length > 0);
+  assert.deepEqual(registeredMarkdownPaths, bundledMarkdownPaths);
   for (const relativePath of registeredMarkdownPaths) {
     await access(path.join(docsRoot, relativePath));
   }
