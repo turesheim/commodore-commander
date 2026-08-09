@@ -140,6 +140,41 @@ viceTest('installs source breakpoints sent before launch', async (t, vice) => {
   assert.equal(topFrame.line, breakpointLine);
 });
 
+viceTest('installs source breakpoints added while VICE is running', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'debug-demo');
+  await initializeAndLaunch(session);
+  await configurationDoneAndWaitStopped(session.client);
+
+  const breakpointLine = await fixtureLine(
+    session.fixture.source,
+    'jmp Hold'
+  );
+
+  await session.client.request<DebugProtocol.ContinueResponse['body']>(
+    'continue',
+    { threadId: THREAD_ID } satisfies DebugProtocol.ContinueArguments
+  );
+  await delay(250);
+
+  const breakpoint = await setSourceBreakpoint(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+  const { stopped, topFrame } = await waitUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    breakpointLine,
+    (candidate) =>
+      candidate.body?.hitBreakpointIds?.includes(breakpoint.id!) === true
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  assert.deepEqual(stopped.body?.hitBreakpointIds, [breakpoint.id]);
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, breakpointLine);
+});
+
 viceTest('resolves screencolors comment breakpoints to executable lines', async (t, vice) => {
   const session = await launchFixture(t, vice, 'screencolors');
   await initializeAndLaunch(session);
@@ -761,6 +796,37 @@ async function continueUntilTopFrame(
     if (topFrame.source?.path === sourcePath && topFrame.line === line) {
       return { stopped, topFrame };
     }
+  }
+  throw new Error(`Did not stop at ${sourcePath}:${line}.`);
+}
+
+async function waitUntilTopFrame(
+  client: DapClient,
+  sourcePath: string,
+  line: number,
+  predicate: (stopped: DebugProtocol.StoppedEvent) => boolean = () => true
+): Promise<{
+  stopped: DebugProtocol.StoppedEvent;
+  topFrame: DebugProtocol.StackFrame;
+}> {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const stopped = await client.waitForEvent<DebugProtocol.StoppedEvent>(
+      'stopped',
+      undefined,
+      E2E_TIMEOUT_MS
+    );
+    const topFrame = await topStackFrame(client);
+    if (
+      topFrame.source?.path === sourcePath &&
+      topFrame.line === line &&
+      predicate(stopped)
+    ) {
+      return { stopped, topFrame };
+    }
+    await client.request<DebugProtocol.ContinueResponse['body']>(
+      'continue',
+      { threadId: THREAD_ID } satisfies DebugProtocol.ContinueArguments
+    );
   }
   throw new Error(`Did not stop at ${sourcePath}:${line}.`);
 }

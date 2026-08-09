@@ -96,10 +96,16 @@ If a breakpoint cannot be installed, hover or inspect it in the Breakpoints view
 for the message. The usual reason is that the source line did not map to a
 generated address in the active `.dbg` file.
 
+Editor breakpoints are managed by Commodore Commander and installed through
+VICE's binary monitor. They are not written into the Kick Assembler `.vs`
+file. If you add them before launch, they are installed on the first CPU halt;
+if you add them while the program is running, they are installed through the
+same binary monitor connection.
+
 Kick Assembler `.break` directives are also supported. Write them in assembly
 source code; when the source is compiled, Kick Assembler emits them into the
-`.dbg` `<Breakpoints>` section. Commodore Commander reads those entries and
-installs them as VICE execution checkpoints when the debug session starts.
+`.dbg` `<Breakpoints>` section and can emit matching `break` commands into the
+`.vs` file that VICE reads through `-moncommands`.
 
 ## Conditional Source Breakpoints
 

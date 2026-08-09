@@ -53,8 +53,10 @@ This layer owns:
   file is available, the adapter can pass a generated labels-only monitor
   command file derived from `.dbg` labels. Monitor command files do not resume
   execution. The binary monitor synchronizes DAP breakpoints while VICE is
-  still stopped at startup after Theia sends `configurationDone`. `noDebug`
-  launches omit the monitor command file, binary monitor, and initial break
+  still stopped at startup after Theia sends `configurationDone`. UI-created
+  source breakpoints are always submitted as binary-monitor checkpoints, both
+  at startup and when added while VICE is running. `noDebug` launches omit the
+  monitor command file, binary monitor, and initial break
 - DAP request handling for launch, source breakpoints, conditional
   breakpoints, hit conditions, logpoints/tracepoints, data breakpoints,
   conditional watchpoints, continue, pause, step in, step over, step out, stack

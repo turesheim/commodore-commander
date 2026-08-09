@@ -48,6 +48,12 @@ binary monitor.
 - Source breakpoints use `<Segment>` line mappings from Kick Assembler debug
   dumps. The `.dbg` `<Breakpoints>` block may be empty for ordinary editor
   breakpoints; it is not required for DAP source breakpoints.
+- UI-created source breakpoints are adapter-managed DAP breakpoints. They are
+  not appended to the Kick Assembler `.vs` file. Breakpoints received before
+  VICE is ready are mapped through `.dbg` and submitted as binary-monitor
+  execution checkpoints on the first CPU halt. Breakpoints added after the
+  machine is already running are submitted through the binary monitor as soon
+  as the monitor connection is available.
 - Kick Assembler `.break` directives are written in assembly source code.
   When the source is compiled, Kick Assembler emits them into the `.dbg`
   `<Breakpoints>` block and may also emit matching `break` commands in the
