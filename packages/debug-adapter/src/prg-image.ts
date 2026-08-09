@@ -64,6 +64,23 @@ export function prgContainsAddress(
   return normalized >= image.loadAddress && normalized <= image.endAddress;
 }
 
+export function findBasicSysTarget(
+  image: PrgImage | undefined
+): number | undefined {
+  if (!image) {
+    return undefined;
+  }
+
+  const maxStartOffset = Math.min(4, image.bytes.length);
+  for (let startOffset = 0; startOffset < maxStartOffset; startOffset += 1) {
+    const target = findBasicSysTargetAtOffset(image, startOffset);
+    if (target !== undefined) {
+      return target;
+    }
+  }
+  return undefined;
+}
+
 export function createPrgDisassemblySource(
   image: PrgImage,
   sourceReference: number,
@@ -154,6 +171,45 @@ function formatPrgInstruction(
     comments.push('undocumented');
   }
   return `    ${instruction.instruction.padEnd(18)} // ${comments.join('  ')}`;
+}
+
+function findBasicSysTargetAtOffset(
+  image: PrgImage,
+  startOffset: number
+): number | undefined {
+  let offset = startOffset;
+  while (offset + 4 < image.bytes.length) {
+    const lineAddress = image.loadAddress + offset;
+    const nextLineAddress = image.bytes.readUInt16LE(offset);
+    if (nextLineAddress === 0) {
+      return undefined;
+    }
+    if (
+      nextLineAddress <= lineAddress ||
+      nextLineAddress > image.endAddress + 2
+    ) {
+      return undefined;
+    }
+
+    const nextOffset = nextLineAddress - image.loadAddress;
+    const lineEnd = Math.min(nextOffset, image.bytes.length);
+    for (let index = offset + 4; index < lineEnd; index += 1) {
+      if (image.bytes[index] !== 0x9e) {
+        continue;
+      }
+      const text = image.bytes.subarray(index + 1, lineEnd).toString('latin1');
+      const match = /(\d{1,5})/u.exec(text);
+      if (match) {
+        const target = Number.parseInt(match[1], 10);
+        if (target >= 0 && target <= 0xffff) {
+          return target;
+        }
+      }
+    }
+
+    offset = nextOffset;
+  }
+  return undefined;
 }
 
 function hexWord(value: number): string {

@@ -18,10 +18,15 @@ data.
 For the best source-level debugging experience, make sure the active build
 profile creates debug information:
 
-- `debugDump: true` creates the Kick Assembler `.dbg` file used for source line
-  mapping.
-- `symbolFile: true` and `viceSymbols: true` are useful when you also want VICE
-  monitor symbols.
+- `debugDump: true` makes Kick Assembler create the `.dbg` file used for
+  source line mapping, labels, `.break`, and `.watch` entries.
+- Commodore Commander reads that `.dbg` file and passes derived VICE monitor
+  label commands to VICE with `-moncommands` for debug launches. The generated
+  command file uses a temporary startup handoff so DAP breakpoints can still be
+  installed through the binary monitor before user code runs. VICE does not read
+  Kick Assembler `.dbg` files directly.
+- `symbolFile: true` and `viceSymbols: true` remain useful for manual symbol
+  files and monitor workflows outside the adapter-managed debug session.
 - `runProgram` should point to the PRG that VICE will launch.
 
 See [Build Configuration](build-configuration.md) for project and launch
@@ -87,9 +92,10 @@ If a breakpoint cannot be installed, hover or inspect it in the Breakpoints view
 for the message. The usual reason is that the source line did not map to a
 generated address in the active `.dbg` file.
 
-Kick Assembler `.break` directives are also supported. They are read from the
-`.dbg` `<Breakpoints>` section and installed as VICE execution checkpoints when
-the debug session starts.
+Kick Assembler `.break` directives are also supported. Write them in assembly
+source code; when the source is compiled, Kick Assembler emits them into the
+`.dbg` `<Breakpoints>` section. Commodore Commander reads those entries and
+installs them as VICE execution checkpoints when the debug session starts.
 
 ## Conditional Source Breakpoints
 

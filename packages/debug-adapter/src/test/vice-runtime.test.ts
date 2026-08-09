@@ -50,6 +50,54 @@ test('createViceProcessArgs includes binary monitor arguments for debug launches
   ]);
 });
 
+test('createViceProcessArgs passes generated monitor command files to VICE', () => {
+  const args = createViceProcessArgs({
+    program: '/workspace/out/main.prg',
+    viceArgs: ['-config', '/workspace/vice.ini'],
+    monitorCommandFile: '/tmp/kick-assembler-labels.vs',
+    monitor: {
+      host: '127.0.0.1',
+      port: 6502
+    }
+  });
+
+  assert.deepEqual(args, [
+    '-config',
+    '/workspace/vice.ini',
+    '-binarymonitor',
+    '-binarymonitoraddress',
+    '127.0.0.1:6502',
+    '-initbreak',
+    'ready',
+    '-moncommands',
+    '/tmp/kick-assembler-labels.vs',
+    '/workspace/out/main.prg'
+  ]);
+});
+
+test('createViceProcessArgs respects explicit monitor command files', () => {
+  const args = createViceProcessArgs({
+    program: '/workspace/out/main.prg',
+    viceArgs: ['-moncommands', '/workspace/custom.vs'],
+    monitorCommandFile: '/tmp/kick-assembler-labels.vs',
+    monitor: {
+      host: '127.0.0.1',
+      port: 6502
+    }
+  });
+
+  assert.deepEqual(args, [
+    '-moncommands',
+    '/workspace/custom.vs',
+    '-binarymonitor',
+    '-binarymonitoraddress',
+    '127.0.0.1:6502',
+    '-initbreak',
+    'ready',
+    '/workspace/out/main.prg'
+  ]);
+});
+
 test('createViceProcessArgs enables the embedded VICE transport when requested', () => {
   const args = createViceProcessArgs({
     program: '/workspace/out/main.prg',

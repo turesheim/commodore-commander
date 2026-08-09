@@ -34,6 +34,7 @@ export {
 } from './call-stack6502';
 export {
   createPrgDisassemblySource,
+  findBasicSysTarget,
   findPrgDisassemblyLine,
   loadPrgImage,
   prgContainsAddress,

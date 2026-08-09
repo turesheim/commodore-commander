@@ -25,12 +25,22 @@ binary monitor.
   emulator process and binary monitor port. Repeated launch-resolution calls
   reuse the reserved frame port, and a second debug launch cannot silently
   replace a frame transport that is already connected to an emulator.
-- Kick Assembler `.dbg` files are parsed by the adapter to map source lines,
-  labels, loaded sources, stack frame locations, breakpoint locations, source
-  breakpoints, and `.break` debug-info breakpoints.
+- Kick Assembler produces `.dbg` files when builds run with `-debugdump`.
+  Those files are parsed by the adapter to map source lines, labels, loaded
+  sources, stack frame locations, breakpoint locations, source breakpoints,
+  and `.break` debug-info breakpoints.
 - Debug launches prefer the configured `.dbg` file but also search the PRG
   directory and nearby output folders for debug dumps whose address ranges
   overlap the launched PRG.
+- VICE does not consume Kick Assembler `.dbg` files directly. For debug
+  launches, the adapter derives a temporary VICE monitor command file from
+  the selected `.dbg` labels and passes it to VICE with `-moncommands`. The
+  generated file ends with a temporary `until` handoff address, normally the
+  BASIC `SYS` target parsed from the launched PRG, so VICE exits the textual
+  monitor after loading labels and stops once at program entry for binary
+  monitor synchronization. Source and `.break` breakpoints are still installed
+  through the binary monitor. An explicit `-moncommands` entry in `viceArgs`
+  is left untouched.
 - Source breakpoints use `<Segment>` line mappings from Kick Assembler debug
   dumps. The `.dbg` `<Breakpoints>` block may be empty for ordinary editor
   breakpoints; it is not required for DAP source breakpoints.
@@ -45,6 +55,9 @@ binary monitor.
   synchronizes VICE checkpoints at the first stopped monitor state before the
   initial resume. This avoids losing breakpoints in embedded/autostart launch
   timing.
+- VICE can report more than one startup stop while `-moncommands` and
+  `-initbreak ready` settle. The adapter serializes initial stop handling and
+  only reports one DAP `stopped` event until the client continues or steps.
 - If a requested source breakpoint line has no exact mapping, the adapter can
   bind it to the next nearby mapped line in the same source file. This supports
   common editor clicks on comments or blank lines immediately above executable
@@ -73,6 +86,8 @@ Protocol reference: [VICE Manual, Binary monitor](https://vice-emu.sourceforge.i
 - Launch and terminate VICE through Theia.
 - Start Without Debugging through DAP `noDebug`, without `-binarymonitor`.
 - Source breakpoints backed by Kick Assembler `.dbg` line mappings.
+- VICE monitor labels derived from the selected Kick Assembler `.dbg` labels
+  and passed through `-moncommands`.
 - Nearby unmapped source breakpoint lines resolved to the next mapped
   executable line.
 - Kick Assembler `.break` debug-info breakpoints from `.dbg` `<Breakpoints>`.

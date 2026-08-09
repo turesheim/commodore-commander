@@ -1,6 +1,7 @@
 import path from 'node:path';
 import type { ChildProcess } from 'node:child_process';
-import { readdir } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import type { Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 
@@ -10,6 +11,7 @@ import { reconstruct6502CallStack, type Reconstructed6502CallFrame } from './cal
 import { DapConnection, type DapRequest } from './dap-connection';
 import { disassemble6502, type Disassembled6502Instruction } from './disassemble6502';
 import {
+  createViceMonitorLabelCommands,
   findLabelByAddress,
   findLabelByName,
   findLineMappingForAddress,
@@ -39,6 +41,7 @@ import {
 } from './vice-monitor';
 import {
   createPrgDisassemblySource,
+  findBasicSysTarget,
   findPrgDisassemblyLine,
   loadPrgImage,
   prgContainsAddress,
@@ -194,6 +197,8 @@ export class ViceDebugSession {
   private initialBreakpointSyncDone = false;
   private configurationDone = false;
   private stopped = false;
+  private dapStopped = false;
+  private handlingStop = false;
   private pendingStopReason: StopReason = 'entry';
   private lastHitCheckpoint: ViceMonitorCheckpoint | undefined;
   private lastHitShouldResume = false;
@@ -203,6 +208,7 @@ export class ViceDebugSession {
   private clientSupportsInvalidatedEvent = false;
   private viceEmbedStdoutBuffer = Buffer.alloc(0);
   private droppedViceEmbedFrameNoticeSent = false;
+  private viceMonitorCommandDirectory: string | undefined;
 
   constructor(private readonly connection: DapConnection) {}
 
@@ -373,6 +379,8 @@ export class ViceDebugSession {
     this.initialBreakpointSyncDone = false;
     this.configurationDone = false;
     this.stopped = false;
+    this.dapStopped = false;
+    this.handlingStop = false;
     this.pendingStopReason = 'entry';
     this.lastHitCheckpoint = undefined;
     this.lastHitShouldResume = false;
@@ -380,6 +388,7 @@ export class ViceDebugSession {
     this.checkpointToBreakpoint.clear();
     this.checkpointToDataBreakpoint.clear();
     this.checkpointToDataBreakpointAccess.clear();
+    await this.cleanupViceMonitorCommandDirectory();
 
     if (path.extname(program).toLowerCase() === '.prg') {
       try {
@@ -402,17 +411,28 @@ export class ViceDebugSession {
       this.debugInfoBreakpoints = this.createDebugInfoBreakpoints(this.debugInfo);
       this.refreshSourceBreakpointMappings(true);
     }
+    const monitorCommandFile =
+      useMonitor && !hasViceArgument(args.viceArgs ?? [], '-moncommands')
+        ? await this.createViceMonitorCommandFile(this.debugInfo)
+        : undefined;
 
-    const launch = await launchViceProcess({
-      program,
-      cwd,
-      viceResourcesPath: path.resolve(args.viceResourcesPath),
-      viceExecutable: args.viceExecutable,
-      viceArgs: args.viceArgs ?? [],
-      enableEmbed: isEmbeddedViceLaunchMode(args.viceLaunchMode),
-      embedFramePort: args.viceFramePort,
-      enableMonitor: useMonitor
-    });
+    let launch: Awaited<ReturnType<typeof launchViceProcess>>;
+    try {
+      launch = await launchViceProcess({
+        program,
+        cwd,
+        viceResourcesPath: path.resolve(args.viceResourcesPath),
+        viceExecutable: args.viceExecutable,
+        viceArgs: args.viceArgs ?? [],
+        monitorCommandFile,
+        enableEmbed: isEmbeddedViceLaunchMode(args.viceLaunchMode),
+        embedFramePort: args.viceFramePort,
+        enableMonitor: useMonitor
+      });
+    } catch (error) {
+      await this.cleanupViceMonitorCommandDirectory();
+      throw error;
+    }
     this.child = launch.child;
     this.viceCommandInput = launch.commandInput;
     this.child.stdout?.on('data', (chunk) => this.handleViceStdout(chunk));
@@ -740,6 +760,67 @@ export class ViceDebugSession {
     }
   }
 
+  private async createViceMonitorCommandFile(
+    debugInfo: KickAssemblerDebugInfo | undefined
+  ): Promise<string | undefined> {
+    if ((debugInfo?.labels.length ?? 0) === 0) {
+      return undefined;
+    }
+
+    const handoffAddress = this.viceMonitorCommandHandoffAddress(debugInfo);
+    if (handoffAddress === undefined) {
+      this.connection.sendOutput(
+        'Could not prepare VICE monitor labels because no startup handoff address could be resolved.\n',
+        'stderr'
+      );
+      return undefined;
+    }
+
+    const commands = createViceMonitorLabelCommands(debugInfo, {
+      handoffAddress
+    });
+    if (!commands) {
+      return undefined;
+    }
+
+    const directory = await mkdtemp(path.join(tmpdir(), 'cc-vice-monitor-'));
+    this.viceMonitorCommandDirectory = directory;
+    const commandFile = path.join(directory, 'kick-assembler-labels.vs');
+    await writeFile(commandFile, commands, 'utf8');
+    this.connection.sendOutput(
+      `Prepared VICE monitor labels from Kick Assembler debug info: ${commandFile}\n`
+    );
+    return commandFile;
+  }
+
+  private viceMonitorCommandHandoffAddress(
+    debugInfo: KickAssemblerDebugInfo | undefined
+  ): number | undefined {
+    const basicSysTarget = findBasicSysTarget(this.programImage);
+    if (prgContainsAddress(this.programImage, basicSysTarget ?? -1)) {
+      return basicSysTarget;
+    }
+    return firstMappedProgramAddress(debugInfo, this.programImage);
+  }
+
+  private async cleanupViceMonitorCommandDirectory(): Promise<void> {
+    const directory = this.viceMonitorCommandDirectory;
+    this.viceMonitorCommandDirectory = undefined;
+    if (!directory) {
+      return;
+    }
+
+    try {
+      await rm(directory, { recursive: true, force: true });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.connection.sendOutput(
+        `Could not remove temporary VICE monitor command directory ${directory}: ${message}\n`,
+        'stderr'
+      );
+    }
+  }
+
   private async configurationDoneRequest(request: DapRequest): Promise<void> {
     this.configurationDone = true;
     this.connection.sendResponse(request);
@@ -747,13 +828,18 @@ export class ViceDebugSession {
       this.resumeMonitor();
       return;
     }
-    if (this.initialStopSeen) {
-      await this.refreshStoppedState();
-      await this.synchronizeInitialBreakpoints();
-      if (this.launchArguments?.stopOnEntry === false) {
-        this.resumeMonitor();
-      } else {
-        await this.emitStopped('entry');
+    if (this.initialStopSeen && !this.dapStopped && !this.handlingStop) {
+      this.handlingStop = true;
+      try {
+        await this.refreshStoppedState();
+        await this.synchronizeInitialBreakpoints();
+        if (this.launchArguments?.stopOnEntry === false) {
+          this.resumeMonitor();
+        } else {
+          await this.emitStopped('entry');
+        }
+      } finally {
+        this.handlingStop = false;
       }
     }
   }
@@ -1004,6 +1090,7 @@ export class ViceDebugSession {
     this.lastHitCheckpoint = undefined;
     this.lastHitShouldResume = false;
     this.lastHitShouldLog = false;
+    this.dapStopped = false;
     await this.installPendingBreakpointCheckpoints();
     this.resumeMonitor();
     this.connection.sendResponse(request, {
@@ -1016,6 +1103,7 @@ export class ViceDebugSession {
     this.lastHitCheckpoint = undefined;
     this.lastHitShouldResume = false;
     this.lastHitShouldLog = false;
+    this.dapStopped = false;
     const [command, body] = ViceMonitorRequests.advanceInstructions(1, stepOverSubroutines);
     this.monitor?.send(command, body);
     this.connection.sendResponse(request);
@@ -1026,6 +1114,7 @@ export class ViceDebugSession {
     this.lastHitCheckpoint = undefined;
     this.lastHitShouldResume = false;
     this.lastHitShouldLog = false;
+    this.dapStopped = false;
     const [command, body] = ViceMonitorRequests.executeUntilReturn();
     this.monitor?.send(command, body);
     this.connection.sendResponse(request);
@@ -1721,31 +1810,40 @@ export class ViceDebugSession {
 
   private async handleMonitorEvent(event: ViceMonitorEvent): Promise<void> {
     switch (event.type) {
-      case 'stopped':
-        const firstStop = !this.initialStopSeen;
-        this.initialStopSeen = true;
-        this.stopped = true;
-        if (this.configurationDone) {
-          await this.refreshStoppedState();
-          if (firstStop) {
-            await this.synchronizeInitialBreakpoints();
-          }
-          if (firstStop && this.launchArguments?.stopOnEntry === false) {
-            this.resumeMonitor();
-          } else if (this.lastHitShouldResume) {
-            if (this.lastHitShouldLog) {
-              await this.recordStoppedTrace('logpoint');
-              this.logLastSourceBreakpointHit();
+      case 'stopped': {
+        if (this.dapStopped || this.handlingStop) {
+          break;
+        }
+        this.handlingStop = true;
+        try {
+          const firstStop = !this.initialStopSeen;
+          this.initialStopSeen = true;
+          this.stopped = true;
+          if (this.configurationDone) {
+            await this.refreshStoppedState();
+            if (firstStop) {
+              await this.synchronizeInitialBreakpoints();
             }
-            this.lastHitShouldResume = false;
-            this.lastHitShouldLog = false;
-            this.lastHitCheckpoint = undefined;
-            this.resumeMonitor();
-          } else {
-            await this.emitStopped(this.stopReason());
+            if (firstStop && this.launchArguments?.stopOnEntry === false) {
+              this.resumeMonitor();
+            } else if (this.lastHitShouldResume) {
+              if (this.lastHitShouldLog) {
+                await this.recordStoppedTrace('logpoint');
+                this.logLastSourceBreakpointHit();
+              }
+              this.lastHitShouldResume = false;
+              this.lastHitShouldLog = false;
+              this.lastHitCheckpoint = undefined;
+              this.resumeMonitor();
+            } else {
+              await this.emitStopped(this.stopReason());
+            }
           }
+        } finally {
+          this.handlingStop = false;
         }
         break;
+      }
       case 'resumed':
         this.stopped = false;
         this.connection.sendEvent('continued', {
@@ -1917,6 +2015,10 @@ export class ViceDebugSession {
     let shouldResume = false;
     this.lastHitShouldLog = false;
 
+    if (!sourceBreakpoint && !dataBreakpoint) {
+      return true;
+    }
+
     if (sourceBreakpoint) {
       sourceBreakpoint.hitCount += 1;
       const hitSatisfied = hitConditionSatisfied(
@@ -1942,6 +2044,7 @@ export class ViceDebugSession {
   }
 
   private async emitStopped(reason: StopReason): Promise<void> {
+    this.dapStopped = true;
     await this.recordStoppedTrace(reason);
     const description = await this.stopDescription(reason);
     if (description) {
@@ -2584,6 +2687,7 @@ export class ViceDebugSession {
     this.terminated = true;
     this.monitor?.dispose();
     this.monitor = undefined;
+    void this.cleanupViceMonitorCommandDirectory();
     this.connection.sendEvent('terminated');
   }
 }
@@ -2727,6 +2831,22 @@ function debugInfoProgramOverlap(
   ).length;
 }
 
+function firstMappedProgramAddress(
+  debugInfo: KickAssemblerDebugInfo | undefined,
+  image: PrgImage | undefined
+): number | undefined {
+  if (!debugInfo || !image) {
+    return undefined;
+  }
+  return debugInfo.lineMappings
+    .filter((mapping) =>
+      mapping.startAddress >= image.loadAddress &&
+      mapping.startAddress <= image.endAddress
+    )
+    .sort((left, right) => left.startAddress - right.startAddress)[0]
+    ?.startAddress;
+}
+
 function replaceExtension(filePath: string, extension: string): string {
   return path.join(
     path.dirname(filePath),
@@ -2744,6 +2864,13 @@ function samePath(left: string, right: string): boolean {
   return process.platform === 'win32'
     ? normalizedLeft.toLowerCase() === normalizedRight.toLowerCase()
     : normalizedLeft === normalizedRight;
+}
+
+function hasViceArgument(
+  viceArgs: readonly string[],
+  option: string
+): boolean {
+  return viceArgs.includes(option);
 }
 
 function uniquePathList(paths: readonly (string | undefined)[]): string[] {

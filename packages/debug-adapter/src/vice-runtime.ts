@@ -26,6 +26,7 @@ export interface ViceProcessLaunchOptions {
   viceResourcesPath: string;
   viceExecutable: string;
   viceArgs: readonly string[];
+  monitorCommandFile?: string;
   enableMonitor?: boolean;
   enableEmbed?: boolean;
   embedFramePort?: number;
@@ -53,6 +54,7 @@ export interface ViceProcessArgsOptions {
   viceArgs: readonly string[];
   embed?: boolean;
   embedFramePort?: number;
+  monitorCommandFile?: string;
   monitor?: {
     host: string;
     port: number;
@@ -78,6 +80,7 @@ export async function launchViceProcess(
     viceArgs: options.viceArgs,
     embed: options.enableEmbed,
     embedFramePort: options.embedFramePort,
+    monitorCommandFile: options.monitorCommandFile,
     ...(monitorHost && monitorPort !== undefined
       ? { monitor: { host: monitorHost, port: monitorPort } }
       : {})
@@ -166,6 +169,12 @@ export function createViceProcessArgs(
       '-initbreak',
       'ready'
     );
+    if (
+      options.monitorCommandFile &&
+      !hasOptionWithValue(options.viceArgs, '-moncommands')
+    ) {
+      args.push('-moncommands', options.monitorCommandFile);
+    }
   }
 
   args.push(options.program);
@@ -199,6 +208,13 @@ export async function assertExecutable(
 function hasMouseGrabFlag(viceArgs: readonly string[]): boolean {
   return viceArgs.includes(VICE_EMBED_MOUSE_GRAB_FLAG) ||
     viceArgs.includes('+mouse');
+}
+
+function hasOptionWithValue(
+  viceArgs: readonly string[],
+  option: string
+): boolean {
+  return viceArgs.includes(option);
 }
 
 function configArgs(program: string, viceArgs: readonly string[]): string[] {

@@ -44,10 +44,15 @@ This layer owns:
 - response correlation by request ID
 - monitor event mapping for stop/resume, checkpoint, register, and memory
   responses
-- Kick Assembler `.dbg` source/label/line mapping
-- VICE process launch with `-binarymonitor`, `-binarymonitoraddress`, and
-  `-initbreak ready` for debugging; `noDebug` launches omit the monitor and
-  initial break
+- Kick Assembler `.dbg` source/label/line mapping; `.dbg` files are produced
+  by Kick Assembler `-debugdump`
+- VICE process launch with `.dbg`-derived temporary monitor label commands
+  passed through `-moncommands`, plus `-binarymonitor`,
+  `-binarymonitoraddress`, and `-initbreak ready` for debugging. The temporary
+  monitor command file ends with a one-shot `until` handoff, usually the BASIC
+  `SYS` target parsed from the PRG, so the binary monitor can synchronize DAP
+  breakpoints at program entry. `noDebug` launches omit the monitor command
+  file, binary monitor, and initial break
 - DAP request handling for launch, source breakpoints, conditional
   breakpoints, hit conditions, logpoints/tracepoints, data breakpoints,
   conditional watchpoints, continue, pause, step in, step over, step out, stack
