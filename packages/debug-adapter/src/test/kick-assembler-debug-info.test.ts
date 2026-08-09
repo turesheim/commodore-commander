@@ -9,6 +9,7 @@ import {
   findLineMappingsForSourceRange,
   findNearestLabelBeforeAddress,
   findNearestLineMappingForAddress,
+  findNearestLineMappingForSourceLine,
   findSourceForMapping,
   parseKickAssemblerDebugInfo,
   resolveSourceEntryPath
@@ -124,6 +125,45 @@ test('nearest source mapping resolves nearby unmapped addresses for stack frames
   assert.equal(findNearestLineMappingForAddress(debugInfo, 0x1004)?.startLine, 12);
   assert.equal(findNearestLineMappingForAddress(debugInfo, 0x101d)?.startLine, 20);
   assert.equal(findNearestLineMappingForAddress(debugInfo, 0x1100, 0x20), undefined);
+});
+
+test('nearest source mapping resolves nearby unmapped source lines for breakpoints', () => {
+  const workspaceRoot = path.resolve('/workspace/project');
+  const debugInfo = parseKickAssemblerDebugInfo(
+    `<C64debugger version="1.0">
+      <Sources values="INDEX,FILE">
+        1,kickassembler/screencolors.asm
+        2,kickassembler/other.asm
+      </Sources>
+      <Segment name="Default" dest="" values="START,END,FILE_IDX,LINE1,COL1,LINE2,COL2">
+        $0f00,$0f01,2,53,1,53,3
+        $1000,$1002,1,54,9,54,11
+        $1003,$1004,1,55,9,55,11
+        $1018,$101a,1,62,9,62,11
+      </Segment>
+      <Labels values="SEGMENT,ADDRESS,NAME,FILE_IDX,LINE1,COL1,LINE2,COL2">
+      </Labels>
+    </C64debugger>`,
+    { sourceRoots: [workspaceRoot] }
+  );
+  const sourcePath = path.join(workspaceRoot, 'kickassembler/screencolors.asm');
+
+  assert.equal(
+    findNearestLineMappingForSourceLine(debugInfo, sourcePath, 54)?.startAddress,
+    0x1000
+  );
+  assert.equal(
+    findNearestLineMappingForSourceLine(debugInfo, sourcePath, 53)?.startAddress,
+    0x1000
+  );
+  assert.equal(
+    findNearestLineMappingForSourceLine(debugInfo, sourcePath, 45),
+    undefined
+  );
+  assert.equal(
+    findNearestLineMappingForSourceLine(debugInfo, sourcePath, 63),
+    undefined
+  );
 });
 
 test('disassemble6502 formats common instructions and labels', () => {

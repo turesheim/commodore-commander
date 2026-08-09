@@ -101,6 +101,34 @@ export function findLineMappingForSourceLine(
   return candidates[0];
 }
 
+export function findNearestLineMappingForSourceLine(
+  debugInfo: KickAssemblerDebugInfo | undefined,
+  sourcePath: string | undefined,
+  line: number,
+  maxLineDistance = 8
+): KickAssemblerLineMapping | undefined {
+  const exact = findLineMappingForSourceLine(debugInfo, sourcePath, line);
+  if (exact || !debugInfo || !sourcePath) {
+    return exact;
+  }
+  const source = sourceEntryForPath(debugInfo, sourcePath);
+  if (!source) {
+    return undefined;
+  }
+
+  return debugInfo.lineMappings
+    .filter((mapping) =>
+      mapping.fileIndex === source.index &&
+      mapping.startLine > line &&
+      mapping.startLine - line <= maxLineDistance
+    )
+    .sort((left, right) =>
+      left.startLine - right.startLine ||
+      left.startColumn - right.startColumn ||
+      left.startAddress - right.startAddress
+    )[0];
+}
+
 export function findLineMappingsForSourceRange(
   debugInfo: KickAssemblerDebugInfo | undefined,
   sourcePath: string | undefined,

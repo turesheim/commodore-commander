@@ -15,7 +15,7 @@ import {
   findLineMappingForAddress,
   findNearestLineMappingForAddress,
   findNearestLabelBeforeAddress,
-  findLineMappingForSourceLine,
+  findNearestLineMappingForSourceLine,
   findLineMappingsForSourceRange,
   findSourceForMapping,
   loadKickAssemblerDebugInfo,
@@ -1204,7 +1204,11 @@ export class ViceDebugSession {
     breakpointSpec: DebugProtocol.SourceBreakpoint
   ): Promise<InstalledBreakpoint> {
     const line = breakpointSpec.line;
-    const mapping = findLineMappingForSourceLine(this.debugInfo, sourcePath, line);
+    const mapping = findNearestLineMappingForSourceLine(
+      this.debugInfo,
+      sourcePath,
+      line
+    );
     const condition = normalizeViceCondition(breakpointSpec.condition);
     const hitCondition = parseHitCondition(breakpointSpec.hitCondition);
     const unsupportedMessage = unsupportedBreakpointMessage(
