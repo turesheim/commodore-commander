@@ -73,6 +73,10 @@ export function formatReferenceDescriptionAsHtml(
 function createReferenceHoverContent(
   declaration: KickAssemblerLookupOccurrence
 ): KickAssemblerHoverContent {
+  if (isKickAssemblerDirectiveKind(declaration.kind)) {
+    return createDirectiveHoverContent(declaration);
+  }
+
   const sections = [
     `<h3><code>${escapeHtml(declaration.name)}</code></h3>`
   ];
@@ -86,6 +90,28 @@ function createReferenceHoverContent(
   );
   if (description) {
     sections.push(description);
+  }
+
+  return {
+    value: sections.join('\n\n'),
+    supportHtml: true
+  };
+}
+
+function createDirectiveHoverContent(
+  declaration: KickAssemblerLookupOccurrence
+): KickAssemblerHoverContent {
+  const signature = [declaration.name, declaration.syntax]
+    .filter((part): part is string => Boolean(part && part.length > 0))
+    .join(' ');
+  const sections = [
+    `<h3><code>${escapeHtml(signature)}</code></h3>`
+  ];
+  const explanation = formatReferenceDescriptionAsHtml(
+    declaration.description
+  );
+  if (explanation) {
+    sections.push(explanation);
   }
 
   return {
@@ -135,6 +161,13 @@ function escapeMarkdownText(value: string): string {
   return value.replace(/([\\`*_{}\[\]()#+\-.!])/gu, '\\$1');
 }
 
+function isKickAssemblerDirectiveKind(
+  kind: KickAssemblerLookupOccurrence['kind']
+): boolean {
+  return kind === 'kickassembler-directive' ||
+    kind === 'kickassembler-preprocessor-directive';
+}
+
 function humanizeKind(kind: KickAssemblerLookupOccurrence['kind']): string {
   switch (kind) {
     case 'constant':
@@ -177,6 +210,10 @@ function humanizeKind(kind: KickAssemblerLookupOccurrence['kind']): string {
       return 'C64 I/O address';
     case 'c64-io-id':
       return 'C64 I/O symbol';
+    case 'kickassembler-directive':
+      return 'Kick Assembler directive';
+    case 'kickassembler-preprocessor-directive':
+      return 'Kick Assembler preprocessor directive';
     case 'machine-io-address':
       return 'machine I/O address';
     case 'machine-io-id':

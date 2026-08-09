@@ -16,9 +16,15 @@ import {
   type ReferenceSymbolKind
 } from '../reference/reference-symbol-catalog.ts';
 import type { KickAssemblerSymbolKind } from '../symbols/symbol-types.ts';
+import {
+  KICK_ASSEMBLER_DIRECTIVES,
+  type KickAssemblerDirectiveInfo
+} from '../features/kick-assembler-language-facts.ts';
 
 const IDENTIFIER_PATTERN = /^@?[A-Za-z_][A-Za-z0-9_.]*$/u;
+const DIRECTIVE_PATTERN = /^[.#][A-Za-z][A-Za-z0-9_]*$/u;
 const HEX_LITERAL_PATTERN = /^\$[0-9A-Fa-f]+$/u;
+const DIRECTIVE_REFERENCE_URI = 'memory:///kickassembler-directives';
 const C64_IO_REFERENCE_MACHINE_PROFILE_IDS:
   ReadonlySet<CommodoreMachineProfileId> = new Set([
     'c64',
@@ -30,7 +36,10 @@ export type KickAssemblerLookupDocumentKind =
   | 'kickassembler'
   | ReferenceDocumentKind;
 export type KickAssemblerLookupOrigin = 'project' | 'reference';
-export type KickAssemblerLookupTokenKind = 'identifier' | 'hex-literal';
+export type KickAssemblerLookupTokenKind =
+  | 'identifier'
+  | 'hex-literal'
+  | 'directive';
 export type KickAssemblerLookupKind =
   | KickAssemblerSymbolKind
   | ReferenceSymbolKind;
@@ -51,6 +60,7 @@ export interface KickAssemblerLookupOccurrence {
     end: number;
   };
   machineProfileId?: CommodoreMachineProfileId;
+  syntax?: string;
   detail?: string;
   description?: string;
 }
@@ -99,6 +109,15 @@ export class KickAssemblerLookupService {
     const referenceKeys = new Set<string>();
     const machineProfileId =
       options.machineProfileId ?? DEFAULT_COMMODORE_MACHINE_PROFILE_ID;
+
+    for (const definition of createKickAssemblerDirectiveReferenceDefinitions()) {
+      addReferenceDefinition(
+        definition,
+        referenceKeys,
+        referenceDeclarationsByName,
+        referenceDeclarationsByAddressRange
+      );
+    }
 
     for (const input of documents) {
       if (input.kind === 'kickassembler') {
@@ -295,6 +314,13 @@ export function findLookupTokenAtPosition(
 
   let probe = clamp(document.offsetAt(position), 0, document.text.length - 1);
 
+  if (
+    document.text[probe] === '#' &&
+    isIdentifierStart(document.text[probe + 1])
+  ) {
+    probe += 1;
+  }
+
   if (!isLookupTokenCharacter(document.text[probe])) {
     if (probe > 0 && isLookupTokenCharacter(document.text[probe - 1])) {
       probe -= 1;
@@ -321,6 +347,17 @@ export function findLookupTokenAtPosition(
   }
 
   const text = document.text.slice(startOffset, endOffset);
+  const directiveText = directiveTokenText(document, startOffset, endOffset, text);
+
+  if (directiveText) {
+    return {
+      text: directiveText.text,
+      normalizedText: directiveText.text.toUpperCase(),
+      kind: 'directive',
+      startOffset: directiveText.startOffset,
+      endOffset
+    };
+  }
 
   if (HEX_LITERAL_PATTERN.test(text)) {
     return {
@@ -457,7 +494,7 @@ function toReferenceLookupOccurrence(
     normalizedName: occurrence.normalizedText,
     kind:
       kind ??
-      (occurrence.kind === 'hex-literal' ? 'c64-io-address' : '6502-mnemonic'),
+      fallbackReferenceKind(occurrence),
     origin: 'reference',
     location: occurrence.location
   };
@@ -479,6 +516,9 @@ function toReferenceOccurrence(
   }
   if (definition.machineProfileId) {
     occurrence.machineProfileId = definition.machineProfileId;
+  }
+  if (definition.syntax) {
+    occurrence.syntax = definition.syntax;
   }
   if (definition.detail) {
     occurrence.detail = definition.detail;
@@ -599,9 +639,95 @@ function isReferenceSymbolKind(
   return kind === '6502-mnemonic' ||
     kind === 'c64-io-address' ||
     kind === 'c64-io-id' ||
+    kind === 'kickassembler-directive' ||
+    kind === 'kickassembler-preprocessor-directive' ||
     kind === 'machine-io-address' ||
     kind === 'machine-io-id' ||
     kind === 'machine-memory-address' ||
     kind === 'machine-rom-symbol' ||
     kind === 'machine-zero-page';
+}
+
+function createKickAssemblerDirectiveReferenceDefinitions():
+  ReferenceSymbolDefinition[] {
+  return KICK_ASSEMBLER_DIRECTIVES.map((directive, index) =>
+    toDirectiveReferenceDefinition(directive, index)
+  );
+}
+
+function toDirectiveReferenceDefinition(
+  directive: KickAssemblerDirectiveInfo,
+  index: number
+): ReferenceSymbolDefinition {
+  return {
+    name: directive.insertText,
+    normalizedName: directive.insertText.toUpperCase(),
+    kind: directive.prefix === '#'
+      ? 'kickassembler-preprocessor-directive'
+      : 'kickassembler-directive',
+    location: {
+      uri: DIRECTIVE_REFERENCE_URI,
+      range: {
+        start: {
+          line: index,
+          character: 0
+        },
+        end: {
+          line: index,
+          character: directive.insertText.length
+        }
+      }
+    },
+    ...(directive.syntax ? { syntax: directive.syntax } : {}),
+    detail: directive.detail,
+    description: directive.description
+  };
+}
+
+function directiveTokenText(
+  document: TextDocumentModel,
+  startOffset: number,
+  endOffset: number,
+  text: string
+): { text: string; startOffset: number } | undefined {
+  if (DIRECTIVE_PATTERN.test(text)) {
+    return {
+      text,
+      startOffset
+    };
+  }
+
+  if (
+    startOffset > 0 &&
+    document.text[startOffset - 1] === '#' &&
+    IDENTIFIER_PATTERN.test(text)
+  ) {
+    const candidate = `#${text}`;
+    if (DIRECTIVE_PATTERN.test(candidate)) {
+      return {
+        text: candidate,
+        startOffset: startOffset - 1
+      };
+    }
+  }
+
+  return undefined;
+}
+
+function fallbackReferenceKind(
+  occurrence: TokenOccurrence
+): ReferenceSymbolKind {
+  if (occurrence.kind === 'hex-literal') {
+    return 'c64-io-address';
+  }
+  if (occurrence.kind === 'directive') {
+    return occurrence.normalizedText.startsWith('#')
+      ? 'kickassembler-preprocessor-directive'
+      : 'kickassembler-directive';
+  }
+  return '6502-mnemonic';
+}
+
+function isIdentifierStart(character: string | undefined): boolean {
+  return Boolean(character && /[A-Za-z_]/u.test(character));
 }

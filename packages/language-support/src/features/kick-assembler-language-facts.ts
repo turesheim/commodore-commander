@@ -4,6 +4,7 @@ export interface KickAssemblerDirectiveInfo {
   name: string;
   insertText: string;
   prefix: KickAssemblerDirectivePrefix;
+  syntax: string;
   detail: string;
   description: string;
 }
@@ -15,61 +16,334 @@ export interface KickAssemblerAddressingModeInfo {
   opcode?: string;
 }
 
+const DOT_DIRECTIVE_SYNTAX: Readonly<Record<string, string>> = Object.freeze({
+  addr: '<value>[, ...]',
+  align: '<boundary>',
+  assert: '<name>, <actual>, <expected>',
+  asserterror: '<name>, <expression-or-block>',
+  binary: '<filename>[, <offset>[, <length>]]',
+  by: '<value>[, ...]',
+  byte: '<value>[, ...]',
+  const: '<name> = <expression>',
+  cpu: '<cpu>',
+  define: '<name>[, ...] { ... }',
+  disk: '[<parameters>] { ... }',
+  dw: '<value>[, ...]',
+  dword: '<value>[, ...]',
+  encoding: '<encoding>',
+  enum: '{ <member>[, ...] }',
+  error: '<message>',
+  errorif: '<condition>, <message>',
+  eval: '<expression>',
+  file: '[<parameters>]',
+  filemodify: '<modifier>(<arguments>)',
+  fill: '<count>, <expression>',
+  fillword: '<count>, <expression>',
+  filenamespace: '<name>',
+  for: '(<init>; <condition>; <update>) { ... }',
+  function: '<name>(<parameters>) { ... }',
+  if: '(<condition>) { ... }',
+  ifdef: '<symbol> { ... }',
+  ifndef: '<symbol> { ... }',
+  import: '<type> <filename>[, ...]',
+  label: '<name> = <expression>',
+  lohifill: '<count>, <expression>',
+  macro: '<name>(<parameters>) { ... }',
+  memblock: '<name>',
+  modify: '<modifier>(<arguments>) { ... }',
+  namespace: '<name> { ... }',
+  pc: '= <address>',
+  plugin: '<java-package>',
+  print: '<message>',
+  printnow: '<message>',
+  pseudocommand: '<name> <arguments> { ... }',
+  pseudopc: '<address> { ... }',
+  return: '[<expression>]',
+  segment: '<name> [<description-or-parameters>]',
+  segmentdef: '<name> [<parameters>]',
+  segmentout: '[<parameters>]',
+  struct: '<name> { <fields> }',
+  te: '<text>',
+  text: '<text>',
+  var: '<name> = <expression>',
+  watch: '<address>[, <end-address>[, <format>]]',
+  while: '(<condition>) { ... }',
+  wo: '<value>[, ...]',
+  word: '<value>[, ...]',
+  zp: '{ ... }'
+});
+
+const HASH_DIRECTIVE_SYNTAX: Readonly<Record<string, string>> = Object.freeze({
+  define: '<name>',
+  elif: '<condition>',
+  if: '<condition>',
+  import: '<filename>',
+  importif: '<condition> <filename>',
+  undef: '<name>'
+});
+
 export const KICK_ASSEMBLER_DIRECTIVES: readonly KickAssemblerDirectiveInfo[] =
   Object.freeze([
-    dotDirective('addr', 'emit an address-sized value'),
-    dotDirective('align', 'align the program counter'),
-    dotDirective('assert', 'assert an assembly-time condition'),
-    dotDirective('binary', 'embed a binary file'),
-    dotDirective('break', 'emit a debugger break marker'),
-    dotDirective('byte', 'emit byte data'),
-    dotDirective('const', 'declare an immutable symbol'),
-    dotDirective('cpu', 'select a target CPU'),
-    dotDirective('disk', 'define disk image output'),
-    dotDirective('dword', 'emit double-word data'),
-    dotDirective('encoding', 'select text encoding'),
-    dotDirective('enum', 'declare an enum block'),
-    dotDirective('error', 'emit an assembly error'),
-    dotDirective('eval', 'evaluate an assembly-time expression'),
-    dotDirective('file', 'define output file settings'),
-    dotDirective('fill', 'emit repeated byte data'),
-    dotDirective('fillword', 'emit repeated word data'),
-    dotDirective('filenamespace', 'declare a file namespace'),
-    dotDirective('for', 'declare an assembly-time loop'),
-    dotDirective('function', 'declare a function'),
-    dotDirective('if', 'start a conditional block'),
-    dotDirective('ifdef', 'start a symbol-defined conditional block'),
-    dotDirective('ifndef', 'start a symbol-not-defined conditional block'),
-    dotDirective('label', 'declare a label-valued symbol'),
-    dotDirective('lohifill', 'emit low/high-byte table data'),
-    dotDirective('macro', 'declare a macro'),
-    dotDirective('memblock', 'define a memory block'),
-    dotDirective('modify', 'modify output data'),
-    dotDirective('namespace', 'declare a namespace block'),
-    dotDirective('pc', 'set the program counter'),
-    dotDirective('plugin', 'load a Kick Assembler plugin'),
-    dotDirective('print', 'print assembly-time output'),
-    dotDirective('pseudocommand', 'declare a pseudocommand'),
-    dotDirective('pseudopc', 'set a pseudo program counter'),
-    dotDirective('return', 'return from a function'),
-    dotDirective('segment', 'select a segment'),
-    dotDirective('segmentdef', 'define a segment'),
-    dotDirective('segmentout', 'write segment output'),
-    dotDirective('struct', 'declare a struct block'),
-    dotDirective('text', 'emit encoded text'),
-    dotDirective('var', 'declare a mutable symbol'),
-    dotDirective('watch', 'emit a debugger watch marker'),
-    dotDirective('while', 'declare an assembly-time while loop'),
-    dotDirective('word', 'emit word data'),
-    hashDirective('define', 'define a preprocessor symbol'),
-    hashDirective('elif', 'continue a preprocessor conditional'),
-    hashDirective('else', 'continue a preprocessor conditional'),
-    hashDirective('endif', 'end a preprocessor conditional'),
-    hashDirective('if', 'start a preprocessor conditional'),
-    hashDirective('import', 'import another Kick Assembler source file'),
-    hashDirective('importif', 'conditionally import another source file'),
-    hashDirective('importonce', 'prevent duplicate imports'),
-    hashDirective('undef', 'undefine a preprocessor symbol')
+    dotDirective(
+      'addr',
+      'Emits address-sized values for labels or expressions. Use it when the data is meant to be interpreted as addresses rather than plain byte data; the assembler resolves each expression before writing it.'
+    ),
+    dotDirective(
+      'align',
+      'Moves the current memory position forward to the next boundary for the given value. The guide uses this to place tables on page boundaries so indexed memory access does not cross a page and cost an extra cycle.'
+    ),
+    dotDirective(
+      'assert',
+      'Runs an assembly-time test that compares an expression or code block with an expected result. The assembler counts assertions, reports failures when assembly finishes, and the guide presents it as useful for testing macros, functions, and pseudocommands.'
+    ),
+    dotDirective(
+      'asserterror',
+      'Runs an assembly-time test that succeeds only when the expression or code block produces an error. Use it to verify that invalid parameters or failing code paths are rejected as expected.'
+    ),
+    dotDirective(
+      'binary',
+      'Embeds bytes from an external binary file into the current output. The guide describes binary importing through the import data workflow, including optional offset and length arguments when only part of a file should be included.'
+    ),
+    dotDirective(
+      'break',
+      'Adds breakpoint debug information at the current memory position or next generated bytes without changing the emitted code. An optional string argument can be attached and interpreted by the emulator or debugger that consumes the debug data.'
+    ),
+    dotDirective(
+      'by',
+      'Short alias for .byte. It emits the same byte values as .byte and exists for compact data tables in the source.'
+    ),
+    dotDirective(
+      'byte',
+      'Outputs one or more byte values directly into memory. The guide groups this with .word, .dword, and .text as the standard data directives used to generate literal data in the assembled output.'
+    ),
+    dotDirective(
+      'const',
+      'Defines an immutable symbol in the current scope. Constants are evaluated by the assembler and can be used in expressions, operands, and later directives without being reassigned.'
+    ),
+    dotDirective(
+      'cpu',
+      'Changes the active instruction set used for parsing mnemonics. The guide lists CPU modes such as the default 6502 illegal set, DTV, and 65C02 variants, each enabling a different mnemonic table.'
+    ),
+    dotDirective(
+      'define',
+      'Executes a directive block in function mode and publishes the named values as locked constants outside the block. The guide recommends this for heavy compile-time calculations because function mode avoids recording intermediate assembler-pass results.'
+    ),
+    dotDirective(
+      'disk',
+      'Creates a D64 disk image using disk and file parameters. The guide describes it as a container for file parameter blocks so assembled segments and generated files can be written into disk output.'
+    ),
+    dotDirective(
+      'dw',
+      'Short alias for .dword. It writes the same four-byte doubleword values while keeping large data lists more compact.'
+    ),
+    dotDirective(
+      'dword',
+      'Outputs one or more doubleword values, where each value is written as four bytes. The guide presents it alongside .byte and .word for generating literal data in memory.'
+    ),
+    dotDirective(
+      'encoding',
+      'Selects the character encoding used by later .text output. The guide names screencode_mixed as the default and shows changing to screencode_upper before emitting text for an uppercase character set.'
+    ),
+    dotDirective(
+      'enum',
+      'Defines a series of constants from an enum block. Members can be assigned automatically or explicitly, letting source code use named values instead of numeric literals.'
+    ),
+    dotDirective(
+      'error',
+      'Stops assembly with a user-provided error message. The guide uses it for validation checks where the source should terminate immediately when an invalid condition is detected.'
+    ),
+    dotDirective(
+      'errorif',
+      'Raises a user error when the boolean expression evaluates to true. The guide notes that this is more flexible than wrapping .error in .if when unresolved labels or later-pass values are involved.'
+    ),
+    dotDirective(
+      'eval',
+      'Evaluates a script expression for its side effects, such as updating mutable values or loop variables. It is commonly used inside functions, loops, and structure manipulation where no bytes should be generated.'
+    ),
+    dotDirective(
+      'file',
+      'Defines PRG or binary file output from one or more segments. The guide shows file parameter blocks selecting segment lists, output names, modifiers, imported PRG files, and overlap behavior.'
+    ),
+    dotDirective(
+      'filemodify',
+      'Applies a modifier to the output of the current source file. The guide places it in the modifier workflow, where generated bytes can be transformed before they are written.'
+    ),
+    dotDirective(
+      'fill',
+      'Generates repeated byte data from an expression or repeat pattern. The guide treats it like a compact loop with the implicit variable i set to the current iteration, and notes it is faster than building the same table with .for and .byte.'
+    ),
+    dotDirective(
+      'fillword',
+      'Generates repeated word data from an expression or repeat pattern. It follows the same iteration idea as .fill, but writes word values instead of single bytes.'
+    ),
+    dotDirective(
+      'filenamespace',
+      'Places all following directives in the current source file into the named namespace. The guide recommends it for libraries so labels, functions, macros, and pseudocommands do not collide with the importing program.'
+    ),
+    dotDirective(
+      'for',
+      'Generates an assembly-time loop with initializer, condition, and iteration expressions. The guide uses it for printing compile-time messages, creating data tables, and unrolling code while the boolean condition remains true.'
+    ),
+    dotDirective(
+      'function',
+      'Defines a compile-time function that can be called from expressions. Functions run non-byte-generating directives such as .eval, .for, .var, and .if, and return a value through .return or null when no value is returned.'
+    ),
+    dotDirective(
+      'if',
+      'Executes a script block only when the given condition is true. Unlike preprocessor #if, this is part of the Kick Assembler script language and works with assembler expressions and values.'
+    ),
+    dotDirective(
+      'ifdef',
+      'Starts a conditional block that depends on whether a symbol is defined. It is retained for compatibility with source that expresses symbol-existence checks as assembler directives.'
+    ),
+    dotDirective(
+      'ifndef',
+      'Starts a conditional block that depends on whether a symbol is not defined. It is retained for compatibility with source that gates assembler directives on missing symbols.'
+    ),
+    dotDirective(
+      'import',
+      'Imports external binary, C64, source, or text data. The guide recommends #import for source files because preprocessing imports immediately, while .import remains useful for binary, C64, and text data with optional offset and length.'
+    ),
+    dotDirective(
+      'importonce',
+      'Skips the current file when it has already been imported. The guide marks this older source-import directive as supported but recommends #importonce for new library code.'
+    ),
+    dotDirective(
+      'label',
+      'Assigns an expression to a label-valued symbol. The guide uses labels and scoped label access throughout so expressions can name addresses and later code can refer to them symbolically.'
+    ),
+    dotDirective(
+      'lohifill',
+      'Generates adjacent low-byte and high-byte tables from an expression. The guide shows connecting it to a label so the generated tables can be read through .lo and .hi fields.'
+    ),
+    dotDirective(
+      'macro',
+      'Defines a macro, which is a reusable group of assembler directives expanded at each call site. Macro calls get their own scope, can take arguments, and may call other macros or themselves when recursion is controlled.'
+    ),
+    dotDirective(
+      'memblock',
+      'Defines a named memory block at the current memory position. Memory blocks are the pieces that segments collect and later write to files, disks, or other output targets.'
+    ),
+    dotDirective(
+      'modify',
+      'Runs a modifier over the output of a code block. The guide presents modifiers as a way to transform generated bytes, for example when packing, encrypting, or otherwise post-processing output.'
+    ),
+    dotDirective(
+      'namespace',
+      'Creates or reopens a namespace containing functions, macros, pseudocommands, labels, and related scope. The guide uses namespaces to prevent library code from colliding with other source and allows nested namespace access with dotted names.'
+    ),
+    dotDirective(
+      'pc',
+      'Sets the program counter in the same way as *=. Use it when source should explicitly move the current memory position before emitting more bytes.'
+    ),
+    dotDirective(
+      'plugin',
+      'Loads a Kick Assembler plugin by Java package path. The guide describes plugins as extension points that can provide custom macros, modifiers, or other assembler functionality.'
+    ),
+    dotDirective(
+      'print',
+      'Prints a message during the output pass. The guide uses it for assembly-time reporting after values have resolved, such as showing calculated script values.'
+    ),
+    dotDirective(
+      'printnow',
+      'Prints a message immediately during each pass. The guide recommends it for debugging scripts when an error prevents the final output pass, while warning that early-pass values may still be unresolved.'
+    ),
+    dotDirective(
+      'pseudocommand',
+      'Defines a command-like macro that accepts mnemonic-style command arguments such as immediates, indexed operands, and indirect operands. The guide uses it to build custom instructions like mov and 16-bit helper commands.'
+    ),
+    dotDirective(
+      'pseudopc',
+      'Assembles a block as if it lived at a different program counter from its actual output location. The guide uses it for relocated code where labels and branches should be calculated for the runtime address.'
+    ),
+    dotDirective(
+      'return',
+      'Returns a value from a function. If no expression is returned, or execution reaches the end without .return, the guide specifies that the function result is null.'
+    ),
+    dotDirective(
+      'segment',
+      'Switches subsequent memory blocks into the named segment. Segments organize code and data into lists that can later be ordered, combined, modified, or written to separate output files.'
+    ),
+    dotDirective(
+      'segmentdef',
+      'Defines a segment and its parameters, such as start address, bounds, fill behavior, source files, or combined segment lists. The guide uses segment definitions to organize banks, patches, files, and alternate output layouts.'
+    ),
+    dotDirective(
+      'segmentout',
+      'Writes the bytes of an intermediate segment into the current memory block. The guide uses this for relocation and alternative output formats, such as emitting bank data in a controlled order.'
+    ),
+    dotDirective(
+      'struct',
+      'Defines a user structure with named fields. The guide explains that the structure name becomes a constructor and instances expose field access plus helper functions for generic field inspection and updates.'
+    ),
+    dotDirective(
+      'te',
+      'Short alias for .text. It emits text bytes using the currently selected encoding.'
+    ),
+    dotDirective(
+      'text',
+      'Outputs bytes representing the supplied text string using the current encoding. The guide describes screencode_mixed as the default and shows .encoding changing how later text is converted.'
+    ),
+    dotDirective(
+      'var',
+      'Defines a mutable assembly-time variable. Variables can be updated with .eval and used in script expressions, loops, tables, functions, and other compile-time calculations.'
+    ),
+    dotDirective(
+      'watch',
+      'Adds watch debug information without changing emitted code. The guide shows watching a single address, a range, and optional text or format data that the emulator or debugger can interpret.'
+    ),
+    dotDirective(
+      'while',
+      'Executes an assembly-time loop while the condition remains true. The guide describes it as a .for-style loop without initializer or iteration parameters.'
+    ),
+    dotDirective(
+      'wo',
+      'Short alias for .word. It emits the same two-byte word values while keeping data tables compact.'
+    ),
+    dotDirective(
+      'word',
+      'Outputs one or more word values, with each word written as two bytes. The guide lists it as one of the standard data directives for generating literal memory data.'
+    ),
+    dotDirective(
+      'zp',
+      'Marks unresolved labels in the block as zero-page labels. The guide uses it when labels should be assembled with zero-page addressing before their final value is otherwise known.'
+    ),
+    hashDirective(
+      'define',
+      'Defines a preprocessor symbol. The guide explains that preprocessor symbols are boolean-like: they are either defined or not defined, with no assigned value.'
+    ),
+    hashDirective(
+      'elif',
+      'Continues a preprocessor conditional as an else-if branch. It combines #else and #if so later source is included only when previous branches were skipped and this condition is true.'
+    ),
+    hashDirective(
+      'else',
+      'Starts the fallback branch of a preprocessor conditional. Source in this branch is passed to the main parser only when the preceding #if or #elif condition did not include its block.'
+    ),
+    hashDirective(
+      'endif',
+      'Ends a preprocessor conditional block. The guide shows every #if, including nested blocks, being closed with #endif before normal preprocessing continues.'
+    ),
+    hashDirective(
+      'if',
+      'Includes or discards following source before it reaches the main parser. Untaken branches can contain text that would not parse as Kick Assembler because the preprocessor removes them first.'
+    ),
+    hashDirective(
+      'import',
+      'Imports another source file at the current point before main parsing. The guide recommends this for libraries because it preserves a natural evaluation order and can search directories supplied with -libdir.'
+    ),
+    hashDirective(
+      'importif',
+      'Conditionally imports another source file when the preprocessor expression is true. The guide uses it for optional startup or standalone code controlled by defined preprocessor symbols.'
+    ),
+    hashDirective(
+      'importonce',
+      'Marks the current file so later imports of the same file are skipped. The guide recommends placing it at the top of library files to prevent duplicate definitions.'
+    ),
+    hashDirective(
+      'undef',
+      'Removes a preprocessor symbol definition. After #undef, later #if, #elif, or #importif expressions treat that symbol as not defined unless it is defined again.'
+    )
   ]);
 
 export const MOS_6502_MNEMONICS: readonly string[] = Object.freeze([
@@ -246,6 +520,7 @@ function dotDirective(
     name,
     insertText: `.${name}`,
     prefix: '.',
+    syntax: DOT_DIRECTIVE_SYNTAX[name] ?? '',
     detail: 'Kick Assembler directive',
     description
   };
@@ -259,6 +534,7 @@ function hashDirective(
     name,
     insertText: `#${name}`,
     prefix: '#',
+    syntax: HASH_DIRECTIVE_SYNTAX[name] ?? '',
     detail: 'Kick Assembler preprocessor directive',
     description
   };
