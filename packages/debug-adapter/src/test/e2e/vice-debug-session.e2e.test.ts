@@ -265,6 +265,96 @@ viceTest('removes source breakpoints cleared through setBreakpoints', async (t, 
   throw new Error(`Did not stop at remaining breakpoint line ${remainingLine}.`);
 });
 
+viceTest('disables source breakpoints through Theia state without deleting checkpoints', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  await initializeAndLaunch(session);
+
+  const disabledLine = await fixtureLine(
+    session.fixture.source,
+    'lda #INNER_MAX'
+  );
+  const remainingLine = await fixtureLine(
+    session.fixture.source,
+    'bne CrazyBorderLoop'
+  );
+  const breakpointStates = [
+    { line: disabledLine, enabled: true, markerId: 'disabled-marker' },
+    { line: remainingLine, enabled: true, markerId: 'remaining-marker' }
+  ];
+  await syncSourceBreakpointStates(
+    session.client,
+    session.fixture.source,
+    breakpointStates
+  );
+  const installedResponse = await sendSetBreakpoints(
+    session.client,
+    session.fixture.source,
+    [
+      { line: disabledLine },
+      { line: remainingLine }
+    ]
+  );
+  assert.equal(installedResponse.breakpoints.length, 2);
+
+  await configurationDoneAndWaitStopped(session.client);
+
+  const checkpointToggleLog = session.client.waitForEvent<DebugProtocol.Event>(
+    COMMODORE_VICE_MONITOR_LOG_EVENT,
+    (event) => {
+      const body = event.body as {
+        category?: string;
+        name?: string;
+        message?: string;
+      } | undefined;
+      return body?.category === 'input' &&
+        body.name === 'CHECKPOINT_TOGGLE' &&
+        body.message?.includes('enabled=0') === true;
+    },
+    E2E_TIMEOUT_MS
+  );
+  const checkpointDeleteLog = session.client.waitForEvent<DebugProtocol.Event>(
+    COMMODORE_VICE_MONITOR_LOG_EVENT,
+    (event) => {
+      const body = event.body as {
+        category?: string;
+        name?: string;
+        message?: string;
+      } | undefined;
+      return body?.category === 'input' &&
+        body.name === 'CHECKPOINT_DELETE' &&
+        body.message?.includes('CHECKPOINT_DELETE') === true;
+    },
+    750
+  ).then(() => true, () => false);
+
+  const updatedResponse = await sendSetBreakpoints(
+    session.client,
+    session.fixture.source,
+    [{ line: remainingLine }]
+  );
+  await syncSourceBreakpointStates(
+    session.client,
+    session.fixture.source,
+    [
+      { line: disabledLine, enabled: false, markerId: 'disabled-marker' },
+      { line: remainingLine, enabled: true, markerId: 'remaining-marker' }
+    ]
+  );
+  await checkpointToggleLog;
+  assert.equal(await checkpointDeleteLog, false);
+
+  const remainingBreakpoint = updatedResponse.breakpoints[0];
+  assert.ok(remainingBreakpoint, 'expected remaining source breakpoint response');
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    remainingLine
+  );
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, remainingLine);
+});
+
 viceTest('resolves screencolors comment breakpoints to executable lines', async (t, vice) => {
   const session = await launchFixture(t, vice, 'screencolors');
   await initializeAndLaunch(session);
@@ -969,6 +1059,27 @@ async function sendSetBreakpoints(
       lines: breakpoints.map((breakpoint) => breakpoint.line),
       sourceModified: false
     } satisfies DebugProtocol.SetBreakpointsArguments
+  );
+}
+
+async function syncSourceBreakpointStates(
+  client: DapClient,
+  sourcePath: string,
+  breakpoints: Array<DebugProtocol.SourceBreakpoint & {
+    enabled: boolean;
+    markerId: string;
+  }>
+): Promise<DebugProtocol.SetBreakpointsResponse['body']> {
+  return client.request<DebugProtocol.SetBreakpointsResponse['body']>(
+    'commodore-vice/syncSourceBreakpoints',
+    {
+      source: {
+        name: path.basename(sourcePath),
+        path: sourcePath
+      },
+      breakpoints,
+      sourceModified: false
+    }
   );
 }
 

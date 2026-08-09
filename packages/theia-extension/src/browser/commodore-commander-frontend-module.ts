@@ -41,6 +41,7 @@ import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-s
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate/textmate-contribution';
 import { PreviewHandler } from '@theia/preview/lib/browser/preview-handler';
 import { PreviewLinkNormalizer } from '@theia/preview/lib/browser/preview-link-normalizer';
+import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
 
 import {
   KickAssemblerBuildService,
@@ -117,6 +118,7 @@ import {
 } from './commodore-sprite-widget';
 import { CommodorePrgContribution } from './commodore-prg-contribution';
 import { CommodoreDebugWatchContribution } from './commodore-debug-watch-contribution';
+import { CommodoreViceBreakpointStateContribution } from './commodore-vice-breakpoint-state-contribution';
 import { CommodoreViceLaunchConfigurationContribution } from './commodore-vice-launch-configuration-contribution';
 import { CommodoreCommanderWelcomeContribution } from './commodore-commander-welcome-contribution';
 import { ViceMemoryContribution } from './vice-memory-contribution';
@@ -368,6 +370,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
   bind(FrontendApplicationContribution).toService(
     CommodoreDebugWatchContribution
   );
+  bind(CommodoreViceBreakpointStateContribution).toSelf().inSingletonScope();
+  bind(DebugContribution).toService(CommodoreViceBreakpointStateContribution);
   bind(CommodoreViceEmbedService)
     .toDynamicValue((context) =>
       WebSocketConnectionProvider.createProxy(

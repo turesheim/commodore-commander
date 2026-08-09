@@ -62,17 +62,25 @@ binary monitor.
   VICE is ready are mapped through `.dbg` and submitted as binary-monitor
   execution checkpoints on the first CPU halt. Breakpoints added after the
   machine is already running are submitted through the binary monitor as soon
-  as the monitor connection is available. When Theia sends a replacement
-  `setBreakpoints` list for a source file, checkpoints for removed UI
-  breakpoints are deleted through the binary monitor and the adapter waits for
-  the VICE `CHECKPOINT_DELETE` acknowledgement before replying.
+  as the monitor connection is available. Theia filters disabled source
+  breakpoints out of the standard DAP `setBreakpoints` request, so the Theia
+  extension also sends a Commodore-specific full source-breakpoint state
+  request containing marker IDs and enabled flags. Once that full state has
+  been seen for a source file, missing entries in the DAP `setBreakpoints`
+  list are treated as disabled, not removed. Disabled UI breakpoints are
+  toggled with VICE `CHECKPOINT_TOGGLE`; removed UI breakpoints are deleted
+  through the binary monitor with `CHECKPOINT_DELETE`.
 - Kick Assembler `.break` directives are written in assembly source code.
   When the source is compiled, Kick Assembler emits them into the `.dbg`
-  `<Breakpoints>` block and may also emit matching `break` commands in the
-  `.vs` monitor command file. The adapter installs `.dbg` breakpoint entries
-  as VICE execution checkpoints when VICE has not already received the same
-  address from the selected `.vs` file. These source-authored breakpoints are
-  not surfaced as Theia gutter breakpoints.
+  `<Breakpoints>` block and emits matching `break` commands in the `.vs`
+  monitor command file. The `.vs` file is the runtime authority for these
+  programmed breakpoints: VICE installs them natively from `-moncommands`,
+  while `.dbg` is used by the adapter to map stopped addresses back to source
+  and to avoid double-installing the same address. If no `.vs` file is
+  available, the adapter can install `.dbg` breakpoint entries as a fallback.
+  Source-authored programmed breakpoints are not deleted through UI
+  breakpoint removal; removing the `.break` directive from source and
+  rebuilding removes them from the authoritative `.vs` file.
 - Explicit VICE monitor command files can also install breakpoints outside the
   adapter's checkpoint map, for example Kick Assembler `.vs` files containing
   `break` commands. Unknown VICE checkpoint hits are reported as DAP
@@ -120,7 +128,9 @@ Protocol reference: [VICE Manual, Binary monitor](https://vice-emu.sourceforge.i
   and passed through `-moncommands`.
 - Nearby unmapped source breakpoint lines resolved to the next mapped
   executable line.
-- Kick Assembler `.break` debug-info breakpoints from `.dbg` `<Breakpoints>`.
+- Kick Assembler `.break` programmed breakpoints installed by VICE from the
+  selected `.vs` monitor command file, with `.dbg` used for source mapping and
+  fallback installation when needed.
 - Conditional source breakpoints through VICE checkpoint conditions.
 - Hit-count source breakpoints interpreted by the adapter before surfacing a
   stop to the DAP client.
@@ -226,7 +236,8 @@ breakpoints, and `CHECKPOINT_INFO` responses that return the installed VICE
 checkpoint numbers. A later breakpoint hit should appear as a `CHECKPOINT_INFO`
 response with `hit=1`. If a remembered breakpoint is not installable, the
 adapter logs a `LOG` row with the skip reason before returning without a
-`CHECKPOINT_SET`.
+`CHECKPOINT_SET`. Disabling an installed UI breakpoint should produce
+`CHECKPOINT_TOGGLE enabled=0`; removing it should produce `CHECKPOINT_DELETE`.
 
 ## Remaining Work
 

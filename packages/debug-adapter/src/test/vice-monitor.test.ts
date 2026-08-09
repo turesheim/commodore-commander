@@ -64,6 +64,13 @@ test('checkpoint conditions encode checkpoint number and expression', () => {
   assert.equal(body.toString('hex'), '341200000841203d3d20243031');
 });
 
+test('checkpoint toggles encode checkpoint number and enabled state', () => {
+  const [command, body] = ViceMonitorRequests.toggleCheckpoint(0x1234, false);
+
+  assert.equal(command, ViceMonitorCommandId.CHECKPOINT_TOGGLE);
+  assert.equal(body.toString('hex'), '3412000000');
+});
+
 test('memory writes encode VICE memory-set body with side effects', () => {
   const [command, body] = ViceMonitorRequests.memorySet(
     0x0400,

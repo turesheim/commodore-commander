@@ -449,6 +449,15 @@ export const ViceMonitorRequests = {
     body.writeUInt32LE(checkpointNumber, 0);
     return [ViceMonitorCommandId.CHECKPOINT_DELETE, body];
   },
+  toggleCheckpoint: (
+    checkpointNumber: number,
+    enabled: boolean
+  ): [ViceMonitorCommandId, ViceMonitorBytes] => {
+    const body = Buffer.alloc(5);
+    body.writeUInt32LE(checkpointNumber, 0);
+    body.writeUInt8(enabled ? 0x01 : 0x00, 4);
+    return [ViceMonitorCommandId.CHECKPOINT_TOGGLE, body];
+  },
   setCheckpointCondition: (
     checkpointNumber: number,
     expression: string
@@ -706,6 +715,10 @@ function describeMonitorCommand(
     case ViceMonitorCommandId.CHECKPOINT_DELETE:
       return body.length >= 4
         ? `${prefix} checkpoint ${body.readUInt32LE(0)}`
+        : prefix;
+    case ViceMonitorCommandId.CHECKPOINT_TOGGLE:
+      return body.length >= 5
+        ? `${prefix} checkpoint ${body.readUInt32LE(0)} enabled=${body.readUInt8(4)}`
         : prefix;
     case ViceMonitorCommandId.CHECKPOINT_CONDITION_SET:
       return body.length >= 5

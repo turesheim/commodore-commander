@@ -125,6 +125,9 @@ interface InstalledBreakpointBase {
   mapping?: KickAssemblerLineMapping;
   address?: number;
   checkpointNumber?: number;
+  checkpointEnabled?: boolean;
+  checkpointDirty?: boolean;
+  enabled: boolean;
   condition?: string;
   hitCondition?: HitCondition;
   logMessage?: string;
@@ -137,6 +140,7 @@ interface InstalledSourceBreakpoint extends InstalledBreakpointBase {
   sourcePath: string;
   line: number;
   sourceBreakpoint: DebugProtocol.SourceBreakpoint;
+  markerId?: string;
   dapVisible: true;
 }
 
@@ -187,6 +191,17 @@ interface ViceMonitorCommandFileSelection {
   externalBreakpointAddresses: ReadonlySet<number>;
 }
 
+interface CommodoreSourceBreakpointState extends DebugProtocol.SourceBreakpoint {
+  enabled?: boolean;
+  markerId?: string;
+}
+
+interface CommodoreSourceBreakpointStateArguments {
+  source: DebugProtocol.Source;
+  breakpoints?: CommodoreSourceBreakpointState[];
+  sourceModified?: boolean;
+}
+
 export class ViceDebugSession {
   private monitor: ViceMonitorConnection | undefined;
   private child: ChildProcess | undefined;
@@ -203,6 +218,7 @@ export class ViceDebugSession {
   private registers = new Map<number, ViceMonitorRegisterValue>();
   private readonly traceHistory = new TraceHistory(TRACE_HISTORY_CAPACITY);
   private breakpointsBySource = new Map<string, InstalledSourceBreakpoint[]>();
+  private readonly fullSourceBreakpointStateSources = new Set<string>();
   private debugInfoBreakpoints: InstalledDebugInfoBreakpoint[] = [];
   private checkpointToBreakpoint = new Map<number, InstalledBreakpoint>();
   private dataBreakpoints: InstalledDataBreakpoint[] = [];
@@ -243,6 +259,9 @@ export class ViceDebugSession {
           break;
         case 'setBreakpoints':
           await this.setBreakpoints(request);
+          break;
+        case 'commodore-vice/syncSourceBreakpoints':
+          await this.syncSourceBreakpoints(request);
           break;
         case 'dataBreakpointInfo':
           await this.dataBreakpointInfo(request);
@@ -1045,18 +1064,45 @@ export class ViceDebugSession {
       category: 'user',
       message: `DAP setBreakpoints for ${sourcePath}: ${args.breakpoints?.length ?? 0} requested.`
     });
-    await this.clearBreakpointsForSource(sourcePath);
-    const installed: InstalledSourceBreakpoint[] = [];
-    for (const sourceBreakpoint of args.breakpoints ?? []) {
-      const breakpoint = await this.installSourceBreakpoint(
-        sourcePath,
-        sourceBreakpoint
-      );
-      installed.push(breakpoint);
-    }
-    this.breakpointsBySource.set(normalizeSourceKey(sourcePath), installed);
+    const installed = await this.reconcileSourceBreakpoints(
+      sourcePath,
+      (args.breakpoints ?? []).map((sourceBreakpoint) => ({
+        ...sourceBreakpoint,
+        enabled: true
+      })),
+      !this.fullSourceBreakpointStateSources.has(normalizeSourceKey(sourcePath))
+    );
     this.connection.sendResponse(request, {
-      breakpoints: installed.map((breakpoint) => this.toDapBreakpoint(breakpoint))
+      breakpoints: installed
+        .filter((breakpoint) => breakpoint.enabled)
+        .map((breakpoint) => this.toDapBreakpoint(breakpoint))
+    } satisfies DebugProtocol.SetBreakpointsResponse['body']);
+  }
+
+  private async syncSourceBreakpoints(request: DapRequest): Promise<void> {
+    const args = request.arguments as CommodoreSourceBreakpointStateArguments;
+    const sourcePath = args.source.path;
+    if (!sourcePath) {
+      this.connection.sendResponse(request, { breakpoints: [] });
+      return;
+    }
+
+    this.sendViceMonitorLog({
+      category: 'user',
+      message:
+        `Theia source breakpoint state for ${sourcePath}: ` +
+        `${args.breakpoints?.length ?? 0} marker(s).`
+    });
+    this.fullSourceBreakpointStateSources.add(normalizeSourceKey(sourcePath));
+    const installed = await this.reconcileSourceBreakpoints(
+      sourcePath,
+      args.breakpoints ?? [],
+      true
+    );
+    this.connection.sendResponse(request, {
+      breakpoints: installed
+        .filter((breakpoint) => breakpoint.enabled)
+        .map((breakpoint) => this.toDapBreakpoint(breakpoint))
     } satisfies DebugProtocol.SetBreakpointsResponse['body']);
   }
 
@@ -1513,33 +1559,109 @@ export class ViceDebugSession {
     return args?.terminateDebuggee !== false;
   }
 
-  private async installSourceBreakpoint(
+  private async reconcileSourceBreakpoints(
     sourcePath: string,
-    breakpointSpec: DebugProtocol.SourceBreakpoint
-  ): Promise<InstalledSourceBreakpoint> {
-    const line = breakpointSpec.line;
-    const condition = normalizeViceCondition(breakpointSpec.condition);
-    const hitCondition = parseHitCondition(breakpointSpec.hitCondition);
-    const breakpoint: InstalledBreakpoint = {
+    breakpointStates: readonly CommodoreSourceBreakpointState[],
+    deleteMissing: boolean
+  ): Promise<InstalledSourceBreakpoint[]> {
+    const key = normalizeSourceKey(sourcePath);
+    const existing = this.breakpointsBySource.get(key) ?? [];
+    const unusedExisting = new Set(existing);
+    const next: InstalledSourceBreakpoint[] = [];
+
+    for (const breakpointState of breakpointStates) {
+      const reusableBreakpoint = findReusableSourceBreakpoint(
+        unusedExisting,
+        breakpointState
+      );
+      const breakpoint = reusableBreakpoint ??
+        this.createSourceBreakpoint(sourcePath, breakpointState);
+      unusedExisting.delete(breakpoint);
+      const changed = this.updateSourceBreakpoint(
+        breakpoint,
+        breakpointState
+      );
+      next.push(breakpoint);
+      await this.synchronizeSourceBreakpointCheckpoint(
+        breakpoint,
+        changed || !reusableBreakpoint
+      );
+    }
+
+    for (const breakpoint of unusedExisting) {
+      if (deleteMissing) {
+        await this.deleteBreakpointCheckpoint(breakpoint);
+      } else {
+        const changed = this.setSourceBreakpointEnabled(breakpoint, false);
+        next.push(breakpoint);
+        await this.synchronizeSourceBreakpointCheckpoint(breakpoint, changed);
+      }
+    }
+
+    this.breakpointsBySource.set(key, next);
+    return next;
+  }
+
+  private createSourceBreakpoint(
+    sourcePath: string,
+    breakpointState: CommodoreSourceBreakpointState
+  ): InstalledSourceBreakpoint {
+    const condition = normalizeViceCondition(breakpointState.condition);
+    const hitCondition = parseHitCondition(breakpointState.hitCondition);
+    const breakpoint: InstalledSourceBreakpoint = {
       id: this.nextBreakpointId,
       sourcePath,
-      line,
-      sourceBreakpoint: breakpointSpec,
+      line: breakpointState.line,
+      sourceBreakpoint: breakpointState,
+      ...(breakpointState.markerId ? { markerId: breakpointState.markerId } : {}),
       dapVisible: true,
+      enabled: breakpointState.enabled !== false,
       ...(condition ? { condition } : {}),
       ...(hitCondition ? { hitCondition } : {}),
-      ...(breakpointSpec.logMessage ? { logMessage: breakpointSpec.logMessage } : {}),
+      ...(breakpointState.logMessage ? { logMessage: breakpointState.logMessage } : {}),
       hitCount: 0,
       verified: false
     };
     this.refreshSourceBreakpointMapping(breakpoint);
     this.nextBreakpointId += 1;
-
-    if (this.initialBreakpointSyncDone) {
-      await this.installBreakpointCheckpoint(breakpoint);
-    }
-
     return breakpoint;
+  }
+
+  private updateSourceBreakpoint(
+    breakpoint: InstalledSourceBreakpoint,
+    breakpointState: CommodoreSourceBreakpointState
+  ): boolean {
+    const previousRange = breakpointAddressRange(breakpoint);
+    const previousCondition = breakpoint.condition;
+    const previousHitCondition = breakpoint.hitCondition;
+    const previousLogMessage = breakpoint.logMessage;
+    const previousLine = breakpoint.line;
+    const previousColumn = breakpoint.sourceBreakpoint.column;
+    breakpoint.line = breakpointState.line;
+    breakpoint.sourceBreakpoint = breakpointState;
+    breakpoint.enabled = breakpointState.enabled !== false;
+    breakpoint.markerId = breakpointState.markerId;
+
+    const condition = normalizeViceCondition(breakpointState.condition);
+    const hitCondition = parseHitCondition(breakpointState.hitCondition);
+    breakpoint.condition = condition;
+    breakpoint.hitCondition = hitCondition;
+    breakpoint.logMessage = breakpointState.logMessage;
+
+    this.refreshSourceBreakpointMapping(breakpoint);
+    const nextRange = breakpointAddressRange(breakpoint);
+    const behaviorChanged =
+      previousLine !== breakpoint.line ||
+      previousColumn !== breakpoint.sourceBreakpoint.column ||
+      !sameBreakpointRange(previousRange, nextRange) ||
+      previousCondition !== breakpoint.condition ||
+      !sameHitCondition(previousHitCondition, breakpoint.hitCondition) ||
+      previousLogMessage !== breakpoint.logMessage;
+    if (behaviorChanged) {
+      breakpoint.hitCount = 0;
+      breakpoint.checkpointDirty = true;
+    }
+    return behaviorChanged;
   }
 
   private async installDataBreakpoint(
@@ -1658,6 +1780,40 @@ export class ViceDebugSession {
     }
   }
 
+  private setSourceBreakpointEnabled(
+    breakpoint: InstalledSourceBreakpoint,
+    enabled: boolean
+  ): boolean {
+    if (breakpoint.enabled === enabled) {
+      return false;
+    }
+    breakpoint.enabled = enabled;
+    return true;
+  }
+
+  private async synchronizeSourceBreakpointCheckpoint(
+    breakpoint: InstalledSourceBreakpoint,
+    changed: boolean
+  ): Promise<void> {
+    if (!this.initialBreakpointSyncDone) {
+      return;
+    }
+    if (!breakpoint.enabled) {
+      await this.toggleBreakpointCheckpoint(breakpoint, false);
+      return;
+    }
+    if (breakpoint.checkpointNumber === undefined) {
+      await this.installBreakpointCheckpoint(breakpoint);
+      return;
+    }
+    if (changed || breakpoint.checkpointDirty) {
+      await this.deleteBreakpointCheckpoint(breakpoint);
+      await this.installBreakpointCheckpoint(breakpoint);
+    } else {
+      await this.toggleBreakpointCheckpoint(breakpoint, true);
+    }
+  }
+
   private async deleteDataBreakpointCheckpoints(
     breakpoint: InstalledDataBreakpoint
   ): Promise<void> {
@@ -1720,6 +1876,7 @@ export class ViceDebugSession {
         dapVisible: false,
         address: debugBreakpoint.address,
         ...(mapping ? { mapping } : {}),
+        enabled: true,
         hitCount: 0,
         verified: true
       };
@@ -1805,6 +1962,8 @@ export class ViceDebugSession {
       );
       if (response.type === 'checkpoint') {
         breakpoint.checkpointNumber = response.checkpoint.number;
+        breakpoint.checkpointEnabled = response.checkpoint.enabled;
+        breakpoint.checkpointDirty = false;
         this.checkpointToBreakpoint.set(response.checkpoint.number, breakpoint);
         if (breakpoint.condition) {
           await this.setCheckpointCondition(
@@ -1832,6 +1991,9 @@ export class ViceDebugSession {
     if (breakpoint.message) {
       return breakpoint.message;
     }
+    if (!breakpoint.enabled) {
+      return 'breakpoint is disabled';
+    }
     if (!breakpoint.verified) {
       return 'breakpoint is not verified';
     }
@@ -1850,7 +2012,53 @@ export class ViceDebugSession {
     }
     this.checkpointToBreakpoint.delete(checkpointNumber);
     breakpoint.checkpointNumber = undefined;
+    breakpoint.checkpointEnabled = undefined;
     await this.deleteCheckpoint(checkpointNumber, breakpointDescription(breakpoint));
+  }
+
+  private async toggleBreakpointCheckpoint(
+    breakpoint: InstalledBreakpoint,
+    enabled: boolean
+  ): Promise<void> {
+    const checkpointNumber = breakpoint.checkpointNumber;
+    const monitor = this.monitor;
+    if (checkpointNumber === undefined || !monitor) {
+      return;
+    }
+    if (breakpoint.checkpointEnabled === enabled) {
+      return;
+    }
+    const [command, body] = ViceMonitorRequests.toggleCheckpoint(
+      checkpointNumber,
+      enabled
+    );
+    try {
+      this.sendViceMonitorLog({
+        category: 'user',
+        message:
+          `${enabled ? 'Enabling' : 'Disabling'} ` +
+          `${breakpointDescription(breakpoint)} at VICE checkpoint ${checkpointNumber}.`
+      });
+      await monitor.sendAndWait(
+        command,
+        body,
+        (event) =>
+          event.type === 'ack' &&
+          event.commandId === ViceMonitorCommandId.CHECKPOINT_TOGGLE,
+        3000
+      );
+      breakpoint.checkpointEnabled = enabled;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.sendViceMonitorLog({
+        category: 'user',
+        message: `Could not toggle VICE checkpoint ${checkpointNumber}: ${message}`
+      });
+      this.connection.sendOutput(
+        `Could not toggle VICE checkpoint ${checkpointNumber}: ${message}\n`,
+        'stderr'
+      );
+    }
   }
 
   private async deleteCheckpoint(
@@ -3288,6 +3496,44 @@ function unsupportedBreakpointMessage(
     return `Unsupported hit condition: ${breakpoint.hitCondition}`;
   }
   return undefined;
+}
+
+function findReusableSourceBreakpoint(
+  candidates: ReadonlySet<InstalledSourceBreakpoint>,
+  breakpointState: CommodoreSourceBreakpointState
+): InstalledSourceBreakpoint | undefined {
+  if (breakpointState.markerId) {
+    for (const candidate of candidates) {
+      if (candidate.markerId === breakpointState.markerId) {
+        return candidate;
+      }
+    }
+  }
+  for (const candidate of candidates) {
+    if (
+      candidate.line === breakpointState.line &&
+      (candidate.sourceBreakpoint.column ?? 0) === (breakpointState.column ?? 0)
+    ) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
+function sameBreakpointRange(
+  left: { startAddress: number; endAddress: number } | undefined,
+  right: { startAddress: number; endAddress: number } | undefined
+): boolean {
+  return left?.startAddress === right?.startAddress &&
+    left?.endAddress === right?.endAddress;
+}
+
+function sameHitCondition(
+  left: HitCondition | undefined,
+  right: HitCondition | undefined
+): boolean {
+  return left?.operator === right?.operator &&
+    left?.value === right?.value;
 }
 
 function breakpointAddressRange(
