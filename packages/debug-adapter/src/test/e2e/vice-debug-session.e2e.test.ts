@@ -401,7 +401,7 @@ viceTest('resolves screencolors comment breakpoints to executable lines', async 
   assert.equal(topFrame.line, executableLine);
 });
 
-viceTest('hits screencolors source breakpoints in embedded VICE mode', async (t, vice) => {
+embeddedViceTest('hits screencolors source breakpoints in embedded VICE mode', async (t, vice) => {
   const session = await launchFixture(t, vice, 'screencolors', {
     embedded: true
   });
@@ -551,7 +551,7 @@ viceTest('ignores configured debug info that does not match the launched PRG', a
   assert.equal(topFrame.line, breakpointLine);
 });
 
-viceTest('keeps embedded VICE stopped while Theia finishes breakpoint setup', async (t, vice) => {
+embeddedViceTest('keeps embedded VICE stopped while Theia finishes breakpoint setup', async (t, vice) => {
   const session = await launchFixture(t, vice, 'screencolors', {
     embedded: true
   });
@@ -1001,10 +1001,29 @@ function viceTest(
   name: string,
   fn: (t: TestContext, vice: ViceE2eEnvironment) => Promise<void>
 ): void {
+  viceTestWithSkip(name, skipReason, fn);
+}
+
+function embeddedViceTest(
+  name: string,
+  fn: (t: TestContext, vice: ViceE2eEnvironment) => Promise<void>
+): void {
+  const embeddedSkipReason = skipReason ??
+    (environment?.embeddedTransportSupported
+      ? undefined
+      : 'VICE executable does not support Commodore Commander embedded transport');
+  viceTestWithSkip(name, embeddedSkipReason, fn);
+}
+
+function viceTestWithSkip(
+  name: string,
+  testSkipReason: string | undefined,
+  fn: (t: TestContext, vice: ViceE2eEnvironment) => Promise<void>
+): void {
   test(
     name,
     {
-      skip: skipReason,
+      skip: testSkipReason,
       timeout: E2E_TIMEOUT_MS + 15_000
     },
     async (t) => {
