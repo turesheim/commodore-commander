@@ -20,6 +20,11 @@ binary monitor.
 - `packages/debug-adapter/src/vice-monitor.ts` encodes and decodes the VICE
   binary monitor frames for memory, registers, checkpoints, stepping, pause,
   resume, and process shutdown.
+- For embedded debug launches, the Theia backend owns one reserved VICE frame
+  transport per Commodore Commander instance, while the debug adapter owns the
+  emulator process and binary monitor port. Repeated launch-resolution calls
+  reuse the reserved frame port, and a second debug launch cannot silently
+  replace a frame transport that is already connected to an emulator.
 - Kick Assembler `.dbg` files are parsed by the adapter to map source lines,
   labels, loaded sources, stack frame locations, breakpoint locations, source
   breakpoints, and `.break` debug-info breakpoints.
