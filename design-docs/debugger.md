@@ -29,9 +29,10 @@ binary monitor.
 - Source breakpoints use `<Segment>` line mappings from Kick Assembler debug
   dumps. The `.dbg` `<Breakpoints>` block may be empty for ordinary editor
   breakpoints; it is not required for DAP source breakpoints.
-- Kick Assembler `.break` directives appear in the `.dbg` `<Breakpoints>`
-  block. The adapter installs those entries as VICE execution checkpoints but
-  does not surface them as Theia gutter breakpoints.
+- Kick Assembler `.break` directives are written in assembly source code.
+  When the source is compiled, Kick Assembler emits them into the `.dbg`
+  `<Breakpoints>` block. The adapter installs those entries as VICE execution
+  checkpoints but does not surface them as Theia gutter breakpoints.
 - Initial DAP source breakpoints are remembered when Theia sends
   `setBreakpoints` and synchronized with VICE at the first stopped monitor
   state before the initial resume. This avoids installing checkpoints too early
