@@ -111,6 +111,70 @@ test('KickAssemblerLookupService resolves 6502 mnemonic and C64 I/O reference sy
   assert.equal(registerLookup.references.length, 1);
 });
 
+test('KickAssemblerLookupService resolves directive and preprocessor keyword references', () => {
+  const sourceDocument = createTextDocumentModel({
+    uri: 'file:///project/main.asm',
+    text: [
+      '#import "lib.asm"',
+      '.byte 1',
+      '.printnow "ready"',
+      '  lda #$d020'
+    ].join('\n')
+  });
+  const lookupService = new KickAssemblerLookupService();
+  const index = lookupService.buildIndex([
+    {
+      kind: 'kickassembler',
+      document: sourceDocument
+    }
+  ]);
+
+  const importLookup = lookupService.lookupAtPosition(
+    sourceDocument,
+    sourceDocument.positionAt(sourceDocument.text.indexOf('#import')),
+    index
+  );
+  const byteLookup = lookupService.lookupAtPosition(
+    sourceDocument,
+    sourceDocument.positionAt(sourceDocument.text.indexOf('.byte')),
+    index
+  );
+  const printNowLookup = lookupService.lookupAtPosition(
+    sourceDocument,
+    sourceDocument.positionAt(sourceDocument.text.indexOf('.printnow')),
+    index
+  );
+  const immediateAddressLookup = lookupService.lookupAtPosition(
+    sourceDocument,
+    sourceDocument.positionAt(sourceDocument.text.indexOf('$d020') + 1),
+    index
+  );
+
+  assert.ok(importLookup);
+  assert.equal(importLookup.queryName, '#IMPORT');
+  assert.equal(
+    importLookup.declarations[0]?.kind,
+    'kickassembler-preprocessor-directive'
+  );
+  assert.equal(importLookup.references.length, 1);
+
+  assert.ok(byteLookup);
+  assert.equal(byteLookup.declarations[0]?.kind, 'kickassembler-directive');
+  assert.equal(byteLookup.declarations[0]?.syntax, '<value>[, ...]');
+  assert.match(byteLookup.declarations[0]?.description ?? '', /byte values/u);
+  assert.equal(byteLookup.references.length, 1);
+
+  assert.ok(printNowLookup);
+  assert.equal(printNowLookup.declarations[0]?.kind, 'kickassembler-directive');
+  assert.match(printNowLookup.declarations[0]?.description ?? '', /immediately/u);
+
+  assert.ok(immediateAddressLookup);
+  assert.notEqual(
+    immediateAddressLookup.declarations[0]?.kind,
+    'kickassembler-preprocessor-directive'
+  );
+});
+
 test('KickAssemblerLookupService filters reference symbols by machine profile', async () => {
   const sourceDocument = createTextDocumentModel({
     uri: 'file:///project/machine.asm',

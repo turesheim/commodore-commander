@@ -78,6 +78,72 @@ test('createLookupHoverContent formats C64 I/O reference descriptions for toolti
   assert.match(hover.value, /<table>/u);
 });
 
+test('createLookupHoverContent formats Kick Assembler directive descriptions for tooltips', () => {
+  const sourceDocument = createTextDocumentModel({
+    uri: 'file:///project/main.asm',
+    text: '.byte 1\n'
+  });
+  const lookupService = new KickAssemblerLookupService();
+  const index = lookupService.buildIndex([
+    {
+      kind: 'kickassembler',
+      document: sourceDocument
+    }
+  ]);
+  const lookup = lookupService.lookupAtPosition(
+    sourceDocument,
+    sourceDocument.positionAt(sourceDocument.text.indexOf('.byte')),
+    index
+  );
+
+  assert.ok(lookup);
+
+  const hover = createLookupHoverContent(lookup);
+
+  assert.ok(hover);
+  assert.equal(hover.supportHtml, true);
+  assert.match(hover.value, /<h3><code>\.byte &lt;value&gt;\[, \.\.\.\]<\/code><\/h3>/u);
+  assert.match(hover.value, /<p>Outputs one or more byte values directly into memory\./u);
+  assert.doesNotMatch(hover.value, /<pre>/u);
+  assert.equal(
+    hover.value,
+    '<h3><code>.byte &lt;value&gt;[, ...]</code></h3>\n\n<p>Outputs one or more byte values directly into memory. The guide groups this with .word, .dword, and .text as the standard data directives used to generate literal data in the assembled output.</p>'
+  );
+});
+
+test('createLookupHoverContent formats Kick Assembler preprocessor descriptions for tooltips', () => {
+  const sourceDocument = createTextDocumentModel({
+    uri: 'file:///project/main.asm',
+    text: '#import "lib.asm"\n'
+  });
+  const lookupService = new KickAssemblerLookupService();
+  const index = lookupService.buildIndex([
+    {
+      kind: 'kickassembler',
+      document: sourceDocument
+    }
+  ]);
+  const lookup = lookupService.lookupAtPosition(
+    sourceDocument,
+    sourceDocument.positionAt(sourceDocument.text.indexOf('#import')),
+    index
+  );
+
+  assert.ok(lookup);
+
+  const hover = createLookupHoverContent(lookup);
+
+  assert.ok(hover);
+  assert.equal(hover.supportHtml, true);
+  assert.match(hover.value, /<h3><code>#import &lt;filename&gt;<\/code><\/h3>/u);
+  assert.match(hover.value, /<p>Imports another source file at the current point/u);
+  assert.doesNotMatch(hover.value, /<pre>/u);
+  assert.equal(
+    hover.value,
+    '<h3><code>#import &lt;filename&gt;</code></h3>\n\n<p>Imports another source file at the current point before main parsing. The guide recommends this for libraries because it preserves a natural evaluation order and can search directories supplied with -libdir.</p>'
+  );
+});
+
 async function loadReferenceDocuments(): Promise<KickAssemblerLookupDocument[]> {
   const [mnemonicXml, c64IoXml] = await Promise.all([
     readFile(mnemonicReferencePath, 'utf8'),

@@ -7,6 +7,8 @@ export type ReferenceSymbolKind =
   | '6502-mnemonic'
   | 'c64-io-address'
   | 'c64-io-id'
+  | 'kickassembler-directive'
+  | 'kickassembler-preprocessor-directive'
   | 'machine-io-address'
   | 'machine-io-id'
   | 'machine-memory-address'
@@ -25,6 +27,7 @@ export interface ReferenceSymbolDefinition {
   location: SourceLocation;
   addressRange?: ReferenceAddressRange;
   machineProfileId?: CommodoreMachineProfileId;
+  syntax?: string;
   detail?: string;
   description?: string;
 }

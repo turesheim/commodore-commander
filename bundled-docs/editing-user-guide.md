@@ -39,9 +39,10 @@ addressing modes, example syntax, and opcode values.
 
 ## Reference Help
 
-Hover over a known 6502 mnemonic or machine reference symbol to see inline
-documentation. Mnemonic hovers include opcode tables and diagrams when the
-bundled reference provides them.
+Hover over a known Kick Assembler directive, preprocessor directive, 6502
+mnemonic, or machine reference symbol to see inline documentation. Mnemonic
+hovers include opcode tables and diagrams when the bundled reference provides
+them.
 
 Use Cmd-click on macOS, Ctrl-click on Windows or Linux, or the editor context
 menu's **Go to Definition** action to jump to a project declaration or bundled
