@@ -83,12 +83,13 @@ binary monitor.
   rebuilding removes them from the authoritative `.vs` file. The Theia
   extension exposes these source-owned breakpoints as managed markers in the
   normal Breakpoints view. They can be enabled or disabled there; removal
-  attempts are converted into disabled managed markers so the source-authored
-  breakpoint is not deleted from the UI state or persisted as a user-authored
-  breakpoint. The full source-breakpoint state sync carries a marker flag so
-  the adapter toggles these entries with `CHECKPOINT_TOGGLE` but never
-  reconciles them as UI-owned checkpoints. Fallback `.dbg` breakpoint entries
-  installed by the adapter use the same non-removable UI path.
+  attempts preserve the managed marker and its current enabled state, since
+  remove and disable are distinct Theia actions. Programmed breakpoint markers
+  are also excluded from persisted user-authored breakpoints. The full
+  source-breakpoint state sync carries a marker flag so the adapter toggles
+  these entries with `CHECKPOINT_TOGGLE` but never reconciles them as UI-owned
+  checkpoints. Fallback `.dbg` breakpoint entries installed by the adapter use
+  the same non-removable UI path.
 - Explicit VICE monitor command files can also install breakpoints outside the
   adapter's checkpoint map, for example Kick Assembler `.vs` files containing
   `break` commands. Unknown VICE checkpoint hits are reported as DAP

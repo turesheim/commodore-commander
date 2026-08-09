@@ -68,7 +68,7 @@ export class CommodoreViceBreakpointManager extends BreakpointManager {
       const uri = new URI(uriString);
       const breakpoints = this.getBreakpoints(uri)
         .filter(isProgrammedSourceBreakpoint)
-        .map(disabledProgrammedSourceBreakpoint);
+        .map(preservedProgrammedSourceBreakpoint);
       super.setBreakpoints(uri, breakpoints);
     }
     this.setFunctionBreakpoints([]);
@@ -124,19 +124,18 @@ export class CommodoreViceBreakpointManager extends BreakpointManager {
       .filter((breakpoint) =>
         !breakpoints.some((candidate) => candidate.id === breakpoint.id)
       )
-      .map(disabledProgrammedSourceBreakpoint);
+      .map(preservedProgrammedSourceBreakpoint);
     return preserved.length > 0
       ? [...breakpoints, ...preserved]
       : breakpoints;
   }
 }
 
-function disabledProgrammedSourceBreakpoint(
+function preservedProgrammedSourceBreakpoint(
   breakpoint: SourceBreakpoint
 ): SourceBreakpoint {
   return {
     ...breakpoint,
-    enabled: false,
     raw: { ...breakpoint.raw }
   };
 }

@@ -148,7 +148,7 @@ export class CommodoreViceBreakpointStateContribution implements DebugContributi
     const restored = removed
       .filter(isProgrammedSourceBreakpoint)
       .map((breakpoint) =>
-        disabledProgrammedSourceBreakpoint(
+        restoredProgrammedSourceBreakpoint(
           uri,
           breakpoint,
           state.programmedBreakpointsById.get(programmedBreakpointId(breakpoint)!)
@@ -299,7 +299,7 @@ function createProgrammedSourceBreakpoint(
   };
 }
 
-function disabledProgrammedSourceBreakpoint(
+function restoredProgrammedSourceBreakpoint(
   uri: URI,
   removed: SourceBreakpoint,
   descriptor: CommodoreViceProgrammedBreakpoint | undefined
@@ -314,7 +314,7 @@ function disabledProgrammedSourceBreakpoint(
   };
   return {
     ...SourceBreakpoint.create(uri, restoredRaw, removed),
-    enabled: false,
+    enabled: removed.enabled,
     raw: restoredRaw
   };
 }
