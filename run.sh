@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_PATH="${ROOT_DIR}/example-workspace"
 
 cd "${ROOT_DIR}"
-#mvn clean package -f ../SIDscore/net.resheim.sidscore/pom.xml && mv -f ../SIDscore/net.resheim.sidscore/bin/sidscore-cli-0.7.0.jar resources/
+#mvn clean package -f ../SIDScore/net.resheim.sidscore/pom.xml && mv -f ../SIDScore/net.resheim.sidscore/bin/sidscore-cli-0.7.1.jar resources/
 npm run theia:build
 
 cd "${ROOT_DIR}/applications/electron"
