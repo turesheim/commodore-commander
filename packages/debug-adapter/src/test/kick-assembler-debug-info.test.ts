@@ -31,6 +31,10 @@ test('parseKickAssemblerDebugInfo reads sources, line mappings, and labels', () 
       <Labels values="SEGMENT,ADDRESS,NAME,FILE_IDX,LINE1,COL1,LINE2,COL2">
         Default,$1018,Done,1,65,1,65,4
       </Labels>
+      <Breakpoints values="SEGMENT,ADDRESS,ARGUMENT">
+        Default,$1000,
+        Default,$1018,"named,break"
+      </Breakpoints>
       <Watchpoints values="SEGMENT,START,END,ARGUMENT">
         Default,$D018,,hex8
         Default,$D000,$D00F,store
@@ -41,6 +45,17 @@ test('parseKickAssemblerDebugInfo reads sources, line mappings, and labels', () 
 
   assert.equal(debugInfo.sources.length, 2);
   assert.equal(debugInfo.labels.find((label) => label.name === 'Done')?.address, 0x1018);
+  assert.deepEqual(debugInfo.breakpoints, [
+    {
+      segment: 'Default',
+      address: 0x1000
+    },
+    {
+      segment: 'Default',
+      address: 0x1018,
+      argument: 'named,break'
+    }
+  ]);
   assert.equal(findLabelByName(debugInfo, 'done')?.address, 0x1018);
   assert.deepEqual(debugInfo.watches, [
     {

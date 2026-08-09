@@ -21,14 +21,21 @@ binary monitor.
   binary monitor frames for memory, registers, checkpoints, stepping, pause,
   resume, and process shutdown.
 - Kick Assembler `.dbg` files are parsed by the adapter to map source lines,
-  labels, loaded sources, stack frame locations, breakpoint locations, and
-  source breakpoints.
+  labels, loaded sources, stack frame locations, breakpoint locations, source
+  breakpoints, and `.break` debug-info breakpoints.
 - Debug launches prefer the configured `.dbg` file but also search the PRG
   directory and nearby output folders for debug dumps whose address ranges
   overlap the launched PRG.
 - Source breakpoints use `<Segment>` line mappings from Kick Assembler debug
   dumps. The `.dbg` `<Breakpoints>` block may be empty for ordinary editor
   breakpoints; it is not required for DAP source breakpoints.
+- Kick Assembler `.break` directives appear in the `.dbg` `<Breakpoints>`
+  block. The adapter installs those entries as VICE execution checkpoints but
+  does not surface them as Theia gutter breakpoints.
+- Initial DAP source breakpoints are remembered when Theia sends
+  `setBreakpoints` and synchronized with VICE at the first stopped monitor
+  state before the initial resume. This avoids installing checkpoints too early
+  in embedded/autostart launch timing.
 - If a requested source breakpoint line has no exact mapping, the adapter can
   bind it to the next nearby mapped line in the same source file. This supports
   common editor clicks on comments or blank lines immediately above executable
@@ -59,6 +66,7 @@ Protocol reference: [VICE Manual, Binary monitor](https://vice-emu.sourceforge.i
 - Source breakpoints backed by Kick Assembler `.dbg` line mappings.
 - Nearby unmapped source breakpoint lines resolved to the next mapped
   executable line.
+- Kick Assembler `.break` debug-info breakpoints from `.dbg` `<Breakpoints>`.
 - Conditional source breakpoints through VICE checkpoint conditions.
 - Hit-count source breakpoints interpreted by the adapter before surfacing a
   stop to the DAP client.
@@ -159,7 +167,8 @@ emulator is running.
 - Debug-adapter VICE e2e fixtures cover `debug-demo`,
   `visual-debugger-demo`, and `screencolors`; `screencolors` specifically
   covers comment-line breakpoint binding against Kick Assembler `<Segment>`
-  mappings when the `.dbg` `<Breakpoints>` block is empty.
+  mappings, embedded VICE breakpoint startup, and `.break` debug-info
+  breakpoint installation from `.dbg` `<Breakpoints>`.
 - Build-before-debug has Theia task-provider and generated `preLaunchTask`
   wiring for Kick Assembler builds. Remaining work is run-picker and
   build-policy behavior for configured runs, plus any clean-task workflow that

@@ -34,10 +34,17 @@ export interface KickAssemblerDebugWatch {
   argument?: string;
 }
 
+export interface KickAssemblerDebugBreakpoint {
+  segment: string;
+  address: number;
+  argument?: string;
+}
+
 export interface KickAssemblerDebugInfo {
   sources: readonly KickAssemblerSourceEntry[];
   lineMappings: readonly KickAssemblerLineMapping[];
   labels: readonly KickAssemblerDebugLabel[];
+  breakpoints: readonly KickAssemblerDebugBreakpoint[];
   watches: readonly KickAssemblerDebugWatch[];
   sourceRoots?: readonly string[];
 }
@@ -70,6 +77,7 @@ export function parseKickAssemblerDebugInfo(
     sources: parseSources(extractTagBody(text, 'Sources')),
     lineMappings: parseLineMappings(text),
     labels: parseLabels(extractTagBody(text, 'Labels')),
+    breakpoints: parseBreakpoints(extractTagBody(text, 'Breakpoints')),
     watches: parseWatches(text),
     ...(sourceRoots.length > 0 ? { sourceRoots } : {})
   };
@@ -330,6 +338,30 @@ function parseLabels(body: string): KickAssemblerDebugLabel[] {
     });
   }
   return labels;
+}
+
+function parseBreakpoints(body: string): KickAssemblerDebugBreakpoint[] {
+  const breakpoints: KickAssemblerDebugBreakpoint[] = [];
+  for (const rawLine of body.split(/\r?\n/u)) {
+    const line = rawLine.trim();
+    if (!line) {
+      continue;
+    }
+    const columns = splitDebugInfoColumns(line).map((column) => column.trim());
+    if (columns.length < 2 || !columns[1].startsWith('$')) {
+      continue;
+    }
+    const argument = columns.slice(2)
+      .filter((column) => column.length > 0)
+      .join(',')
+      .trim();
+    breakpoints.push({
+      segment: columns[0],
+      address: parseAddress(columns[1]),
+      ...(argument ? { argument } : {})
+    });
+  }
+  return breakpoints;
 }
 
 function parseWatches(text: string): KickAssemblerDebugWatch[] {

@@ -72,8 +72,9 @@ memory views, watchpoints, and stepping are not available.
 
 ## Source Breakpoints
 
-Source breakpoints are backed by Kick Assembler `.dbg` line mappings. A
-breakpoint can only be installed on a source line that maps to assembled code.
+Source breakpoints are backed by Kick Assembler `.dbg` line mappings. If you
+click a nearby comment or blank line, the debugger can bind the breakpoint to
+the next mapped instruction line in the same source file.
 
 1. Start or prepare a debug session with a `.dbg` file available.
 2. Open a source file that belongs to the debug dump.
@@ -85,6 +86,10 @@ breakpoint can only be installed on a source line that maps to assembled code.
 If a breakpoint cannot be installed, hover or inspect it in the Breakpoints view
 for the message. The usual reason is that the source line did not map to a
 generated address in the active `.dbg` file.
+
+Kick Assembler `.break` directives are also supported. They are read from the
+`.dbg` `<Breakpoints>` section and installed as VICE execution checkpoints when
+the debug session starts.
 
 ## Conditional Source Breakpoints
 
@@ -395,7 +400,8 @@ If source breakpoints stay unverified:
 2. Confirm that the launched PRG matches the debug dump.
 3. Confirm that the source file path in the `.dbg` file can be resolved from
    `sourceRoot`, the workspace, or the PRG directory.
-4. Move the breakpoint to an assembled instruction line.
+4. Move the breakpoint to an assembled instruction line or a nearby line above
+   it.
 
 If a conditional breakpoint or watchpoint is rejected:
 

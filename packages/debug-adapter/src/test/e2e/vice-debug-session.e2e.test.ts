@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import net from 'node:net';
 import path from 'node:path';
 import { test, type TestContext } from 'node:test';
 
@@ -22,6 +23,13 @@ const THREAD_ID = 1;
 const E2E_TIMEOUT_MS = 45_000;
 
 const { environment, skipReason } = resolveViceE2eEnvironment();
+
+interface LaunchedFixtureSession {
+  client: DapClient;
+  fixture: PreparedFixture;
+  vice: ViceE2eEnvironment;
+  viceFramePort?: number;
+}
 
 viceTest('launches VICE and stops on entry', async (t, vice) => {
   const session = await launchFixture(t, vice, 'debug-demo');
@@ -103,6 +111,63 @@ viceTest('resolves screencolors comment breakpoints to executable lines', async 
   if (stopped.body?.hitBreakpointIds) {
     assert.deepEqual(stopped.body.hitBreakpointIds, [breakpoint.id]);
   }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, executableLine);
+});
+
+viceTest('hits screencolors source breakpoints in embedded VICE mode', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors', {
+    embedded: true
+  });
+  await initializeAndLaunch(session);
+
+  const commentLine = await fixtureLine(
+    session.fixture.source,
+    '// back to top of loop'
+  );
+  const executableLine = commentLine + 1;
+  const breakpoint = await setSourceBreakpoint(
+    session.client,
+    session.fixture.source,
+    commentLine
+  );
+
+  assert.equal(breakpoint.line, executableLine);
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    executableLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  if (stopped.body?.hitBreakpointIds) {
+    assert.deepEqual(stopped.body.hitBreakpointIds, [breakpoint.id]);
+  }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, executableLine);
+});
+
+viceTest('hits Kick Assembler debug-info breakpoints', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  await addDebugInfoBreakpoint(session.fixture.debugInfo, '$1009');
+  await initializeAndLaunch(session);
+
+  const executableLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    executableLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  assert.equal(stopped.body?.hitBreakpointIds, undefined);
   assert.equal(topFrame.source?.path, session.fixture.source);
   assert.equal(topFrame.line, executableLine);
 });
@@ -336,11 +401,13 @@ function viceTest(
 async function launchFixture(
   t: TestContext,
   vice: ViceE2eEnvironment,
-  fixtureName: DebugAdapterFixtureName
+  fixtureName: DebugAdapterFixtureName,
+  options: { embedded?: boolean } = {}
 ): Promise<{
   client: DapClient;
   fixture: PreparedFixture;
   vice: ViceE2eEnvironment;
+  viceFramePort?: number;
 }> {
   const fixture = await prepareFixture(vice.packageRoot, fixtureName);
   const artifactDirectory = path.join(
@@ -355,21 +422,27 @@ async function launchFixture(
     artifactDirectory,
     requestTimeoutMs: E2E_TIMEOUT_MS
   });
+  const embeddedFrameServer = options.embedded ? net.createServer((socket) => {
+    socket.on('data', () => undefined);
+  }) : undefined;
+  const viceFramePort = embeddedFrameServer
+    ? await listenOnLoopback(embeddedFrameServer)
+    : undefined;
   t.after(async () => {
     await client.stop();
+    embeddedFrameServer?.close();
   });
   return {
     client,
     fixture,
-    vice
+    vice,
+    ...(viceFramePort !== undefined ? { viceFramePort } : {})
   };
 }
 
-async function initializeAndLaunch(session: {
-  client: DapClient;
-  fixture: PreparedFixture;
-  vice: ViceE2eEnvironment;
-}): Promise<DebugProtocol.Capabilities> {
+async function initializeAndLaunch(
+  session: LaunchedFixtureSession
+): Promise<DebugProtocol.Capabilities> {
   const capabilities = await session.client.request<DebugProtocol.Capabilities>(
     'initialize',
     {
@@ -395,6 +468,12 @@ async function initializeAndLaunch(session: {
         viceResourcesPath: session.vice.viceResourcesPath,
         viceExecutable: session.vice.viceExecutable,
         viceArgs: session.vice.viceArgs,
+        ...(session.viceFramePort !== undefined
+          ? {
+              viceLaunchMode: 'embedded',
+              viceFramePort: session.viceFramePort
+            }
+          : {}),
         machineName: 'VICE e2e C64'
       },
       E2E_TIMEOUT_MS
@@ -402,6 +481,35 @@ async function initializeAndLaunch(session: {
   ]);
 
   return capabilities;
+}
+
+async function addDebugInfoBreakpoint(
+  debugInfoPath: string,
+  address: string
+): Promise<void> {
+  const debugInfo = await readFile(debugInfoPath, 'utf8');
+  const updated = debugInfo.replace(
+    /(<Breakpoints\b[^>]*>\s*)/u,
+    (_match, prefix: string) => `${prefix}\n      Default,${address},`
+  );
+  if (updated === debugInfo) {
+    throw new Error(`Could not add debug-info breakpoint to ${debugInfoPath}.`);
+  }
+  await writeFile(debugInfoPath, updated, 'utf8');
+}
+
+async function listenOnLoopback(server: net.Server): Promise<number> {
+  return new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (!address || typeof address === 'string') {
+        reject(new Error('Embedded frame server did not bind to a TCP port.'));
+        return;
+      }
+      resolve(address.port);
+    });
+  });
 }
 
 async function configurationDoneAndWaitStopped(

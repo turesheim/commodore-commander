@@ -10,7 +10,8 @@ programs during every run.
   debugger.
 - `screencolors` covers breakpoint binding on a comment line immediately above
   executable code when the Kick Assembler `.dbg` `<Breakpoints>` section is
-  empty.
+  empty, plus `.break`-style debug-info breakpoint installation in the e2e
+  suite.
 
 The e2e runner copies each fixture to a temporary workspace before launch and
 rewrites the primary `.dbg` source path to that temporary copy. That keeps
