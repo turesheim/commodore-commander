@@ -21,6 +21,7 @@ import {
   type CommodoreViceProgrammedBreakpoint,
   type CommodoreViceProgrammedBreakpointsEvent
 } from '../common/commodore-vice-programmed-breakpoints';
+import { CommodoreViceBreakpointManager } from './commodore-vice-breakpoint-manager';
 import {
   isProgrammedSourceBreakpoint,
   programmedBreakpointId,
@@ -148,7 +149,9 @@ export class CommodoreViceBreakpointStateContribution implements DebugContributi
             createProgrammedSourceBreakpoint(uri, breakpoint, existing)
           );
         }
-        this.breakpointManager.setBreakpoints(uri, nextBreakpoints);
+        this.withProgrammedBreakpointRemovalAllowed(() => {
+          this.breakpointManager.setBreakpoints(uri, nextBreakpoints);
+        });
       }
     } finally {
       state.updatingProgrammedMarkers = false;
@@ -174,12 +177,14 @@ export class CommodoreViceBreakpointStateContribution implements DebugContributi
     try {
       for (const uriString of uriStrings) {
         const uri = new URI(uriString);
-        this.breakpointManager.setBreakpoints(
-          uri,
-          this.breakpointManager
-            .getBreakpoints(uri)
-            .filter((breakpoint) => !isProgrammedSourceBreakpoint(breakpoint))
-        );
+        this.withProgrammedBreakpointRemovalAllowed(() => {
+          this.breakpointManager.setBreakpoints(
+            uri,
+            this.breakpointManager
+              .getBreakpoints(uri)
+              .filter((breakpoint) => !isProgrammedSourceBreakpoint(breakpoint))
+          );
+        });
       }
     } finally {
       state.updatingProgrammedMarkers = false;
@@ -229,6 +234,14 @@ export class CommodoreViceBreakpointStateContribution implements DebugContributi
     }
   }
 
+  private withProgrammedBreakpointRemovalAllowed(callback: () => void): void {
+    const breakpointManager = this.breakpointManager;
+    if (breakpointManager instanceof CommodoreViceBreakpointManager) {
+      breakpointManager.withProgrammedBreakpointRemovalAllowed(callback);
+      return;
+    }
+    callback();
+  }
 }
 
 function toSourceBreakpointState(

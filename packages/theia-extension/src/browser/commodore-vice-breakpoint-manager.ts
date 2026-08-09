@@ -3,10 +3,33 @@ import { injectable } from '@theia/core/shared/inversify';
 import { BreakpointManager } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
 import type { SourceBreakpoint } from '@theia/debug/lib/browser/breakpoint/breakpoint-marker';
 
-import { isProgrammedSourceBreakpoint } from './commodore-vice-programmed-breakpoint-state';
+import {
+  isProgrammedSourceBreakpoint,
+  programmedBreakpointId
+} from './commodore-vice-programmed-breakpoint-state';
 
 @injectable()
 export class CommodoreViceBreakpointManager extends BreakpointManager {
+  private allowProgrammedBreakpointRemovalDepth = 0;
+
+  withProgrammedBreakpointRemovalAllowed<T>(callback: () => T): T {
+    this.allowProgrammedBreakpointRemovalDepth += 1;
+    try {
+      return callback();
+    } finally {
+      this.allowProgrammedBreakpointRemovalDepth -= 1;
+    }
+  }
+
+  override setBreakpoints(uri: URI, breakpoints: SourceBreakpoint[]): void {
+    super.setBreakpoints(
+      uri,
+      this.allowProgrammedBreakpointRemovalDepth > 0
+        ? breakpoints
+        : this.withProtectedProgrammedBreakpoints(uri, breakpoints)
+    );
+  }
+
   override enableAllBreakpoints(enabled: boolean): void {
     const changedByUri = new Map<string, SourceBreakpoint[]>();
     for (const uriString of this.getUris()) {
@@ -29,6 +52,24 @@ export class CommodoreViceBreakpointManager extends BreakpointManager {
         changed
       });
     }
+  }
+
+  override removeBreakpoints(): void {
+    if (this.allowProgrammedBreakpointRemovalDepth > 0) {
+      super.removeBreakpoints();
+      return;
+    }
+
+    const uriStrings = [...this.getUris()];
+    for (const uriString of uriStrings) {
+      const uri = new URI(uriString);
+      const breakpoints = this.getBreakpoints(uri)
+        .filter(isProgrammedSourceBreakpoint)
+        .map(preservedProgrammedSourceBreakpoint);
+      super.setBreakpoints(uri, breakpoints);
+    }
+    this.setFunctionBreakpoints([]);
+    this.clearInstructionBreakpoints();
   }
 
   override save(): void {
@@ -62,4 +103,36 @@ export class CommodoreViceBreakpointManager extends BreakpointManager {
 
     this.storage.setData('breakpoints', data);
   }
+
+  private withProtectedProgrammedBreakpoints(
+    uri: URI,
+    breakpoints: SourceBreakpoint[]
+  ): SourceBreakpoint[] {
+    const requestedProgrammedBreakpointIds = new Set(
+      breakpoints
+        .map(programmedBreakpointId)
+        .filter((id): id is number => id !== undefined)
+    );
+    const preserved = this.getBreakpoints(uri)
+      .filter(isProgrammedSourceBreakpoint)
+      .filter((breakpoint) =>
+        !requestedProgrammedBreakpointIds.has(programmedBreakpointId(breakpoint)!)
+      )
+      .filter((breakpoint) =>
+        !breakpoints.some((candidate) => candidate.id === breakpoint.id)
+      )
+      .map(preservedProgrammedSourceBreakpoint);
+    return preserved.length > 0
+      ? [...breakpoints, ...preserved]
+      : breakpoints;
+  }
+}
+
+function preservedProgrammedSourceBreakpoint(
+  breakpoint: SourceBreakpoint
+): SourceBreakpoint {
+  return {
+    ...breakpoint,
+    raw: { ...breakpoint.raw }
+  };
 }

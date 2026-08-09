@@ -87,13 +87,19 @@ binary monitor.
   removal does not delete the VICE checkpoint because the `.vs` file remains
   authoritative; removing the `.break` directive from source and rebuilding is
   the deletion path. Programmed breakpoint markers are also excluded from
-  persisted user-authored breakpoints. The Theia source breakpoint toggle path
-  is patched to update marker ids in place, because
-  Theia's default implementation can otherwise turn disable into remove when a
-  DAP adapter resolves a breakpoint to a different executable line. The full
-  source-breakpoint state sync carries a marker flag so the adapter toggles
-  these entries with `CHECKPOINT_TOGGLE` but never reconciles them as UI-owned
-  checkpoints. VICE checkpoint numbers for `.vs`-owned programmed breakpoints
+  persisted user-authored breakpoints. The custom Theia breakpoint manager
+  protects programmed markers during normal `setBreakpoints` and
+  `removeBreakpoints` rewrites so debug-session startup, DAP response updates,
+  and enable/disable actions cannot accidentally drop them. The explicit
+  `DebugSourceBreakpoint.remove()` path is patched to allow deliberate marker
+  removal, which hides the marker for the active debug session only. The Theia
+  source breakpoint toggle path is patched to update marker ids in place,
+  because Theia's default implementation can otherwise turn disable into
+  remove when a DAP adapter resolves a breakpoint to a different executable
+  line. The full source-breakpoint state sync carries a marker flag so the
+  adapter toggles these entries with `CHECKPOINT_TOGGLE` but never reconciles
+  them as UI-owned checkpoints. VICE checkpoint numbers for `.vs`-owned
+  programmed breakpoints
   are monitor-local and volatile: before toggling one from the UI, the adapter
   refreshes the association with `CHECKPOINT_LIST`; if VICE rejects a toggle
   because the remembered object no longer exists, the adapter clears the stale
