@@ -299,8 +299,8 @@ rebuilt `.vs` file after the `.break` directive is removed from source.
   `visual-debugger-demo`, and `screencolors`; `debug-demo` covers regular
   source breakpoints, including source breakpoints sent before `launch`, while
   `screencolors` covers comment-line breakpoint binding against Kick Assembler
-  `<Segment>` mappings, embedded VICE breakpoint startup, and `.break`
-  debug-info breakpoint installation from `.dbg` `<Breakpoints>`.
+  `<Segment>` mappings, embedded VICE breakpoint startup, and a source-authored
+  `.break` represented by matching `.dbg` and `.vs` fixture output.
 - Build-before-debug has Theia task-provider and generated `preLaunchTask`
   wiring for Kick Assembler builds. Remaining work is run-picker and
   build-policy behavior for configured runs, plus any clean-task workflow that

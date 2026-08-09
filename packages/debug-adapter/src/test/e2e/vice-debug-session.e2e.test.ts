@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import net from 'node:net';
 import path from 'node:path';
 import { test, type TestContext } from 'node:test';
@@ -35,6 +35,12 @@ interface LaunchedFixtureSession {
   viceArgs?: readonly string[];
   viceFramePort?: number;
   debugInfo?: string | false;
+}
+
+interface LaunchFixtureOptions {
+  embedded?: boolean;
+  includeMonitorCommands?: boolean;
+  viceArgs?: readonly string[];
 }
 
 interface ProgrammedBreakpointDescriptor {
@@ -377,7 +383,10 @@ viceTest('resolves screencolors comment breakpoints to executable lines', async 
     session.fixture.source,
     '// back to top of loop'
   );
-  const executableLine = commentLine + 1;
+  const executableLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
   const breakpoint = await setSourceBreakpoint(
     session.client,
     session.fixture.source,
@@ -411,7 +420,10 @@ embeddedViceTest('hits screencolors source breakpoints in embedded VICE mode', a
     session.fixture.source,
     '// back to top of loop'
   );
-  const executableLine = commentLine + 1;
+  const executableLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
   const breakpoint = await setSourceBreakpoint(
     session.client,
     session.fixture.source,
@@ -561,7 +573,10 @@ embeddedViceTest('keeps embedded VICE stopped while Theia finishes breakpoint se
     session.fixture.source,
     '// back to top of loop'
   );
-  const executableLine = commentLine + 1;
+  const executableLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
   const breakpoint = await setSourceBreakpoint(
     session.client,
     session.fixture.source,
@@ -588,7 +603,6 @@ embeddedViceTest('keeps embedded VICE stopped while Theia finishes breakpoint se
 
 viceTest('hits Kick Assembler debug-info breakpoints', async (t, vice) => {
   const session = await launchFixture(t, vice, 'screencolors');
-  await addDebugInfoBreakpoint(session.fixture.debugInfo, '$1009');
   await initializeAndLaunch(session);
 
   const executableLine = await fixtureLine(
@@ -610,14 +624,14 @@ viceTest('hits Kick Assembler debug-info breakpoints', async (t, vice) => {
 });
 
 viceTest('stops on VICE monitor command breakpoints from explicit moncommands', async (t, vice) => {
-  const session = await launchFixture(t, vice, 'screencolors');
-  const monitorCommands = path.join(session.fixture.directory, 'screencolors.vs');
-  await writeFile(monitorCommands, 'break 1009\n', 'utf8');
-  await addDebugInfoBreakpoint(session.fixture.debugInfo, '$1009');
+  const session = await launchFixture(t, vice, 'screencolors', {
+    includeMonitorCommands: true
+  });
+  assert.ok(session.fixture.monitorCommands, 'expected screencolors.vs fixture');
   session.viceArgs = [
     ...session.vice.viceArgs,
     '-moncommands',
-    monitorCommands
+    session.fixture.monitorCommands
   ];
   await initializeAndLaunch(session);
 
@@ -644,15 +658,9 @@ viceTest('stops on VICE monitor command breakpoints from explicit moncommands', 
 });
 
 viceTest('toggles programmed breakpoints without deleting VICE checkpoints', async (t, vice) => {
-  const session = await launchFixture(t, vice, 'screencolors');
-  const monitorCommands = path.join(session.fixture.directory, 'screencolors.vs');
-  await writeFile(monitorCommands, 'break 1009\n', 'utf8');
-  await addDebugInfoBreakpoint(session.fixture.debugInfo, '$1009');
-  session.viceArgs = [
-    ...session.vice.viceArgs,
-    '-moncommands',
-    monitorCommands
-  ];
+  const session = await launchFixture(t, vice, 'screencolors', {
+    includeMonitorCommands: true
+  });
   await initializeAndLaunch(session);
 
   const executableLine = await fixtureLine(
@@ -751,18 +759,14 @@ viceTest('toggles programmed breakpoints without deleting VICE checkpoints', asy
 });
 
 viceTest('passes adjacent Kick Assembler VICE symbol files to VICE', async (t, vice) => {
-  const session = await launchFixture(t, vice, 'screencolors');
-  const monitorCommands = path.join(session.fixture.directory, 'screencolors.vs');
-  await writeFile(
-    monitorCommands,
-    '; Kick Assembler VICE symbols\nbreak 1009\n',
-    'utf8'
-  );
-  await addDebugInfoBreakpoint(session.fixture.debugInfo, '$1009');
+  const session = await launchFixture(t, vice, 'screencolors', {
+    includeMonitorCommands: true
+  });
+  assert.ok(session.fixture.monitorCommands, 'expected screencolors.vs fixture');
   await initializeAndLaunch(session);
 
   assert.ok(
-    session.client.outputText.includes(monitorCommands),
+    session.client.outputText.includes(session.fixture.monitorCommands),
     'expected launch output to include adjacent .vs monitor command file'
   );
   assert.match(
@@ -1037,9 +1041,11 @@ async function launchFixture(
   t: TestContext,
   vice: ViceE2eEnvironment,
   fixtureName: DebugAdapterFixtureName,
-  options: { embedded?: boolean; viceArgs?: readonly string[] } = {}
+  options: LaunchFixtureOptions = {}
 ): Promise<LaunchedFixtureSession> {
-  const fixture = await prepareFixture(vice.packageRoot, fixtureName);
+  const fixture = await prepareFixture(vice.packageRoot, fixtureName, {
+    includeMonitorCommands: options.includeMonitorCommands
+  });
   const artifactDirectory = path.join(
     vice.repoRoot,
     'test-results',
@@ -1119,21 +1125,6 @@ async function launchInitializedFixture(
       E2E_TIMEOUT_MS
     )
   ]);
-}
-
-async function addDebugInfoBreakpoint(
-  debugInfoPath: string,
-  address: string
-): Promise<void> {
-  const debugInfo = await readFile(debugInfoPath, 'utf8');
-  const updated = debugInfo.replace(
-    /(<Breakpoints\b[^>]*>\s*)/u,
-    (_match, prefix: string) => `${prefix}\n      Default,${address},`
-  );
-  if (updated === debugInfo) {
-    throw new Error(`Could not add debug-info breakpoint to ${debugInfoPath}.`);
-  }
-  await writeFile(debugInfoPath, updated, 'utf8');
 }
 
 async function listenOnLoopback(server: net.Server): Promise<number> {

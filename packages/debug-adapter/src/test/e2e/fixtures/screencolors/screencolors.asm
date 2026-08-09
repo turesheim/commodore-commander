@@ -51,6 +51,7 @@ CrazyBorderLoop:
 
         // inc inner counter and if hasn't reached max then 
         // back to top of loop
+        .break
         inc inner_counter          
         lda #INNER_MAX
         cmp inner_counter
@@ -72,5 +73,4 @@ CrazyBorderLoop:
         jmp CrazyBorderLoop
 Done:
         rts
-
 

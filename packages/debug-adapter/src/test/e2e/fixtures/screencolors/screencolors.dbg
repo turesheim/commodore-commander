@@ -1,7 +1,7 @@
 <C64debugger version="1.0">
    <Sources values="INDEX,FILE">
       0,KickAss.jar:/include/autoinclude.asm
-      1,/private/tmp/commodore-commander-embedded-vm-behavior/example-workspace/kickassembler/screencolors.asm
+      1,/Users/torkild/Developer/C64/git/commodore-commander/packages/debug-adapter/src/test/e2e/fixtures/screencolors/screencolors.asm
    </Sources>
 
    <Segment name="Default" dest="" values="START,END,FILE_IDX,LINE1,COL1,LINE2,COL2">
@@ -19,18 +19,18 @@
          $1000,$1002,1,44,9,44,11
          $1003,$1005,1,49,9,49,11
          $1006,$1008,1,50,9,50,11
-         $1009,$100b,1,54,9,54,11
-         $100c,$100d,1,55,9,55,11
-         $100e,$1010,1,56,9,56,11
-         $1011,$1012,1,57,9,57,11
-         $1013,$1014,1,61,9,61,11
-         $1015,$1017,1,62,9,62,11
-         $1018,$101a,1,66,9,66,11
-         $101b,$101c,1,67,9,67,11
-         $101d,$101f,1,68,9,68,11
-         $1020,$1021,1,69,9,69,11
-         $1022,$1024,1,72,9,72,11
-         $1025,$1025,1,74,9,74,11
+         $1009,$100b,1,55,9,55,11
+         $100c,$100d,1,56,9,56,11
+         $100e,$1010,1,57,9,57,11
+         $1011,$1012,1,58,9,58,11
+         $1013,$1014,1,62,9,62,11
+         $1015,$1017,1,63,9,63,11
+         $1018,$101a,1,67,9,67,11
+         $101b,$101c,1,68,9,68,11
+         $101d,$101f,1,69,9,69,11
+         $1020,$1021,1,70,9,70,11
+         $1022,$1024,1,73,9,73,11
+         $1025,$1025,1,75,9,75,11
       </Block>
    </Segment>
 
@@ -39,10 +39,11 @@
       Default,$0811,outer_counter,1,27,1,27,14
       Default,$1000,Main,1,31,1,31,5
       Default,$1003,CrazyBorderLoop,1,46,1,46,16
-      Default,$1025,Done,1,73,1,73,5
+      Default,$1025,Done,1,74,1,74,5
    </Labels>
 
    <Breakpoints values="SEGMENT,ADDRESS,ARGUMENT">
+      Default,$1009,
    </Breakpoints>
 
    <Watchpoints values="SEGMENT,ADDRESS1,ADDRESS2,ARGUMENT">
