@@ -46,13 +46,15 @@ This layer owns:
   responses
 - Kick Assembler `.dbg` source/label/line mapping; `.dbg` files are produced
   by Kick Assembler `-debugdump`
-- VICE process launch with `.dbg`-derived temporary monitor label commands
-  passed through `-moncommands`, plus `-binarymonitor`,
-  `-binarymonitoraddress`, and `-initbreak ready` for debugging. The temporary
-  monitor command file loads labels only; it does not resume execution. The
-  binary monitor synchronizes DAP breakpoints while VICE is still stopped at
-  startup after Theia sends `configurationDone`. `noDebug` launches omit the
-  monitor command file, binary monitor, and initial break
+- VICE process launch with Kick Assembler `.vs` VICE symbol files passed
+  through `-moncommands` when present, plus `-binarymonitor`,
+  `-binarymonitoraddress`, and `-initbreak ready` for debugging. VICE reads
+  `.vs` files natively, including labels and `break` commands. If no `.vs`
+  file is available, the adapter can pass a generated labels-only monitor
+  command file derived from `.dbg` labels. Monitor command files do not resume
+  execution. The binary monitor synchronizes DAP breakpoints while VICE is
+  still stopped at startup after Theia sends `configurationDone`. `noDebug`
+  launches omit the monitor command file, binary monitor, and initial break
 - DAP request handling for launch, source breakpoints, conditional
   breakpoints, hit conditions, logpoints/tracepoints, data breakpoints,
   conditional watchpoints, continue, pause, step in, step over, step out, stack

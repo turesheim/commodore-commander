@@ -19,14 +19,18 @@ For the best source-level debugging experience, make sure the active build
 profile creates debug information:
 
 - `debugDump: true` makes Kick Assembler create the `.dbg` file used for
-  source line mapping, labels, `.break`, and `.watch` entries.
-- Commodore Commander reads that `.dbg` file and passes derived VICE monitor
-  label commands to VICE with `-moncommands` for debug launches. The generated
-  command file loads labels only; DAP source and `.break` breakpoints are
-  installed through the binary monitor while VICE is stopped at startup. VICE
-  does not read Kick Assembler `.dbg` files directly.
-- `symbolFile: true` and `viceSymbols: true` remain useful for manual symbol
-  files and monitor workflows outside the adapter-managed debug session.
+  source line mapping, `.break`, and `.watch` entries.
+- `viceSymbols: true` makes Kick Assembler create the `.vs` VICE symbol file.
+  VICE reads this file natively through `-moncommands`, including labels and
+  `break` commands. Commodore Commander passes the adjacent `.vs` file to VICE
+  for debug launches when it is available. If it is missing, the adapter falls
+  back to a generated labels-only monitor command file derived from `.dbg`
+  labels.
+- DAP source breakpoints are installed through the binary monitor while VICE
+  is stopped at startup. VICE does not read Kick Assembler `.dbg` files
+  directly.
+- `symbolFile: true` remains useful for manual symbol files and monitor
+  workflows outside the adapter-managed debug session.
 - `runProgram` should point to the PRG that VICE will launch.
 
 See [Build Configuration](build-configuration.md) for project and launch

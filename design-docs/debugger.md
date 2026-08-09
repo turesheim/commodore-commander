@@ -32,21 +32,29 @@ binary monitor.
 - Debug launches prefer the configured `.dbg` file but also search the PRG
   directory and nearby output folders for debug dumps whose address ranges
   overlap the launched PRG.
-- VICE does not consume Kick Assembler `.dbg` files directly. For debug
-  launches, the adapter derives a temporary VICE monitor command file from
-  the selected `.dbg` labels and passes it to VICE with `-moncommands`. The
-  generated file does not resume the machine; VICE remains under the
-  `-initbreak ready` startup stop while Theia sends breakpoints and the adapter
-  installs VICE checkpoints through the binary monitor. Source and `.break`
-  breakpoints are still installed through the binary monitor. An explicit
-  `-moncommands` entry in `viceArgs` is left untouched.
+- VICE consumes Kick Assembler `.vs` VICE symbol files natively through
+  `-moncommands`; it does not consume `.dbg` files directly. For debug
+  launches, the adapter looks for the `.vs` file next to the selected `.dbg`
+  file or launched PRG and passes it to VICE. This lets VICE install labels
+  and any `break` commands emitted by Kick Assembler. If no `.vs` file is
+  available, the adapter falls back to a generated labels-only monitor command
+  file derived from `.dbg` labels. Monitor command files do not resume the
+  machine; VICE remains under the `-initbreak ready` startup stop while Theia
+  sends breakpoints and the adapter installs DAP source breakpoints through
+  the binary monitor. An explicit `-moncommands` entry in `viceArgs` is left
+  untouched, but the adapter still inspects the referenced file so `.dbg`
+  `.break` entries are not double-installed when the same address is already
+  present as a VICE `break` command.
 - Source breakpoints use `<Segment>` line mappings from Kick Assembler debug
   dumps. The `.dbg` `<Breakpoints>` block may be empty for ordinary editor
   breakpoints; it is not required for DAP source breakpoints.
 - Kick Assembler `.break` directives are written in assembly source code.
   When the source is compiled, Kick Assembler emits them into the `.dbg`
-  `<Breakpoints>` block. The adapter installs those entries as VICE execution
-  checkpoints but does not surface them as Theia gutter breakpoints.
+  `<Breakpoints>` block and may also emit matching `break` commands in the
+  `.vs` monitor command file. The adapter installs `.dbg` breakpoint entries
+  as VICE execution checkpoints when VICE has not already received the same
+  address from the selected `.vs` file. These source-authored breakpoints are
+  not surfaced as Theia gutter breakpoints.
 - Explicit VICE monitor command files can also install breakpoints outside the
   adapter's checkpoint map, for example Kick Assembler `.vs` files containing
   `break` commands. Unknown VICE checkpoint hits are reported as DAP

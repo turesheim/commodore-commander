@@ -268,12 +268,55 @@ viceTest('stops on VICE monitor command breakpoints from explicit moncommands', 
   const session = await launchFixture(t, vice, 'screencolors');
   const monitorCommands = path.join(session.fixture.directory, 'screencolors.vs');
   await writeFile(monitorCommands, 'break 1009\n', 'utf8');
+  await addDebugInfoBreakpoint(session.fixture.debugInfo, '$1009');
   session.viceArgs = [
     ...session.vice.viceArgs,
     '-moncommands',
     monitorCommands
   ];
   await initializeAndLaunch(session);
+
+  const executableLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    executableLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  assert.equal(stopped.body?.hitBreakpointIds, undefined);
+  assert.match(
+    session.client.outputText,
+    /Skipped 1 Kick Assembler \.dbg breakpoint already present/u
+  );
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, executableLine);
+});
+
+viceTest('passes adjacent Kick Assembler VICE symbol files to VICE', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  const monitorCommands = path.join(session.fixture.directory, 'screencolors.vs');
+  await writeFile(
+    monitorCommands,
+    '; Kick Assembler VICE symbols\nbreak 1009\n',
+    'utf8'
+  );
+  await addDebugInfoBreakpoint(session.fixture.debugInfo, '$1009');
+  await initializeAndLaunch(session);
+
+  assert.ok(
+    session.client.outputText.includes(monitorCommands),
+    'expected launch output to include adjacent .vs monitor command file'
+  );
+  assert.match(
+    session.client.outputText,
+    /Skipped 1 Kick Assembler \.dbg breakpoint already present/u
+  );
 
   const executableLine = await fixtureLine(
     session.fixture.source,

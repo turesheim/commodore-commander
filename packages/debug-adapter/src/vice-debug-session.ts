@@ -1,6 +1,7 @@
 import path from 'node:path';
 import type { ChildProcess } from 'node:child_process';
-import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { access, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import type { Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
@@ -170,11 +171,23 @@ interface MemoryDisassemblySource {
   sourceReference: number;
 }
 
+interface LoadedKickAssemblerDebugInfo {
+  path: string;
+  info: KickAssemblerDebugInfo;
+}
+
+interface ViceMonitorCommandFileSelection {
+  path: string;
+  passToVice: boolean;
+  externalBreakpointAddresses: ReadonlySet<number>;
+}
+
 export class ViceDebugSession {
   private monitor: ViceMonitorConnection | undefined;
   private child: ChildProcess | undefined;
   private viceCommandInput: Writable | undefined;
   private debugInfo: KickAssemblerDebugInfo | undefined;
+  private debugInfoPath: string | undefined;
   private programImage: PrgImage | undefined;
   private programDisassembly: PrgDisassemblySource | undefined;
   private romSources: RomSource[] = [];
@@ -388,6 +401,7 @@ export class ViceDebugSession {
     this.checkpointToDataBreakpoint.clear();
     this.checkpointToDataBreakpointAccess.clear();
     await this.cleanupViceMonitorCommandDirectory();
+    this.debugInfoPath = undefined;
 
     if (path.extname(program).toLowerCase() === '.prg') {
       try {
@@ -401,19 +415,33 @@ export class ViceDebugSession {
     }
     if (useMonitor) {
       this.romSources = await this.loadRomSources(path.resolve(args.viceResourcesPath));
-      this.debugInfo = await this.loadDebugInfoForLaunch(
+      const loadedDebugInfo = await this.loadDebugInfoForLaunch(
         debugInfoPath,
         program,
         cwd,
         sourceRoot
       );
-      this.debugInfoBreakpoints = this.createDebugInfoBreakpoints(this.debugInfo);
+      this.debugInfo = loadedDebugInfo?.info;
+      this.debugInfoPath = loadedDebugInfo?.path;
+    }
+    const monitorCommandSelection =
+      useMonitor
+        ? await this.resolveViceMonitorCommandFile(
+            args.viceArgs ?? [],
+            this.debugInfoPath,
+            program,
+            cwd,
+            sourceRoot,
+            this.debugInfo
+          )
+        : undefined;
+    if (useMonitor) {
+      this.debugInfoBreakpoints = this.createDebugInfoBreakpoints(
+        this.debugInfo,
+        monitorCommandSelection?.externalBreakpointAddresses
+      );
       this.refreshSourceBreakpointMappings(true);
     }
-    const monitorCommandFile =
-      useMonitor && !hasViceArgument(args.viceArgs ?? [], '-moncommands')
-        ? await this.createViceMonitorCommandFile(this.debugInfo)
-        : undefined;
 
     let launch: Awaited<ReturnType<typeof launchViceProcess>>;
     try {
@@ -423,7 +451,9 @@ export class ViceDebugSession {
         viceResourcesPath: path.resolve(args.viceResourcesPath),
         viceExecutable: args.viceExecutable,
         viceArgs: args.viceArgs ?? [],
-        monitorCommandFile,
+        monitorCommandFile: monitorCommandSelection?.passToVice
+          ? monitorCommandSelection.path
+          : undefined,
         enableEmbed: isEmbeddedViceLaunchMode(args.viceLaunchMode),
         embedFramePort: args.viceFramePort,
         enableMonitor: useMonitor
@@ -670,7 +700,7 @@ export class ViceDebugSession {
     program: string,
     cwd: string,
     sourceRoot: string | undefined
-  ): Promise<KickAssemblerDebugInfo | undefined> {
+  ): Promise<LoadedKickAssemblerDebugInfo | undefined> {
     const sourceRoots = [
       ...(sourceRoot ? [sourceRoot] : []),
       cwd,
@@ -728,7 +758,10 @@ export class ViceDebugSession {
           'stderr'
         );
       }
-      return best.info;
+      return {
+        path: best.path,
+        info: best.info
+      };
     }
 
     if (failures.length > 0) {
@@ -756,6 +789,86 @@ export class ViceDebugSession {
         'stderr'
       );
       return [];
+    }
+  }
+
+  private async resolveViceMonitorCommandFile(
+    viceArgs: readonly string[],
+    debugInfoPath: string | undefined,
+    program: string,
+    cwd: string,
+    sourceRoot: string | undefined,
+    debugInfo: KickAssemblerDebugInfo | undefined
+  ): Promise<ViceMonitorCommandFileSelection | undefined> {
+    const explicitMonitorCommandFile = resolveExplicitViceMonitorCommandFile(
+      viceArgs,
+      cwd
+    );
+    if (explicitMonitorCommandFile) {
+      const externalBreakpointAddresses =
+        await this.readViceMonitorBreakpointAddresses(explicitMonitorCommandFile);
+      const breakpointSummary = externalBreakpointAddresses.size > 0
+        ? ` with ${externalBreakpointAddresses.size} breakpoint command${externalBreakpointAddresses.size === 1 ? '' : 's'}`
+        : '';
+      this.connection.sendOutput(
+        `Using configured VICE monitor commands ${explicitMonitorCommandFile}${breakpointSummary}\n`
+      );
+      return {
+        path: explicitMonitorCommandFile,
+        passToVice: false,
+        externalBreakpointAddresses
+      };
+    }
+    if (hasViceArgument(viceArgs, '-moncommands')) {
+      return undefined;
+    }
+
+    const viceSymbolFile = await findReadableViceSymbolFile(
+      debugInfoPath,
+      program,
+      cwd,
+      sourceRoot
+    );
+    if (viceSymbolFile) {
+      const externalBreakpointAddresses =
+        await this.readViceMonitorBreakpointAddresses(viceSymbolFile);
+      const breakpointSummary = externalBreakpointAddresses.size > 0
+        ? ` with ${externalBreakpointAddresses.size} breakpoint command${externalBreakpointAddresses.size === 1 ? '' : 's'}`
+        : '';
+      this.connection.sendOutput(
+        `Using Kick Assembler VICE monitor commands ${viceSymbolFile}${breakpointSummary}\n`
+      );
+      return {
+        path: viceSymbolFile,
+        passToVice: true,
+        externalBreakpointAddresses
+      };
+    }
+
+    const generated = await this.createViceMonitorCommandFile(debugInfo);
+    return generated
+      ? {
+          path: generated,
+          passToVice: true,
+          externalBreakpointAddresses: new Set()
+        }
+      : undefined;
+  }
+
+  private async readViceMonitorBreakpointAddresses(
+    monitorCommandFile: string
+  ): Promise<ReadonlySet<number>> {
+    try {
+      return parseViceMonitorBreakpointAddresses(
+        await readFile(monitorCommandFile, 'utf8')
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.connection.sendOutput(
+        `Could not inspect VICE monitor commands ${monitorCommandFile}: ${message}\n`,
+        'stderr'
+      );
+      return new Set();
     }
   }
 
@@ -1485,9 +1598,21 @@ export class ViceDebugSession {
   }
 
   private createDebugInfoBreakpoints(
-    debugInfo: KickAssemblerDebugInfo | undefined
+    debugInfo: KickAssemblerDebugInfo | undefined,
+    externalBreakpointAddresses: ReadonlySet<number> = new Set()
   ): InstalledDebugInfoBreakpoint[] {
-    return (debugInfo?.breakpoints ?? []).map((debugBreakpoint) => {
+    const breakpoints = (debugInfo?.breakpoints ?? []).filter(
+      (debugBreakpoint) =>
+        !externalBreakpointAddresses.has(debugBreakpoint.address & 0xffff)
+    );
+    const skipped = (debugInfo?.breakpoints.length ?? 0) - breakpoints.length;
+    if (skipped > 0) {
+      this.connection.sendOutput(
+        `Skipped ${skipped} Kick Assembler .dbg breakpoint${skipped === 1 ? '' : 's'} already present in VICE monitor commands.\n`
+      );
+    }
+
+    return breakpoints.map((debugBreakpoint) => {
       const mapping = findNearestLineMappingForAddress(
         debugInfo,
         debugBreakpoint.address,
@@ -2784,6 +2909,44 @@ async function discoverDebugInfoCandidates(
   return uniquePathList([...staticCandidates, ...discovered]);
 }
 
+async function findReadableViceSymbolFile(
+  debugInfoPath: string | undefined,
+  program: string,
+  cwd: string,
+  sourceRoot: string | undefined
+): Promise<string | undefined> {
+  for (const candidate of discoverViceSymbolFileCandidates(
+    debugInfoPath,
+    program,
+    cwd,
+    sourceRoot
+  )) {
+    if (await isReadableFile(candidate)) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
+function discoverViceSymbolFileCandidates(
+  debugInfoPath: string | undefined,
+  program: string,
+  cwd: string,
+  sourceRoot: string | undefined
+): string[] {
+  const programDirectory = path.dirname(program);
+  const programBase = path.basename(program, path.extname(program));
+  return uniquePathList([
+    debugInfoPath ? replaceExtension(debugInfoPath, '.vs') : undefined,
+    replaceExtension(program, '.vs'),
+    path.join(programDirectory, `${programBase}.vs`),
+    path.join(cwd, `${programBase}.vs`),
+    path.join(cwd, 'out', `${programBase}.vs`),
+    sourceRoot ? path.join(sourceRoot, `${programBase}.vs`) : undefined,
+    sourceRoot ? path.join(sourceRoot, 'out', `${programBase}.vs`) : undefined
+  ]);
+}
+
 async function listDebugInfoFiles(directory: string): Promise<string[]> {
   try {
     const entries = await readdir(directory, { withFileTypes: true });
@@ -2792,6 +2955,15 @@ async function listDebugInfoFiles(directory: string): Promise<string[]> {
       .map((entry) => path.join(directory, entry.name));
   } catch {
     return [];
+  }
+}
+
+async function isReadableFile(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath, constants.R_OK);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -2832,6 +3004,72 @@ function hasViceArgument(
   option: string
 ): boolean {
   return viceArgs.includes(option);
+}
+
+function resolveExplicitViceMonitorCommandFile(
+  viceArgs: readonly string[],
+  cwd: string
+): string | undefined {
+  const optionIndex = viceArgs.indexOf('-moncommands');
+  if (optionIndex < 0) {
+    return undefined;
+  }
+  const filePath = viceArgs[optionIndex + 1];
+  if (!filePath) {
+    return undefined;
+  }
+  return resolveLaunchPath(filePath, cwd);
+}
+
+function parseViceMonitorBreakpointAddresses(text: string): Set<number> {
+  const addresses = new Set<number>();
+  for (const rawLine of text.split(/\r?\n/u)) {
+    const line = rawLine.replace(/;.*/u, '').trim();
+    if (!line) {
+      continue;
+    }
+    const tokens = line.split(/\s+/u);
+    if (tokens[0]?.toLowerCase() !== 'break') {
+      continue;
+    }
+    for (const token of tokens.slice(1)) {
+      const lowerToken = token.toLowerCase();
+      if (
+        lowerToken === 'load' ||
+        lowerToken === 'store' ||
+        lowerToken === 'exec'
+      ) {
+        continue;
+      }
+      if (lowerToken === 'if') {
+        break;
+      }
+      const address = parseViceMonitorAddressToken(token);
+      if (address !== undefined) {
+        addresses.add(address);
+      }
+      break;
+    }
+  }
+  return addresses;
+}
+
+function parseViceMonitorAddressToken(token: string): number | undefined {
+  let normalized = token.trim().replace(/[,)]$/u, '');
+  const bankSeparator = normalized.lastIndexOf(':');
+  if (bankSeparator >= 0) {
+    normalized = normalized.slice(bankSeparator + 1);
+  }
+  if (normalized.startsWith('$')) {
+    normalized = normalized.slice(1);
+  } else if (/^0x[0-9a-f]+$/iu.test(normalized)) {
+    normalized = normalized.slice(2);
+  }
+  if (!/^[0-9a-f]+$/iu.test(normalized)) {
+    return undefined;
+  }
+  const address = Number.parseInt(normalized, 16);
+  return Number.isFinite(address) ? address & 0xffff : undefined;
 }
 
 function uniquePathList(paths: readonly (string | undefined)[]): string[] {
