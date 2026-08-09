@@ -34,10 +34,12 @@ binary monitor.
   Those files are parsed by the adapter to map source lines, labels, loaded
   sources, stack frame locations, breakpoint locations, source breakpoints,
   and `.break` debug-info breakpoints.
-- Debug launches use the configured `.dbg` file when it can be read. The PRG
-  directory and nearby output folders are searched only as fallback recovery
-  when no configured debug dump is available; otherwise unrelated programs that
-  occupy the same C64 address range can steal source breakpoint mappings.
+- Debug launches use the configured `.dbg` file when it can be read. If no
+  configured dump is available, fallback candidates are limited to exact
+  launched-PRG basename matches, such as `program.prg` -> `program.dbg`, in the
+  launch directory, `cwd`, and workspace `out` folder. The adapter must not
+  choose arbitrary nearby debug dumps by address overlap, because unrelated
+  programs often occupy the same C64 address range.
 - VICE consumes Kick Assembler `.vs` VICE symbol files natively through
   `-moncommands`; it does not consume `.dbg` files directly. For debug
   launches, the adapter looks for the `.vs` file next to the selected `.dbg`

@@ -49,8 +49,9 @@ This layer owns:
   `TX` outbound commands, and `RX` inbound responses
 - Kick Assembler `.dbg` source/label/line mapping; `.dbg` files are produced
   by Kick Assembler `-debugdump`. The configured debug dump is authoritative
-  for source breakpoint mapping; nearby debug dumps are fallback discovery only
-  when no configured `.dbg` can be read
+  for source breakpoint mapping; when it is absent, fallback discovery is
+  limited to exact launched-PRG basename matches and must not select arbitrary
+  nearby debug dumps by address overlap
 - VICE process launch with Kick Assembler `.vs` VICE symbol files passed
   through `-moncommands` when present, plus `-binarymonitor`,
   `-binarymonitoraddress`, and `-initbreak ready` for debugging. VICE reads

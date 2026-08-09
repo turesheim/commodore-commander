@@ -31,6 +31,7 @@ interface LaunchedFixtureSession {
   vice: ViceE2eEnvironment;
   viceArgs?: readonly string[];
   viceFramePort?: number;
+  debugInfo?: string | false;
 }
 
 viceTest('launches VICE and stops on entry', async (t, vice) => {
@@ -259,6 +260,43 @@ viceTest('hits screencolors source breakpoints in embedded VICE mode', async (t,
 
 viceTest('prefers configured debug info over nearby overlapping debug dumps', async (t, vice) => {
   const session = await launchFixture(t, vice, 'screencolors');
+  await writeFile(
+    path.join(session.fixture.directory, 'misleading.dbg'),
+    createMisleadingDebugInfo(
+      path.join(session.fixture.directory, 'misleading.asm')
+    ),
+    'utf8'
+  );
+  await initializeAndLaunch(session);
+
+  const breakpointLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+  const breakpoint = await setSourceBreakpoint(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  if (stopped.body?.hitBreakpointIds) {
+    assert.deepEqual(stopped.body.hitBreakpointIds, [breakpoint.id]);
+  }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, breakpointLine);
+});
+
+viceTest('uses exact program debug info when launch omits debug info', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  session.debugInfo = false;
   await writeFile(
     path.join(session.fixture.directory, 'misleading.dbg'),
     createMisleadingDebugInfo(
@@ -715,7 +753,9 @@ async function launchInitializedFixture(
       'launch',
       {
         program: session.fixture.program,
-        debugInfo: session.fixture.debugInfo,
+        ...(session.debugInfo === false
+          ? {}
+          : { debugInfo: session.debugInfo ?? session.fixture.debugInfo }),
         sourceRoot: session.fixture.directory,
         cwd: session.fixture.directory,
         stopOnEntry: true,

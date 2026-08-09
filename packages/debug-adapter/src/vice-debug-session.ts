@@ -1,7 +1,7 @@
 import path from 'node:path';
 import type { ChildProcess } from 'node:child_process';
 import { constants } from 'node:fs';
-import { access, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import type { Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
@@ -764,17 +764,12 @@ export class ViceDebugSession {
       cwd,
       path.dirname(program)
     ];
-    const candidates = await discoverDebugInfoCandidates(
+    const candidates = discoverDebugInfoCandidates(
       configuredDebugInfoPath,
       program,
       cwd,
       sourceRoot
     );
-    let best: {
-      path: string;
-      info: KickAssemblerDebugInfo;
-      overlap: number;
-    } | undefined;
     const failures: string[] = [];
 
     if (configuredDebugInfoPath) {
@@ -812,42 +807,31 @@ export class ViceDebugSession {
       try {
         const info = await loadKickAssemblerDebugInfo(candidate, { sourceRoots });
         const overlap = debugInfoProgramOverlap(info, this.programImage);
-        if (
-          !best ||
-          overlap > best.overlap
-        ) {
-          best = { path: candidate, info, overlap };
+        if (failures.length > 0) {
+          this.connection.sendOutput(
+            `Could not read configured Kick Assembler debug info: ${failures.join('; ')}\n`,
+            'stderr'
+          );
         }
+        this.connection.sendOutput(
+          `Using Kick Assembler debug info ${candidate}\n`
+        );
+        if (this.programImage && overlap === 0) {
+          this.connection.sendOutput(
+            `Kick Assembler debug info ${candidate} has no address ranges overlapping ` +
+              `${path.basename(program)} ($${hexWord(this.programImage.loadAddress)}-$${hexWord(this.programImage.endAddress)}); ` +
+              'stack frames will use disassembly where source cannot be mapped.\n',
+            'stderr'
+          );
+        }
+        return {
+          path: candidate,
+          info
+        };
       } catch (error) {
-        // Fallback candidates are best-effort; unreadable unrelated .dbg files
-        // should not make the debug session noisy.
+        // Exact program-name fallback candidates are best-effort. Several
+        // candidate paths often collapse to missing duplicates depending on cwd.
       }
-    }
-
-    if (best) {
-      if (failures.length > 0) {
-        this.connection.sendOutput(
-          `Could not read configured Kick Assembler debug info: ${failures.join('; ')}\n`,
-          'stderr'
-        );
-      }
-      if (!configuredDebugInfoPath || !samePath(best.path, configuredDebugInfoPath)) {
-        this.connection.sendOutput(
-          `Using Kick Assembler debug info ${best.path}\n`
-        );
-      }
-      if (this.programImage && best.overlap === 0) {
-        this.connection.sendOutput(
-          `Kick Assembler debug info ${best.path} has no address ranges overlapping ` +
-            `${path.basename(program)} ($${hexWord(this.programImage.loadAddress)}-$${hexWord(this.programImage.endAddress)}); ` +
-            'stack frames will use disassembly where source cannot be mapped.\n',
-          'stderr'
-        );
-      }
-      return {
-        path: best.path,
-        info: best.info
-      };
     }
 
     if (failures.length > 0) {
@@ -857,7 +841,13 @@ export class ViceDebugSession {
       );
     } else if (configuredDebugInfoPath) {
       this.connection.sendOutput(
-        `Could not find Kick Assembler debug info near ${configuredDebugInfoPath}; ` +
+        `Could not find Kick Assembler debug info for ${configuredDebugInfoPath}; ` +
+          'stack frames will use disassembly where source cannot be mapped.\n',
+        'stderr'
+      );
+    } else {
+      this.connection.sendOutput(
+        `Could not find Kick Assembler debug info for ${path.basename(program)}; ` +
           'stack frames will use disassembly where source cannot be mapped.\n',
         'stderr'
       );
@@ -3021,15 +3011,15 @@ function sourceForMemoryDisassembly(
   };
 }
 
-async function discoverDebugInfoCandidates(
+function discoverDebugInfoCandidates(
   configuredDebugInfoPath: string | undefined,
   program: string,
   cwd: string,
   sourceRoot: string | undefined
-): Promise<string[]> {
+): string[] {
   const programDirectory = path.dirname(program);
   const programDebugInfoPath = replaceExtension(program, '.dbg');
-  const staticCandidates = uniquePathList([
+  return uniquePathList([
     configuredDebugInfoPath,
     programDebugInfoPath,
     path.join(programDirectory, `${path.basename(program, path.extname(program))}.dbg`),
@@ -3039,17 +3029,6 @@ async function discoverDebugInfoCandidates(
       ? path.join(sourceRoot, 'out', `${path.basename(program, path.extname(program))}.dbg`)
       : undefined
   ]);
-  const searchDirectories = uniquePathList([
-    programDirectory,
-    cwd,
-    path.join(cwd, 'out'),
-    sourceRoot,
-    sourceRoot ? path.join(sourceRoot, 'out') : undefined
-  ]);
-  const discovered = (
-    await Promise.all(searchDirectories.map((directory) => listDebugInfoFiles(directory)))
-  ).flat();
-  return uniquePathList([...staticCandidates, ...discovered]);
 }
 
 async function findReadableViceSymbolFile(
@@ -3088,17 +3067,6 @@ function discoverViceSymbolFileCandidates(
     sourceRoot ? path.join(sourceRoot, `${programBase}.vs`) : undefined,
     sourceRoot ? path.join(sourceRoot, 'out', `${programBase}.vs`) : undefined
   ]);
-}
-
-async function listDebugInfoFiles(directory: string): Promise<string[]> {
-  try {
-    const entries = await readdir(directory, { withFileTypes: true });
-    return entries
-      .filter((entry) => entry.isFile() && path.extname(entry.name).toLowerCase() === '.dbg')
-      .map((entry) => path.join(directory, entry.name));
-  } catch {
-    return [];
-  }
 }
 
 async function isReadableFile(filePath: string): Promise<boolean> {
