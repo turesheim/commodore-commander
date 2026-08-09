@@ -29,8 +29,9 @@ export function shouldScanMidiDevicesForModeActivation(
 export function planMidiModeActivationSync(
   state: MidiModeScanState
 ): MidiModeActivationSyncPlan {
+  const scanDevices = shouldScanMidiDevicesForModeActivation(state);
   return {
-    scanDevices: shouldScanMidiDevicesForModeActivation(state),
-    queueMidiSettings: true
+    scanDevices,
+    queueMidiSettings: !scanDevices
   };
 }

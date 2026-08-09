@@ -66,7 +66,7 @@ test('SID Instrument scans before enabling MIDI with no known input devices', ()
   );
 });
 
-test('SID Instrument keeps MIDI settings sync queued when scan is needed', () => {
+test('SID Instrument waits for scan results before enabling MIDI with no known inputs', () => {
   assert.deepEqual(
     planMidiModeActivationSync({
       midiEnabled: true,
@@ -75,6 +75,31 @@ test('SID Instrument keeps MIDI settings sync queued when scan is needed', () =>
     }),
     {
       scanDevices: true,
+      queueMidiSettings: false
+    }
+  );
+});
+
+test('SID Instrument sends MIDI settings when scan is not needed', () => {
+  assert.deepEqual(
+    planMidiModeActivationSync({
+      midiEnabled: true,
+      midiDeviceCount: 1,
+      midiScanning: false
+    }),
+    {
+      scanDevices: false,
+      queueMidiSettings: true
+    }
+  );
+  assert.deepEqual(
+    planMidiModeActivationSync({
+      midiEnabled: false,
+      midiDeviceCount: 0,
+      midiScanning: false
+    }),
+    {
+      scanDevices: false,
       queueMidiSettings: true
     }
   );
