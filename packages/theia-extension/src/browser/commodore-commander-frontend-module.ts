@@ -122,6 +122,9 @@ import { CommodoreViceBreakpointManager } from './commodore-vice-breakpoint-mana
 import { CommodoreDebugWatchContribution } from './commodore-debug-watch-contribution';
 import { CommodoreViceBreakpointStateContribution } from './commodore-vice-breakpoint-state-contribution';
 import { CommodoreViceLaunchConfigurationContribution } from './commodore-vice-launch-configuration-contribution';
+import {
+  installDebugSourceBreakpointTogglePatch
+} from './commodore-vice-debug-source-breakpoint-patch';
 import { CommodoreCommanderWelcomeContribution } from './commodore-commander-welcome-contribution';
 import { ViceMemoryContribution } from './vice-memory-contribution';
 import {
@@ -198,6 +201,7 @@ const commodoreCommanderToolbarDefaults: typeof ToolbarDefaults = () => {
 };
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
+  installDebugSourceBreakpointTogglePatch();
   rebind(MonacoThemingService)
     .to(CommodoreCommanderThemingService)
     .inSingletonScope();

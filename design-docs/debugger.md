@@ -85,7 +85,10 @@ binary monitor.
   normal Breakpoints view. They can be enabled or disabled there; removal
   attempts preserve the managed marker and its current enabled state, since
   remove and disable are distinct Theia actions. Programmed breakpoint markers
-  are also excluded from persisted user-authored breakpoints. The full
+  are also excluded from persisted user-authored breakpoints. The Theia source
+  breakpoint toggle path is patched to update marker ids in place, because
+  Theia's default implementation can otherwise turn disable into remove when a
+  DAP adapter resolves a breakpoint to a different executable line. The full
   source-breakpoint state sync carries a marker flag so the adapter toggles
   these entries with `CHECKPOINT_TOGGLE` but never reconciles them as UI-owned
   checkpoints. Fallback `.dbg` breakpoint entries installed by the adapter use
