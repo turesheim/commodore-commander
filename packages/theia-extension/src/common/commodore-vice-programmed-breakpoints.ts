@@ -6,6 +6,10 @@ export const COMMODORE_VICE_LIST_PROGRAMMED_BREAKPOINTS_REQUEST =
   'commodore-vice/listProgrammedBreakpoints';
 export const COMMODORE_VICE_SET_PROGRAMMED_BREAKPOINT_ENABLED_REQUEST =
   'commodore-vice/setProgrammedBreakpointEnabled';
+export const COMMODORE_VICE_PROGRAMMED_BREAKPOINT_RAW_ID =
+  'commodoreViceProgrammedBreakpointId';
+export const COMMODORE_VICE_PROGRAMMED_BREAKPOINT_RAW_ADDRESS =
+  'commodoreViceProgrammedBreakpointAddress';
 
 export interface CommodoreViceProgrammedBreakpoint {
   id: number;

@@ -105,6 +105,7 @@ const WATCH_MEMORY_PREVIEW_BYTES = 64;
 const TRACE_HISTORY_CAPACITY = 200;
 const MAX_EMBED_STDOUT_BUFFER_BYTES = 32 * 1024 * 1024;
 const PROGRAMMED_BREAKPOINTS_EVENT = 'commodoreViceProgrammedBreakpoints';
+const PROGRAMMED_BREAKPOINT_RAW_ID = 'commodoreViceProgrammedBreakpointId';
 
 export interface ViceDebugLaunchArguments
   extends DebugProtocol.LaunchRequestArguments {
@@ -196,6 +197,7 @@ interface ViceMonitorCommandFileSelection {
 interface CommodoreSourceBreakpointState extends DebugProtocol.SourceBreakpoint {
   enabled?: boolean;
   markerId?: string;
+  [PROGRAMMED_BREAKPOINT_RAW_ID]?: number;
 }
 
 interface CommodoreSourceBreakpointStateArguments {
@@ -1086,18 +1088,46 @@ export class ViceDebugSession {
       category: 'user',
       message: `DAP setBreakpoints for ${sourcePath}: ${args.breakpoints?.length ?? 0} requested.`
     });
+    const requestedBreakpoints = args.breakpoints ?? [];
+    const sourceBreakpoints = requestedBreakpoints.filter((sourceBreakpoint) =>
+      programmedBreakpointId(sourceBreakpoint) === undefined
+    );
     const installed = await this.reconcileSourceBreakpoints(
       sourcePath,
-      (args.breakpoints ?? []).map((sourceBreakpoint) => ({
+      sourceBreakpoints.map((sourceBreakpoint) => ({
         ...sourceBreakpoint,
         enabled: true
       })),
       !this.fullSourceBreakpointStateSources.has(normalizeSourceKey(sourcePath))
     );
+    let sourceBreakpointIndex = 0;
     this.connection.sendResponse(request, {
-      breakpoints: installed
-        .filter((breakpoint) => breakpoint.enabled)
-        .map((breakpoint) => this.toDapBreakpoint(breakpoint))
+      breakpoints: requestedBreakpoints.map((sourceBreakpoint) => {
+        const programmedId = programmedBreakpointId(sourceBreakpoint);
+        if (programmedId !== undefined) {
+          const breakpoint = this.debugInfoBreakpoints.find((candidate) =>
+            candidate.id === programmedId
+          );
+          if (breakpoint) {
+            breakpoint.enabled = true;
+            void this.synchronizeProgrammedBreakpointCheckpoint(breakpoint);
+          }
+          return this.toProgrammedDapBreakpoint(
+            programmedId,
+            args.source,
+            sourceBreakpoint
+          );
+        }
+        const breakpoint = installed[sourceBreakpointIndex];
+        sourceBreakpointIndex += 1;
+        return breakpoint
+          ? this.toDapBreakpoint(breakpoint)
+          : {
+              verified: false,
+              line: sourceBreakpoint.line,
+              source: args.source
+            };
+      })
     } satisfies DebugProtocol.SetBreakpointsResponse['body']);
   }
 
@@ -1116,9 +1146,24 @@ export class ViceDebugSession {
         `${args.breakpoints?.length ?? 0} marker(s).`
     });
     this.fullSourceBreakpointStateSources.add(normalizeSourceKey(sourcePath));
+    for (const sourceBreakpoint of args.breakpoints ?? []) {
+      const programmedId = programmedBreakpointId(sourceBreakpoint);
+      if (programmedId !== undefined) {
+        const breakpoint = this.debugInfoBreakpoints.find((candidate) =>
+          candidate.id === programmedId
+        );
+        if (breakpoint) {
+          breakpoint.enabled = sourceBreakpoint.enabled !== false;
+          await this.synchronizeProgrammedBreakpointCheckpoint(breakpoint);
+        }
+      }
+    }
+    const sourceBreakpoints = (args.breakpoints ?? []).filter((sourceBreakpoint) =>
+      programmedBreakpointId(sourceBreakpoint) === undefined
+    );
     const installed = await this.reconcileSourceBreakpoints(
       sourcePath,
-      args.breakpoints ?? [],
+      sourceBreakpoints,
       true
     );
     this.connection.sendResponse(request, {
@@ -1487,7 +1532,7 @@ export class ViceDebugSession {
     }
 
     breakpoint.enabled = enabled;
-    await this.toggleBreakpointCheckpoint(breakpoint, enabled);
+    await this.synchronizeProgrammedBreakpointCheckpoint(breakpoint);
     this.emitProgrammedBreakpoints();
     this.connection.sendResponse(request, {
       breakpoint: this.programmedBreakpointDescriptor(breakpoint)
@@ -2131,6 +2176,18 @@ export class ViceDebugSession {
     }
   }
 
+  private async synchronizeProgrammedBreakpointCheckpoint(
+    breakpoint: InstalledDebugInfoBreakpoint
+  ): Promise<void> {
+    const enabled = breakpoint.enabled;
+    await this.refreshProgrammedBreakpointCheckpointNumbers();
+    breakpoint.enabled = enabled;
+    if (breakpoint.checkpointNumber !== undefined) {
+      await this.toggleBreakpointCheckpoint(breakpoint, enabled);
+    }
+    this.emitProgrammedBreakpoints();
+  }
+
   private async deleteCheckpoint(
     checkpointNumber: number,
     description: string
@@ -2227,6 +2284,38 @@ export class ViceDebugSession {
       endLine: breakpoint.mapping?.endLine,
       endColumn: breakpoint.mapping?.endColumn,
       source: sourceForPath(breakpoint.sourcePath),
+      ...(breakpoint.message ? { message: breakpoint.message } : {})
+    };
+  }
+
+  private toProgrammedDapBreakpoint(
+    id: number,
+    source: DebugProtocol.Source,
+    requestedBreakpoint: DebugProtocol.SourceBreakpoint
+  ): DebugProtocol.Breakpoint {
+    const breakpoint = this.debugInfoBreakpoints.find((candidate) =>
+      candidate.id === id
+    );
+    if (!breakpoint) {
+      return {
+        id,
+        verified: false,
+        line: requestedBreakpoint.line,
+        source,
+        message: 'Programmed breakpoint is not part of the active debug info.'
+      };
+    }
+    const mappedSource = breakpoint.mapping
+      ? findSourceForMapping(this.debugInfo, breakpoint.mapping)
+      : undefined;
+    const sourcePath = this.debugInfo && mappedSource
+      ? resolveSourceEntryPath(this.debugInfo, mappedSource)
+      : undefined;
+    return {
+      id: breakpoint.id,
+      verified: breakpoint.verified,
+      line: breakpoint.mapping?.startLine ?? requestedBreakpoint.line,
+      source: sourcePath ? sourceForPath(sourcePath) : source,
       ...(breakpoint.message ? { message: breakpoint.message } : {})
     };
   }
@@ -4025,6 +4114,15 @@ function decodeDataBreakpointId(dataId: string): {
 
 function normalizeAddress(address: number): number {
   return ((address % 0x10000) + 0x10000) % 0x10000;
+}
+
+function programmedBreakpointId(
+  sourceBreakpoint: DebugProtocol.SourceBreakpoint
+): number | undefined {
+  const id = (sourceBreakpoint as {
+    [PROGRAMMED_BREAKPOINT_RAW_ID]?: unknown;
+  })[PROGRAMMED_BREAKPOINT_RAW_ID];
+  return typeof id === 'number' ? id : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

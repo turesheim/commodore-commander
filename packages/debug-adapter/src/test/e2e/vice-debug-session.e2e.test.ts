@@ -22,6 +22,9 @@ import {
 
 const THREAD_ID = 1;
 const E2E_TIMEOUT_MS = 45_000;
+const PROGRAMMED_BREAKPOINT_RAW_ID = 'commodoreViceProgrammedBreakpointId';
+const PROGRAMMED_BREAKPOINT_RAW_ADDRESS =
+  'commodoreViceProgrammedBreakpointAddress';
 
 const { environment, skipReason } = resolveViceE2eEnvironment();
 
@@ -656,6 +659,10 @@ viceTest('toggles programmed breakpoints without deleting VICE checkpoints', asy
     session.fixture.source,
     'inc inner_counter'
   );
+  const remainingLine = await fixtureLine(
+    session.fixture.source,
+    'bne CrazyBorderLoop'
+  );
   await configurationDoneAndWaitStopped(session.client);
 
   const listResponse = await session.client.request<{
@@ -670,6 +677,19 @@ viceTest('toggles programmed breakpoints without deleting VICE checkpoints', asy
   assert.equal(programmedBreakpoint.source?.path, session.fixture.source);
   assert.equal(programmedBreakpoint.line, executableLine);
   assert.equal(typeof programmedBreakpoint.checkpointNumber, 'number');
+
+  const installedResponse = await sendSetBreakpoints(
+    session.client,
+    session.fixture.source,
+    [
+      programmedSourceBreakpoint(programmedBreakpoint),
+      { line: remainingLine }
+    ]
+  );
+  assert.equal(installedResponse.breakpoints.length, 2);
+  assert.equal(installedResponse.breakpoints[0]?.id, programmedBreakpoint.id);
+  assert.equal(installedResponse.breakpoints[0]?.line, executableLine);
+  assert.equal(installedResponse.breakpoints[1]?.verified, true);
 
   const checkpointToggleLog = session.client.waitForEvent<DebugProtocol.Event>(
     COMMODORE_VICE_MONITOR_LOG_EVENT,
@@ -700,18 +720,23 @@ viceTest('toggles programmed breakpoints without deleting VICE checkpoints', asy
     750
   ).then(() => true, () => false);
 
-  const toggleResponse = await session.client.request<{
-    breakpoint: ProgrammedBreakpointDescriptor;
-  }>(
-    'commodore-vice/setProgrammedBreakpointEnabled',
-    {
-      id: programmedBreakpoint.id,
-      enabled: false
-    }
+  await syncSourceBreakpointStates(
+    session.client,
+    session.fixture.source,
+    [
+      {
+        ...programmedSourceBreakpoint(programmedBreakpoint),
+        enabled: false,
+        markerId: 'programmed-marker'
+      },
+      {
+        line: remainingLine,
+        enabled: true,
+        markerId: 'remaining-marker'
+      }
+    ]
   );
   await checkpointToggleLog;
-  assert.equal(toggleResponse.breakpoint.enabled, false);
-  assert.equal(toggleResponse.breakpoint.canRemove, false);
   assert.equal(await checkpointDeleteLog, false);
 });
 
@@ -1167,6 +1192,16 @@ async function syncSourceBreakpointStates(
       sourceModified: false
     }
   );
+}
+
+function programmedSourceBreakpoint(
+  breakpoint: ProgrammedBreakpointDescriptor
+): DebugProtocol.SourceBreakpoint {
+  return {
+    line: breakpoint.line!,
+    [PROGRAMMED_BREAKPOINT_RAW_ID]: breakpoint.id,
+    [PROGRAMMED_BREAKPOINT_RAW_ADDRESS]: breakpoint.address
+  } as DebugProtocol.SourceBreakpoint;
 }
 
 async function continueAndWaitStopped(

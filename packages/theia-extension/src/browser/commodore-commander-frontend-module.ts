@@ -42,6 +42,7 @@ import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser
 import { PreviewHandler } from '@theia/preview/lib/browser/preview-handler';
 import { PreviewLinkNormalizer } from '@theia/preview/lib/browser/preview-link-normalizer';
 import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
+import { BreakpointManager } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
 
 import {
   KickAssemblerBuildService,
@@ -117,6 +118,7 @@ import {
   type CommodoreSpriteWidgetOptions
 } from './commodore-sprite-widget';
 import { CommodorePrgContribution } from './commodore-prg-contribution';
+import { CommodoreViceBreakpointManager } from './commodore-vice-breakpoint-manager';
 import { CommodoreDebugWatchContribution } from './commodore-debug-watch-contribution';
 import { CommodoreViceBreakpointStateContribution } from './commodore-vice-breakpoint-state-contribution';
 import { CommodoreViceLaunchConfigurationContribution } from './commodore-vice-launch-configuration-contribution';
@@ -131,11 +133,6 @@ import {
   VICE_MONITOR_LOG_WIDGET_ID,
   ViceMonitorLogWidget
 } from './vice-monitor-log-widget';
-import { ViceProgrammedBreakpointsContribution } from './vice-programmed-breakpoints-contribution';
-import {
-  VICE_PROGRAMMED_BREAKPOINTS_WIDGET_ID,
-  ViceProgrammedBreakpointsWidget
-} from './vice-programmed-breakpoints-widget';
 import { C64VisualDebuggerContribution } from './c64-visual-debugger-contribution';
 import {
   C64_VISUAL_DEBUGGER_WIDGET_ID,
@@ -203,6 +200,9 @@ const commodoreCommanderToolbarDefaults: typeof ToolbarDefaults = () => {
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
   rebind(MonacoThemingService)
     .to(CommodoreCommanderThemingService)
+    .inSingletonScope();
+  rebind(BreakpointManager)
+    .to(CommodoreViceBreakpointManager)
     .inSingletonScope();
   bind(CommodoreCommanderThemeStyleParticipant).toSelf().inSingletonScope();
   bind(ColorContribution).toService(CommodoreCommanderThemeStyleParticipant);
@@ -403,17 +403,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     .inSingletonScope();
   bindViewContribution(bind, ViceMonitorLogContribution);
   bind(FrontendApplicationContribution).toService(ViceMonitorLogContribution);
-  bind(ViceProgrammedBreakpointsWidget).toSelf();
-  bind(WidgetFactory)
-    .toDynamicValue((context) => ({
-      id: VICE_PROGRAMMED_BREAKPOINTS_WIDGET_ID,
-      createWidget: () => context.container.get(ViceProgrammedBreakpointsWidget)
-    }))
-    .inSingletonScope();
-  bindViewContribution(bind, ViceProgrammedBreakpointsContribution);
-  bind(FrontendApplicationContribution).toService(
-    ViceProgrammedBreakpointsContribution
-  );
   bind(C64VisualDebuggerWidget).toSelf();
   bind(WidgetFactory)
     .toDynamicValue((context) => ({
