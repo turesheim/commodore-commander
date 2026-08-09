@@ -20,6 +20,11 @@ binary monitor.
 - `packages/debug-adapter/src/vice-monitor.ts` encodes and decodes the VICE
   binary monitor frames for memory, registers, checkpoints, stepping, pause,
   resume, and process shutdown.
+- The adapter emits a `commodoreViceMonitorLog` DAP custom event for VICE
+  binary monitor diagnostics. The Theia VICE Monitor view consumes those
+  events and shows adapter notes (`===`), outbound monitor commands (`<<<`),
+  and inbound monitor responses (`>>>`) with request IDs, command/response
+  names, byte counts, decoded summaries, and hex payload previews.
 - For embedded debug launches, the Theia backend owns one reserved VICE frame
   transport per Commodore Commander instance, while the debug adapter owns the
   emulator process and binary monitor port. Repeated launch-resolution calls
@@ -153,6 +158,8 @@ Protocol reference: [VICE Manual, Binary monitor](https://vice-emu.sourceforge.i
   in bundled ROM ranges.
 - Generated live-memory disassembly sources for stack-frame addresses outside
   the launched PRG image.
+- VICE Monitor protocol view backed by DAP custom events from the adapter's
+  binary monitor connection.
 
 ## Memory View
 
@@ -186,6 +193,28 @@ Implemented behavior:
 Memory refresh still happens only while the target is stopped. This matches the
 Eclipse-era behavior and avoids flooding VICE with monitor requests while the
 emulator is running.
+
+## VICE Monitor View
+
+The VICE Monitor view is a bottom-panel diagnostic view for the active
+`commodore-vice` debug session. It does not open another monitor socket.
+Instead, the debug adapter mirrors its session-owned binary monitor traffic as
+DAP custom events.
+
+The view preserves the Eclipse-era direction markers:
+
+- `===` adapter decisions such as selected `.vs` monitor command files,
+  `setBreakpoints`, `configurationDone`, and checkpoint synchronization
+- `<<<` binary monitor command frames sent to VICE
+- `>>>` binary monitor response and asynchronous event frames received from
+  VICE
+
+For breakpoint diagnosis, the expected startup sequence is a `.vs` selection
+note when a Kick Assembler VICE symbol file exists, a `configurationDone` note,
+one or more `CHECKPOINT_SET` commands for DAP-managed source or `.dbg`
+breakpoints, and `CHECKPOINT_INFO` responses that return the installed VICE
+checkpoint numbers. A later breakpoint hit should appear as a `CHECKPOINT_INFO`
+response with `hit=1`.
 
 ## Remaining Work
 

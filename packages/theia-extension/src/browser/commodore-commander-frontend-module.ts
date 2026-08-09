@@ -124,6 +124,11 @@ import {
   VICE_MEMORY_WIDGET_ID,
   ViceMemoryWidget
 } from './vice-memory-widget';
+import { ViceMonitorLogContribution } from './vice-monitor-log-contribution';
+import {
+  VICE_MONITOR_LOG_WIDGET_ID,
+  ViceMonitorLogWidget
+} from './vice-monitor-log-widget';
 import { C64VisualDebuggerContribution } from './c64-visual-debugger-contribution';
 import {
   C64_VISUAL_DEBUGGER_WIDGET_ID,
@@ -380,6 +385,15 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     .inSingletonScope();
   bindViewContribution(bind, ViceMemoryContribution);
   bind(FrontendApplicationContribution).toService(ViceMemoryContribution);
+  bind(ViceMonitorLogWidget).toSelf();
+  bind(WidgetFactory)
+    .toDynamicValue((context) => ({
+      id: VICE_MONITOR_LOG_WIDGET_ID,
+      createWidget: () => context.container.get(ViceMonitorLogWidget)
+    }))
+    .inSingletonScope();
+  bindViewContribution(bind, ViceMonitorLogContribution);
+  bind(FrontendApplicationContribution).toService(ViceMonitorLogContribution);
   bind(C64VisualDebuggerWidget).toSelf();
   bind(WidgetFactory)
     .toDynamicValue((context) => ({

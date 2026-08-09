@@ -38,8 +38,13 @@ import {
   type ViceMonitorEvent,
   type ViceMonitorMemoryOptions,
   type ViceMonitorRegisterDescriptor,
-  type ViceMonitorRegisterValue
+  type ViceMonitorRegisterValue,
+  type ViceMonitorTrafficEvent
 } from './vice-monitor';
+import {
+  COMMODORE_VICE_MONITOR_LOG_EVENT,
+  type ViceMonitorLogEvent
+} from './vice-monitor-log';
 import {
   createPrgDisassemblySource,
   findPrgDisassemblyLine,
@@ -435,6 +440,17 @@ export class ViceDebugSession {
             this.debugInfo
           )
         : undefined;
+    if (monitorCommandSelection?.passToVice) {
+      this.sendViceMonitorLog({
+        category: 'user',
+        message: `Passing VICE monitor commands to VICE: ${monitorCommandSelection.path}`
+      });
+    } else if (monitorCommandSelection) {
+      this.sendViceMonitorLog({
+        category: 'user',
+        message: `Using explicit VICE monitor commands from launch arguments: ${monitorCommandSelection.path}`
+      });
+    }
     if (useMonitor) {
       this.debugInfoBreakpoints = this.createDebugInfoBreakpoints(
         this.debugInfo,
@@ -503,8 +519,15 @@ export class ViceDebugSession {
         delayMs: VICE_MONITOR_CONNECT_DELAY_MS
       }
     );
+    this.monitor.onTraffic((event) => {
+      this.sendViceMonitorTrafficLog(event);
+    });
     this.monitor.onEvent((event) => {
       void this.handleMonitorEvent(event);
+    });
+    this.sendViceMonitorLog({
+      category: 'user',
+      message: `Connected to VICE binary monitor at ${launch.monitorHost}:${launch.monitorPort}.`
     });
 
     this.connection.sendEvent('initialized');
@@ -689,6 +712,26 @@ export class ViceDebugSession {
       stream,
       text
     });
+  }
+
+  private sendViceMonitorTrafficLog(event: ViceMonitorTrafficEvent): void {
+    this.sendViceMonitorLog({
+      category: event.category,
+      requestId: event.requestId,
+      code: event.code,
+      name: event.name,
+      bodyLength: event.bodyLength,
+      bodyPreview: event.bodyPreview,
+      ...(event.errorCode !== undefined ? { errorCode: event.errorCode } : {}),
+      message: event.message
+    });
+  }
+
+  private sendViceMonitorLog(event: ViceMonitorLogEvent): void {
+    this.connection.sendEvent(COMMODORE_VICE_MONITOR_LOG_EVENT, {
+      ...event,
+      timestamp: event.timestamp ?? new Date().toISOString()
+    } satisfies ViceMonitorLogEvent);
   }
 
   private isViceEmbedActive(): boolean {
@@ -914,6 +957,10 @@ export class ViceDebugSession {
 
   private async configurationDoneRequest(request: DapRequest): Promise<void> {
     this.configurationDone = true;
+    this.sendViceMonitorLog({
+      category: 'user',
+      message: 'DAP configurationDone received; installing pending breakpoints on the stopped CPU.'
+    });
     if (this.launchArguments?.noDebug) {
       this.resumeMonitor();
       this.connection.sendResponse(request);
@@ -946,6 +993,10 @@ export class ViceDebugSession {
       return;
     }
 
+    this.sendViceMonitorLog({
+      category: 'user',
+      message: `DAP setBreakpoints for ${sourcePath}: ${args.breakpoints?.length ?? 0} requested.`
+    });
     await this.clearBreakpointsForSource(sourcePath);
     const installed: InstalledSourceBreakpoint[] = [];
     for (const sourceBreakpoint of args.breakpoints ?? []) {
@@ -1637,6 +1688,10 @@ export class ViceDebugSession {
       return;
     }
     this.refreshSourceBreakpointMappings(true);
+    this.sendViceMonitorLog({
+      category: 'user',
+      message: `Synchronizing ${this.allInstalledBreakpoints().length} breakpoint checkpoint(s) with VICE.`
+    });
     await this.reinstallAllBreakpointCheckpoints();
     this.initialBreakpointSyncDone = true;
   }
@@ -1682,6 +1737,10 @@ export class ViceDebugSession {
         exec: true,
         enabled: true,
         stopWhenHit
+      });
+      this.sendViceMonitorLog({
+        category: 'user',
+        message: `Installing ${breakpointDescription(breakpoint)} at $${hexWord(range.startAddress)}-$${hexWord(range.endAddress)}.`
       });
       const response = await this.monitor.sendAndWait(
         command,
@@ -2799,6 +2858,13 @@ function sourceForPath(sourcePath: string): DebugProtocol.Source {
     name: sourceNameForPath(sourcePath),
     path: dapSourcePath(sourcePath)
   };
+}
+
+function breakpointDescription(breakpoint: InstalledBreakpoint): string {
+  if (breakpoint.dapVisible) {
+    return `source breakpoint #${breakpoint.id} ${sourceNameForPath(breakpoint.sourcePath)}:${breakpoint.line}`;
+  }
+  return `Kick Assembler .dbg breakpoint #${breakpoint.id}`;
 }
 
 function formatViceProcessCloseMessage(

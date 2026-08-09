@@ -13,6 +13,7 @@ import {
   type DebugAdapterFixtureName,
   type PreparedFixture
 } from './fixtures';
+import { COMMODORE_VICE_MONITOR_LOG_EVENT } from '../../vice-monitor-log';
 import { readC64VisualSnapshot } from './visual-snapshot';
 import {
   resolveViceE2eEnvironment,
@@ -69,8 +70,23 @@ viceTest('hits source breakpoints through a real VICE monitor session', async (t
     session.fixture.source,
     breakpointLine
   );
+  const checkpointSetLog = session.client.waitForEvent<DebugProtocol.Event>(
+    COMMODORE_VICE_MONITOR_LOG_EVENT,
+    (event) => {
+      const body = event.body as {
+        category?: string;
+        name?: string;
+        message?: string;
+      } | undefined;
+      return body?.category === 'input' &&
+        body.name === 'CHECKPOINT_SET' &&
+        body.message?.includes('CHECKPOINT_SET') === true;
+    },
+    E2E_TIMEOUT_MS
+  );
 
   await configurationDoneAndWaitStopped(session.client);
+  await checkpointSetLog;
   const { stopped, topFrame } = await continueUntilTopFrame(
     session.client,
     session.fixture.source,

@@ -44,6 +44,9 @@ This layer owns:
 - response correlation by request ID
 - monitor event mapping for stop/resume, checkpoint, register, and memory
   responses
+- binary monitor diagnostic events mirrored to Theia as
+  `commodoreViceMonitorLog` DAP custom events, using `===` adapter notes,
+  `<<<` outbound commands, and `>>>` inbound responses
 - Kick Assembler `.dbg` source/label/line mapping; `.dbg` files are produced
   by Kick Assembler `-debugdump`
 - VICE process launch with Kick Assembler `.vs` VICE symbol files passed
@@ -87,6 +90,9 @@ The Theia extension now contributes:
   memory-space dropdown and bank combobox controls, persisted settings, and
   ASCII, custom text, or bitmap C64 PETSCII/screen-code renderings with
   upper/graphics and lower/upper charset selection plus labeled control bytes
+- a VICE Monitor view available from Theia's View list that subscribes to the
+  adapter's `commodoreViceMonitorLog` custom events and shows binary monitor
+  command/response traffic for breakpoint and monitor diagnostics
 - a Debug breakpoints menu action for managing persistent memory watchpoints,
   including add, enable/disable, edit, delete, clear, and active-session
   reinstall operations
@@ -182,14 +188,15 @@ The TypeScript seams are easier to test because:
 
 Current automated coverage includes `.dbg` parsing, full NMOS 6502
 disassembly, stack-frame reconstruction, VICE binary monitor request encoding,
-and a real VICE end-to-end suite under `packages/debug-adapter/src/test/e2e`.
-The real VICE lane launches the adapter over stdio, starts VICE through the
-production launch path, and verifies DAP behavior for launch, entry stops,
-source breakpoints, stepping, data breakpoints, memory reads/writes,
-trace-history last-write provenance, logpoints, ROM source fallback, and
-visual-debugger memory snapshots. A Linux GitHub Actions workflow and matching
-Docker rig run this suite against Debian's `/usr/bin/x64sc` with the repository
-bundled VICE resources.
+monitor traffic event emission, and a real VICE end-to-end suite under
+`packages/debug-adapter/src/test/e2e`. The real VICE lane launches the adapter
+over stdio, starts VICE through the production launch path, and verifies DAP
+behavior for launch, entry stops, source breakpoints, breakpoint monitor-log
+events, stepping, data breakpoints, memory reads/writes, trace-history
+last-write provenance, logpoints, ROM source fallback, and visual-debugger
+memory snapshots. A Linux GitHub Actions workflow and matching Docker rig run
+this suite against Debian's `/usr/bin/x64sc` with the repository bundled VICE
+resources.
 
 The built Electron app also has a Theia UI e2e harness in
 `tools/run-theia-ui-e2e.mjs`, wired into GitHub Actions on Linux under Xvfb. It

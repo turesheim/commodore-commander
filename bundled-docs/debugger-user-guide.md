@@ -408,6 +408,26 @@ Use Theia's standard debug controls:
 The debugger keeps VICE integration external-process-oriented. Closing or
 stopping a debug session terminates the emulator process owned by that session.
 
+## VICE Monitor Protocol View
+
+Open the **VICE Monitor** view from the Theia view list when breakpoint
+installation or monitor traffic needs inspection. It shows the debug adapter's
+session-owned binary monitor traffic; it does not create another VICE monitor
+connection.
+
+The direction column uses the same convention as the original Eclipse-based
+debugger:
+
+- `===` adapter notes, such as selected `.vs` files, `setBreakpoints`,
+  `configurationDone`, and breakpoint synchronization.
+- `<<<` commands sent to VICE through the binary monitor.
+- `>>>` responses and asynchronous events received from VICE.
+
+When source breakpoints are working, startup should show `CHECKPOINT_SET`
+commands after `configurationDone`, followed by `CHECKPOINT_INFO` responses
+with VICE checkpoint numbers. A triggered breakpoint appears as a
+`CHECKPOINT_INFO` response with `hit=1`.
+
 ## Troubleshooting
 
 If source breakpoints stay unverified:
@@ -431,6 +451,16 @@ If watchpoints do not install:
 2. Make sure the session is not a Start Without Debugging session.
 3. Check that the expression resolves to a C64 memory address.
 4. Use **Manage Memory Watchpoints > Install Watchpoints Now** after editing.
+
+If breakpoints verify but do not stop:
+
+1. Open the **VICE Monitor** view.
+2. Confirm that VICE was given the adjacent Kick Assembler `.vs` file or a
+   generated monitor command file.
+3. Confirm that DAP-created breakpoints produce `CHECKPOINT_SET` commands and
+   `CHECKPOINT_INFO` responses after `configurationDone`.
+4. Continue execution and check for a later `CHECKPOINT_INFO` response with
+   `hit=1`.
 
 If the Memory view is read-only:
 
