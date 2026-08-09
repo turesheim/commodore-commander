@@ -91,8 +91,13 @@ binary monitor.
   DAP adapter resolves a breakpoint to a different executable line. The full
   source-breakpoint state sync carries a marker flag so the adapter toggles
   these entries with `CHECKPOINT_TOGGLE` but never reconciles them as UI-owned
-  checkpoints. Fallback `.dbg` breakpoint entries installed by the adapter use
-  the same non-removable UI path.
+  checkpoints. VICE checkpoint numbers for `.vs`-owned programmed breakpoints
+  are monitor-local and volatile: before toggling one from the UI, the adapter
+  refreshes the association with `CHECKPOINT_LIST`; if VICE rejects a toggle
+  because the remembered object no longer exists, the adapter clears the stale
+  number, refreshes again, and retries with the current number. Fallback `.dbg`
+  breakpoint entries installed by the adapter use the same non-removable UI
+  path.
 - Explicit VICE monitor command files can also install breakpoints outside the
   adapter's checkpoint map, for example Kick Assembler `.vs` files containing
   `break` commands. Unknown VICE checkpoint hits are reported as DAP
@@ -250,11 +255,13 @@ are discovered with `CHECKPOINT_LIST` and associated with their `.dbg` mappings
 by address, not reinstalled by the adapter. A later breakpoint hit should
 appear as a `CHECKPOINT_INFO` response with `hit=1`. If a remembered breakpoint
 is not installable, the adapter logs a `LOG` row with the skip reason before
-returning without a `CHECKPOINT_SET`. Disabling an installed UI breakpoint or
-source-owned programmed breakpoint should produce `CHECKPOINT_TOGGLE enabled=0`;
-removing an installed UI breakpoint should produce `CHECKPOINT_DELETE`.
-Programmed breakpoints must not produce
-`CHECKPOINT_DELETE` from UI removal controls.
+returning without a `CHECKPOINT_SET`. Disabling an installed UI breakpoint
+should produce `CHECKPOINT_TOGGLE enabled=0`; removing an installed UI
+breakpoint should produce `CHECKPOINT_DELETE`. Disabling a source-owned
+programmed breakpoint should first refresh with `CHECKPOINT_LIST`, then produce
+`CHECKPOINT_TOGGLE enabled=0` for the current VICE checkpoint number.
+Programmed breakpoints must not produce `CHECKPOINT_DELETE` from UI removal
+controls.
 
 ## Remaining Work
 

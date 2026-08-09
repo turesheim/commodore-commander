@@ -1109,7 +1109,7 @@ export class ViceDebugSession {
             candidate.id === programmedId
           );
           if (breakpoint) {
-            breakpoint.enabled = true;
+            breakpoint.enabled = sourceBreakpointEnabled(sourceBreakpoint);
             void this.synchronizeProgrammedBreakpointCheckpoint(breakpoint);
           }
           return this.toProgrammedDapBreakpoint(
@@ -2132,15 +2132,16 @@ export class ViceDebugSession {
 
   private async toggleBreakpointCheckpoint(
     breakpoint: InstalledBreakpoint,
-    enabled: boolean
-  ): Promise<void> {
+    enabled: boolean,
+    options: { suppressMissingObjectError?: boolean } = {}
+  ): Promise<boolean> {
     const checkpointNumber = breakpoint.checkpointNumber;
     const monitor = this.monitor;
     if (checkpointNumber === undefined || !monitor) {
-      return;
+      return false;
     }
     if (breakpoint.checkpointEnabled === enabled) {
-      return;
+      return true;
     }
     const [command, body] = ViceMonitorRequests.toggleCheckpoint(
       checkpointNumber,
@@ -2163,8 +2164,22 @@ export class ViceDebugSession {
       );
       breakpoint.checkpointEnabled = enabled;
       breakpoint.enabled = enabled;
+      return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      const missingObject = isViceMonitorObjectMissingError(message);
+      if (missingObject) {
+        this.clearBreakpointCheckpointAssociation(breakpoint, checkpointNumber);
+      }
+      if (missingObject && options.suppressMissingObjectError) {
+        this.sendViceMonitorLog({
+          category: 'user',
+          message:
+            `VICE checkpoint ${checkpointNumber} for ` +
+            `${breakpointDescription(breakpoint)} no longer exists; refreshing checkpoint list.`
+        });
+        return false;
+      }
       this.sendViceMonitorLog({
         category: 'user',
         message: `Could not toggle VICE checkpoint ${checkpointNumber}: ${message}`
@@ -2173,6 +2188,7 @@ export class ViceDebugSession {
         `Could not toggle VICE checkpoint ${checkpointNumber}: ${message}\n`,
         'stderr'
       );
+      return false;
     }
   }
 
@@ -2180,12 +2196,37 @@ export class ViceDebugSession {
     breakpoint: InstalledDebugInfoBreakpoint
   ): Promise<void> {
     const enabled = breakpoint.enabled;
-    await this.refreshProgrammedBreakpointCheckpointNumbers();
+    await this.refreshProgrammedBreakpointCheckpointNumbers(true);
     breakpoint.enabled = enabled;
     if (breakpoint.checkpointNumber !== undefined) {
-      await this.toggleBreakpointCheckpoint(breakpoint, enabled);
+      const toggled = await this.toggleBreakpointCheckpoint(
+        breakpoint,
+        enabled,
+        { suppressMissingObjectError: breakpoint.monitorCommandOwned }
+      );
+      if (!toggled && breakpoint.monitorCommandOwned) {
+        await this.refreshProgrammedBreakpointCheckpointNumbers(true);
+        breakpoint.enabled = enabled;
+        if (breakpoint.checkpointNumber !== undefined) {
+          await this.toggleBreakpointCheckpoint(breakpoint, enabled);
+        }
+      }
     }
     this.emitProgrammedBreakpoints();
+  }
+
+  private clearBreakpointCheckpointAssociation(
+    breakpoint: InstalledBreakpoint,
+    checkpointNumber = breakpoint.checkpointNumber
+  ): void {
+    if (checkpointNumber !== undefined &&
+      this.checkpointToBreakpoint.get(checkpointNumber) === breakpoint) {
+      this.checkpointToBreakpoint.delete(checkpointNumber);
+    }
+    if (breakpoint.checkpointNumber === checkpointNumber) {
+      breakpoint.checkpointNumber = undefined;
+      breakpoint.checkpointEnabled = undefined;
+    }
   }
 
   private async deleteCheckpoint(
@@ -2686,9 +2727,18 @@ export class ViceDebugSession {
     this.emitProgrammedBreakpoints();
   }
 
-  private async refreshProgrammedBreakpointCheckpointNumbers(): Promise<void> {
+  private async refreshProgrammedBreakpointCheckpointNumbers(
+    force = false
+  ): Promise<void> {
     if (!this.monitor || this.debugInfoBreakpoints.length === 0) {
       return;
+    }
+    if (force) {
+      for (const breakpoint of this.debugInfoBreakpoints) {
+        if (breakpoint.monitorCommandOwned) {
+          this.clearBreakpointCheckpointAssociation(breakpoint);
+        }
+      }
     }
     const needsRefresh = this.debugInfoBreakpoints.some((breakpoint) =>
       breakpoint.monitorCommandOwned &&
@@ -4123,6 +4173,17 @@ function programmedBreakpointId(
     [PROGRAMMED_BREAKPOINT_RAW_ID]?: unknown;
   })[PROGRAMMED_BREAKPOINT_RAW_ID];
   return typeof id === 'number' ? id : undefined;
+}
+
+function sourceBreakpointEnabled(
+  sourceBreakpoint: DebugProtocol.SourceBreakpoint
+): boolean {
+  const enabled = (sourceBreakpoint as { enabled?: unknown }).enabled;
+  return enabled !== false;
+}
+
+function isViceMonitorObjectMissingError(message: string): boolean {
+  return message.includes('(object does not exist)');
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
