@@ -764,43 +764,58 @@ export class ViceDebugSession {
       cwd,
       path.dirname(program)
     ];
+    const matchingConfiguredDebugInfoPath =
+      configuredDebugInfoPath &&
+      debugInfoPathMatchesProgram(configuredDebugInfoPath, program)
+        ? configuredDebugInfoPath
+        : undefined;
+    if (configuredDebugInfoPath && !matchingConfiguredDebugInfoPath) {
+      this.connection.sendOutput(
+        `Configured Kick Assembler debug info ${configuredDebugInfoPath} does not match ` +
+          `launched PRG ${program}; expected ${replaceExtension(program, '.dbg')}.\n`,
+        'stderr'
+      );
+    }
     const candidates = discoverDebugInfoCandidates(
-      configuredDebugInfoPath,
+      matchingConfiguredDebugInfoPath,
       program,
       cwd,
       sourceRoot
     );
     const failures: string[] = [];
 
-    if (configuredDebugInfoPath) {
+    if (matchingConfiguredDebugInfoPath) {
       try {
-        const info = await loadKickAssemblerDebugInfo(configuredDebugInfoPath, { sourceRoots });
+        const info = await loadKickAssemblerDebugInfo(
+          matchingConfiguredDebugInfoPath,
+          { sourceRoots }
+        );
         const overlap = debugInfoProgramOverlap(info, this.programImage);
         this.connection.sendOutput(
-          `Using configured Kick Assembler debug info ${configuredDebugInfoPath}\n`
+          `Using configured Kick Assembler debug info ${matchingConfiguredDebugInfoPath}\n`
         );
         if (this.programImage && overlap === 0) {
           this.connection.sendOutput(
-            `Kick Assembler debug info ${configuredDebugInfoPath} has no address ranges overlapping ` +
+            `Kick Assembler debug info ${matchingConfiguredDebugInfoPath} has no address ranges overlapping ` +
               `${path.basename(program)} ($${hexWord(this.programImage.loadAddress)}-$${hexWord(this.programImage.endAddress)}); ` +
               'stack frames will use disassembly where source cannot be mapped.\n',
             'stderr'
           );
         }
         return {
-          path: configuredDebugInfoPath,
+          path: matchingConfiguredDebugInfoPath,
           info
         };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        failures.push(`${configuredDebugInfoPath}: ${message}`);
+        failures.push(`${matchingConfiguredDebugInfoPath}: ${message}`);
       }
     }
 
     for (const candidate of candidates) {
       if (
-        configuredDebugInfoPath !== undefined &&
-        samePath(candidate, configuredDebugInfoPath)
+        matchingConfiguredDebugInfoPath !== undefined &&
+        samePath(candidate, matchingConfiguredDebugInfoPath)
       ) {
         continue;
       }
@@ -839,9 +854,9 @@ export class ViceDebugSession {
         `Could not read Kick Assembler debug info: ${failures.join('; ')}\n`,
         'stderr'
       );
-    } else if (configuredDebugInfoPath) {
+    } else if (matchingConfiguredDebugInfoPath) {
       this.connection.sendOutput(
-        `Could not find Kick Assembler debug info for ${configuredDebugInfoPath}; ` +
+        `Could not find Kick Assembler debug info for ${matchingConfiguredDebugInfoPath}; ` +
           'stack frames will use disassembly where source cannot be mapped.\n',
         'stderr'
       );
@@ -3096,6 +3111,11 @@ function replaceExtension(filePath: string, extension: string): string {
     path.dirname(filePath),
     `${path.basename(filePath, path.extname(filePath))}${extension}`
   );
+}
+
+function debugInfoPathMatchesProgram(debugInfoPath: string, program: string): boolean {
+  return path.basename(debugInfoPath, path.extname(debugInfoPath)) ===
+    path.basename(program, path.extname(program));
 }
 
 function resolveLaunchPath(filePath: string, cwd: string): string {

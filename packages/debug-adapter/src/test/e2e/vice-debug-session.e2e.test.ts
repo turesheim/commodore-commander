@@ -331,6 +331,49 @@ viceTest('uses exact program debug info when launch omits debug info', async (t,
   assert.equal(topFrame.line, breakpointLine);
 });
 
+viceTest('ignores configured debug info that does not match the launched PRG', async (t, vice) => {
+  const session = await launchFixture(t, vice, 'screencolors');
+  const misleadingDebugInfo = path.join(session.fixture.directory, 'misleading.dbg');
+  session.debugInfo = misleadingDebugInfo;
+  await writeFile(
+    misleadingDebugInfo,
+    createMisleadingDebugInfo(
+      path.join(session.fixture.directory, 'misleading.asm')
+    ),
+    'utf8'
+  );
+  await initializeAndLaunch(session);
+
+  assert.match(
+    session.client.outputText,
+    /Configured Kick Assembler debug info .*misleading\.dbg does not match launched PRG .*screencolors\.prg/u
+  );
+
+  const breakpointLine = await fixtureLine(
+    session.fixture.source,
+    'inc inner_counter'
+  );
+  const breakpoint = await setSourceBreakpoint(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+
+  await configurationDoneAndWaitStopped(session.client);
+  const { stopped, topFrame } = await continueUntilTopFrame(
+    session.client,
+    session.fixture.source,
+    breakpointLine
+  );
+
+  assert.equal(stopped.body?.reason, 'breakpoint');
+  if (stopped.body?.hitBreakpointIds) {
+    assert.deepEqual(stopped.body.hitBreakpointIds, [breakpoint.id]);
+  }
+  assert.equal(topFrame.source?.path, session.fixture.source);
+  assert.equal(topFrame.line, breakpointLine);
+});
+
 viceTest('keeps embedded VICE stopped while Theia finishes breakpoint setup', async (t, vice) => {
   const session = await launchFixture(t, vice, 'screencolors', {
     embedded: true
