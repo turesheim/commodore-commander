@@ -1268,7 +1268,17 @@ export class SidInstrumentControlWidget extends ReactWidget {
     this.clearMidiUpdateTimer();
     this.midiEnabled = this.midiEnabledForCurrentMode();
     this.update();
-    await this.sendMidiSettings();
+    const syncPlan = planMidiModeActivationSync({
+      midiEnabled: this.midiEnabled,
+      midiDeviceCount: this.midiDevices.length,
+      midiScanning: this.midiScanning
+    });
+    if (syncPlan.scanDevices) {
+      await this.scanMidiDevices();
+    }
+    if (syncPlan.queueMidiSettings) {
+      await this.sendMidiSettings();
+    }
   }
 
   protected midiEnabledForCurrentMode(): boolean {
