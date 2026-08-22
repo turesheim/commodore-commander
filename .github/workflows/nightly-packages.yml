@@ -67,6 +67,12 @@ jobs:
             pkg-config \
             python3
 
+      - name: Install macOS VICE build packages
+        if: runner.os == 'macOS'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+        run: brew install autoconf automake pkg-config sdl2_image subversion
+
       - name: Prepare @vscode/ripgrep download cache
         env:
           TMPDIR: ${{ runner.temp }}

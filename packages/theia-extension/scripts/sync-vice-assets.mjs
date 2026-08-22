@@ -35,7 +35,11 @@ const source = process.env.COMMODORE_COMMANDER_PATCHED_VICE_APP
     'darwin-arm64',
     'VICE.app'
   );
-const usesExternalViceApp = Boolean(process.env.COMMODORE_COMMANDER_PATCHED_VICE_APP);
+const usesExternalViceApp = Boolean(
+  process.env.COMMODORE_COMMANDER_PATCHED_VICE_APP
+);
+const supportsBundledViceAssets =
+  process.platform === 'darwin' && process.arch === 'arm64';
 const viceEmbedDir = path.join(repoRoot, 'tools', 'vice-embed');
 const viceEmbedBuildInputs = [
   path.join(viceEmbedDir, 'Makefile'),
@@ -60,12 +64,20 @@ await cp(sidScoreCliSource, sidScoreCliTarget, {
   preserveTimestamps: true
 });
 
-if (process.env.COMMODORE_COMMANDER_SKIP_VICE_ASSETS === '1') {
-  console.warn('Skipping bundled VICE asset sync.');
+if (
+  process.env.COMMODORE_COMMANDER_SKIP_VICE_ASSETS === '1' ||
+  !supportsBundledViceAssets
+) {
+  console.warn(
+    `Skipping bundled VICE asset sync for ${process.platform}-${process.arch}.`
+  );
   process.exit(0);
 }
 
-if (!usesExternalViceApp && process.env.COMMODORE_COMMANDER_SKIP_VICE_AUTO_REBUILD !== '1') {
+if (
+  !usesExternalViceApp &&
+  process.env.COMMODORE_COMMANDER_SKIP_VICE_AUTO_REBUILD !== '1'
+) {
   await ensurePatchedVicePackage(source);
 }
 
