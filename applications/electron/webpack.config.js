@@ -16,7 +16,11 @@ const bundledDocsPath = path.resolve(__dirname, '..', '..', 'bundled-docs');
 const bundledDocsTargetPath = path.resolve(frontendOutputPath, 'assets', 'docs');
 const sidScoreCliJar = 'sidscore-cli-0.7.1.jar';
 const sidScoreAssetsTargetPath = path.resolve(outputPath, 'assets', 'sidscore');
-const skipViceAssets = process.env.COMMODORE_COMMANDER_SKIP_VICE_ASSETS === '1';
+const supportsBundledViceAssets =
+    process.platform === 'darwin' && process.arch === 'arm64';
+const skipViceAssets =
+    process.env.COMMODORE_COMMANDER_SKIP_VICE_ASSETS === '1' ||
+    !supportsBundledViceAssets;
 const viceInfoPlistPath = skipViceAssets
     ? undefined
     : require.resolve(
@@ -226,7 +230,9 @@ nodeConfig.config.plugins.push(
 );
 nodeConfig.config.plugins.push(new CleanSidScoreAssetsPlugin());
 if (skipViceAssets) {
-    console.warn('Skipping bundled VICE app copy.');
+    console.warn(
+        `Skipping bundled VICE app copy for ${process.platform}-${process.arch}.`
+    );
 } else {
     nodeConfig.config.plugins.push(new CopyViceAppBundlePlugin());
 }
