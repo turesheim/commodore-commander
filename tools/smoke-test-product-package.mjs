@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { inflateRawSync } from 'node:zlib';
 
 const productName = 'Commodore Commander';
 const sidScoreCliJar = 'sidscore-cli-0.7.1.jar';
+const sidScoreMainClass = 'net/resheim/sidscore/SIDScoreCLI.class';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const SRAP_MAGIC = 0x53524150;
@@ -138,6 +140,7 @@ function verifyPackageLayout(layout) {
   for (const [requiredPath, description] of requiredPaths) {
     assertPath(requiredPath, description);
   }
+  readJarClassMajorVersion(layout.sidScoreCliJarPath, sidScoreMainClass);
 
   if (process.platform !== 'win32') {
     const mode = statSync(layout.executablePath).mode;
@@ -148,6 +151,16 @@ function verifyPackageLayout(layout) {
 }
 
 async function smokeTestSidScore(layout, options) {
+  const sidScoreClassMajorVersion = readJarClassMajorVersion(
+    layout.sidScoreCliJarPath,
+    sidScoreMainClass
+  );
+  await assertJavaCommandSupportsClassVersion(
+    options.javaCommand,
+    sidScoreClassMajorVersion,
+    options.timeoutMs
+  );
+
   const { createSidScorePlayerServerArgs } = await importSidScoreLaunchModule();
   const args = createSidScorePlayerServerArgs({
     kickAssemblerJarPath: layout.kickAssemblerJarPath,
@@ -515,6 +528,183 @@ function waitForExit(child, timeoutMs) {
 function assertPath(requiredPath, description) {
   if (!existsSync(requiredPath)) {
     throw new Error(`Missing ${description}: ${path.relative(repoRoot, requiredPath)}`);
+  }
+}
+
+function readJarClassMajorVersion(jarPath, classEntryName) {
+  const classFile = readJarEntry(jarPath, classEntryName);
+  if (classFile.length < 8 || classFile.readUInt32BE(0) !== 0xcafebabe) {
+    throw new Error(`Invalid Java class file in ${path.basename(jarPath)}: ${classEntryName}`);
+  }
+  return classFile.readUInt16BE(6);
+}
+
+async function assertJavaCommandSupportsClassVersion(javaCommand, classMajorVersion, timeoutMs) {
+  const requiredJavaRelease = javaReleaseForClassMajorVersion(classMajorVersion);
+  const runtime = await readJavaRuntimeVersion(javaCommand, timeoutMs);
+  console.log(
+    `SIDScore Java runtime: ${javaCommand} -> ${runtime.version} ` +
+    `(Java ${runtime.major}); bundled SIDScore requires Java ${requiredJavaRelease}+.`
+  );
+  if (runtime.major < requiredJavaRelease) {
+    throw new Error(
+      `SIDScore Java runtime is Java ${runtime.major}, but the bundled SIDScore jar ` +
+      `requires Java ${requiredJavaRelease}+ (class file major ${classMajorVersion}). ` +
+      'Install a newer Java runtime or set COMMODORE_COMMANDER_JAVA_RUNTIME.'
+    );
+  }
+}
+
+function readJavaRuntimeVersion(javaCommand, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(javaCommand, ['-version'], {
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    let output = '';
+    const timeout = setTimeout(() => {
+      cleanup();
+      child.kill('SIGKILL');
+      reject(new Error(`Timed out checking Java runtime version: ${javaCommand}`));
+    }, timeoutMs);
+
+    const cleanup = () => {
+      clearTimeout(timeout);
+      child.stdout.off('data', onOutput);
+      child.stderr.off('data', onOutput);
+      child.off('error', onError);
+      child.off('exit', onExit);
+    };
+    const onOutput = (chunk) => {
+      output += chunk.toString();
+    };
+    const onError = (error) => {
+      cleanup();
+      reject(new Error(`Failed to run Java runtime ${javaCommand}: ${error.message}`));
+    };
+    const onExit = (code, signal) => {
+      cleanup();
+      if (code !== 0) {
+        reject(new Error(`Java runtime version check failed (${formatExit(code, signal)}).\n${output}`));
+        return;
+      }
+      try {
+        resolve(parseJavaRuntimeVersion(output));
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    child.stdout.on('data', onOutput);
+    child.stderr.on('data', onOutput);
+    child.once('error', onError);
+    child.once('exit', onExit);
+  });
+}
+
+function parseJavaRuntimeVersion(output) {
+  const match = output.match(/(?:openjdk|java) version "([^"]+)"/iu);
+  if (!match) {
+    throw new Error(`Could not parse Java runtime version output.\n${output}`);
+  }
+  const version = match[1];
+  const major = parseJavaMajorVersion(version);
+  if (!Number.isInteger(major)) {
+    throw new Error(`Could not parse Java major version from: ${version}`);
+  }
+  return { version, major };
+}
+
+function parseJavaMajorVersion(version) {
+  const legacy = version.match(/^1\.(\d+)/u);
+  if (legacy) {
+    return Number.parseInt(legacy[1], 10);
+  }
+  const modern = version.match(/^(\d+)/u);
+  return modern ? Number.parseInt(modern[1], 10) : NaN;
+}
+
+function javaReleaseForClassMajorVersion(classMajorVersion) {
+  if (classMajorVersion < 45) {
+    throw new Error(`Unsupported Java class file major version: ${classMajorVersion}`);
+  }
+  return classMajorVersion - 44;
+}
+
+function readJarEntry(jarPath, entryName) {
+  const jar = readFileSync(jarPath);
+  const centralDirectory = findZipCentralDirectory(jar, jarPath);
+
+  let entryOffset = centralDirectory.offset;
+  for (let index = 0; index < centralDirectory.entries; index += 1) {
+    if (jar.readUInt32LE(entryOffset) !== 0x02014b50) {
+      throw new Error(`Invalid ZIP central directory in ${jarPath}.`);
+    }
+
+    const compressionMethod = jar.readUInt16LE(entryOffset + 10);
+    const compressedSize = jar.readUInt32LE(entryOffset + 20);
+    const fileNameLength = jar.readUInt16LE(entryOffset + 28);
+    const extraLength = jar.readUInt16LE(entryOffset + 30);
+    const commentLength = jar.readUInt16LE(entryOffset + 32);
+    const localHeaderOffset = jar.readUInt32LE(entryOffset + 42);
+    const fileNameStart = entryOffset + 46;
+    const fileNameEnd = fileNameStart + fileNameLength;
+    const fileName = jar.subarray(fileNameStart, fileNameEnd).toString('utf8');
+
+    if (fileName === entryName) {
+      return readZipEntryData(
+        jar,
+        jarPath,
+        entryName,
+        localHeaderOffset,
+        compressedSize,
+        compressionMethod
+      );
+    }
+
+    entryOffset = fileNameEnd + extraLength + commentLength;
+  }
+
+  throw new Error(`Missing ${entryName} in ${jarPath}.`);
+}
+
+function findZipCentralDirectory(zip, zipPath) {
+  const minOffset = Math.max(0, zip.length - 65_557);
+  for (let offset = zip.length - 22; offset >= minOffset; offset -= 1) {
+    if (zip.readUInt32LE(offset) === 0x06054b50) {
+      return {
+        entries: zip.readUInt16LE(offset + 10),
+        offset: zip.readUInt32LE(offset + 16)
+      };
+    }
+  }
+  throw new Error(`Could not find ZIP central directory in ${zipPath}.`);
+}
+
+function readZipEntryData(
+  zip,
+  zipPath,
+  entryName,
+  localHeaderOffset,
+  compressedSize,
+  compressionMethod
+) {
+  if (zip.readUInt32LE(localHeaderOffset) !== 0x04034b50) {
+    throw new Error(`Invalid ZIP local header for ${entryName} in ${zipPath}.`);
+  }
+
+  const fileNameLength = zip.readUInt16LE(localHeaderOffset + 26);
+  const extraLength = zip.readUInt16LE(localHeaderOffset + 28);
+  const dataStart = localHeaderOffset + 30 + fileNameLength + extraLength;
+  const compressed = zip.subarray(dataStart, dataStart + compressedSize);
+  switch (compressionMethod) {
+    case 0:
+      return Buffer.from(compressed);
+    case 8:
+      return inflateRawSync(compressed);
+    default:
+      throw new Error(
+        `Unsupported ZIP compression method ${compressionMethod} for ${entryName} in ${zipPath}.`
+      );
   }
 }
 

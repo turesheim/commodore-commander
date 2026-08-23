@@ -1,4 +1,5 @@
 export const SID_SCORE_CLI_JAR_FILENAME = 'sidscore-cli-0.7.1.jar';
+export const SID_SCORE_REQUIRED_JAVA_RELEASE = 21;
 
 const MACOS_MIDI_SYSTEM_PROPERTIES = [
   '-Dsidscore.midi.awtEventPump.disabled=true'
@@ -18,6 +19,11 @@ export interface SidScoreLaunchDiagnosticOptions {
   readonly platform?: NodeJS.Platform;
   readonly arch?: string;
   readonly processExecPath?: string;
+}
+
+export interface JavaRuntimeVersion {
+  readonly version: string;
+  readonly major: number;
 }
 
 export function createSidScorePlayerServerArgs(
@@ -63,6 +69,40 @@ export function formatCommandLine(
   args: readonly string[]
 ): string {
   return [command, ...args].map(quoteDiagnosticValue).join(' ');
+}
+
+export function parseJavaRuntimeVersionOutput(output: string): JavaRuntimeVersion {
+  const match = output.match(/(?:openjdk|java) version "([^"]+)"/iu);
+  if (!match) {
+    throw new Error(`Could not parse Java runtime version output.\n${output}`);
+  }
+
+  const version = match[1];
+  const major = parseJavaMajorVersion(version);
+  if (!Number.isInteger(major)) {
+    throw new Error(`Could not parse Java major version from: ${version}`);
+  }
+
+  return { version, major };
+}
+
+export function formatJavaRuntimeTooOldMessage(
+  runtime: JavaRuntimeVersion,
+  requiredJavaRelease = SID_SCORE_REQUIRED_JAVA_RELEASE
+): string {
+  return `The configured Java runtime is ${runtime.version} (Java ${runtime.major}), ` +
+    `but bundled SIDScore requires Java ${requiredJavaRelease} or newer. ` +
+    `Install Java ${requiredJavaRelease}+ or set commodoreCommander.tools.javaRuntime ` +
+    `to a Java ${requiredJavaRelease}+ executable.`;
+}
+
+function parseJavaMajorVersion(version: string): number {
+  const legacy = version.match(/^1\.(\d+)/u);
+  if (legacy) {
+    return Number.parseInt(legacy[1], 10);
+  }
+  const modern = version.match(/^(\d+)/u);
+  return modern ? Number.parseInt(modern[1], 10) : NaN;
 }
 
 function quoteDiagnosticValue(value: string): string {

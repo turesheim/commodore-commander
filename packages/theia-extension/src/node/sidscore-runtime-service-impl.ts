@@ -54,8 +54,11 @@ import {
 } from '../common/commodore-commander-tool-preferences';
 import {
   createSidScorePlayerServerArgs,
+  formatJavaRuntimeTooOldMessage,
   formatSidScoreLaunchDiagnostic,
-  SID_SCORE_CLI_JAR_FILENAME
+  parseJavaRuntimeVersionOutput,
+  SID_SCORE_CLI_JAR_FILENAME,
+  SID_SCORE_REQUIRED_JAVA_RELEASE
 } from './sidscore-launch';
 
 export { SID_SCORE_CLI_JAR_FILENAME } from './sidscore-launch';
@@ -66,6 +69,7 @@ const SRAP_HEADER_BYTES = 24;
 const SRAP_MAX_PAYLOAD_BYTES = 4 * 1024 * 1024;
 const SERVER_READY_TIMEOUT_MS = 10_000;
 const SERVER_HELLO_TIMEOUT_MS = 5_000;
+const JAVA_VERSION_TIMEOUT_MS = 5_000;
 const EXPORT_RESULT_TIMEOUT_MS = 5 * 60_000;
 const TELEMETRY_FLUSH_INTERVAL_MS = 33;
 const MAX_PENDING_SCOPE_SAMPLES_PER_VOICE = 2048;
@@ -489,6 +493,7 @@ export class SidScoreRuntimeServiceImpl
     await assertReadable(kickAssemblerJarPath, 'KickAssembler jar');
 
     const command = javaCommand ?? await this.resolveJavaCommand();
+    await this.assertJavaRuntimeSupportsSidScore(command);
     const args = createSidScorePlayerServerArgs({
       kickAssemblerJarPath,
       sidScoreCliJarPath: jarPath
@@ -534,6 +539,7 @@ export class SidScoreRuntimeServiceImpl
         rejectStartup(new Error(`Failed to start SIDScore player server: ${error.message}`));
       });
       child.once('exit', (exitCode, signal) => {
+        const startupOutput = `${stdoutBuffer}\n${stderrBuffer}`;
         if (stdoutBuffer.trim().length > 0) {
           this.emitServerOutput('stdout', stdoutBuffer);
           stdoutBuffer = '';
@@ -548,7 +554,7 @@ export class SidScoreRuntimeServiceImpl
         if (!ready) {
           rejectStartup(
             new Error(
-              `SIDScore player server exited before ready (${formatExit(exitCode, signal)}).`
+              formatSidScoreStartupExitMessage(exitCode, signal, startupOutput)
             )
           );
         }
@@ -591,6 +597,19 @@ export class SidScoreRuntimeServiceImpl
     await this.preferenceService.ready;
     return getCommodoreCommanderToolPreferences(this.preferenceService)
       .javaRuntime ?? getJavaCommand();
+  }
+
+  protected async assertJavaRuntimeSupportsSidScore(command: string): Promise<void> {
+    const runtime = await readJavaRuntimeVersion(command, JAVA_VERSION_TIMEOUT_MS);
+    if (runtime.major < SID_SCORE_REQUIRED_JAVA_RELEASE) {
+      throw new Error(formatJavaRuntimeTooOldMessage(runtime));
+    }
+
+    this.emitServerOutput(
+      'stdout',
+      `[Commodore Commander] SIDScore Java runtime ${command} -> ` +
+      `${runtime.version} (Java ${runtime.major})\n`
+    );
   }
 
   protected emitServerOutput(
@@ -1902,6 +1921,56 @@ function clampInteger(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, Math.round(value)));
 }
 
+function readJavaRuntimeVersion(
+  command: string,
+  timeoutMs: number
+): Promise<ReturnType<typeof parseJavaRuntimeVersionOutput>> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, ['-version'], {
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    let output = '';
+
+    const timeout = setTimeout(() => {
+      cleanup();
+      child.kill('SIGKILL');
+      reject(new Error(`Timed out checking Java runtime version: ${command}`));
+    }, timeoutMs);
+
+    const cleanup = (): void => {
+      clearTimeout(timeout);
+      child.stdout.off('data', onOutput);
+      child.stderr.off('data', onOutput);
+      child.off('error', onError);
+      child.off('exit', onExit);
+    };
+    const onOutput = (chunk: Buffer): void => {
+      output += chunk.toString();
+    };
+    const onError = (error: Error): void => {
+      cleanup();
+      reject(new Error(`Failed to run Java runtime ${command}: ${error.message}`));
+    };
+    const onExit = (code: number | null, signal: NodeJS.Signals | null): void => {
+      cleanup();
+      if (code !== 0) {
+        reject(new Error(`Java runtime version check failed (${formatExit(code, signal)}).\n${output}`));
+        return;
+      }
+      try {
+        resolve(parseJavaRuntimeVersionOutput(output));
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    child.stdout.on('data', onOutput);
+    child.stderr.on('data', onOutput);
+    child.once('error', onError);
+    child.once('exit', onExit);
+  });
+}
+
 function formatExit(
   exitCode: number | null,
   signal: NodeJS.Signals | null
@@ -1910,4 +1979,43 @@ function formatExit(
     return `exit ${exitCode}`;
   }
   return `signal ${signal ?? 'unknown'}`;
+}
+
+function formatSidScoreStartupExitMessage(
+  exitCode: number | null,
+  signal: NodeJS.Signals | null,
+  output: string
+): string {
+  const base = `SIDScore player server exited before ready (${formatExit(exitCode, signal)}).`;
+  if (/UnsupportedClassVersionError/u.test(output)) {
+    const requiredJavaRelease = requiredJavaReleaseFromUnsupportedClassVersion(output) ?? 21;
+    return `${base} The configured Java runtime is too old for bundled SIDScore. ` +
+      `Install Java ${requiredJavaRelease} or newer, or set ` +
+      `commodoreCommander.tools.javaRuntime to a Java ${requiredJavaRelease}+ executable.`;
+  }
+
+  const compactOutput = output
+    .replace(/\s+/gu, ' ')
+    .trim();
+  if (!compactOutput) {
+    return base;
+  }
+
+  const maxOutputLength = 500;
+  const detail = compactOutput.length > maxOutputLength
+    ? `${compactOutput.slice(0, maxOutputLength)}...`
+    : compactOutput;
+  return `${base} Last server output: ${detail}`;
+}
+
+function requiredJavaReleaseFromUnsupportedClassVersion(output: string): number | undefined {
+  const match = output.match(/class file version (\d+(?:\.\d+)?)/u);
+  if (!match) {
+    return undefined;
+  }
+  const classMajorVersion = Math.trunc(Number(match[1]));
+  if (!Number.isInteger(classMajorVersion) || classMajorVersion < 45) {
+    return undefined;
+  }
+  return classMajorVersion - 44;
 }
