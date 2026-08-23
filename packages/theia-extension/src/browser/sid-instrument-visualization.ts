@@ -1,3 +1,13 @@
+import {
+  SID_PAL_CLOCK_HZ,
+  sidAttackCurve,
+  sidCurveDurationCycles,
+  sidCyclesToMilliseconds,
+  sidFallingEnvelopeCurve,
+  sidSustainLevel,
+  type SidEnvelopeCurvePoint
+} from './sid-envelope-model';
+
 export interface SidAdsrEnvelopeInput {
   readonly attack: number;
   readonly decay: number;
@@ -13,6 +23,8 @@ export interface SidEnvelopePoint {
 export interface SidEnvelopeSegmentLabel {
   readonly label: 'A' | 'D' | 'S' | 'R';
   readonly x: number;
+  readonly text: string;
+  readonly durationCycles?: number;
 }
 
 export interface SidAdsrEnvelopeVisualization {
@@ -22,6 +34,7 @@ export interface SidAdsrEnvelopeVisualization {
   readonly areaPath: string;
   readonly sustainY: number;
   readonly labels: readonly SidEnvelopeSegmentLabel[];
+  readonly ariaLabel: string;
 }
 
 const WIDTH = 280;
@@ -30,31 +43,40 @@ const GRAPH_LEFT = 12;
 const GRAPH_RIGHT = 268;
 const GRAPH_TOP = 10;
 const GRAPH_BOTTOM = 80;
-const SUSTAIN_WEIGHT = 9;
+const PHASE_WIDTH = (GRAPH_RIGHT - GRAPH_LEFT) / 4;
 
 export function createSidAdsrEnvelopeVisualization(
   input: SidAdsrEnvelopeInput
 ): SidAdsrEnvelopeVisualization {
-  const attackWeight = rateWeight(input.attack);
-  const decayWeight = rateWeight(input.decay);
-  const releaseWeight = rateWeight(input.release);
-  const totalWeight =
-    attackWeight + decayWeight + SUSTAIN_WEIGHT + releaseWeight;
-  const graphWidth = GRAPH_RIGHT - GRAPH_LEFT;
-  const attackWidth = graphWidth * (attackWeight / totalWeight);
-  const decayWidth = graphWidth * (decayWeight / totalWeight);
-  const sustainWidth = graphWidth * (SUSTAIN_WEIGHT / totalWeight);
-  const sustainY = amplitudeY(clamp(input.sustain, 0, 15) / 15);
-  const attackEndX = GRAPH_LEFT + attackWidth;
-  const decayEndX = attackEndX + decayWidth;
-  const sustainEndX = decayEndX + sustainWidth;
-
-  const points = [
-    { x: GRAPH_LEFT, y: GRAPH_BOTTOM },
-    { x: attackEndX, y: GRAPH_TOP },
-    { x: decayEndX, y: sustainY },
-    { x: sustainEndX, y: sustainY },
-    { x: GRAPH_RIGHT, y: GRAPH_BOTTOM }
+  const sustainLevel = sidSustainLevel(input.sustain);
+  const sustainY = amplitudeY(sustainLevel / 0xff);
+  const attackEndX = GRAPH_LEFT + PHASE_WIDTH;
+  const decayEndX = attackEndX + PHASE_WIDTH;
+  const sustainEndX = decayEndX + PHASE_WIDTH;
+  const attackCurve = sidAttackCurve(input.attack);
+  const decayCurve = sidFallingEnvelopeCurve(
+    input.decay,
+    0xff,
+    sustainLevel
+  );
+  const releaseCurve = sidFallingEnvelopeCurve(
+    input.release,
+    sustainLevel,
+    0
+  );
+  const attackDuration = sidCurveDurationCycles(attackCurve);
+  const decayDuration = sidCurveDurationCycles(decayCurve);
+  const releaseDuration = sidCurveDurationCycles(releaseCurve);
+  const points: SidEnvelopePoint[] = [];
+  appendCurve(points, attackCurve, GRAPH_LEFT, attackEndX);
+  appendCurve(points, decayCurve, attackEndX, decayEndX);
+  appendPoint(points, { x: sustainEndX, y: sustainY });
+  appendCurve(points, releaseCurve, sustainEndX, GRAPH_RIGHT);
+  const labels: readonly SidEnvelopeSegmentLabel[] = [
+    durationLabel('A', midpoint(GRAPH_LEFT, attackEndX), attackDuration),
+    durationLabel('D', midpoint(attackEndX, decayEndX), decayDuration),
+    { label: 'S', x: midpoint(decayEndX, sustainEndX), text: 'S GATE' },
+    durationLabel('R', midpoint(sustainEndX, GRAPH_RIGHT), releaseDuration)
   ];
   return {
     viewBox: `0 0 ${WIDTH} ${HEIGHT}`,
@@ -65,17 +87,70 @@ export function createSidAdsrEnvelopeVisualization(
       .map(formatPoint)
       .join(' L ')} L ${GRAPH_RIGHT} ${GRAPH_BOTTOM} Z`,
     sustainY,
-    labels: [
-      { label: 'A', x: midpoint(GRAPH_LEFT, attackEndX) },
-      { label: 'D', x: midpoint(attackEndX, decayEndX) },
-      { label: 'S', x: midpoint(decayEndX, sustainEndX) },
-      { label: 'R', x: midpoint(sustainEndX, GRAPH_RIGHT) }
-    ]
+    labels,
+    ariaLabel: [
+      `SID ADSR envelope at PAL clock speed. Attack ${formatDuration(attackDuration)}.`,
+      `Decay ${formatDuration(decayDuration)} to sustain level ${clamp(input.sustain, 0, 15)}.`,
+      'Sustain remains while gate is on.',
+      `Release ${formatDuration(releaseDuration)} from the sustain level.`
+    ].join(' ')
   };
 }
 
-function rateWeight(value: number): number {
-  return 2 + clamp(value, 0, 15);
+function appendCurve(
+  points: SidEnvelopePoint[],
+  curve: readonly SidEnvelopeCurvePoint[],
+  left: number,
+  right: number
+): void {
+  const duration = sidCurveDurationCycles(curve);
+  for (const point of curve) {
+    const progress = duration > 0 ? point.elapsedCycles / duration : 1;
+    appendPoint(points, {
+      x: left + (right - left) * progress,
+      y: amplitudeY(point.level / 0xff)
+    });
+  }
+}
+
+function appendPoint(
+  points: SidEnvelopePoint[],
+  point: SidEnvelopePoint
+): void {
+  const previous = points.at(-1);
+  if (previous && previous.x === point.x && previous.y === point.y) {
+    return;
+  }
+  points.push(point);
+}
+
+function durationLabel(
+  label: 'A' | 'D' | 'R',
+  x: number,
+  durationCycles: number
+): SidEnvelopeSegmentLabel {
+  return {
+    label,
+    x,
+    text: `${label} ${formatDuration(durationCycles)}`,
+    durationCycles
+  };
+}
+
+function formatDuration(cycles: number): string {
+  const milliseconds = sidCyclesToMilliseconds(cycles, SID_PAL_CLOCK_HZ);
+  if (milliseconds < 10) {
+    return `${formatDecimal(milliseconds)}ms`;
+  }
+  if (milliseconds < 1000) {
+    return `${Math.round(milliseconds)}ms`;
+  }
+  const seconds = milliseconds / 1000;
+  return `${seconds < 10 ? formatDecimal(seconds) : Math.round(seconds)}s`;
+}
+
+function formatDecimal(value: number): string {
+  return value.toFixed(1).replace(/\.0$/u, '');
 }
 
 function amplitudeY(amplitude: number): number {

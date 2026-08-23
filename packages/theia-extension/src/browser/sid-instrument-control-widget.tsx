@@ -134,7 +134,7 @@ const CONTROL_TITLES = {
   midiChannel:
     'Selects the MIDI channel that drives this SID voice assignment.',
   visualization:
-    'Shows the SID ADSR volume envelope and the gate/articulation settings that directly affect note shape.',
+    'Shows a clean SID ADSR cycle from zero at PAL clock speed. Attack is linear, decay and release use the SID exponential divider, and sustain lasts until GATE is cleared.',
   waveRegister:
     'SID control register waveform bits: TRI=$10, SAW=$20, PULSE=$40, NOISE=$80. GATE, SYNC, and RING are separate control bits.',
   filterRegister:
@@ -689,12 +689,15 @@ export class SidInstrumentControlWidget extends ReactWidget {
         className='cc-sid-visualization__graph'
         viewBox={envelope.viewBox}
         role='img'
-        aria-label='SID ADSR envelope'
+        aria-label={envelope.ariaLabel}
         preserveAspectRatio='none'
       >
         <line className='cc-sid-visualization__grid' x1='12' y1='27.5' x2='268' y2='27.5' />
         <line className='cc-sid-visualization__grid' x1='12' y1='45' x2='268' y2='45' />
         <line className='cc-sid-visualization__grid' x1='12' y1='62.5' x2='268' y2='62.5' />
+        <line className='cc-sid-visualization__grid' x1='76' y1='10' x2='76' y2='80' />
+        <line className='cc-sid-visualization__grid' x1='140' y1='10' x2='140' y2='80' />
+        <line className='cc-sid-visualization__grid' x1='204' y1='10' x2='204' y2='80' />
         <path
           className='cc-sid-visualization__envelope-fill'
           d={envelope.areaPath}
@@ -710,7 +713,7 @@ export class SidInstrumentControlWidget extends ReactWidget {
             x={label.x}
             y='96'
           >
-            {label.label}
+            {label.text}
           </text>
         ))}
       </svg>

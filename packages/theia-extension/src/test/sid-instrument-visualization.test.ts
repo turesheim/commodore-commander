@@ -14,18 +14,17 @@ test('SID instrument ADSR visualization creates ordered envelope points', () => 
   });
 
   assert.equal(visualization.viewBox, '0 0 280 104');
-  assert.equal(visualization.points.length, 5);
+  assert.ok(visualization.points.length > 500);
   assert.equal(visualization.points[0]?.x, 12);
   assert.equal(visualization.points[0]?.y, 80);
-  assert.equal(visualization.points[1]?.y, 10);
-  assert.equal(visualization.points[4]?.x, 268);
-  assert.equal(visualization.points[4]?.y, 80);
+  assert.equal(visualization.points.at(-1)?.x, 268);
+  assert.equal(visualization.points.at(-1)?.y, 80);
   for (let index = 1; index < visualization.points.length; index += 1) {
     const current = visualization.points[index];
     const previous = visualization.points[index - 1];
     assert.ok(current);
     assert.ok(previous);
-    assert.ok(current.x > previous.x);
+    assert.ok(current.x >= previous.x);
   }
   assert.deepEqual(
     visualization.labels.map((label) => label.label),
@@ -52,7 +51,7 @@ test('SID instrument ADSR visualization maps sustain level to vertical position'
   assert.ok(highSustain.sustainY < lowSustain.sustainY);
 });
 
-test('SID instrument ADSR visualization expands slower rate segments', () => {
+test('SID instrument ADSR visualization reports measured phase durations', () => {
   const fastAttack = createSidAdsrEnvelopeVisualization({
     attack: 0,
     decay: 4,
@@ -66,16 +65,21 @@ test('SID instrument ADSR visualization expands slower rate segments', () => {
     release: 4
   });
 
-  const fastAttackWidth =
-    pointAt(fastAttack.points, 1).x - pointAt(fastAttack.points, 0).x;
-  const slowAttackWidth =
-    pointAt(slowAttack.points, 1).x - pointAt(slowAttack.points, 0).x;
+  const fastAttackDuration = labelDuration(fastAttack, 'A');
+  const slowAttackDuration = labelDuration(slowAttack, 'A');
 
-  assert.ok(slowAttackWidth > fastAttackWidth);
+  assert.equal(fastAttackDuration, 255 * 8);
+  assert.equal(slowAttackDuration, 255 * 31250);
+  assert.match(slowAttack.ariaLabel, /Attack 8\.1s/u);
 });
 
-function pointAt<T>(items: readonly T[], index: number): T {
-  const item = items[index];
-  assert.ok(item);
-  return item;
+function labelDuration(
+  visualization: ReturnType<typeof createSidAdsrEnvelopeVisualization>,
+  label: 'A' | 'D' | 'R'
+): number {
+  const duration = visualization.labels.find(
+    (candidate) => candidate.label === label
+  )?.durationCycles;
+  assert.ok(duration !== undefined);
+  return duration;
 }
