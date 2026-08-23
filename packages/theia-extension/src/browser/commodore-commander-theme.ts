@@ -322,6 +322,51 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   background: rgba(177, 93, 0, 0.22);
 }
 
+.cc-sidscore-scope-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cc-sidscore-scope-controls__label {
+  color: var(--theia-descriptionForeground);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cc-sidscore-scope-segment {
+  display: inline-flex;
+}
+
+.cc-sidscore-scope-segment .theia-button {
+  border-radius: 0;
+  margin: 0;
+  min-height: 24px;
+  min-width: 30px;
+  padding: 2px 8px;
+}
+
+.cc-sidscore-scope-segment .theia-button:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+.cc-sidscore-scope-segment .theia-button:last-child {
+  border-radius: 0 3px 3px 0;
+}
+
+.cc-sidscore-scope-freeze {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  margin-left: auto;
+  min-height: 24px;
+  min-width: 28px;
+  padding: 2px;
+  width: 28px;
+}
+
 .cc-sidscore-protocol-log-widget {
   min-width: 360px;
 }
