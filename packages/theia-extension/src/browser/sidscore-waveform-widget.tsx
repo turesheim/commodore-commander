@@ -40,7 +40,6 @@ export class SidScoreWaveformWidget extends ReactWidget {
   protected playbackLabel = 'Idle';
   protected scopeMode: SidScoreScopeMode = 'free';
   protected triggerVoice = 1;
-  protected frozenScopeSnapshots: readonly SidScoreScopeChannel[] | undefined;
   protected readonly scopeBuffers = new Map<number, ScopeTraceBuffer>([
     [1, new ScopeTraceBuffer()],
     [2, new ScopeTraceBuffer()],
@@ -88,9 +87,7 @@ export class SidScoreWaveformWidget extends ReactWidget {
         .get(voiceScope.voiceIndex)
         ?.appendSamples(voiceScope);
     }
-    if (!this.frozenScopeSnapshots) {
-      this.update();
-    }
+    this.update();
   }
 
   clear(playbackLabel = 'Idle'): void {
@@ -98,7 +95,6 @@ export class SidScoreWaveformWidget extends ReactWidget {
     this.scopeBuckets = undefined;
     this.songMetadata = undefined;
     this.playbackLabel = playbackLabel;
-    this.frozenScopeSnapshots = undefined;
     for (const buffer of this.scopeBuffers.values()) {
       buffer.clear();
     }
@@ -244,23 +240,6 @@ export class SidScoreWaveformWidget extends ReactWidget {
               </button>
             ))}
           </div>
-          <button
-            aria-label={
-              this.frozenScopeSnapshots ? 'Resume live scope' : 'Freeze scope'
-            }
-            aria-pressed={Boolean(this.frozenScopeSnapshots)}
-            className='theia-button secondary cc-sidscore-scope-freeze'
-            onClick={() => this.toggleScopeFreeze()}
-            title={this.frozenScopeSnapshots ? 'Resume live scope' : 'Freeze scope'}
-            type='button'
-          >
-            <span
-              aria-hidden='true'
-              className={codicon(
-                this.frozenScopeSnapshots ? 'debug-continue' : 'debug-pause'
-              )}
-            />
-          </button>
         </div>
       </div>
     );
@@ -276,18 +255,7 @@ export class SidScoreWaveformWidget extends ReactWidget {
     this.update();
   }
 
-  protected toggleScopeFreeze(): void {
-    this.frozenScopeSnapshots = this.frozenScopeSnapshots
-      ? undefined
-      : this.liveScopeSnapshots();
-    this.update();
-  }
-
   protected scopeSnapshots(): readonly SidScoreScopeChannel[] {
-    return this.frozenScopeSnapshots ?? this.liveScopeSnapshots();
-  }
-
-  protected liveScopeSnapshots(): readonly SidScoreScopeChannel[] {
     return [1, 2, 3].map((voiceIndex) => ({
       voiceIndex,
       samples: this.scopeBuffers.get(voiceIndex)?.snapshot() ?? []

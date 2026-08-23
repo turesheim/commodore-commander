@@ -356,17 +356,6 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   border-radius: 0 3px 3px 0;
 }
 
-.cc-sidscore-scope-freeze {
-  align-items: center;
-  display: inline-flex;
-  justify-content: center;
-  margin-left: auto;
-  min-height: 24px;
-  min-width: 28px;
-  padding: 2px;
-  width: 28px;
-}
-
 .cc-sidscore-protocol-log-widget {
   min-width: 360px;
 }
