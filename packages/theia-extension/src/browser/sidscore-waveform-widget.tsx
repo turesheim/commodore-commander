@@ -12,16 +12,23 @@ import type {
   SidScoreVoiceStateEvent,
   SidScoreVoiceTelemetry
 } from '../common/sidscore-runtime-service';
+import {
+  createSidScoreScopeDisplay,
+  type SidScoreScopeChannel,
+  type SidScoreScopeMode
+} from './sidscore-scope-visualization';
 
 export const SID_SCORE_WAVEFORM_WIDGET_ID =
   'commodore-commander.sidscore-waveforms';
 
-const SCOPE_BUFFER_SIZE = 2048;
+const SCOPE_BUFFER_SIZE = 8192;
+const SCOPE_DISPLAY_SIZE = 2048;
 const SCOPE_AUTO_GAIN_LIMIT = 3.0;
 const SCOPE_VERTICAL_HEADROOM = 0.92;
 const SCOPE_BG = '#4c3d26';
 const SCOPE_TRACE = '#D6CDB6';
 const SCOPE_ZERO = 'rgba(214, 205, 182, 0.22)';
+const SCOPE_TRIGGER = 'rgba(214, 205, 182, 0.42)';
 const SCOPE_WIDTH = 1000;
 const SCOPE_HEIGHT = 140;
 
@@ -31,6 +38,8 @@ export class SidScoreWaveformWidget extends ReactWidget {
   protected scopeBuckets: SidScoreScopeBucketsEvent | undefined;
   protected songMetadata: SidScoreSongMetadata | undefined;
   protected playbackLabel = 'Idle';
+  protected scopeMode: SidScoreScopeMode = 'free';
+  protected triggerVoice = 1;
   protected readonly scopeBuffers = new Map<number, ScopeTraceBuffer>([
     [1, new ScopeTraceBuffer()],
     [2, new ScopeTraceBuffer()],
@@ -94,9 +103,20 @@ export class SidScoreWaveformWidget extends ReactWidget {
 
   protected render(): React.ReactNode {
     const songDetails = this.renderSongDetails();
+    const scopeDisplay = createSidScoreScopeDisplay(
+      this.scopeSnapshots(),
+      this.scopeMode,
+      this.triggerVoice,
+      SCOPE_DISPLAY_SIZE
+    );
     const voices = [1, 2, 3].map((voiceIndex) => ({
       voiceIndex,
-      telemetry: this.voiceState?.voices.find((voice) => voice.voiceIndex === voiceIndex)
+      telemetry: this.voiceState?.voices.find(
+        (voice) => voice.voiceIndex === voiceIndex
+      ),
+      trace:
+        scopeDisplay.channels.find((channel) => channel.voiceIndex === voiceIndex)
+          ?.samples ?? []
     }));
 
     return (
@@ -121,8 +141,13 @@ export class SidScoreWaveformWidget extends ReactWidget {
             padding: '10px'
           }}
         >
-          {voices.map(({ voiceIndex, telemetry }) =>
-            this.renderVoice(voiceIndex, telemetry)
+          {voices.map(({ voiceIndex, telemetry, trace }) =>
+            this.renderVoice(
+              voiceIndex,
+              telemetry,
+              trace,
+              scopeDisplay.triggered ? scopeDisplay.triggerPosition : undefined
+            )
           )}
         </div>
       </div>
@@ -170,8 +195,73 @@ export class SidScoreWaveformWidget extends ReactWidget {
             {this.playbackLabel}
           </span>
         </div>
+        <div className='cc-sidscore-scope-controls'>
+          <span className='cc-sidscore-scope-controls__label'>Mode</span>
+          <div
+            aria-label='Scope mode'
+            className='cc-sidscore-scope-segment'
+            role='group'
+          >
+            {(['free', 'triggered'] as const).map((mode) => (
+              <button
+                aria-pressed={this.scopeMode === mode}
+                className={`theia-button ${
+                  this.scopeMode === mode ? '' : 'secondary'
+                }`}
+                key={mode}
+                onClick={() => this.setScopeMode(mode)}
+                title={
+                  mode === 'free'
+                    ? 'Show the newest samples continuously without phase alignment.'
+                    : 'Stabilise all three waveforms by aligning them to a rising edge in the selected trigger voice.'
+                }
+                type='button'
+              >
+                {mode === 'free' ? 'Free' : 'Triggered'}
+              </button>
+            ))}
+          </div>
+          <span className='cc-sidscore-scope-controls__label'>Trigger</span>
+          <div
+            aria-label='Trigger voice'
+            className='cc-sidscore-scope-segment'
+            role='group'
+          >
+            {[1, 2, 3].map((voiceIndex) => (
+              <button
+                aria-pressed={this.triggerVoice === voiceIndex}
+                className={`theia-button ${
+                  this.triggerVoice === voiceIndex ? '' : 'secondary'
+                }`}
+                key={voiceIndex}
+                onClick={() => this.setTriggerVoice(voiceIndex)}
+                title={`Use voice ${voiceIndex} as the common trigger source while preserving the timing between all three waveforms.`}
+                type='button'
+              >
+                V{voiceIndex}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     );
+  }
+
+  protected setScopeMode(mode: SidScoreScopeMode): void {
+    this.scopeMode = mode;
+    this.update();
+  }
+
+  protected setTriggerVoice(voiceIndex: number): void {
+    this.triggerVoice = voiceIndex;
+    this.update();
+  }
+
+  protected scopeSnapshots(): readonly SidScoreScopeChannel[] {
+    return [1, 2, 3].map((voiceIndex) => ({
+      voiceIndex,
+      samples: this.scopeBuffers.get(voiceIndex)?.snapshot() ?? []
+    }));
   }
 
   protected renderSongDetails(): React.ReactNode {
@@ -212,11 +302,12 @@ export class SidScoreWaveformWidget extends ReactWidget {
 
   protected renderVoice(
     voiceIndex: number,
-    telemetry: SidScoreVoiceTelemetry | undefined
+    telemetry: SidScoreVoiceTelemetry | undefined,
+    trace: readonly number[],
+    triggerPosition: number | undefined
   ): React.ReactNode {
     const active = telemetry ? (telemetry.flags & 1) !== 0 : false;
     const note = telemetry ? formatNote(telemetry) : '-';
-    const trace = this.scopeBuffers.get(voiceIndex)?.snapshot() ?? [];
     return (
       <div
         key={voiceIndex}
@@ -270,6 +361,18 @@ export class SidScoreWaveformWidget extends ReactWidget {
             strokeWidth='1'
             vectorEffect='non-scaling-stroke'
           />
+          {triggerPosition !== undefined && trace.length > 1 ? (
+            <line
+              x1={(triggerPosition / (trace.length - 1)) * SCOPE_WIDTH}
+              y1='0'
+              x2={(triggerPosition / (trace.length - 1)) * SCOPE_WIDTH}
+              y2={SCOPE_HEIGHT}
+              stroke={SCOPE_TRIGGER}
+              strokeDasharray='3 3'
+              strokeWidth='1'
+              vectorEffect='non-scaling-stroke'
+            />
+          ) : undefined}
           {renderScopeTrace(trace)}
         </svg>
       </div>
