@@ -40,6 +40,12 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
       - name: Verify Windows native build toolchain
         if: runner.os == 'Windows'
         shell: pwsh
@@ -173,6 +179,7 @@ jobs:
           package_dir="dist/nightly/${{ matrix.package-dir }}"
           package_archive="dist/nightly/commodore-commander-nightly-${{ matrix.platform }}-${{ runner.arch }}.tar.gz"
           npm run package:current --workspace @commodore-commander/electron-app -- --output "$package_dir"
+          npm run test:product-package -- --package-dir "$package_dir"
           tar -czf "$package_archive" -C "$(dirname "$package_dir")" "$(basename "$package_dir")"
           echo "Packaged $package_archive"
 

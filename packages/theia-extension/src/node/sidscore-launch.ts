@@ -1,9 +1,7 @@
 export const SID_SCORE_CLI_JAR_FILENAME = 'sidscore-cli-0.7.1.jar';
 
 const MACOS_MIDI_SYSTEM_PROPERTIES = [
-  '-Djava.awt.headless=false',
-  '-Dapple.awt.UIElement=true',
-  '-Dsidscore.midi.awtEventPump=true'
+  '-Dsidscore.midi.awtEventPump.disabled=true'
 ] as const;
 
 export interface SidScorePlayerServerArgsOptions {
