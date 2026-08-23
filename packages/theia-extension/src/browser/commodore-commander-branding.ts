@@ -20,8 +20,8 @@ body[data-application-id="${COMMODORE_COMMANDER_APPLICATION_ID}"] #theia\\:icon.
 body[data-application-id="${COMMODORE_COMMANDER_APPLICATION_ID}"] #theia-left-content-panel .theia-sidepanel-toolbar {
   position: relative;
   box-sizing: border-box;
-  min-height: calc(var(--theia-horizontal-toolbar-height) + 46px);
-  padding-top: 46px;
+  min-height: calc(var(--theia-horizontal-toolbar-height) + 33px);
+  padding-top: 33px;
 }
 
 body[data-application-id="${COMMODORE_COMMANDER_APPLICATION_ID}"] #theia-left-content-panel .theia-sidepanel-toolbar::before {
@@ -33,7 +33,7 @@ body[data-application-id="${COMMODORE_COMMANDER_APPLICATION_ID}"] #theia-left-co
   height: 30px;
   background-image: url("${COMMODORE_COMMANDER_BANNER_URL}");
   background-repeat: no-repeat;
-  background-position: left center;
+  background-position: left bottom;
   background-size: contain;
   pointer-events: none;
 }
