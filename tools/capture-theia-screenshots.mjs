@@ -494,23 +494,6 @@ function createCaptureConfig(options) {
         ]
       },
       {
-        outputPath: path.join(options.outputDir, 'theia-character-set-editor.png'),
-        sourcePath: options.characterSetPath,
-        steps: [
-          {
-            type: 'executeCommand',
-            commandId: 'core.collapse.all.tabs'
-          },
-          {
-            type: 'waitForVisibleText',
-            selector: '.cc-character-set-editor',
-            text: 'Import .64C',
-            timeoutMs: options.timeoutMs
-          },
-          { type: 'wait', ms: 500 }
-        ]
-      },
-      {
         outputPath: path.join(options.outputDir, 'theia-sidscore-player.png'),
         sourcePath: options.sidScorePath,
         source: sidScorePlayerSource,
@@ -533,6 +516,56 @@ function createCaptureConfig(options) {
             type: 'waitForVisibleText',
             selector: '.cc-sid-instrument',
             text: 'Instrument',
+            timeoutMs: options.timeoutMs
+          },
+          {
+            type: 'clickVisibleText',
+            selector: '.cc-sidscore-waveforms button',
+            text: 'Triggered',
+            timeoutMs: options.timeoutMs
+          },
+          { type: 'wait', ms: 1000 }
+        ],
+        afterSteps: [
+          {
+            type: 'executeCommand',
+            commandId: 'commodoreCommander.sidscore.stop'
+          },
+          { type: 'wait', ms: 250 }
+        ]
+      },
+      {
+        outputPath: path.join(
+          options.outputDir,
+          'theia-sidscore-spectrogram.png'
+        ),
+        sourcePath: options.sidScorePath,
+        source: sidScorePlayerSource,
+        marker: {
+          needle: 'VOICE 1 lead:',
+          offset: 0
+        },
+        steps: [
+          {
+            type: 'executeCommand',
+            commandId: 'commodoreCommander.sidscore.play'
+          },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-sidscore-waveforms',
+            text: 'SIDScore playback',
+            timeoutMs: options.timeoutMs
+          },
+          {
+            type: 'clickVisibleText',
+            selector: '.cc-sidscore-waveforms button',
+            text: 'Spectrogram',
+            timeoutMs: options.timeoutMs
+          },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-sidscore-spectrogram-legend',
+            text: '-96 dBFS',
             timeoutMs: options.timeoutMs
           },
           { type: 'wait', ms: 1000 }
@@ -848,6 +881,23 @@ function createCaptureConfig(options) {
             commandId: 'workbench.action.debug.stop'
           },
           { type: 'wait', ms: 250 }
+        ]
+      },
+      {
+        outputPath: path.join(options.outputDir, 'theia-character-set-editor.png'),
+        sourcePath: options.characterSetPath,
+        steps: [
+          {
+            type: 'executeCommand',
+            commandId: 'core.collapse.all.tabs'
+          },
+          {
+            type: 'waitForVisibleText',
+            selector: '.cc-character-set-editor',
+            text: 'Import .64C',
+            timeoutMs: options.timeoutMs
+          },
+          { type: 'wait', ms: 500 }
         ]
       }
     ]

@@ -63,16 +63,84 @@ The editor provides:
 
 ## Music and sound effects
 
-Commodore Commander supports [SIDScore](https://github.com/turesheim/SIDScore) which is a DSL and toolchain for composing Commodore 64 SID music and sound effects. It has realtime auditioning and export to ASM, PRG, SID, and WAV. It focuses on playback fidelity by aligning the built-in `sidscore` driver with a realtime player timing while keeping output compatible with PSID players like VICE/VSID. SIDScore playback uses the dedicated instrument panel. And even has support for MIDI instruments.
+Commodore Commander supports [SIDScore](https://github.com/turesheim/SIDScore),
+a DSL and toolchain for composing Commodore 64 SID music and sound effects. It
+provides real-time auditioning, MIDI input, dedicated instrument controls, and
+export to ASM, PRG, SID, and WAV. Playback fidelity is improved by aligning the
+built-in `sidscore` driver with the timing of the real-time player while keeping
+the exported result compatible with PSID players such as VICE and VSID.
 
-![Theia SIDScore player with SID instrument controls](docs/theia-sidscore-player.png)
+### SIDScore voice visualiser
+
+The voice visualiser receives ordered audio samples from the SIDScore real-time
+renderer and displays voices 1, 2, and 3 independently. The note, waveform, and
+envelope level shown beside each plot describe the current voice state. Use the
+**View** control to switch between the time-domain **Waveform** view and the
+frequency-domain **Spectrogram** view while playback continues.
+
+#### Waveform
+
+![Theia SIDScore player with stabilised per-voice waveforms](docs/theia-sidscore-player.png)
+
+The waveform view plots sample amplitude against time for each voice. At the
+usual 44.1 kHz sample rate, the 2,048 displayed samples cover approximately 46
+milliseconds. Each trace is centred on zero and may be enlarged automatically,
+up to three times, to make quieter waveforms legible. The vertical scale is
+therefore useful for inspecting shape and timing, but it is not a fixed level
+scale for comparing loudness between voices.
+
+**Free** mode always shows the newest samples. This is useful for attacks,
+releases, pulse-width sweeps, and other changing signals, but a periodic wave
+will normally appear to move horizontally. **Triggered** mode finds the latest
+rising midpoint crossing in the selected trigger voice and places it at the
+dashed vertical line. The same time offset is applied to all three voices, so
+their relative timing is preserved while periodic waveforms appear stationary.
+The **V1**, **V2**, and **V3** controls select the common trigger source. If that
+voice is silent or has too little signal range, the visualiser falls back to
+the newest samples and omits the trigger line.
+
+#### Spectrogram
+
+![Theia SIDScore player with per-voice spectrograms](docs/theia-sidscore-spectrogram.png)
+
+The spectrogram shows how the frequency content of each rendered voice changes
+over time:
+
+- **Horizontal position is time.** Older samples are on the left and the newest
+  analysis window is on the right. The default history is 16,384 samples, or
+  approximately 372 milliseconds at 44.1 kHz.
+- **Vertical position is frequency on a logarithmic scale.** At 44.1 kHz the
+  display covers 50 Hz to the 22.05 kHz Nyquist limit. The 100 Hz, 1 kHz, and
+  10 kHz labels are reference lines, not the limits: content below 100 Hz and
+  above 10 kHz is still included.
+- **Colour is level in dBFS.** The fixed legend runs from -96 dBFS (dark) to
+  0 dBFS (light). dBFS is relative to digital full scale, not acoustic sound
+  pressure. Because the scale is fixed rather than normalised per frame, colour
+  can be compared over time and between the three voices.
+
+Each column is calculated from a 2,048-sample Hann-windowed FFT, with a
+256-sample hop between columns. At 44.1 kHz this gives an analysis window of
+approximately 46 milliseconds and a new column every 5.8 milliseconds. The
+Hann window reduces spectral leakage caused by cutting the signal into short
+frames. The window also spreads an abrupt change across a short interval; the
+view is therefore a time-frequency analysis rather than an instantaneous list
+of oscillator frequencies.
+
+A pitched waveform normally appears as a fundamental band with harmonic bands
+above it. Saw and pulse waves contain stronger high harmonics than a triangle
+wave, while noise produces energy across a broad frequency range. Pulse-width
+changes alter the harmonic pattern, and filter cutoff or resonance modulation
+changes which bands remain strong over time. The display analyses the separate
+voice samples produced by SIDScore's digital real-time renderer, including its
+filter-routing contribution. It does not show only the SID frequency register,
+and it is not a measurement of the analogue output of a physical 6581 or 8580.
 
 The SID SFX editor provides a focused workspace for one-shot game sound
-effects. It starts from a small preset catalog and exposes SIDScore controls for
-waveform, pitch sweep, ADSR envelope, pulse width, priority, voice selection,
-and retrigger behavior. The editor visualizes the envelope, pitch movement, and
-gate-off point while generating a SIDScore `EFFECT` block that can be previewed,
-stopped, or copied into a project source file.
+effects. It starts from a small preset catalogue and exposes SIDScore controls
+for waveform, pitch sweep, ADSR envelope, pulse width, priority, voice
+selection, and retrigger behaviour. The editor visualises the envelope, pitch
+movement, and gate-off point while generating a SIDScore `EFFECT` block that
+can be previewed, stopped, or copied into a project source file.
 
 ![Theia SID SFX editor](docs/theia-sid-sfx-editor.png)
 
