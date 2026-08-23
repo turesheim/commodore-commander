@@ -73,7 +73,7 @@ jobs:
           HOMEBREW_NO_AUTO_UPDATE: "1"
         run: |
           brew untap aws/tap || true
-          brew install autoconf automake dos2unix pkg-config sdl2_image subversion
+          brew install autoconf automake dos2unix pkg-config sdl2_image subversion xa
 
       - name: Prepare @vscode/ripgrep download cache
         env:

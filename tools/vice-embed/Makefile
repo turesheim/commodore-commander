@@ -182,6 +182,7 @@ check-prereqs:
 	 command -v patch >/dev/null 2>&1 || { echo "patch is required to apply $(PATCH_FILE)."; exit 1; }
 	 command -v make >/dev/null 2>&1 || { echo "make is required to build VICE."; exit 1; }
 	 command -v dos2unix >/dev/null 2>&1 || { echo "dos2unix is required to configure VICE."; exit 1; }
+	 command -v xa >/dev/null 2>&1 || { echo "xa is required to configure VICE."; exit 1; }
 	 command -v pkg-config >/dev/null 2>&1 || { echo "pkg-config is required to find SDL2 dependencies."; exit 1; }
 	 pkg-config --exists sdl2 || { echo "SDL2 development files are required. Install sdl2 or sdl2-compat."; exit 1; }
 	 pkg-config --exists SDL2_image || { echo "SDL2_image development files are required. On Homebrew, run: brew install sdl2_image"; exit 1; }
