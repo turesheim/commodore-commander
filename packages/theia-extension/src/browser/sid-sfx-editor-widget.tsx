@@ -29,6 +29,9 @@ import {
 } from '../common/sid-sfx-effect';
 import { SID_SCORE_LANGUAGE_ID } from './sidscore-language-contribution';
 import { SidKnob } from './sid-knob';
+import {
+  createSidSfxEnvelopeVisualization
+} from './sid-sfx-envelope-visualization';
 
 export const SID_SFX_EDITOR_WIDGET_ID = 'commodoreCommander.sidSfxEditor';
 
@@ -474,15 +477,14 @@ export class SidSfxEditorWidget extends ReactWidget {
 
   protected renderVisualization(): React.ReactNode {
     const settings = normalizeSidSfxSettings(this.settings);
-    const envelope = this.envelopePolyline(settings);
+    const envelope = createSidSfxEnvelopeVisualization(settings);
     const pitch = this.pitchPolyline(settings);
-    const gateX = 10 + (settings.gateOffTick / settings.lengthTicks) * 260;
     return (
       <svg
         className='cc-sid-sfx-visualization'
         viewBox='0 0 280 104'
         role='img'
-        aria-label='SID sound effect shape'
+        aria-label={envelope.ariaLabel}
         preserveAspectRatio='none'
       >
         <line className='cc-sid-visualization__grid' x1='10' y1='27.5' x2='270' y2='27.5' />
@@ -490,7 +492,7 @@ export class SidSfxEditorWidget extends ReactWidget {
         <line className='cc-sid-visualization__grid' x1='10' y1='76.5' x2='270' y2='76.5' />
         <polyline
           className='cc-sid-sfx-visualization__envelope'
-          points={envelope}
+          points={envelope.pointsAttribute}
         />
         <polyline
           className='cc-sid-sfx-visualization__pitch'
@@ -498,9 +500,9 @@ export class SidSfxEditorWidget extends ReactWidget {
         />
         <line
           className='cc-sid-sfx-visualization__gate'
-          x1={gateX}
+          x1={envelope.gateX}
           y1='10'
-          x2={gateX}
+          x2={envelope.gateX}
           y2='92'
         />
         <text className='cc-sid-visualization__label' x='42' y='98'>ADSR</text>
@@ -747,32 +749,6 @@ export class SidSfxEditorWidget extends ReactWidget {
     requestAnimationFrame(() => {
       this.sourceEditor?.layout();
     });
-  }
-
-  protected envelopePolyline(settings: SidSfxEffectSettings): string {
-    const left = 10;
-    const right = 270;
-    const top = 12;
-    const bottom = 88;
-    const width = right - left;
-    const gateX = left + (settings.gateOffTick / settings.lengthTicks) * width;
-    const attackX = Math.min(
-      gateX,
-      left + Math.max(4, (settings.attack / 15) * 58)
-    );
-    const decayX = Math.min(
-      gateX,
-      attackX + Math.max(4, (settings.decay / 15) * 58)
-    );
-    const sustainY =
-      bottom - (settings.sustain / 15) * (bottom - top);
-    return [
-      `${left},${bottom}`,
-      `${attackX},${top}`,
-      `${decayX},${sustainY}`,
-      `${gateX},${sustainY}`,
-      `${right},${bottom}`
-    ].join(' ');
   }
 
   protected pitchPolyline(settings: SidSfxEffectSettings): string {
