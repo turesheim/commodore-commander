@@ -13,7 +13,7 @@ test('SID instrument ADSR visualization creates ordered envelope points', () => 
     release: 3
   });
 
-  assert.equal(visualization.viewBox, '0 0 280 104');
+  assert.equal(visualization.viewBox, '0 0 280 126');
   assert.ok(visualization.points.length > 500);
   assert.equal(visualization.points[0]?.x, 12);
   assert.equal(visualization.points[0]?.y, 80);
@@ -30,6 +30,44 @@ test('SID instrument ADSR visualization creates ordered envelope points', () => 
     visualization.labels.map((label) => label.label),
     ['A', 'D', 'S', 'R']
   );
+});
+
+test('SID instrument visualization includes gate articulation settings', () => {
+  const visualization = createSidAdsrEnvelopeVisualization({
+    attack: 1,
+    decay: 4,
+    sustain: 10,
+    release: 3,
+    gateMode: 'retrigger',
+    gateMin: 4,
+    hardRestart: true
+  });
+
+  assert.equal(
+    visualization.gate.pointsAttribute,
+    '12,112 17,112 17,103 204,103 204,112 268,112'
+  );
+  assert.equal(visualization.gate.detailText, 'RETRIGGER  MIN 4F  RESTART');
+  assert.match(visualization.ariaLabel, /Gate mode is retrigger/u);
+  assert.match(visualization.ariaLabel, /Minimum gate-on time is 4 PAL frames/u);
+  assert.match(visualization.ariaLabel, /Restart is enabled/u);
+});
+
+test('SID instrument visualization reports legato without restart', () => {
+  const visualization = createSidAdsrEnvelopeVisualization({
+    attack: 1,
+    decay: 4,
+    sustain: 10,
+    release: 3,
+    gateMode: 'legato',
+    gateMin: 1,
+    hardRestart: false
+  });
+
+  assert.equal(visualization.gate.detailText, 'LEGATO  MIN 1F');
+  assert.match(visualization.ariaLabel, /Gate mode is legato/u);
+  assert.match(visualization.ariaLabel, /Minimum gate-on time is 1 PAL frame\./u);
+  assert.doesNotMatch(visualization.ariaLabel, /Restart is enabled/u);
 });
 
 test('SID instrument ADSR visualization maps sustain level to vertical position', () => {

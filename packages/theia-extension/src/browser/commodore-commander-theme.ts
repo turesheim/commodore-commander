@@ -811,7 +811,7 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   border-radius: 5px;
   box-sizing: border-box;
   display: block;
-  height: 104px;
+  height: 126px;
   min-width: 0;
   width: 100%;
 }
@@ -840,6 +840,29 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   font-size: 9px;
   font-weight: 700;
   text-anchor: middle;
+}
+
+.cc-sid-visualization__gate-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--cc-sid-control-text) 74%, transparent);
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.cc-sid-visualization__gate-label {
+  fill: var(--cc-sid-control-muted);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.cc-sid-visualization__gate-label--name {
+  text-anchor: start;
+}
+
+.cc-sid-visualization__gate-label--detail {
+  text-anchor: end;
 }
 
 .cc-sid-instrument__footer {

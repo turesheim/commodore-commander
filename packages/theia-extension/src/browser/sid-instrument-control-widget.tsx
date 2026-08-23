@@ -134,7 +134,7 @@ const CONTROL_TITLES = {
   midiChannel:
     'Selects the MIDI channel that drives this SID voice assignment.',
   visualization:
-    'Shows a clean SID ADSR cycle from zero at PAL clock speed. Attack is linear, decay and release use the SID exponential divider, and sustain lasts until GATE is cleared.',
+    'Shows a clean SID ADSR cycle from zero at PAL clock speed. The lower track shows the schematic GATE transition plus the articulation mode and minimum gate-on time.',
   waveRegister:
     'SID control register waveform bits: TRI=$10, SAW=$20, PULSE=$40, NOISE=$80. GATE, SYNC, and RING are separate control bits.',
   filterRegister:
@@ -664,7 +664,10 @@ export class SidInstrumentControlWidget extends ReactWidget {
       attack: this.numericValues.attack,
       decay: this.numericValues.decay,
       sustain: this.numericValues.sustain,
-      release: this.numericValues.release
+      release: this.numericValues.release,
+      gateMode: this.gateMode,
+      gateMin: this.numericValues.gateMin,
+      hardRestart: this.toggleValues.hardRestart
     });
     return (
       <section className='cc-sid-section cc-sid-section--visualization'>
@@ -716,6 +719,24 @@ export class SidInstrumentControlWidget extends ReactWidget {
             {label.text}
           </text>
         ))}
+        <polyline
+          className='cc-sid-visualization__gate-line'
+          points={envelope.gate.pointsAttribute}
+        />
+        <text
+          className='cc-sid-visualization__gate-label cc-sid-visualization__gate-label--name'
+          x='12'
+          y='122'
+        >
+          GATE
+        </text>
+        <text
+          className='cc-sid-visualization__gate-label cc-sid-visualization__gate-label--detail'
+          x='268'
+          y='122'
+        >
+          {envelope.gate.detailText}
+        </text>
       </svg>
     );
   }

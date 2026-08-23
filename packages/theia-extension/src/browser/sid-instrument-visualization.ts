@@ -13,6 +13,9 @@ export interface SidAdsrEnvelopeInput {
   readonly decay: number;
   readonly sustain: number;
   readonly release: number;
+  readonly gateMode?: 'retrigger' | 'legato';
+  readonly gateMin?: number;
+  readonly hardRestart?: boolean;
 }
 
 export interface SidEnvelopePoint {
@@ -34,16 +37,25 @@ export interface SidAdsrEnvelopeVisualization {
   readonly areaPath: string;
   readonly sustainY: number;
   readonly labels: readonly SidEnvelopeSegmentLabel[];
+  readonly gate: SidGateVisualization;
   readonly ariaLabel: string;
 }
 
+export interface SidGateVisualization {
+  readonly pointsAttribute: string;
+  readonly detailText: string;
+}
+
 const WIDTH = 280;
-const HEIGHT = 104;
+const HEIGHT = 126;
 const GRAPH_LEFT = 12;
 const GRAPH_RIGHT = 268;
 const GRAPH_TOP = 10;
 const GRAPH_BOTTOM = 80;
 const PHASE_WIDTH = (GRAPH_RIGHT - GRAPH_LEFT) / 4;
+const GATE_HIGH_Y = 103;
+const GATE_LOW_Y = 112;
+const GATE_ON_X = 17;
 
 export function createSidAdsrEnvelopeVisualization(
   input: SidAdsrEnvelopeInput
@@ -67,6 +79,7 @@ export function createSidAdsrEnvelopeVisualization(
   const attackDuration = sidCurveDurationCycles(attackCurve);
   const decayDuration = sidCurveDurationCycles(decayCurve);
   const releaseDuration = sidCurveDurationCycles(releaseCurve);
+  const gate = createGateVisualization(input, sustainEndX);
   const points: SidEnvelopePoint[] = [];
   appendCurve(points, attackCurve, GRAPH_LEFT, attackEndX);
   appendCurve(points, decayCurve, attackEndX, decayEndX);
@@ -88,13 +101,48 @@ export function createSidAdsrEnvelopeVisualization(
       .join(' L ')} L ${GRAPH_RIGHT} ${GRAPH_BOTTOM} Z`,
     sustainY,
     labels,
+    gate,
     ariaLabel: [
       `SID ADSR envelope at PAL clock speed. Attack ${formatDuration(attackDuration)}.`,
       `Decay ${formatDuration(decayDuration)} to sustain level ${clamp(input.sustain, 0, 15)}.`,
       'Sustain remains while gate is on.',
-      `Release ${formatDuration(releaseDuration)} from the sustain level.`
+      `Release ${formatDuration(releaseDuration)} from the sustain level.`,
+      gateAriaLabel(input)
     ].join(' ')
   };
+}
+
+function createGateVisualization(
+  input: SidAdsrEnvelopeInput,
+  gateOffX: number
+): SidGateVisualization {
+  const gateMode = input.gateMode === 'legato' ? 'LEGATO' : 'RETRIGGER';
+  const gateMin = Math.round(clamp(input.gateMin ?? 0, 0, 16));
+  const detailParts = [gateMode, `MIN ${gateMin}F`];
+  if (input.hardRestart) {
+    detailParts.push('RESTART');
+  }
+  return {
+    pointsAttribute: [
+      `${GRAPH_LEFT},${GATE_LOW_Y}`,
+      `${GATE_ON_X},${GATE_LOW_Y}`,
+      `${GATE_ON_X},${GATE_HIGH_Y}`,
+      `${gateOffX},${GATE_HIGH_Y}`,
+      `${gateOffX},${GATE_LOW_Y}`,
+      `${GRAPH_RIGHT},${GATE_LOW_Y}`
+    ].join(' '),
+    detailText: detailParts.join('  ')
+  };
+}
+
+function gateAriaLabel(input: SidAdsrEnvelopeInput): string {
+  const gateMode = input.gateMode === 'legato' ? 'legato' : 'retrigger';
+  const gateMin = Math.round(clamp(input.gateMin ?? 0, 0, 16));
+  return [
+    `Gate mode is ${gateMode}.`,
+    `Minimum gate-on time is ${gateMin} PAL ${gateMin === 1 ? 'frame' : 'frames'}.`,
+    input.hardRestart ? 'Restart is enabled.' : ''
+  ].filter(Boolean).join(' ');
 }
 
 function appendCurve(
