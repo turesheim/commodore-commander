@@ -14,7 +14,7 @@ On macOS, the build expects Xcode command line tools plus the normal VICE SDL2
 build prerequisites. With Homebrew, the missing pieces are typically:
 
 ```sh
-brew install autoconf automake pkg-config sdl2_image
+brew install autoconf automake dos2unix pkg-config sdl2_image subversion
 ```
 
 The staged runtime is written to:
