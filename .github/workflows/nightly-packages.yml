@@ -71,7 +71,9 @@ jobs:
         if: runner.os == 'macOS'
         env:
           HOMEBREW_NO_AUTO_UPDATE: "1"
-        run: brew install autoconf automake pkg-config sdl2_image subversion
+        run: |
+          brew untap aws/tap || true
+          brew install autoconf automake dos2unix pkg-config sdl2_image subversion
 
       - name: Prepare @vscode/ripgrep download cache
         env:
