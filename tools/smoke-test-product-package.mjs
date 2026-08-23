@@ -270,8 +270,9 @@ async function scanMidiDevices(port, timeoutMs) {
     const deviceCount = deviceList.payload.readUInt16LE(4);
     console.log(`SIDScore MIDI scan returned ${deviceCount} device(s).`);
   } finally {
-    socket.end();
+    socket.on('error', () => undefined);
     reader.dispose();
+    socket.destroy();
   }
 }
 
