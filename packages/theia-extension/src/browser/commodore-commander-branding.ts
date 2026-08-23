@@ -1,10 +1,12 @@
 import appIcon128Url from '../../assets/branding/cc_128.png';
+import bannerUrl from '../../assets/branding/banner.png';
 
 const BRANDING_STYLE_ELEMENT_ID = 'commodore-commander-branding';
 const FAVICON_ELEMENT_ID = 'commodore-commander-favicon';
 
 export const COMMODORE_COMMANDER_APPLICATION_ID = 'commodore-commander';
 export const COMMODORE_COMMANDER_APP_ICON_URL = appIcon128Url;
+export const COMMODORE_COMMANDER_BANNER_URL = bannerUrl;
 
 function brandingStyleSheetContent(): string {
   return `
@@ -13,6 +15,27 @@ body[data-application-id="${COMMODORE_COMMANDER_APPLICATION_ID}"] #theia\\:icon.
   height: 32px;
   margin: 4px 8px 4px 12px;
   background: center / contain no-repeat url("${COMMODORE_COMMANDER_APP_ICON_URL}");
+}
+
+body[data-application-id="${COMMODORE_COMMANDER_APPLICATION_ID}"] #theia-left-content-panel .theia-sidepanel-toolbar {
+  position: relative;
+  box-sizing: border-box;
+  min-height: calc(var(--theia-horizontal-toolbar-height) + 33px);
+  padding-top: 33px;
+}
+
+body[data-application-id="${COMMODORE_COMMANDER_APPLICATION_ID}"] #theia-left-content-panel .theia-sidepanel-toolbar::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: calc(var(--theia-ui-padding) * 3);
+  right: calc(var(--theia-ui-padding) * 3);
+  height: 30px;
+  background-image: url("${COMMODORE_COMMANDER_BANNER_URL}");
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: contain;
+  pointer-events: none;
 }
 
 body[data-application-id="${COMMODORE_COMMANDER_APPLICATION_ID}"] .cc-welcome-header {
