@@ -122,7 +122,9 @@ while an embedded emulator is running.
   VICE runtime before packaging
 - preference-backed external tool paths for installed VICE and Java:
   `commodoreCommander.VICE.runtimePath` selects a VICE runtime or installation
-  root, while `commodoreCommander.tools.javaRuntime` selects Java
+  root, while `commodoreCommander.tools.javaRuntime` selects Java 21 or newer.
+  SIDScore checks the selected Java runtime before startup and reports a clear
+  error when the system Java is too old.
 - Kick Assembler `.dbg` source mapping for source breakpoints, breakpoint locations, loaded sources, labels, and source-backed stack frame locations with nearest-line fallback and generated PRG-disassembly fallback
 - source breakpoints and memory data breakpoints/watchpoints through VICE binary-monitor checkpoints, including VICE checkpoint conditions and DAP-style hit conditions
 - logpoints/tracepoints for source lines, using non-stopping VICE checkpoints when the log message only needs static values and adapter-managed stop/log/resume when live register values are needed
@@ -183,7 +185,8 @@ Linux. The scheduled workflow uploads run artifacts and refreshes the mutable
 `nightly` prerelease after all three platform packages build successfully.
 Each product package is smoke-tested before upload by starting the bundled
 SIDScore player server from the packaged Kick Assembler and SIDScore assets and
-running a MIDI-device scan through the SRAP protocol.
+running a MIDI-device scan through the SRAP protocol. The smoke test also
+checks that the selected Java runtime supports the bundled SIDScore CLI.
 The macOS nightly package is ad-hoc signed unless these repository secrets are
 configured:
 

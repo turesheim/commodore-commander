@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 
 import {
   createSidScorePlayerServerArgs,
+  formatJavaRuntimeTooOldMessage,
   formatCommandLine,
-  formatSidScoreLaunchDiagnostic
+  formatSidScoreLaunchDiagnostic,
+  parseJavaRuntimeVersionOutput
 } from '../node/sidscore-launch';
 
 test('SIDScore player server launch disables macOS AWT MIDI event pump before jar execution', () => {
@@ -77,5 +79,32 @@ test('SIDScore launch command formatting quotes paths with spaces', () => {
   assert.equal(
     formatCommandLine('/usr/bin/java', ['-jar', '/Applications/Commodore Commander/sidscore-cli.jar']),
     "/usr/bin/java -jar '/Applications/Commodore Commander/sidscore-cli.jar'"
+  );
+});
+
+test('SIDScore Java runtime parser reads modern Java versions', () => {
+  assert.deepEqual(
+    parseJavaRuntimeVersionOutput(
+      'openjdk version "21.0.11" 2026-04-21 LTS\n' +
+      'OpenJDK Runtime Environment Temurin-21.0.11+10\n'
+    ),
+    { version: '21.0.11', major: 21 }
+  );
+});
+
+test('SIDScore Java runtime parser reads legacy Java versions', () => {
+  assert.deepEqual(
+    parseJavaRuntimeVersionOutput('java version "1.8.0_402"\n'),
+    { version: '1.8.0_402', major: 8 }
+  );
+});
+
+test('SIDScore Java runtime error names the Java 21 requirement', () => {
+  assert.equal(
+    formatJavaRuntimeTooOldMessage({ version: '17.0.19', major: 17 }),
+    'The configured Java runtime is 17.0.19 (Java 17), ' +
+    'but bundled SIDScore requires Java 21 or newer. ' +
+    'Install Java 21+ or set commodoreCommander.tools.javaRuntime ' +
+    'to a Java 21+ executable.'
   );
 });
