@@ -17,11 +17,18 @@ import {
   type SidScoreScopeChannel,
   type SidScoreScopeMode
 } from './sidscore-scope-visualization';
+import {
+  createSidScoreSpectrogram,
+  SID_SCORE_SPECTROGRAM_MAX_DECIBELS,
+  SID_SCORE_SPECTROGRAM_MIN_DECIBELS,
+  spectrogramRowForFrequency,
+  type SidScoreSpectrogram
+} from './sidscore-spectrogram';
 
 export const SID_SCORE_WAVEFORM_WIDGET_ID =
   'commodore-commander.sidscore-waveforms';
 
-const SCOPE_BUFFER_SIZE = 8192;
+const SCOPE_BUFFER_SIZE = 16384;
 const SCOPE_DISPLAY_SIZE = 2048;
 const SCOPE_AUTO_GAIN_LIMIT = 3.0;
 const SCOPE_VERTICAL_HEADROOM = 0.92;
@@ -32,14 +39,28 @@ const SCOPE_TRIGGER = 'rgba(214, 205, 182, 0.42)';
 const SCOPE_WIDTH = 1000;
 const SCOPE_HEIGHT = 140;
 
+type SidScoreVisualisationMode = 'waveform' | 'spectrogram';
+
+interface CachedSidScoreSpectrogram {
+  readonly revision: number;
+  readonly sampleRate: number;
+  readonly spectrogram: SidScoreSpectrogram;
+}
+
 @injectable()
 export class SidScoreWaveformWidget extends ReactWidget {
   protected voiceState: SidScoreVoiceStateEvent | undefined;
   protected scopeBuckets: SidScoreScopeBucketsEvent | undefined;
   protected songMetadata: SidScoreSongMetadata | undefined;
   protected playbackLabel = 'Idle';
+  protected visualisationMode: SidScoreVisualisationMode = 'waveform';
   protected scopeMode: SidScoreScopeMode = 'free';
   protected triggerVoice = 1;
+  protected scopeSampleRate: number | undefined;
+  protected readonly spectrogramCache = new Map<
+    number,
+    CachedSidScoreSpectrogram
+  >();
   protected readonly scopeBuffers = new Map<number, ScopeTraceBuffer>([
     [1, new ScopeTraceBuffer()],
     [2, new ScopeTraceBuffer()],
@@ -50,7 +71,7 @@ export class SidScoreWaveformWidget extends ReactWidget {
     super();
     this.id = SID_SCORE_WAVEFORM_WIDGET_ID;
     this.title.label = 'SIDScore';
-    this.title.caption = 'SIDScore Voice Waveforms';
+    this.title.caption = 'SIDScore Voice Visualiser';
     this.title.iconClass = codicon('pulse');
     this.title.closable = true;
     this.addClass('cc-sidscore-waveforms');
@@ -73,6 +94,7 @@ export class SidScoreWaveformWidget extends ReactWidget {
 
   setScopeBuckets(event: SidScoreScopeBucketsEvent): void {
     this.scopeBuckets = event;
+    this.setScopeSampleRate(event.sampleRate);
     for (const voiceScope of event.voices) {
       this.scopeBuffers
         .get(voiceScope.voiceIndex)
@@ -82,6 +104,7 @@ export class SidScoreWaveformWidget extends ReactWidget {
   }
 
   setScopeSamples(event: SidScoreScopeSamplesEvent): void {
+    this.setScopeSampleRate(event.sampleRate);
     for (const voiceScope of event.voices) {
       this.scopeBuffers
         .get(voiceScope.voiceIndex)
@@ -95,6 +118,8 @@ export class SidScoreWaveformWidget extends ReactWidget {
     this.scopeBuckets = undefined;
     this.songMetadata = undefined;
     this.playbackLabel = playbackLabel;
+    this.scopeSampleRate = undefined;
+    this.spectrogramCache.clear();
     for (const buffer of this.scopeBuffers.values()) {
       buffer.clear();
     }
@@ -103,20 +128,24 @@ export class SidScoreWaveformWidget extends ReactWidget {
 
   protected render(): React.ReactNode {
     const songDetails = this.renderSongDetails();
-    const scopeDisplay = createSidScoreScopeDisplay(
-      this.scopeSnapshots(),
-      this.scopeMode,
-      this.triggerVoice,
-      SCOPE_DISPLAY_SIZE
-    );
+    const snapshots = this.scopeSnapshots();
+    const scopeDisplay = this.visualisationMode === 'waveform'
+      ? createSidScoreScopeDisplay(
+          snapshots,
+          this.scopeMode,
+          this.triggerVoice,
+          SCOPE_DISPLAY_SIZE
+        )
+      : undefined;
     const voices = [1, 2, 3].map((voiceIndex) => ({
       voiceIndex,
       telemetry: this.voiceState?.voices.find(
         (voice) => voice.voiceIndex === voiceIndex
       ),
       trace:
-        scopeDisplay.channels.find((channel) => channel.voiceIndex === voiceIndex)
-          ?.samples ?? []
+        (scopeDisplay?.channels ?? snapshots).find(
+          (channel) => channel.voiceIndex === voiceIndex
+        )?.samples ?? []
     }));
 
     return (
@@ -146,7 +175,9 @@ export class SidScoreWaveformWidget extends ReactWidget {
               voiceIndex,
               telemetry,
               trace,
-              scopeDisplay.triggered ? scopeDisplay.triggerPosition : undefined
+              scopeDisplay?.triggered
+                ? scopeDisplay.triggerPosition
+                : undefined
             )
           )}
         </div>
@@ -196,55 +227,104 @@ export class SidScoreWaveformWidget extends ReactWidget {
           </span>
         </div>
         <div className='cc-sidscore-scope-controls'>
-          <span className='cc-sidscore-scope-controls__label'>Mode</span>
+          <span className='cc-sidscore-scope-controls__label'>View</span>
           <div
-            aria-label='Scope mode'
+            aria-label='Visualisation mode'
             className='cc-sidscore-scope-segment'
             role='group'
           >
-            {(['free', 'triggered'] as const).map((mode) => (
+            {(['waveform', 'spectrogram'] as const).map((mode) => (
               <button
-                aria-pressed={this.scopeMode === mode}
+                aria-pressed={this.visualisationMode === mode}
                 className={`theia-button ${
-                  this.scopeMode === mode ? '' : 'secondary'
+                  this.visualisationMode === mode ? '' : 'secondary'
                 }`}
                 key={mode}
-                onClick={() => this.setScopeMode(mode)}
+                onClick={() => this.setVisualisationMode(mode)}
                 title={
-                  mode === 'free'
-                    ? 'Show the newest samples continuously without phase alignment.'
-                    : 'Stabilise all three waveforms by aligning them to a rising edge in the selected trigger voice.'
+                  mode === 'waveform'
+                    ? 'Show each voice as amplitude over time.'
+                    : 'Show how frequency energy changes over time for each voice; colour represents level in dBFS.'
                 }
                 type='button'
               >
-                {mode === 'free' ? 'Free' : 'Triggered'}
+                {mode === 'waveform' ? 'Waveform' : 'Spectrogram'}
               </button>
             ))}
           </div>
-          <span className='cc-sidscore-scope-controls__label'>Trigger</span>
-          <div
-            aria-label='Trigger voice'
-            className='cc-sidscore-scope-segment'
-            role='group'
-          >
-            {[1, 2, 3].map((voiceIndex) => (
-              <button
-                aria-pressed={this.triggerVoice === voiceIndex}
-                className={`theia-button ${
-                  this.triggerVoice === voiceIndex ? '' : 'secondary'
-                }`}
-                key={voiceIndex}
-                onClick={() => this.setTriggerVoice(voiceIndex)}
-                title={`Use voice ${voiceIndex} as the common trigger source while preserving the timing between all three waveforms.`}
-                type='button'
+          {this.visualisationMode === 'waveform' ? (
+            <>
+              <span className='cc-sidscore-scope-controls__label'>Mode</span>
+              <div
+                aria-label='Scope mode'
+                className='cc-sidscore-scope-segment'
+                role='group'
               >
-                V{voiceIndex}
-              </button>
-            ))}
-          </div>
+                {(['free', 'triggered'] as const).map((mode) => (
+                  <button
+                    aria-pressed={this.scopeMode === mode}
+                    className={`theia-button ${
+                      this.scopeMode === mode ? '' : 'secondary'
+                    }`}
+                    key={mode}
+                    onClick={() => this.setScopeMode(mode)}
+                    title={
+                      mode === 'free'
+                        ? 'Show the newest samples continuously without phase alignment.'
+                        : 'Stabilise all three waveforms by aligning them to a rising edge in the selected trigger voice.'
+                    }
+                    type='button'
+                  >
+                    {mode === 'free' ? 'Free' : 'Triggered'}
+                  </button>
+                ))}
+              </div>
+              <span className='cc-sidscore-scope-controls__label'>Trigger</span>
+              <div
+                aria-label='Trigger voice'
+                className='cc-sidscore-scope-segment'
+                role='group'
+              >
+                {[1, 2, 3].map((voiceIndex) => (
+                  <button
+                    aria-pressed={this.triggerVoice === voiceIndex}
+                    className={`theia-button ${
+                      this.triggerVoice === voiceIndex ? '' : 'secondary'
+                    }`}
+                    key={voiceIndex}
+                    onClick={() => this.setTriggerVoice(voiceIndex)}
+                    title={`Use voice ${voiceIndex} as the common trigger source while preserving the timing between all three waveforms.`}
+                    type='button'
+                  >
+                    V{voiceIndex}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : this.renderSpectrogramLegend()}
         </div>
       </div>
     );
+  }
+
+  protected setVisualisationMode(mode: SidScoreVisualisationMode): void {
+    this.visualisationMode = mode;
+    this.update();
+  }
+
+  protected setScopeSampleRate(sampleRate: number): void {
+    const nextSampleRate = validSampleRate(sampleRate);
+    if (
+      this.scopeSampleRate !== undefined &&
+      nextSampleRate !== undefined &&
+      nextSampleRate !== this.scopeSampleRate
+    ) {
+      for (const buffer of this.scopeBuffers.values()) {
+        buffer.clear();
+      }
+      this.spectrogramCache.clear();
+    }
+    this.scopeSampleRate = nextSampleRate;
   }
 
   protected setScopeMode(mode: SidScoreScopeMode): void {
@@ -317,7 +397,7 @@ export class SidScoreWaveformWidget extends ReactWidget {
           gap: '10px',
           gridTemplateColumns: '120px 1fr',
           minHeight: 0,
-          padding: '8px'
+          padding: '4px 8px'
         }}
       >
         <div
@@ -325,8 +405,9 @@ export class SidScoreWaveformWidget extends ReactWidget {
             display: 'flex',
             flexDirection: 'column',
             fontSize: '12px',
-            gap: '4px',
+            gap: 0,
             justifyContent: 'center',
+            lineHeight: '12px',
             minWidth: 0
           }}
         >
@@ -341,43 +422,251 @@ export class SidScoreWaveformWidget extends ReactWidget {
             env {telemetry ? Math.round(telemetry.envelopeLevel * 100) : 0}%
           </span>
         </div>
-        <svg
-          aria-label={`Voice ${voiceIndex} waveform`}
-          preserveAspectRatio='none'
-          viewBox={`0 0 ${SCOPE_WIDTH} ${SCOPE_HEIGHT}`}
-          style={{
-            background: SCOPE_BG,
-            height: '100%',
-            minHeight: '54px',
-            width: '100%'
-          }}
-        >
-          <line
-            x1='0'
-            y1={SCOPE_HEIGHT / 2}
-            x2={SCOPE_WIDTH}
-            y2={SCOPE_HEIGHT / 2}
-            stroke={SCOPE_ZERO}
-            strokeWidth='1'
-            vectorEffect='non-scaling-stroke'
-          />
-          {triggerPosition !== undefined && trace.length > 1 ? (
+        {this.visualisationMode === 'waveform' ? (
+          <svg
+            aria-label={`Voice ${voiceIndex} waveform`}
+            preserveAspectRatio='none'
+            viewBox={`0 0 ${SCOPE_WIDTH} ${SCOPE_HEIGHT}`}
+            style={{
+              background: SCOPE_BG,
+              height: '100%',
+              minHeight: '40px',
+              width: '100%'
+            }}
+          >
             <line
-              x1={(triggerPosition / (trace.length - 1)) * SCOPE_WIDTH}
-              y1='0'
-              x2={(triggerPosition / (trace.length - 1)) * SCOPE_WIDTH}
-              y2={SCOPE_HEIGHT}
-              stroke={SCOPE_TRIGGER}
-              strokeDasharray='3 3'
+              x1='0'
+              y1={SCOPE_HEIGHT / 2}
+              x2={SCOPE_WIDTH}
+              y2={SCOPE_HEIGHT / 2}
+              stroke={SCOPE_ZERO}
               strokeWidth='1'
               vectorEffect='non-scaling-stroke'
             />
-          ) : undefined}
-          {renderScopeTrace(trace)}
-        </svg>
+            {triggerPosition !== undefined && trace.length > 1 ? (
+              <line
+                x1={(triggerPosition / (trace.length - 1)) * SCOPE_WIDTH}
+                y1='0'
+                x2={(triggerPosition / (trace.length - 1)) * SCOPE_WIDTH}
+                y2={SCOPE_HEIGHT}
+                stroke={SCOPE_TRIGGER}
+                strokeDasharray='3 3'
+                strokeWidth='1'
+                vectorEffect='non-scaling-stroke'
+              />
+            ) : undefined}
+            {renderScopeTrace(trace)}
+          </svg>
+        ) : this.renderSpectrogram(voiceIndex, trace)}
       </div>
     );
   }
+
+  protected renderSpectrogram(
+    voiceIndex: number,
+    samples: readonly number[]
+  ): React.ReactNode {
+    const buffer = this.scopeBuffers.get(voiceIndex);
+    const sampleRate = this.scopeSampleRate;
+    const cached = this.spectrogramCache.get(voiceIndex);
+    let spectrogram = cached?.spectrogram;
+    if (
+      buffer &&
+      sampleRate &&
+      (cached?.revision !== buffer.revision ||
+        cached.sampleRate !== sampleRate)
+    ) {
+      spectrogram = createSidScoreSpectrogram(samples, sampleRate);
+      this.spectrogramCache.set(voiceIndex, {
+        revision: buffer.revision,
+        sampleRate,
+        spectrogram
+      });
+    } else if (!buffer || !sampleRate) {
+      spectrogram = undefined;
+    }
+    return (
+      <div className='cc-sidscore-spectrogram'>
+        <SpectrogramCanvas
+          ariaLabel={`Voice ${voiceIndex} spectrogram`}
+          spectrogram={spectrogram}
+        />
+        {spectrogram && spectrogram.width > 0
+          ? renderSpectrogramAxes(spectrogram)
+          : undefined}
+      </div>
+    );
+  }
+
+  protected renderSpectrogramLegend(): React.ReactNode {
+    return (
+      <div
+        className='cc-sidscore-spectrogram-legend'
+        title='Fixed colour scale showing signal level from -96 dBFS to 0 dBFS.'
+      >
+        <span>{SID_SCORE_SPECTROGRAM_MIN_DECIBELS} dBFS</span>
+        <span className='cc-sidscore-spectrogram-legend__scale' />
+        <span>{SID_SCORE_SPECTROGRAM_MAX_DECIBELS} dBFS</span>
+      </div>
+    );
+  }
+}
+
+interface SpectrogramCanvasProps {
+  readonly ariaLabel: string;
+  readonly spectrogram: SidScoreSpectrogram | undefined;
+}
+
+class SpectrogramCanvas extends React.Component<SpectrogramCanvasProps> {
+  protected readonly canvasRef = React.createRef<HTMLCanvasElement>();
+
+  componentDidMount(): void {
+    this.draw();
+  }
+
+  componentDidUpdate(previous: SpectrogramCanvasProps): void {
+    if (previous.spectrogram !== this.props.spectrogram) {
+      this.draw();
+    }
+  }
+
+  render(): React.ReactNode {
+    return (
+      <canvas
+        aria-label={this.props.ariaLabel}
+        className='cc-sidscore-spectrogram__canvas'
+        height={this.props.spectrogram?.height ?? 1}
+        ref={this.canvasRef}
+        role='img'
+        width={Math.max(1, this.props.spectrogram?.width ?? 0)}
+      />
+    );
+  }
+
+  protected draw(): void {
+    const canvas = this.canvasRef.current;
+    const spectrogram = this.props.spectrogram;
+    if (!canvas) {
+      return;
+    }
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return;
+    }
+    context.fillStyle = '#1b1f24';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    if (!spectrogram || spectrogram.width === 0) {
+      return;
+    }
+
+    const image = context.createImageData(
+      spectrogram.width,
+      spectrogram.height
+    );
+    for (let index = 0; index < spectrogram.intensities.length; index += 1) {
+      const [red, green, blue] = spectrogramColour(
+        spectrogram.intensities[index] ?? 0
+      );
+      const pixel = index * 4;
+      image.data[pixel] = red;
+      image.data[pixel + 1] = green;
+      image.data[pixel + 2] = blue;
+      image.data[pixel + 3] = 255;
+    }
+    context.putImageData(image, 0, 0);
+  }
+}
+
+const SPECTROGRAM_COLOUR_STOPS: readonly (readonly [
+  number,
+  number,
+  number
+])[] = [
+  [27, 31, 36],
+  [37, 74, 102],
+  [47, 127, 117],
+  [194, 168, 79],
+  [245, 239, 202]
+];
+
+function renderSpectrogramAxes(
+  spectrogram: SidScoreSpectrogram
+): React.ReactNode {
+  const frequencyTicks = [10000, 1000, 100].filter(
+    (frequency) =>
+      frequency > spectrogram.minFrequency &&
+      frequency < spectrogram.maxFrequency
+  );
+  return (
+    <>
+      {frequencyTicks.map((frequency) => {
+        const row = spectrogramRowForFrequency(
+          frequency,
+          spectrogram.height,
+          spectrogram.minFrequency,
+          spectrogram.maxFrequency
+        );
+        const top = spectrogram.height > 1
+          ? (row / (spectrogram.height - 1)) * 100
+          : 0;
+        return (
+          <div
+            className='cc-sidscore-spectrogram__frequency'
+            key={frequency}
+            style={{ top: `${top}%` }}
+          >
+            <span>{formatFrequency(frequency)}</span>
+          </div>
+        );
+      })}
+      <span className='cc-sidscore-spectrogram__time cc-sidscore-spectrogram__time--start'>
+        -{formatTimeSpan(spectrogram.timeSpanSeconds)}
+      </span>
+      <span className='cc-sidscore-spectrogram__time cc-sidscore-spectrogram__time--end'>
+        now
+      </span>
+    </>
+  );
+}
+
+function spectrogramColour(
+  intensity: number
+): readonly [number, number, number] {
+  const clamped = Math.max(0, Math.min(1, intensity));
+  const position = clamped * (SPECTROGRAM_COLOUR_STOPS.length - 1);
+  const lowerIndex = Math.floor(position);
+  const upperIndex = Math.min(
+    SPECTROGRAM_COLOUR_STOPS.length - 1,
+    lowerIndex + 1
+  );
+  const fraction = position - lowerIndex;
+  const lower = SPECTROGRAM_COLOUR_STOPS[lowerIndex] ?? [0, 0, 0];
+  const upper = SPECTROGRAM_COLOUR_STOPS[upperIndex] ?? lower;
+  return [
+    Math.round(lower[0] + (upper[0] - lower[0]) * fraction),
+    Math.round(lower[1] + (upper[1] - lower[1]) * fraction),
+    Math.round(lower[2] + (upper[2] - lower[2]) * fraction)
+  ];
+}
+
+function formatFrequency(frequency: number): string {
+  if (frequency >= 1000) {
+    return `${frequency / 1000} kHz`;
+  }
+  return `${frequency} Hz`;
+}
+
+function formatTimeSpan(seconds: number): string {
+  if (seconds < 1) {
+    return `${Math.round(seconds * 1000)} ms`;
+  }
+  return `${seconds.toFixed(1)} s`;
+}
+
+function validSampleRate(sampleRate: number): number | undefined {
+  return Number.isFinite(sampleRate) && sampleRate > 0
+    ? sampleRate
+    : undefined;
 }
 
 class ScopeTraceBuffer {
@@ -385,6 +674,11 @@ class ScopeTraceBuffer {
   protected writePos = 0;
   protected filled = false;
   protected lastValue = 0;
+  protected revisionNumber = 0;
+
+  get revision(): number {
+    return this.revisionNumber;
+  }
 
   appendBuckets(
     scope: SidScoreVoiceScopeBuckets,
@@ -403,11 +697,17 @@ class ScopeTraceBuffer {
         Math.abs(this.lastValue - min) <= Math.abs(this.lastValue - max);
       this.appendInterpolated(minFirst ? max : min, expandedBucketLength);
     }
+    if (scope.buckets.length > 0) {
+      this.revisionNumber += 1;
+    }
   }
 
   appendSamples(scope: SidScoreVoiceScopeSamples): void {
     for (const sample of scope.samples) {
       this.append(i16ToFloat(sample));
+    }
+    if (scope.samples.length > 0) {
+      this.revisionNumber += 1;
     }
   }
 
@@ -416,6 +716,7 @@ class ScopeTraceBuffer {
     this.writePos = 0;
     this.filled = false;
     this.lastValue = 0;
+    this.revisionNumber += 1;
   }
 
   snapshot(): readonly number[] {
