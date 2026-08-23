@@ -211,7 +211,9 @@ export class SidScoreWaveformWidget extends ReactWidget {
                 key={mode}
                 onClick={() => this.setScopeMode(mode)}
                 title={
-                  mode === 'free' ? 'Free-running scope' : 'Triggered scope'
+                  mode === 'free'
+                    ? 'Show the newest samples continuously without phase alignment.'
+                    : 'Stabilise all three waveforms by aligning them to a rising edge in the selected trigger voice.'
                 }
                 type='button'
               >
@@ -233,7 +235,7 @@ export class SidScoreWaveformWidget extends ReactWidget {
                 }`}
                 key={voiceIndex}
                 onClick={() => this.setTriggerVoice(voiceIndex)}
-                title={`Use voice ${voiceIndex} as trigger source`}
+                title={`Use voice ${voiceIndex} as the common trigger source while preserving the timing between all three waveforms.`}
                 type='button'
               >
                 V{voiceIndex}
