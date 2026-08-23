@@ -7,7 +7,7 @@ import {
   formatSidScoreLaunchDiagnostic
 } from '../node/sidscore-launch';
 
-test('SIDScore player server launch enables macOS MIDI event pump before jar execution', () => {
+test('SIDScore player server launch disables macOS AWT MIDI event pump before jar execution', () => {
   const args = createSidScorePlayerServerArgs({
     kickAssemblerJarPath: '/Applications/Commodore Commander/KickAss.jar',
     sidScoreCliJarPath: '/Applications/Commodore Commander/sidscore-cli.jar',
@@ -17,12 +17,11 @@ test('SIDScore player server launch enables macOS MIDI event pump before jar exe
   const jarIndex = args.indexOf('-jar');
 
   assert.ok(jarIndex > 0);
-  assert.ok(args.indexOf('-Djava.awt.headless=false') > -1);
-  assert.ok(args.indexOf('-Dapple.awt.UIElement=true') > -1);
-  assert.ok(args.indexOf('-Dsidscore.midi.awtEventPump=true') > -1);
-  assert.ok(args.indexOf('-Djava.awt.headless=false') < jarIndex);
-  assert.ok(args.indexOf('-Dapple.awt.UIElement=true') < jarIndex);
-  assert.ok(args.indexOf('-Dsidscore.midi.awtEventPump=true') < jarIndex);
+  assert.equal(args.includes('-Djava.awt.headless=false'), false);
+  assert.equal(args.includes('-Dapple.awt.UIElement=true'), false);
+  assert.equal(args.includes('-Dsidscore.midi.awtEventPump=true'), false);
+  assert.ok(args.indexOf('-Dsidscore.midi.awtEventPump.disabled=true') > -1);
+  assert.ok(args.indexOf('-Dsidscore.midi.awtEventPump.disabled=true') < jarIndex);
   assert.equal(args[jarIndex + 1], '/Applications/Commodore Commander/sidscore-cli.jar');
   assert.deepEqual(args.slice(-3), ['--player-server', '--port', '0']);
 });
@@ -37,6 +36,7 @@ test('SIDScore player server launch keeps macOS-only MIDI properties off other p
   assert.equal(args.includes('-Djava.awt.headless=false'), false);
   assert.equal(args.includes('-Dapple.awt.UIElement=true'), false);
   assert.equal(args.includes('-Dsidscore.midi.awtEventPump=true'), false);
+  assert.equal(args.includes('-Dsidscore.midi.awtEventPump.disabled=true'), false);
   assert.ok(args.includes('-Dsidscore.midi.monitor.startOnInput=false'));
 });
 

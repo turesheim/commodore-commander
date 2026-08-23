@@ -181,6 +181,9 @@ npm run package:current
 Nightly product packages are built by GitHub Actions for macOS, Windows, and
 Linux. The scheduled workflow uploads run artifacts and refreshes the mutable
 `nightly` prerelease after all three platform packages build successfully.
+Each product package is smoke-tested before upload by starting the bundled
+SIDScore player server from the packaged Kick Assembler and SIDScore assets and
+running a MIDI-device scan through the SRAP protocol.
 The macOS nightly package is ad-hoc signed unless these repository secrets are
 configured:
 
