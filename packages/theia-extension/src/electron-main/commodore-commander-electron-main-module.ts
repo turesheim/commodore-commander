@@ -129,6 +129,12 @@ type ElectronScreenCaptureStep =
       readonly timeoutMs?: number;
     }
   | {
+      readonly type: 'clickVisibleText';
+      readonly selector: string;
+      readonly text: string;
+      readonly timeoutMs?: number;
+    }
+  | {
       readonly type: 'waitForInputValue';
       readonly selector: string;
       readonly value: string;
@@ -637,6 +643,14 @@ async function runScreenCaptureStep(
         step.timeoutMs ?? timeoutMs
       );
       return;
+    case 'clickVisibleText':
+      await clickVisibleText(
+        window,
+        step.selector,
+        step.text,
+        step.timeoutMs ?? timeoutMs
+      );
+      return;
     case 'waitForInputValue':
       await waitForInputValue(
         window,
@@ -850,6 +864,41 @@ async function waitForVisibleText(
     timeoutMs,
     `Timed out waiting for "${text}" in ${selector}.`
   );
+}
+
+async function clickVisibleText(
+  window: BrowserWindow,
+  selector: string,
+  text: string,
+  timeoutMs: number
+): Promise<void> {
+  await waitForVisibleText(window, selector, text, timeoutMs);
+  const clicked = await evaluateInWindow<boolean>(
+    window,
+    `(() => {
+      const elements = [...document.querySelectorAll(${JSON.stringify(selector)})];
+      const element = elements.find((candidate) => {
+        const rect = candidate.getBoundingClientRect();
+        const style = window.getComputedStyle(candidate);
+        return rect.width > 0 &&
+          rect.height > 0 &&
+          style.display !== 'none' &&
+          style.visibility !== 'hidden' &&
+          (candidate.textContent ?? '').includes(${JSON.stringify(text)});
+      });
+      if (!(element instanceof HTMLElement)) {
+        return false;
+      }
+      element.click();
+      return true;
+    })()`,
+    false,
+    timeoutMs
+  );
+  if (!clicked) {
+    throw new Error(`Unable to click "${text}" in ${selector}.`);
+  }
+  await delay(150);
 }
 
 async function waitForInputValue(

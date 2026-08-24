@@ -356,6 +356,81 @@ export class CommodoreCommanderThemeStyleParticipant implements ColorContributio
   border-radius: 0 3px 3px 0;
 }
 
+.cc-sidscore-spectrogram {
+  background: #1b1f24;
+  height: 100%;
+  min-height: 40px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.cc-sidscore-spectrogram__canvas {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.cc-sidscore-spectrogram__frequency {
+  border-top: 1px solid rgba(245, 239, 202, 0.18);
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
+.cc-sidscore-spectrogram__frequency span,
+.cc-sidscore-spectrogram__time {
+  background: rgba(27, 31, 36, 0.72);
+  color: rgba(245, 239, 202, 0.82);
+  font-size: 10px;
+  line-height: 14px;
+  padding: 0 3px;
+  position: absolute;
+}
+
+.cc-sidscore-spectrogram__frequency span {
+  left: 3px;
+  top: 0;
+  transform: translateY(-50%);
+}
+
+.cc-sidscore-spectrogram__time {
+  bottom: 2px;
+  pointer-events: none;
+}
+
+.cc-sidscore-spectrogram__time--start {
+  left: 48px;
+}
+
+.cc-sidscore-spectrogram__time--end {
+  right: 3px;
+}
+
+.cc-sidscore-spectrogram-legend {
+  align-items: center;
+  display: inline-flex;
+  font-size: 10px;
+  gap: 5px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.cc-sidscore-spectrogram-legend__scale {
+  background: linear-gradient(
+    90deg,
+    #1b1f24,
+    #254a66,
+    #2f7f75,
+    #c2a84f,
+    #f5efca
+  );
+  border: 1px solid rgba(245, 239, 202, 0.35);
+  height: 10px;
+  width: 72px;
+}
+
 .cc-sidscore-protocol-log-widget {
   min-width: 360px;
 }
