@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import {
   createViceEmbedKeyEvent,
   isViceEmbedCommodoreFunctionKeyEvent,
+  ViceEmbedKeyEventTracker,
   type ViceEmbedKeyboardEventLike
 } from '../browser/vice-keyboard-mapping';
 
@@ -557,6 +558,82 @@ test('VICE keyboard mapping sends C64 matrix fallback metadata for angle bracket
   assert.equal(greaterThan.sdlKeyCode, 46);
   assert.equal(lessThan.sdlShift, false);
   assert.equal(greaterThan.sdlShift, false);
+});
+
+test('VICE keyboard event tracker releases the pressed angle-bracket matrix key after host Shift changes', () => {
+  const tracker = new ViceEmbedKeyEventTracker();
+
+  const down = tracker.createKeyEvent(
+    keyboardEvent({
+      code: 'IntlBackslash',
+      key: '>',
+      keyCode: 62,
+      shiftKey: true
+    }),
+    true
+  );
+  const up = tracker.createKeyEvent(
+    keyboardEvent({
+      code: 'IntlBackslash',
+      key: '<',
+      keyCode: 60,
+      shiftKey: false
+    }),
+    false
+  );
+
+  assert.deepEqual(matrixKey(down), { row: 5, col: 4, shift: true });
+  assert.deepEqual(matrixKey(up), { row: 5, col: 4, shift: true });
+  assert.equal(up.sdlKeyCode, 46);
+  assert.equal(up.pressed, false);
+  assert.equal(up.repeat, false);
+});
+
+test('VICE keyboard event tracker releases shifted matrix keys when key-up loses the matrix mapping', () => {
+  const tracker = new ViceEmbedKeyEventTracker();
+
+  const down = tracker.createKeyEvent(
+    keyboardEvent({
+      code: 'Digit2',
+      key: '"',
+      keyCode: 50,
+      shiftKey: true
+    }),
+    true
+  );
+  const up = tracker.createKeyEvent(
+    keyboardEvent({
+      code: 'Digit2',
+      key: '2',
+      keyCode: 50,
+      shiftKey: false
+    }),
+    false
+  );
+
+  assert.deepEqual(matrixKey(down), { row: 7, col: 3, shift: true });
+  assert.deepEqual(matrixKey(up), { row: 7, col: 3, shift: true });
+  assert.equal(up.sdlKeyCode, 50);
+  assert.equal(up.pressed, false);
+});
+
+test('VICE keyboard event tracker can release tracked matrix keys without a key-up event', () => {
+  const tracker = new ViceEmbedKeyEventTracker();
+
+  tracker.createKeyEvent(
+    keyboardEvent({
+      code: 'IntlBackslash',
+      key: '<',
+      keyCode: 60
+    }),
+    true
+  );
+
+  const releases = tracker.releasePressedMatrixKeys();
+  assert.equal(releases.length, 1);
+  assert.deepEqual(matrixKey(releases[0]), { row: 5, col: 7, shift: true });
+  assert.equal(releases[0].pressed, false);
+  assert.equal(tracker.releasePressedMatrixKeys().length, 0);
 });
 
 function keyboardEvent(

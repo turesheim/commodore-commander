@@ -23,8 +23,8 @@ import {
     type ViceCanvasDisplaySize
 } from './vice-canvas-scaling';
 import {
-    createViceEmbedKeyEvent,
-    isViceEmbedCommodoreFunctionKeyEvent
+    isViceEmbedCommodoreFunctionKeyEvent,
+    ViceEmbedKeyEventTracker
 } from './vice-keyboard-mapping';
 
 export const VICE_EMBEDDED_WIDGET_ID = 'commodore-commander.vice-embedded';
@@ -52,6 +52,7 @@ export class ViceEmbeddedWidget
     protected lastOutput = '';
     protected starting = false;
     protected hostCommodorePressed = false;
+    protected readonly keyEventTracker = new ViceEmbedKeyEventTracker();
 
     @postConstruct()
     protected init(): void {
@@ -68,12 +69,14 @@ export class ViceEmbeddedWidget
         );
         document.addEventListener('keydown', this.handleDocumentKeyDown, true);
         document.addEventListener('keyup', this.handleDocumentKeyUp, true);
+        window.addEventListener('blur', this.handleWindowBlur);
         this.update();
     }
 
     override dispose(): void {
         document.removeEventListener('keydown', this.handleDocumentKeyDown, true);
         document.removeEventListener('keyup', this.handleDocumentKeyUp, true);
+        window.removeEventListener('blur', this.handleWindowBlur);
         this.resizeObserver?.disconnect();
         this.resizeObserver = undefined;
         this.viceEmbedService.setClient(undefined);
@@ -99,6 +102,7 @@ export class ViceEmbeddedWidget
         this.statusMessage = event.message ?? event.state;
         this.starting = event.state === 'starting';
         if (event.state === 'stopped' || event.state === 'error') {
+            this.keyEventTracker.reset();
             this.frame = undefined;
             this.refreshCanvasDisplaySize();
         }
@@ -223,6 +227,7 @@ export class ViceEmbeddedWidget
 
     protected readonly stopVice = async (): Promise<void> => {
         await this.viceEmbedService.stop();
+        this.keyEventTracker.reset();
         this.status = 'stopped';
         this.statusMessage = 'Stopped';
         this.frame = undefined;
@@ -331,7 +336,12 @@ export class ViceEmbeddedWidget
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
-        void this.viceEmbedService.sendKey(createViceEmbedKeyEvent(event, pressed));
+        void this.viceEmbedService.sendKey(
+            this.keyEventTracker.createKeyEvent(
+                this.keyboardEventForEmulator(event),
+                pressed
+            )
+        );
         return true;
     }
 
@@ -353,9 +363,18 @@ export class ViceEmbeddedWidget
             this.hostCommodorePressed = pressed;
         }
         const keyEvent: CommodoreViceEmbedKeyEvent =
-            createViceEmbedKeyEvent(this.keyboardEventForEmulator(event), pressed);
+            this.keyEventTracker.createKeyEvent(
+                this.keyboardEventForEmulator(event),
+                pressed
+            );
         void this.viceEmbedService.sendKey(keyEvent);
     }
+
+    protected readonly handleWindowBlur = (): void => {
+        for (const keyEvent of this.keyEventTracker.releasePressedMatrixKeys()) {
+            void this.viceEmbedService.sendKey(keyEvent);
+        }
+    };
 
     protected keyboardEventForEmulator(
         event: React.KeyboardEvent<HTMLCanvasElement> | KeyboardEvent
