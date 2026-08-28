@@ -215,6 +215,47 @@ export function createViceEmbedKeyEvent(
     };
 }
 
+export class ViceEmbedKeyEventTracker {
+    protected readonly pressedMatrixKeys = new Map<string, CommodoreViceEmbedKeyEvent>();
+
+    createKeyEvent(
+        event: ViceEmbedKeyboardEventLike,
+        pressed: boolean
+    ): CommodoreViceEmbedKeyEvent {
+        const keyEvent = createViceEmbedKeyEvent(event, pressed);
+        const identity = viceEmbedKeyboardEventIdentity(event);
+
+        if (pressed) {
+            if (isMatrixKeyEvent(keyEvent)) {
+                this.pressedMatrixKeys.set(identity, keyEvent);
+            } else {
+                this.pressedMatrixKeys.delete(identity);
+            }
+            return keyEvent;
+        }
+
+        const pressedKeyEvent = this.pressedMatrixKeys.get(identity);
+        this.pressedMatrixKeys.delete(identity);
+        if (pressedKeyEvent && !isSameMatrixKey(keyEvent, pressedKeyEvent)) {
+            return releaseTrackedMatrixKeyEvent(pressedKeyEvent);
+        }
+        return keyEvent;
+    }
+
+    releasePressedMatrixKeys(): CommodoreViceEmbedKeyEvent[] {
+        const releases = Array.from(
+            this.pressedMatrixKeys.values(),
+            releaseTrackedMatrixKeyEvent
+        );
+        this.pressedMatrixKeys.clear();
+        return releases;
+    }
+
+    reset(): void {
+        this.pressedMatrixKeys.clear();
+    }
+}
+
 export function isViceEmbedCommodoreFunctionKeyEvent(
     event: Pick<ViceEmbedKeyboardEventLike, 'code' | 'key' | 'keyCode' | 'ctrlKey' | 'altKey' | 'metaKey'>
 ): boolean {
@@ -287,6 +328,35 @@ function digitFromCode(code: string): string | undefined {
 
 function isCommodoreFunctionKeyName(value: string): boolean {
     return /^[Ff][1-8]$/u.test(value);
+}
+
+function viceEmbedKeyboardEventIdentity(
+    event: Pick<ViceEmbedKeyboardEventLike, 'code' | 'key' | 'keyCode'>
+): string {
+    return event.code || `${event.keyCode}:${event.key}`;
+}
+
+function isMatrixKeyEvent(event: CommodoreViceEmbedKeyEvent): boolean {
+    return event.matrixRow !== undefined && event.matrixCol !== undefined;
+}
+
+function isSameMatrixKey(
+    event: CommodoreViceEmbedKeyEvent,
+    other: CommodoreViceEmbedKeyEvent
+): boolean {
+    return event.matrixRow === other.matrixRow &&
+        event.matrixCol === other.matrixCol &&
+        Boolean(event.matrixShift) === Boolean(other.matrixShift);
+}
+
+function releaseTrackedMatrixKeyEvent(
+    event: CommodoreViceEmbedKeyEvent
+): CommodoreViceEmbedKeyEvent {
+    return {
+        ...event,
+        pressed: false,
+        repeat: false
+    };
 }
 
 function charCode(value: string): number {

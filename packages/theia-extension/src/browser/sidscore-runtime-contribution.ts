@@ -479,6 +479,7 @@ export class SidScoreRuntimeContribution
       this.scorePlaybackRequestId = requestId;
       this.scorePlaybackScoreId = undefined;
       const instrumentWidget = await this.openInstrumentWidgetForScorePlayback();
+      instrumentWidget?.beginScoreInstrumentLoad();
       instrumentWidget?.setScorePlaybackActive(true, false);
       await instrumentWidget?.prepareMidiForScorePlayback();
       const result = await this.sidScoreRuntimeService.play({

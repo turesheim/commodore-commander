@@ -2,6 +2,10 @@ import assert from 'node:assert/strict';
 import net from 'node:net';
 import { test } from 'node:test';
 
+import type {
+  CommodoreViceEmbedClient,
+  CommodoreViceEmbedStatusEvent
+} from '../common/commodore-vice-embed-service';
 import { CommodoreViceEmbedServiceImpl } from '../node/commodore-vice-embed-service-impl';
 
 test('embedded debug frame transport reuses a reserved port', async (t) => {
@@ -31,6 +35,21 @@ test('embedded debug frame transport refuses to replace a connected emulator', a
   assert.equal(service.frameServerStartCount, 1);
 });
 
+test('embedded VICE service drops frontend client when the RPC connection closes', () => {
+  const service = new TestViceEmbedService();
+  const client = new TestViceEmbedClient();
+  service.setClient(client);
+
+  service.emitTestStatus({ state: 'running', message: 'before close' });
+  client.closeConnection();
+  service.emitTestStatus({ state: 'running', message: 'after close' });
+
+  assert.deepEqual(
+    client.statuses.map((status) => status.message),
+    ['before close']
+  );
+});
+
 class TestViceEmbedService extends CommodoreViceEmbedServiceImpl {
   frameServerStartCount = 0;
 
@@ -42,11 +61,41 @@ class TestViceEmbedService extends CommodoreViceEmbedServiceImpl {
     return this.viceFrameSocket !== undefined;
   }
 
+  emitTestStatus(event: CommodoreViceEmbedStatusEvent): void {
+    this.emitStatus(event);
+  }
+
   protected override async startViceFrameServer(
     closeWhenSocketCloses: boolean
   ): Promise<number> {
     this.frameServerStartCount += 1;
     return super.startViceFrameServer(closeWhenSocketCloses);
+  }
+}
+
+class TestViceEmbedClient implements CommodoreViceEmbedClient {
+  readonly statuses: CommodoreViceEmbedStatusEvent[] = [];
+  private readonly closeListeners = new Set<() => void>();
+
+  readonly onDidCloseConnection = (listener: () => void): { dispose(): void } => {
+    this.closeListeners.add(listener);
+    return {
+      dispose: () => this.closeListeners.delete(listener)
+    };
+  };
+
+  onViceEmbedFrame(): void {}
+
+  onViceEmbedStatus(event: CommodoreViceEmbedStatusEvent): void {
+    this.statuses.push(event);
+  }
+
+  onViceEmbedOutput(): void {}
+
+  closeConnection(): void {
+    for (const listener of this.closeListeners) {
+      listener();
+    }
   }
 }
 

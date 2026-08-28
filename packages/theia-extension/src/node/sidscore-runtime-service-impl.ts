@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import type { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
+import type { Disposable } from '@theia/core/lib/common/disposable';
 import { ILogger } from '@theia/core/lib/common/logger';
 import {
   PreferenceService
@@ -60,6 +61,7 @@ import {
   SID_SCORE_CLI_JAR_FILENAME,
   SID_SCORE_REQUIRED_JAVA_RELEASE
 } from './sidscore-launch';
+import { observeRpcClientClose } from './rpc-client-lifecycle';
 
 export { SID_SCORE_CLI_JAR_FILENAME } from './sidscore-launch';
 
@@ -168,6 +170,7 @@ export class SidScoreRuntimeServiceImpl
   protected serverArgs: string[] = [];
   protected serverCwd = process.cwd();
   protected readyServer: ReadyEvent | undefined;
+  protected clientConnectionCloseListener: Disposable | undefined;
   protected pendingVoiceState: SidScoreVoiceStateEvent | undefined;
   protected pendingScopeBuckets: SidScoreScopeBucketsEvent | undefined;
   protected pendingScopeSamples: SidScoreScopeSamplesEvent | undefined;
@@ -181,6 +184,8 @@ export class SidScoreRuntimeServiceImpl
       new Error('SIDScore player server was disposed.')
     );
     this.stopServerProcess();
+    this.clientConnectionCloseListener?.dispose();
+    this.clientConnectionCloseListener = undefined;
     this.client = undefined;
   }
 
@@ -189,7 +194,17 @@ export class SidScoreRuntimeServiceImpl
   }
 
   setClient(client: SidScoreRuntimeClient | undefined): void {
+    this.clientConnectionCloseListener?.dispose();
+    this.clientConnectionCloseListener = undefined;
     this.client = client;
+    this.clientConnectionCloseListener = observeRpcClientClose(
+      client,
+      (closedClient) => {
+        if (this.client === closedClient) {
+          this.handleClientDisconnected();
+        }
+      }
+    );
   }
 
   async play(request: SidScorePlayRequest): Promise<SidScorePlayResult> {
@@ -886,7 +901,7 @@ export class SidScoreRuntimeServiceImpl
   }
 
   protected queueVoiceState(event: SidScoreVoiceStateEvent): void {
-    if (this.pendingPlaybackRequestId !== undefined) {
+    if (!this.client || this.pendingPlaybackRequestId !== undefined) {
       return;
     }
     if (
@@ -900,7 +915,7 @@ export class SidScoreRuntimeServiceImpl
   }
 
   protected queueScopeBuckets(event: SidScoreScopeBucketsEvent): void {
-    if (this.pendingPlaybackRequestId !== undefined) {
+    if (!this.client || this.pendingPlaybackRequestId !== undefined) {
       return;
     }
     if (
@@ -914,7 +929,7 @@ export class SidScoreRuntimeServiceImpl
   }
 
   protected queueScopeSamples(event: SidScoreScopeSamplesEvent): void {
-    if (this.pendingPlaybackRequestId !== undefined) {
+    if (!this.client || this.pendingPlaybackRequestId !== undefined) {
       return;
     }
     const pending = this.pendingScopeSamples;
@@ -977,6 +992,13 @@ export class SidScoreRuntimeServiceImpl
     this.pendingVoiceState = undefined;
     this.pendingScopeBuckets = undefined;
     this.pendingScopeSamples = undefined;
+  }
+
+  protected handleClientDisconnected(): void {
+    this.clientConnectionCloseListener?.dispose();
+    this.clientConnectionCloseListener = undefined;
+    this.client = undefined;
+    this.clearPendingTelemetry();
   }
 
   protected sendFrame(

@@ -12,6 +12,7 @@ import {
 } from 'node:net';
 import path from 'node:path';
 
+import type { Disposable } from '@theia/core/lib/common/disposable';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
 import type { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
@@ -50,6 +51,7 @@ import {
     startsWithViceEmbedBinaryFrame,
     type CommodoreViceEmbedCommand
 } from './commodore-vice-embed-protocol';
+import { observeRpcClientClose } from './rpc-client-lifecycle';
 
 const DEFAULT_VICE_EMULATOR = 'x64sc';
 const EMBED_FLAG = '-cc-embed';
@@ -59,6 +61,7 @@ const EMBED_COMMAND_FD = 3;
 const MAX_UNFRAMED_STDOUT_BYTES = 32 * 1024 * 1024;
 const MAX_FRAME_TRANSPORT_BUFFER_BYTES = 32 * 1024 * 1024;
 const MIN_FRAME_SOCKET_BACKPRESSURE_BYTES = 256 * 1024;
+const MAX_FRAME_SOCKET_BUFFERED_BYTES = 2 * 1024 * 1024;
 
 interface ResolvedViceEmbedLaunch {
     readonly command: string;
@@ -85,6 +88,7 @@ export class CommodoreViceEmbedServiceImpl
     protected frameSocketServer: WebSocketServer | undefined;
     protected frameSockets = new Set<WebSocket>();
     protected latestBinaryFrame: Buffer | undefined;
+    protected clientConnectionCloseListener: Disposable | undefined;
     protected frameSocketUpgradeListener:
         | ((request: http.IncomingMessage, socket: Socket, head: Buffer) => void)
         | undefined;
@@ -106,6 +110,8 @@ export class CommodoreViceEmbedServiceImpl
         this.frameSockets.clear();
         this.frameSocketServer?.close();
         this.frameSocketServer = undefined;
+        this.clientConnectionCloseListener?.dispose();
+        this.clientConnectionCloseListener = undefined;
         this.client = undefined;
     }
 
@@ -138,7 +144,17 @@ export class CommodoreViceEmbedServiceImpl
     }
 
     setClient(client: CommodoreViceEmbedClient | undefined): void {
+        this.clientConnectionCloseListener?.dispose();
+        this.clientConnectionCloseListener = undefined;
         this.client = client;
+        this.clientConnectionCloseListener = observeRpcClientClose(
+            client,
+            (closedClient) => {
+                if (this.client === closedClient) {
+                    this.handleClientDisconnected();
+                }
+            }
+        );
     }
 
     async launch(request: CommodoreViceEmbedLaunchRequest = {}): Promise<CommodoreViceEmbedLaunchResult> {
@@ -587,14 +603,28 @@ export class CommodoreViceEmbedServiceImpl
         if (!record || socket.readyState !== WebSocket.OPEN) {
             return;
         }
+        if (socket.bufferedAmount > MAX_FRAME_SOCKET_BUFFERED_BYTES) {
+            this.logger.warn(
+                `Closing slow VICE frame socket with ${socket.bufferedAmount} buffered bytes.`
+            );
+            this.frameSockets.delete(socket);
+            socket.terminate();
+            return;
+        }
         const maxBufferedBytes = Math.max(
             MIN_FRAME_SOCKET_BACKPRESSURE_BYTES,
             record.length
         );
-        if (socket.bufferedAmount > maxBufferedBytes) {
+        if (socket.bufferedAmount > maxBufferedBytes || socket.bufferedAmount > 0) {
             return;
         }
-        socket.send(record, { binary: true });
+        socket.send(record, { binary: true }, (error) => {
+            if (error) {
+                this.frameSockets.delete(socket);
+                socket.terminate();
+                this.logger.warn(`VICE frame socket send failed: ${error.message}`);
+            }
+        });
     }
 
     protected emitStatus(event: CommodoreViceEmbedStatusEvent): void {
@@ -602,6 +632,12 @@ export class CommodoreViceEmbedServiceImpl
         if (event.state === 'error') {
             this.logger.warn(event.message ?? 'Patched VICE embed reported an error.');
         }
+    }
+
+    protected handleClientDisconnected(): void {
+        this.clientConnectionCloseListener?.dispose();
+        this.clientConnectionCloseListener = undefined;
+        this.client = undefined;
     }
 }
 

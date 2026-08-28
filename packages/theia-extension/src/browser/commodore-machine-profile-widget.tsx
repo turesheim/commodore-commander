@@ -49,7 +49,8 @@ import {
 } from './vice-canvas-scaling';
 import {
   createViceEmbedKeyEvent,
-  isViceEmbedCommodoreFunctionKeyEvent
+  isViceEmbedCommodoreFunctionKeyEvent,
+  ViceEmbedKeyEventTracker
 } from './vice-keyboard-mapping';
 import {
   DEFAULT_COMMODORE_EMULATOR_VICE_MENU_SHORTCUT,
@@ -163,6 +164,7 @@ export class CommodoreMachineProfileWidget
   protected virtualShiftLatched = false;
   protected virtualCommodoreLatched = false;
   protected virtualControlLatched = false;
+  protected readonly keyEventTracker = new ViceEmbedKeyEventTracker();
   protected readonly activeVirtualKeyboardKeys =
     new Map<string, ActiveVirtualKeyboardKey>();
   protected pressedVirtualMouseKey: PressedVirtualMouseKey | undefined;
@@ -869,7 +871,9 @@ export class CommodoreMachineProfileWidget
   };
 
   protected readonly handleWindowBlur = (): void => {
+    const releasedTrackedKeys = this.releaseTrackedKeyboardKeys();
     if (
+      releasedTrackedKeys ||
       this.pressedVirtualMouseKey ||
       this.hostShiftPressed ||
       this.hostCommodorePressed ||
@@ -1427,6 +1431,7 @@ export class CommodoreMachineProfileWidget
     if (releaseMouseKey) {
       this.releasePressedVirtualMouseKey();
     }
+    this.keyEventTracker.reset();
     this.hostShiftPressed = false;
     this.hostCommodorePressed = false;
     this.hostControlPressed = false;
@@ -1814,7 +1819,12 @@ export class CommodoreMachineProfileWidget
     }
 
     this.consumeEmulatorShortcutEvent(event);
-    this.sendKeyEventPayload(createViceEmbedKeyEvent(event, pressed));
+    this.sendKeyEventPayload(
+      this.keyEventTracker.createKeyEvent(
+        this.keyboardEventForEmulator(event),
+        pressed
+      )
+    );
     this.trackVirtualKeyboardKey(event, pressed);
     return true;
   }
@@ -1873,8 +1883,19 @@ export class CommodoreMachineProfileWidget
       }
     }
     const keyEvent: CommodoreViceEmbedKeyEvent =
-      createViceEmbedKeyEvent(this.keyboardEventForEmulator(event), pressed);
+      this.keyEventTracker.createKeyEvent(
+        this.keyboardEventForEmulator(event),
+        pressed
+      );
     this.sendKeyEventPayload(keyEvent);
+  }
+
+  protected releaseTrackedKeyboardKeys(): boolean {
+    const releases = this.keyEventTracker.releasePressedMatrixKeys();
+    for (const keyEvent of releases) {
+      this.sendKeyEventPayload(keyEvent);
+    }
+    return releases.length > 0;
   }
 
   protected keyboardEventForEmulator(
