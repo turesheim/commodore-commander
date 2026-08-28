@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import {
   PreferenceService
 } from '@theia/core/lib/common/preferences';
+import type { Disposable } from '@theia/core/lib/common/disposable';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import {
   KickAssemblerWorkspaceBuildPlanner,
@@ -46,6 +47,7 @@ import {
 import {
   getCommodoreCommanderToolPreferences
 } from '../common/commodore-commander-tool-preferences';
+import { observeRpcClientClose } from './rpc-client-lifecycle';
 
 const DEFAULT_BUILD_CONFIG_FILE = 'commodore-commander.build.json';
 const DEFAULT_PROFILE_NAME = 'debug';
@@ -76,17 +78,32 @@ export class KickAssemblerBuildServiceImpl implements KickAssemblerBuildService 
 
   private readonly planner = new KickAssemblerWorkspaceBuildPlanner();
   private client: KickAssemblerBuildClient | undefined;
+  private clientConnectionCloseListener: Disposable | undefined;
   private pendingRequest: KickAssemblerBuildRequest | undefined;
   private drainLoop: Promise<void> | undefined;
   private buildConfigurationMutation: Promise<void> = Promise.resolve();
 
   dispose(): void {
     this.pendingRequest = undefined;
+    this.clientConnectionCloseListener?.dispose();
+    this.clientConnectionCloseListener = undefined;
     this.client = undefined;
   }
 
   setClient(client: KickAssemblerBuildClient | undefined): void {
+    this.clientConnectionCloseListener?.dispose();
+    this.clientConnectionCloseListener = undefined;
     this.client = client;
+    this.clientConnectionCloseListener = observeRpcClientClose(
+      client,
+      (closedClient) => {
+        if (this.client === closedClient) {
+          this.clientConnectionCloseListener?.dispose();
+          this.clientConnectionCloseListener = undefined;
+          this.client = undefined;
+        }
+      }
+    );
   }
 
   async build(
