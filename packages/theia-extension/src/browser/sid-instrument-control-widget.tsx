@@ -559,6 +559,15 @@ export class SidInstrumentControlWidget extends ReactWidget {
     }
   }
 
+  beginScoreInstrumentLoad(): void {
+    this.clearInstrumentUpdateTimer();
+    this.clearPendingInstrumentVoices();
+    this.instrumentStates.clear();
+    this.nonOverrideInstrumentStates.clear();
+    this.instrumentSource = 'default';
+    this.update();
+  }
+
   async initializeMidiDevices(): Promise<void> {
     if (!shouldStartInitialMidiDeviceScan({
       initialMidiScanStarted: this.initialMidiScanStarted,
