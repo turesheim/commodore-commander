@@ -1,4 +1,4 @@
-export const SID_SCORE_CLI_JAR_FILENAME = 'sidscore-cli-0.7.1.jar';
+export const SID_SCORE_CLI_JAR_FILENAME = 'sidscore-cli-0.7.2.jar';
 export const SID_SCORE_REQUIRED_JAVA_RELEASE = 21;
 
 const MACOS_MIDI_SYSTEM_PROPERTIES = [
