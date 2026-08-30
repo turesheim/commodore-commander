@@ -93,6 +93,7 @@ import {
   CommodoreMachineProfileWidget
 } from './commodore-machine-profile-widget';
 import { CommodoreCommanderScreenCaptureContribution } from './commodore-commander-screen-capture-contribution';
+import { CommodoreCommanderSleepResumeContribution } from './commodore-commander-sleep-resume-contribution';
 import {
   CommodoreCharacterSetContribution
 } from './commodore-character-set-contribution';
@@ -299,6 +300,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
   bind(CommodoreCommanderScreenCaptureContribution).toSelf().inSingletonScope();
   bind(FrontendApplicationContribution).toService(
     CommodoreCommanderScreenCaptureContribution
+  );
+  bind(CommodoreCommanderSleepResumeContribution).toSelf().inSingletonScope();
+  bind(FrontendApplicationContribution).toService(
+    CommodoreCommanderSleepResumeContribution
   );
   bind(CommodoreCharacterSetWidget).toSelf();
   bind(WidgetFactory)

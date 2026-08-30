@@ -1,17 +1,35 @@
 import { isCancelled } from '@theia/core/lib/common';
+import { CHANNEL_ON_WINDOW_EVENT } from '@theia/core/lib/electron-common/electron-api';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, powerMonitor } from 'electron';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+
+import {
+  COMMODORE_COMMANDER_SYSTEM_RESUME_EVENT,
+  COMMODORE_COMMANDER_SYSTEM_SUSPEND_EVENT
+} from '../common/commodore-commander-electron-events';
 
 const cancellationFilterInstalled = Symbol.for(
   'commodoreCommander.electronMain.cancellationFilterInstalled'
 );
+const sleepResumeEventsInstalled = Symbol.for(
+  'commodoreCommander.electronMain.sleepResumeEventsInstalled'
+);
 const screenCaptureConfigEnv = 'COMMODORE_COMMANDER_SCREEN_CAPTURE_CONFIG';
 const screenCaptureApiKey = '__commodoreCommanderScreenCaptureApi';
+const renderRecoveryAfterResumeMs = 30000;
+const renderRecoveryReloadTimeoutMs = 1000;
+
+type RenderProcessGoneReason = Electron.RenderProcessGoneDetails['reason'];
+
+const windowsWithRendererRecovery = new WeakSet<BrowserWindow>();
+const windowsBeingReloaded = new WeakSet<BrowserWindow>();
+let recoverRenderersAfterResumeUntil = 0;
 
 export default new ContainerModule(() => {
   installCancellationRejectionFilter();
+  installSleepResumeWindowEvents();
   installElectronScreenCapture();
 });
 
@@ -34,6 +52,145 @@ function isTheiaCancellation(reason: unknown): boolean {
   return reason instanceof Error
     ? isCancelled(reason) || reason.message === 'Cancelled'
     : false;
+}
+
+function installSleepResumeWindowEvents(): void {
+  const globalState = globalThis as Record<symbol, boolean>;
+  if (globalState[sleepResumeEventsInstalled]) {
+    return;
+  }
+  globalState[sleepResumeEventsInstalled] = true;
+
+  void app.whenReady().then(() => {
+    BrowserWindow.getAllWindows().forEach((window) => attachRendererRecovery(window));
+    app.on('browser-window-created', (_event, window) => {
+      attachRendererRecovery(window);
+    });
+
+    powerMonitor.on('suspend', () => {
+      recoverRenderersAfterResumeUntil = 0;
+      sendWindowEventToAllWindows(COMMODORE_COMMANDER_SYSTEM_SUSPEND_EVENT);
+    });
+    powerMonitor.on('resume', () => {
+      recoverRenderersAfterResumeUntil = Date.now() + renderRecoveryAfterResumeMs;
+      recoverCrashedWindowsAfterResume();
+      setTimeout(() => {
+        recoverCrashedWindowsAfterResume();
+        sendWindowEventToAllWindows(COMMODORE_COMMANDER_SYSTEM_RESUME_EVENT);
+      }, renderRecoveryReloadTimeoutMs);
+    });
+  });
+}
+
+function attachRendererRecovery(window: BrowserWindow): void {
+  if (windowsWithRendererRecovery.has(window)) {
+    return;
+  }
+  windowsWithRendererRecovery.add(window);
+
+  window.webContents.on('render-process-gone', (_event, details) => {
+    if (!shouldReloadAfterRendererExit(details.reason)) {
+      return;
+    }
+    console.warn(
+      `Commodore Commander renderer exited (${details.reason}, exit code ${details.exitCode}); reloading window.`
+    );
+    reloadWindowIgnoringCache(window, `renderer process exited with ${details.reason}`);
+  });
+
+  window.on('unresponsive', () => {
+    if (Date.now() > recoverRenderersAfterResumeUntil) {
+      return;
+    }
+
+    console.warn('Commodore Commander renderer became unresponsive after system resume; restarting renderer.');
+    try {
+      if (!window.isDestroyed() && !window.webContents.isDestroyed() && !window.webContents.isCrashed()) {
+        window.webContents.forcefullyCrashRenderer();
+      }
+    } catch (error) {
+      console.warn('Could not crash unresponsive renderer after system resume.', error);
+    }
+
+    setTimeout(() => {
+      reloadWindowIgnoringCache(window, 'renderer stayed unresponsive after system resume');
+    }, renderRecoveryReloadTimeoutMs);
+  });
+}
+
+function shouldReloadAfterRendererExit(reason: RenderProcessGoneReason): boolean {
+  return reason === 'abnormal-exit' ||
+    reason === 'killed' ||
+    reason === 'crashed' ||
+    reason === 'oom';
+}
+
+function recoverCrashedWindowsAfterResume(): void {
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (window.isDestroyed() || window.webContents.isDestroyed()) {
+      continue;
+    }
+    attachRendererRecovery(window);
+    if (window.webContents.isCrashed()) {
+      reloadWindowIgnoringCache(window, 'renderer was crashed after system resume');
+    }
+  }
+}
+
+function reloadWindowIgnoringCache(window: BrowserWindow, reason: string): void {
+  if (
+    windowsBeingReloaded.has(window) ||
+    window.isDestroyed() ||
+    window.webContents.isDestroyed()
+  ) {
+    return;
+  }
+
+  windowsBeingReloaded.add(window);
+  console.warn(`Reloading Commodore Commander window: ${reason}.`);
+  try {
+    window.webContents.reloadIgnoringCache();
+  } catch (error) {
+    windowsBeingReloaded.delete(window);
+    console.warn(`Could not reload Commodore Commander window: ${reason}.`, error);
+    return;
+  }
+
+  const clearReloading = (): void => {
+    windowsBeingReloaded.delete(window);
+  };
+  window.webContents.once('did-finish-load', clearReloading);
+  setTimeout(clearReloading, 10000);
+}
+
+function sendWindowEventToAllWindows(event: string): void {
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (!canSendWindowEvent(window)) {
+      continue;
+    }
+    try {
+      window.webContents.send(CHANNEL_ON_WINDOW_EVENT, event);
+    } catch (error) {
+      console.warn(`Could not send Electron window event "${event}".`, error);
+    }
+  }
+}
+
+function canSendWindowEvent(window: BrowserWindow): boolean {
+  if (
+    window.isDestroyed() ||
+    window.webContents.isDestroyed() ||
+    window.webContents.isCrashed()
+  ) {
+    return false;
+  }
+
+  try {
+    void window.webContents.mainFrame;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 interface ElectronScreenCaptureConfig {
