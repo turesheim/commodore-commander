@@ -1,5 +1,16 @@
 # Kick Assembler Debugging Demos
 
+## SIDScore Bouncing Balls
+
+Build and run `bouncing-balls` to see three sprites bounce within the visible
+screen. `bouncing-balls.asm` declares `bouncing-balls.sidscore` in a source
+comment, so the normal Commodore Commander build embeds the module without a
+separate score entry in the build JSON. Tune 1 plays continuously on SID voices
+1 and 2; every wall hit triggers `Bounces.tune2.effect_WallHit` on voice 3.
+The 201-frame melody restarts automatically. The program targets PAL timing
+and keeps the sprite bitmap at `$2000` and the
+SIDScore module at `$3000`.
+
 Use `visual-debugger-demo.asm` to exercise the C64 Visual Debugger. It writes
 screen codes and color RAM directly, installs sprite 0 bitmap data at `$2000`,
 sets the sprite pointer at `$07f8`, and moves sprite 0 around the screen.

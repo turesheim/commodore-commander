@@ -71,6 +71,12 @@
       "root": "kickassembler/visual-debugger-demo.asm",
       "profile": "debug",
       "runProgram": "out/visual-debugger-demo.prg"
+    },
+    {
+      "name": "bouncing-balls",
+      "root": "kickassembler/bouncing-balls.asm",
+      "profile": "debug",
+      "runProgram": "out/bouncing-balls.prg"
     }
   ]
 }
