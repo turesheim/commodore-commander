@@ -7,7 +7,7 @@ supplies it as an `IAutoIncludeFile` during the same KickAssembler build.
 Compile the Java plugin with `./build.sh`. The script writes
 `resources/sidscore-kickass-plugin.jar` and requires JDK 21, the bundled
 `resources/KickAss.jar`, and the corresponding
-`resources/sidscore-cli-0.7.2.jar` containing `SIDScoreModuleExporter`.
+`resources/sidscore-cli-0.7.3.jar` containing `SIDScoreModuleExporter`.
 `KICKASS_JAR`, `SIDSCORE_JAR`, and `OUTPUT_JAR` can override those paths.
 
 For a Commodore Commander project, declare a module in the root ASM or an
