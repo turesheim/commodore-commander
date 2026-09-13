@@ -15,6 +15,7 @@ const outputPath = nodeConfig.config.output.path;
 const bundledDocsPath = path.resolve(__dirname, '..', '..', 'bundled-docs');
 const bundledDocsTargetPath = path.resolve(frontendOutputPath, 'assets', 'docs');
 const sidScoreCliJar = 'sidscore-cli-0.7.2.jar';
+const sidScorePluginJar = 'sidscore-kickass-plugin.jar';
 const sidScoreAssetsTargetPath = path.resolve(outputPath, 'assets', 'sidscore');
 const supportsBundledViceAssets =
     process.platform === 'darwin' && process.arch === 'arm64';
@@ -224,6 +225,12 @@ nodeConfig.config.plugins.push(
                     `@commodore-commander/theia-extension/assets/sidscore/${sidScoreCliJar}`
                 ),
                 to: path.resolve(sidScoreAssetsTargetPath, sidScoreCliJar)
+            },
+            {
+                from: require.resolve(
+                    `@commodore-commander/theia-extension/assets/sidscore/${sidScorePluginJar}`
+                ),
+                to: path.resolve(sidScoreAssetsTargetPath, sidScorePluginJar)
             }
         ]
     })

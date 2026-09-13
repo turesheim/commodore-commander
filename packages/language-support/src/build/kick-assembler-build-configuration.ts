@@ -57,6 +57,13 @@ export interface KickAssemblerProgramConfiguration
   root?: string;
   profile?: string;
   machine?: KickAssemblerMachineConfiguration;
+  sidScoreModules?: readonly KickAssemblerSidScoreModuleConfiguration[];
+}
+
+export interface KickAssemblerSidScoreModuleConfiguration {
+  source: string;
+  namespace: string;
+  origin: string | number;
 }
 
 export interface KickAssemblerRunConfiguration {
@@ -119,6 +126,13 @@ export interface ResolvedKickAssemblerProgramConfiguration
   entryPath: string;
   profileName?: string;
   machine?: CommodoreMachineLaunchConfiguration;
+  sidScoreModules?: readonly ResolvedKickAssemblerSidScoreModuleConfiguration[];
+}
+
+export interface ResolvedKickAssemblerSidScoreModuleConfiguration {
+  sourcePath: string;
+  namespace: string;
+  origin: number;
 }
 
 export interface ResolvedKickAssemblerRunConfiguration {
@@ -491,8 +505,61 @@ function readOptionalPrograms(
     if (machine) {
       program.machine = machine;
     }
+    const sidScoreModules = readOptionalSidScoreModules(
+      object.sidScoreModules,
+      `${sourceName}[${index}].sidScoreModules`
+    );
+    if (sidScoreModules) {
+      program.sidScoreModules = sidScoreModules;
+    }
     return program;
   });
+}
+
+function readOptionalSidScoreModules(
+  value: unknown,
+  sourceName: string
+): KickAssemblerSidScoreModuleConfiguration[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (!Array.isArray(value)) {
+    throw new Error(`${sourceName} must be an array.`);
+  }
+
+  return value.map((entry, index) => {
+    const entryName = `${sourceName}[${index}]`;
+    const object = expectRecord(entry, entryName);
+    const source = readRequiredString(object.source, `${entryName}.source`);
+    const namespace = readRequiredString(object.namespace, `${entryName}.namespace`);
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/u.test(namespace)) {
+      throw new Error(`${entryName}.namespace must be a Kick Assembler identifier.`);
+    }
+    if (path.extname(source).toLowerCase() !== '.sidscore') {
+      throw new Error(`${entryName}.source must name a .sidscore file.`);
+    }
+    const origin = parseSidScoreModuleOrigin(object.origin, `${entryName}.origin`);
+    return { source, namespace, origin };
+  });
+}
+
+function parseSidScoreModuleOrigin(value: unknown, sourceName: string): number {
+  let origin: number;
+  if (typeof value === 'number') {
+    origin = value;
+  } else if (typeof value === 'string' && /^\$[0-9a-f]+$/iu.test(value)) {
+    origin = Number.parseInt(value.slice(1), 16);
+  } else if (typeof value === 'string' && /^0x[0-9a-f]+$/iu.test(value)) {
+    origin = Number.parseInt(value.slice(2), 16);
+  } else if (typeof value === 'string' && /^[0-9]+$/u.test(value)) {
+    origin = Number.parseInt(value, 10);
+  } else {
+    throw new Error(`${sourceName} must be a C64 address (number, $hex, or 0xhex).`);
+  }
+  if (!Number.isInteger(origin) || origin < 0 || origin > 0xffff) {
+    throw new Error(`${sourceName} must be between $0000 and $ffff.`);
+  }
+  return origin;
 }
 
 function readOptionalMachineConfiguration(
@@ -607,10 +674,44 @@ function resolveProgramConfiguration(
   const entryPath = resolveWorkspacePath(workspaceRootPath, program.root);
   const resolvedSettings = resolveSettings(workspaceRootPath, mergedSettings);
   const sourceName = `program ${program.name ?? program.root}`;
+  const sidScoreModules = (program.sidScoreModules ?? []).map((module) => ({
+    sourcePath: resolveWorkspacePath(workspaceRootPath, module.source),
+    namespace: module.namespace,
+    origin: parseSidScoreModuleOrigin(
+      module.origin,
+      `${sourceName}.sidScoreModules.origin`
+    )
+  }));
+  const duplicateNamespace = sidScoreModules.find((module, index) =>
+    sidScoreModules.slice(0, index).some(
+      (other) => other.namespace === module.namespace
+    )
+  );
+  if (duplicateNamespace) {
+    throw new Error(
+      `${sourceName} declares SIDScore namespace ${duplicateNamespace.namespace} more than once.`
+    );
+  }
+  const duplicateOrigin = sidScoreModules.find((module, index) =>
+    sidScoreModules.slice(0, index).some(
+      (other) => other.origin === module.origin
+    )
+  );
+  if (duplicateOrigin) {
+    const address = duplicateOrigin.origin.toString(16).padStart(4, '0');
+    throw new Error(
+      `${sourceName} declares SIDScore origin $${address} more than once.`
+    );
+  }
   const resolved: ResolvedKickAssemblerProgramConfiguration = {
     ...resolvedSettings,
     name: program.name ?? path.basename(entryPath, path.extname(entryPath)),
     entryPath,
+    sidScoreModules,
+    generatedAssetPaths: [
+      ...resolvedSettings.generatedAssetPaths,
+      ...sidScoreModules.map((module) => module.sourcePath)
+    ],
     ...(program.machine
       ? {
           machine: resolveConfiguredMachineConfiguration(

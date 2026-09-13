@@ -17,6 +17,7 @@ const MACHO_MAGIC = new Set([
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..', '..', '..');
 const sidScoreCliJar = 'sidscore-cli-0.7.2.jar';
+const sidScorePluginJar = 'sidscore-kickass-plugin.jar';
 const sidScoreCliSource = path.join(repoRoot, 'resources', sidScoreCliJar);
 const sidScoreCliTarget = path.join(
   scriptDir,
@@ -63,6 +64,11 @@ for (const entry of await readdir(path.dirname(sidScoreCliTarget))) {
 await cp(sidScoreCliSource, sidScoreCliTarget, {
   preserveTimestamps: true
 });
+await cp(
+  path.join(repoRoot, 'resources', sidScorePluginJar),
+  path.join(path.dirname(sidScoreCliTarget), sidScorePluginJar),
+  { preserveTimestamps: true }
+);
 
 if (
   process.env.COMMODORE_COMMANDER_SKIP_VICE_ASSETS === '1' ||

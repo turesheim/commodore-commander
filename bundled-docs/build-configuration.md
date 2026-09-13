@@ -119,7 +119,7 @@ The build model deliberately uses separate concepts:
 
 - `javaRuntime`: Java command or path. Defaults to `JAVA_HOME/bin/java` when
   `JAVA_HOME` is set, otherwise `java`.
-- `javaArgs`: arguments placed before `-jar`.
+- `javaArgs`: JVM arguments placed before the Kick Assembler launcher.
 - `kickAssemblerJar`: KickAss jar path. The Theia product supplies the bundled
   jar by default.
 - `libraryRoots`: one or more KickAss `-libdir` roots. These also participate in
@@ -149,11 +149,66 @@ The build model deliberately uses separate concepts:
   `name`, `profile`, optional `machine`, and any build setting. When `machine`
   is omitted, generated launch entries currently rely on the debug adapter's
   default C64 profile.
+- `sidScoreModules`: optional legacy array on a program. Source-local ASM
+  declarations described below are preferred. Each entry names a `.sidscore`
+  `source`, a unique Kick Assembler `namespace`, and a C64 `origin` (decimal,
+  `$`-prefixed hex, or `0x`-prefixed hex). The score and its `IMPORT ... AS`
+  subtunes trigger rebuilds when changed.
 - `runs`: optional named launch entries. Each entry declares `program` and can
   override `profile`, `machine`, `runProgram`, and `build`.
 - `build`: run policy for named runs. Use `ifStale`, `always`, or `never`.
 - `excludeDirectories`: additional directory names skipped during fallback
   auto-root scanning.
+
+## SIDScore modules in Kick Assembler
+
+Declare each SIDScore module in the ASM source, and register the plugin once
+in the root ASM file:
+
+```asm
+// @sidscore "../music/theme.sidscore" as Music at $3000
+.plugin "net.resheim.cc.sidscore.kickass.SIDScoreArchive"
+
+// In the host's startup code, select tune 1:
+lda #1
+jsr Music.init
+// In the host IRQ, after saving A, X, and Y:
+jsr Music.play
+
+// When a game event occurs, queue the Zap effect from TUNE 2:
+jsr Music.tune2.effect_Zap
+```
+
+The ASM declaration gives the score path relative to the declaring source
+file, its label namespace, and its C64 origin. It must be unconditional, outside
+`#if` blocks. It stays a legal Kick Assembler comment; the build runner reads it
+before assembly. No `sidScoreModules` JSON
+setting is needed. The build runner loads the bundled third-party plugin and
+SIDScore exporter, which generate and assemble the module during the Kick
+Assembler build. The origin sets the module's starting address; the host must leave
+room there for the generated code and data. The exact source assembled is
+written to `out/debug/generated/sidscore/Music.asm` in this example, and debug
+information points to it. No separate generation command or `#import` is
+needed. External Kick Assembler invocations must supply the plugin and
+SIDScore jars on the Java classpath and the module JVM properties described in
+the plugin README in the source repository.
+
+The module supports inline `TUNE` blocks and `IMPORT "file.sidscore" AS N`,
+up to 254 tunes per module.
+For a multi-tune score, pass the tune number in A to `Music.init`; invalid
+numbers select tune 1. `Music.play` advances the selected tune and any queued
+effects once per PAL/NTSC video frame according to the score's `SYSTEM`.
+`Music.tuneN.effect_Name` queues a named effect. An effect-only tune starts its
+effects when selected with `init`, and an effect from another tune can be
+triggered while music continues. The host owns IRQ installation and must save
+A, X, and Y around calls made from an IRQ. The module uses SID registers
+`$d400-$d418` and temporarily uses zero-page `$fb-$fc`; keep them reserved
+during calls. Generated code and data must fit the chosen C64 memory range.
+Concurrent effects from different tunes should use different fixed `VOICE`
+numbers; if they write the same SID voice, the later tune wins. Global SID
+filter and volume changes persist until another write replaces them. Effects
+longer than 4096 frames currently fail module export with a named error.
+The module export has not yet been playback-tested in VICE.
 
 ## Machine Sections
 

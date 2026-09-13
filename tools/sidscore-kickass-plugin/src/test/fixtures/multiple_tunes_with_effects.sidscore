@@ -1,0 +1,34 @@
+TITLE "Plugin Multi Tune Test"
+AUTHOR "SIDScore"
+TEMPO 140
+SYSTEM PAL
+
+INSTR lead WAVE=PULSE ADSR=0,4,8,2 PW=$0800
+
+EFFECT Blip {
+  VOICE 3
+  LENGTH 4 TICKS
+  WAVE=NOISE
+  ADSR=0,4,8,2
+  GATE=ON
+  FREQ=$4000
+  GATE=OFF @3
+}
+
+VOICE 1 lead: O5 C8 R8
+
+TUNE 2 {
+  TITLE "Effect Only"
+  TEMPO 140
+  SYSTEM PAL
+
+  EFFECT Zap {
+    VOICE 2
+    LENGTH 4 TICKS
+    WAVE=NOISE
+    ADSR=0,4,8,2
+    GATE=ON
+    FREQ=$3000
+    GATE=OFF @3
+  }
+}

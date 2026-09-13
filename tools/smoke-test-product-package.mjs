@@ -7,8 +7,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { inflateRawSync } from 'node:zlib';
 
 const productName = 'Commodore Commander';
-const sidScoreCliJar = 'sidscore-cli-0.7.1.jar';
+const sidScoreCliJar = 'sidscore-cli-0.7.2.jar';
+const sidScorePluginJar = 'sidscore-kickass-plugin.jar';
 const sidScoreMainClass = 'net/resheim/sidscore/SIDScoreCLI.class';
+const sidScoreModuleExporterClass = 'net/resheim/sidscore/export/SIDScoreModuleExporter.class';
+const sidScorePluginClass = 'net/resheim/cc/sidscore/kickass/SIDScoreArchive.class';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const SRAP_MAGIC = 0x53524150;
@@ -90,6 +93,14 @@ function resolvePackageLayout(packageDir) {
         'assets',
         'sidscore',
         sidScoreCliJar
+      ),
+      sidScorePluginJarPath: path.join(
+        macAppResources,
+        'lib',
+        'backend',
+        'assets',
+        'sidscore',
+        sidScorePluginJar
       )
     };
   }
@@ -118,6 +129,14 @@ function resolvePackageLayout(packageDir) {
         'assets',
         'sidscore',
         sidScoreCliJar
+      ),
+      sidScorePluginJarPath: path.join(
+        portableAppResources,
+        'lib',
+        'backend',
+        'assets',
+        'sidscore',
+        sidScorePluginJar
       )
     };
   }
@@ -134,13 +153,16 @@ function verifyPackageLayout(layout) {
     [path.join(layout.appResourcesDir, 'lib', 'frontend', 'index.html'), 'packaged frontend'],
     [path.join(layout.appResourcesDir, 'plugins'), 'packaged plugins'],
     [layout.kickAssemblerJarPath, 'packaged Kick Assembler jar'],
-    [layout.sidScoreCliJarPath, 'packaged SIDScore jar']
+    [layout.sidScoreCliJarPath, 'packaged SIDScore jar'],
+    [layout.sidScorePluginJarPath, 'packaged SIDScore KickAssembler plugin jar']
   ];
 
   for (const [requiredPath, description] of requiredPaths) {
     assertPath(requiredPath, description);
   }
   readJarClassMajorVersion(layout.sidScoreCliJarPath, sidScoreMainClass);
+  readJarClassMajorVersion(layout.sidScoreCliJarPath, sidScoreModuleExporterClass);
+  readJarClassMajorVersion(layout.sidScorePluginJarPath, sidScorePluginClass);
 
   if (process.platform !== 'win32') {
     const mode = statSync(layout.executablePath).mode;
