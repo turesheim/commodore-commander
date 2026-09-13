@@ -115,7 +115,8 @@ export class KickAssemblerBuilderContribution
     string,
     ReturnType<typeof setTimeout>
   >();
-  protected readonly pendingAutoBuilds = new Map<string, URI>();
+  protected readonly pendingAutoBuilds = new Map<string, Map<string, URI>>();
+  protected readonly autoBuildExecutions = new Map<string, Promise<void>>();
   protected readonly activeBuilds = new Map<string, ActiveBuildState>();
   protected readonly diagnosticUrisByOwner = new Map<string, Set<string>>();
   protected readonly diagnosticOwnerVersions = new Map<string, number>();
@@ -161,6 +162,7 @@ export class KickAssemblerBuilderContribution
     }
     this.autoBuildTimers.clear();
     this.pendingAutoBuilds.clear();
+    this.autoBuildExecutions.clear();
     this.activeBuilds.clear();
     this.buildConfigurationsByWorkspace.clear();
     void this.statusBar.removeElement(KICK_ASSEMBLER_PROFILE_STATUS_BAR_ID);
@@ -196,7 +198,7 @@ export class KickAssemblerBuilderContribution
     const resourceUri = this.getCurrentKickAssemblerResource();
     if (!resourceUri) {
       this.messageService.warn(
-        'Open a Kick Assembler source file before selecting a build profile.'
+        'Open an ASM or SIDScore source file before selecting a build profile.'
       );
       return;
     }
@@ -315,7 +317,10 @@ export class KickAssemblerBuilderContribution
     }
 
     const workspaceKey = workspaceRootUri.toString();
-    this.pendingAutoBuilds.set(workspaceKey, resourceUri);
+    const pendingResources = this.pendingAutoBuilds.get(workspaceKey) ??
+      new Map<string, URI>();
+    pendingResources.set(resourceUri.toString(), resourceUri);
+    this.pendingAutoBuilds.set(workspaceKey, pendingResources);
 
     const existingTimer = this.autoBuildTimers.get(workspaceKey);
     if (existingTimer) {
@@ -326,13 +331,26 @@ export class KickAssemblerBuilderContribution
       workspaceKey,
       setTimeout(() => {
         this.autoBuildTimers.delete(workspaceKey);
-        const pendingResource = this.pendingAutoBuilds.get(workspaceKey);
+        const pendingResources = this.pendingAutoBuilds.get(workspaceKey);
         this.pendingAutoBuilds.delete(workspaceKey);
-        if (!pendingResource) {
+        if (!pendingResources) {
           return;
         }
 
-        void this.requestBuild(pendingResource);
+        const previous = this.autoBuildExecutions.get(workspaceKey) ??
+          Promise.resolve();
+        const execution = previous.catch(() => undefined).then(async () => {
+          for (const pendingResource of pendingResources.values()) {
+            await this.requestBuild(pendingResource);
+          }
+        });
+        this.autoBuildExecutions.set(workspaceKey, execution);
+        const clearExecution = (): void => {
+          if (this.autoBuildExecutions.get(workspaceKey) === execution) {
+            this.autoBuildExecutions.delete(workspaceKey);
+          }
+        };
+        void execution.then(clearExecution, clearExecution);
       }, AUTO_BUILD_DEBOUNCE_MS)
     );
   }
@@ -348,7 +366,7 @@ export class KickAssemblerBuilderContribution
 
     try {
       const configuration = await this.getBuildConfiguration(resourceUri);
-      await this.buildService.build({
+      await this.buildService.buildAndWait({
         workspaceRootUri: workspaceRootUri.toString(),
         resourceUri: resourceUri.toString(),
         profileName: configuration?.activeProfileName
@@ -430,7 +448,7 @@ export class KickAssemblerBuilderContribution
       return false;
     }
 
-    if (resourceUri.path.ext.toLowerCase() !== '.asm') {
+    if (!['.asm', '.sidscore'].includes(resourceUri.path.ext.toLowerCase())) {
       return false;
     }
 

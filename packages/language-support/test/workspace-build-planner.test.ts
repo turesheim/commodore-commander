@@ -173,6 +173,254 @@ test('KickAssemblerWorkspaceBuildPlanner treats output changes as ignored and ge
   );
 });
 
+test('SIDScore modules resolve to program inputs and trigger assembly on score changes', async () => {
+  const sourcePath = path.join(workspaceRootPath, 'music/theme.sidscore');
+  const parsed = parseKickAssemblerBuildConfiguration(JSON.stringify({
+    programs: [{
+      name: 'main',
+      root: 'main.asm',
+      sidScoreModules: [{
+        source: 'music/theme.sidscore',
+        namespace: 'Music',
+        origin: '$3000'
+      }]
+    }]
+  }));
+  const configuration = resolveKickAssemblerBuildConfiguration(
+    workspaceRootPath,
+    parsed,
+    { environment: {} }
+  );
+  const plan = await new KickAssemblerWorkspaceBuildPlanner().planWorkspaceBuild(
+    workspaceRootPath,
+    sourcePath,
+    { configuration }
+  );
+
+  assert.deepEqual(plan.affectedPrograms.map((program) => program.name), ['main']);
+  assert.deepEqual(plan.affectedPrograms[0]?.sidScoreModules, [{
+    sourcePath,
+    namespace: 'Music',
+    origin: 0x3000
+  }]);
+  assert.ok(plan.affectedPrograms[0]?.generatedAssetPaths.includes(sourcePath));
+});
+
+test('imported SIDScore subtunes and effects trigger their owning program build', async () => {
+  const temporaryRoot = await mkdtemp(
+    path.join(os.tmpdir(), 'commodore-commander-sidscore-imports-')
+  );
+  try {
+    const musicDirectory = path.join(temporaryRoot, 'music');
+    const effectPath = path.join(musicDirectory, 'effect.sidscore');
+    await mkdir(musicDirectory, { recursive: true });
+    await writeFile(path.join(temporaryRoot, 'game.asm'), '*=$2000\nstart: rts\n');
+    await writeFile(
+      path.join(musicDirectory, 'theme.sidscore'),
+      'IMPORT "effect.sidscore" ; note\n  AS 2\n; IMPORT "ignored.sidscore" AS 3\n'
+    );
+    await writeFile(effectPath, 'EFFECT Zap { VOICE 3 LENGTH 4 TICKS }\n');
+    const configuration = resolveKickAssemblerBuildConfiguration(
+      temporaryRoot,
+      {
+        programs: [{
+          root: 'game.asm',
+          sidScoreModules: [{
+            source: 'music/theme.sidscore', namespace: 'Music', origin: '$3000'
+          }]
+        }]
+      },
+      { environment: {} }
+    );
+    const plan = await new KickAssemblerWorkspaceBuildPlanner().planWorkspaceBuild(
+      temporaryRoot,
+      effectPath,
+      { configuration }
+    );
+
+    assert.deepEqual(plan.affectedPrograms.map((program) => program.name), ['game']);
+    assert.ok(plan.affectedPrograms[0]?.generatedAssetPaths.includes(effectPath));
+    assert.ok(!plan.affectedPrograms[0]?.generatedAssetPaths.includes(
+      path.join(musicDirectory, 'ignored.sidscore')
+    ));
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
+});
+
+test('ASM SIDScore declarations work without module JSON in root and included files', async () => {
+  const temporaryRoot = await mkdtemp(
+    path.join(os.tmpdir(), 'commodore-commander-asm-sidscore-')
+  );
+  try {
+    const gamePath = path.join(temporaryRoot, 'game.asm');
+    const musicPath = path.join(temporaryRoot, 'music', 'theme.sidscore');
+    const effectPath = path.join(temporaryRoot, 'music', 'zap.sidscore');
+    const otherPath = path.join(temporaryRoot, 'music', 'other.sidscore');
+    await mkdir(path.join(temporaryRoot, 'lib'), { recursive: true });
+    await mkdir(path.join(temporaryRoot, 'music'), { recursive: true });
+    await writeFile(gamePath, [
+      '// @sidscore "music/theme.sidscore" as Music at $3000',
+      '#import "lib/effects.asm"',
+      'start: rts'
+    ].join('\n'));
+    await writeFile(
+      path.join(temporaryRoot, 'unrelated.asm'),
+      '*=$2000\nstart: rts\n'
+    );
+    await writeFile(path.join(temporaryRoot, 'lib', 'effects.asm'), [
+      '  // @SIDScore "../music/other.sidscore" AS Other AT 0x4000',
+      '  // // @sidscore "../music/ignored.sidscore" as Ignored at $5000'
+    ].join('\n'));
+    await writeFile(musicPath, 'IMPORT "zap.sidscore" AS 2\n');
+    await writeFile(effectPath, 'EFFECT Zap { VOICE 3 LENGTH 4 TICKS }\n');
+    await writeFile(otherPath, 'TUNE 1 { }\n');
+
+    const plan = await new KickAssemblerWorkspaceBuildPlanner().planWorkspaceBuild(
+      temporaryRoot, effectPath
+    );
+    assert.deepEqual(plan.programs.map((program) => program.name), [
+      'game', 'unrelated'
+    ]);
+    assert.deepEqual(plan.affectedPrograms.map((program) => program.name), ['game']);
+    assert.deepEqual(plan.programs[0]?.sidScoreModules, [
+      { sourcePath: musicPath, namespace: 'Music', origin: 0x3000 },
+      { sourcePath: otherPath, namespace: 'Other', origin: 0x4000 }
+    ]);
+    assert.ok(plan.programs[0]?.generatedAssetPaths.includes(musicPath));
+    assert.ok(plan.programs[0]?.generatedAssetPaths.includes(effectPath));
+    assert.ok(plan.programs[0]?.generatedAssetPaths.includes(otherPath));
+    assert.ok(!plan.programs[0]?.generatedAssetPaths.includes(
+      path.join(temporaryRoot, 'music', 'ignored.sidscore')
+    ));
+    const unrelatedScorePlan = await new KickAssemblerWorkspaceBuildPlanner()
+      .planWorkspaceBuild(
+        temporaryRoot,
+        path.join(temporaryRoot, 'music', 'unrelated.sidscore')
+      );
+    assert.deepEqual(unrelatedScorePlan.affectedPrograms, []);
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
+});
+
+test('ASM SIDScore declarations merge with configured modules and diagnose conflicts', async () => {
+  const temporaryRoot = await mkdtemp(
+    path.join(os.tmpdir(), 'commodore-commander-sidscore-conflicts-')
+  );
+  try {
+    const gamePath = path.join(temporaryRoot, 'game.asm');
+    const configuration = resolveKickAssemblerBuildConfiguration(
+      temporaryRoot,
+      { programs: [{ root: 'game.asm', sidScoreModules: [{
+        source: 'music/legacy.sidscore', namespace: 'Legacy', origin: '$3000'
+      }] }] },
+      { environment: {} }
+    );
+    const planner = new KickAssemblerWorkspaceBuildPlanner();
+    await writeFile(gamePath, '// @sidscore "music/new.sidscore" as New at 16384\n');
+    const plan = await planner.planWorkspaceBuild(temporaryRoot, undefined, { configuration });
+    assert.deepEqual(plan.programs[0]?.sidScoreModules, [
+      {
+        sourcePath: path.join(temporaryRoot, 'music', 'legacy.sidscore'),
+        namespace: 'Legacy', origin: 0x3000
+      },
+      {
+        sourcePath: path.join(temporaryRoot, 'music', 'new.sidscore'),
+        namespace: 'New', origin: 0x4000
+      }
+    ]);
+
+    await writeFile(gamePath, '\n// @sidscore "music/new.sidscore" as Legacy at $4000\n');
+    await assert.rejects(
+      planner.planWorkspaceBuild(temporaryRoot, undefined, { configuration }),
+      (error) => error instanceof Error && error.message.includes(
+        `${gamePath}:2: SIDScore namespace Legacy is already declared in build configuration`
+      )
+    );
+    await writeFile(gamePath, '// @sidscore "music/new.sidscore" as New at $3000\n');
+    await assert.rejects(
+      planner.planWorkspaceBuild(temporaryRoot, undefined, { configuration }),
+      (error) => error instanceof Error && error.message.includes(
+        `${gamePath}:1: SIDScore origin $3000 is already declared in build configuration`
+      )
+    );
+    await writeFile(gamePath, '// @sidscore "music/new.sidscore" as New\n');
+    await assert.rejects(
+      planner.planWorkspaceBuild(temporaryRoot, undefined, { configuration }),
+      (error) => error instanceof Error && error.message.includes(
+        `${gamePath}:1: invalid SIDScore declaration`
+      )
+    );
+    await writeFile(gamePath, [
+      '#if 0',
+      '// @sidscore "music/new.sidscore" as New at $4000',
+      '#endif'
+    ].join('\n'));
+    await assert.rejects(
+      planner.planWorkspaceBuild(temporaryRoot, undefined, { configuration }),
+      (error) => error instanceof Error && error.message.includes(
+        `${gamePath}:2: SIDScore declarations must be unconditional`
+      )
+    );
+    await writeFile(gamePath, [
+      '/*',
+      '// @sidscore "music/ignored.sidscore" as Ignored at $4000',
+      '*/'
+    ].join('\n'));
+    const commentedPlan = await planner.planWorkspaceBuild(
+      temporaryRoot, undefined, { configuration }
+    );
+    assert.deepEqual(commentedPlan.programs[0]?.sidScoreModules, [
+      {
+        sourcePath: path.join(temporaryRoot, 'music', 'legacy.sidscore'),
+        namespace: 'Legacy', origin: 0x3000
+      }
+    ]);
+    await writeFile(gamePath, [
+      '// @sidscore "music/one.sidscore" as One at $4000',
+      '// @sidscore "music/two.sidscore" as One at $5000'
+    ].join('\n'));
+    await assert.rejects(
+      planner.planWorkspaceBuild(temporaryRoot, undefined, { configuration }),
+      (error) => error instanceof Error && error.message.includes(
+        `${gamePath}:2: SIDScore namespace One is already declared in ${gamePath}:1`
+      )
+    );
+    await writeFile(gamePath, [
+      '// @sidscore "music/one.sidscore" as One at $4000',
+      '// @sidscore "music/two.sidscore" as Two at $4000'
+    ].join('\n'));
+    await assert.rejects(
+      planner.planWorkspaceBuild(temporaryRoot, undefined, { configuration }),
+      (error) => error instanceof Error && error.message.includes(
+        `${gamePath}:2: SIDScore origin $4000 is already declared in ${gamePath}:1`
+      )
+    );
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
+});
+
+test('SIDScore module configuration rejects invalid origin and namespace', () => {
+  assert.throws(() => parseKickAssemblerBuildConfiguration(JSON.stringify({
+    programs: [{ root: 'main.asm', sidScoreModules: [{
+      source: 'music/theme.sidscore', namespace: 'Music', origin: '$10000'
+    }] }]
+  })), /origin must be between \$0000 and \$ffff/u);
+  assert.throws(() => parseKickAssemblerBuildConfiguration(JSON.stringify({
+    programs: [{ root: 'main.asm', sidScoreModules: [{
+      source: 'music/theme.sidscore', namespace: 'bad-name', origin: '$3000'
+    }] }]
+  })), /namespace must be a Kick Assembler identifier/u);
+  assert.throws(() => resolveKickAssemblerBuildConfiguration(workspaceRootPath, {
+    programs: [{ root: 'main.asm', sidScoreModules: [
+      { source: 'music/a.sidscore', namespace: 'A', origin: '$3000' },
+      { source: 'music/b.sidscore', namespace: 'B', origin: '$3000' }
+    ] }]
+  }, { environment: {} }), /SIDScore origin \$3000 more than once/u);
+});
+
 test('KickAssemblerWorkspaceBuildPlanner keeps discovered standalone programs beside configured programs', async () => {
   const temporaryRoot = await mkdtemp(
     path.join(os.tmpdir(), 'commodore-commander-program-discovery-')

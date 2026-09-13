@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export interface KickAssemblerSourceEntry {
   index: number;
@@ -510,6 +511,7 @@ function resolveDebugSourcePath(
   sourcePath: string,
   sourceRoots: readonly string[] | undefined
 ): string {
+  sourcePath = localPathFromFileUri(sourcePath);
   if (!sourcePath || hasUriScheme(sourcePath) || path.isAbsolute(sourcePath)) {
     return sourcePath;
   }
@@ -517,11 +519,23 @@ function resolveDebugSourcePath(
 }
 
 function normalizePath(sourcePath: string): string {
+  sourcePath = localPathFromFileUri(sourcePath);
   if (!sourcePath || hasUriScheme(sourcePath)) {
     return sourcePath;
   }
   const normalized = path.normalize(sourcePath);
   return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
+}
+
+function localPathFromFileUri(sourcePath: string): string {
+  if (!sourcePath.startsWith('file:')) {
+    return sourcePath;
+  }
+  try {
+    return fileURLToPath(sourcePath);
+  } catch {
+    return sourcePath;
+  }
 }
 
 function hasUriScheme(sourcePath: string): boolean {

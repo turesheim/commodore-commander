@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { test } from 'node:test';
 
 import {
@@ -150,6 +151,27 @@ test('source mappings resolve relative debug-info paths against source roots', (
     sourcePath
   );
   assert.equal(resolveSourceEntryPath(debugInfo, debugInfo.sources[0]!), sourcePath);
+});
+
+test('source mappings match file URIs emitted by auto-included plugin sources', () => {
+  const generatedAsmPath = path.resolve('/workspace/project/out/generated/sidscore/Music.asm');
+  const generatedAsmUri = pathToFileURL(generatedAsmPath).href;
+  const debugInfo = parseKickAssemblerDebugInfo(
+    `<C64debugger version="1.0">
+      <Sources values="INDEX,FILE">
+        1,${generatedAsmUri}
+      </Sources>
+      <Segment name="Default" dest="" values="START,END,FILE_IDX,LINE1,COL1,LINE2,COL2">
+        $3000,$3002,1,5,1,5,3
+      </Segment>
+    </C64debugger>`
+  );
+
+  assert.equal(
+    findLineMappingForSourceLine(debugInfo, generatedAsmPath, 5)?.startAddress,
+    0x3000
+  );
+  assert.equal(resolveSourceEntryPath(debugInfo, debugInfo.sources[0]!), generatedAsmPath);
 });
 
 test('nearest source mapping resolves nearby unmapped addresses for stack frames', () => {

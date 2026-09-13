@@ -168,12 +168,14 @@ export type {
   KickAssemblerBuildProfileConfiguration,
   KickAssemblerMachineConfiguration,
   KickAssemblerProgramConfiguration,
+  KickAssemblerSidScoreModuleConfiguration,
   KickAssemblerRunBuildPolicy,
   KickAssemblerRunConfiguration,
   LoadKickAssemblerBuildConfigurationOptions,
   ResolvedKickAssemblerBuildConfiguration,
   ResolvedKickAssemblerBuildSettings,
   ResolvedKickAssemblerProgramConfiguration,
+  ResolvedKickAssemblerSidScoreModuleConfiguration,
   ResolvedKickAssemblerRunConfiguration
 } from './build/kick-assembler-build-configuration.ts';
 export type {
