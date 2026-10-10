@@ -1,6 +1,7 @@
 import {
     resolveViceCommand,
     ViceStandaloneProcess,
+    ViceFrameTransport,
     VICE_EMBED_FLAG as EMBED_FLAG,
     VICE_EMBED_FRAME_PORT_FLAG as EMBED_FRAME_PORT_FLAG,
     VICE_EMBED_COMMAND_FD_FLAG as EMBED_COMMAND_FD_FLAG,
@@ -8,12 +9,7 @@ import {
 } from '@commodore-commander/vice-runtime';
 import type * as http from 'node:http';
 import type * as https from 'node:https';
-import {
-    createServer,
-    type AddressInfo,
-    type Server as NetServer,
-    type Socket
-} from 'node:net';
+import type { Socket } from 'node:net';
 
 import type { Disposable } from '@theia/core/lib/common/disposable';
 import { ILogger } from '@theia/core/lib/common/logger';
@@ -58,7 +54,6 @@ import { observeRpcClientClose } from './rpc-client-lifecycle';
 
 const DEFAULT_VICE_EMULATOR = 'x64sc';
 const MAX_UNFRAMED_STDOUT_BYTES = 32 * 1024 * 1024;
-const MAX_FRAME_TRANSPORT_BUFFER_BYTES = 32 * 1024 * 1024;
 const MIN_FRAME_SOCKET_BACKPRESSURE_BYTES = 256 * 1024;
 const MAX_FRAME_SOCKET_BUFFERED_BYTES = 2 * 1024 * 1024;
 
@@ -105,9 +100,11 @@ export class CommodoreViceEmbedServiceImpl
         }
     });
     protected stdoutBuffer = Buffer.alloc(0);
-    protected viceFrameServer: NetServer | undefined;
-    protected viceFrameSocket: Socket | undefined;
-    protected viceFrameBuffer = Buffer.alloc(0);
+    protected readonly viceFrameTransport = new ViceFrameTransport({
+        onFrame: (record) => this.broadcastBinaryFrame(record),
+        onError: (error) => this.emitStatus({ state: 'error', message: error.message }),
+        onSocketError: (error) => this.logger.warn(`VICE frame transport socket error: ${error.message}`)
+    });
     protected frameSocketServer: WebSocketServer | undefined;
     protected frameSockets = new Set<WebSocket>();
     protected latestBinaryFrame: Buffer | undefined;
@@ -252,7 +249,7 @@ export class CommodoreViceEmbedServiceImpl
         if (this.standaloneProcess.hasProcess) {
             this.stopProcess();
         }
-        if (this.viceFrameSocket) {
+        if (this.viceFrameTransport.connected) {
             throw new Error(
                 'Embedded VICE frame transport is already connected to an emulator.'
             );
@@ -358,67 +355,6 @@ export class CommodoreViceEmbedServiceImpl
         }
     }
 
-    protected handleViceFrameData(chunk: Buffer): void {
-        const ownedChunk = Buffer.from(chunk);
-        this.viceFrameBuffer = this.viceFrameBuffer.length === 0
-            ? ownedChunk
-            : Buffer.concat([this.viceFrameBuffer, ownedChunk]);
-        if (this.viceFrameBuffer.length > MAX_FRAME_TRANSPORT_BUFFER_BYTES) {
-            this.emitStatus({
-                state: 'error',
-                message: 'Patched VICE frame transport buffer was too large.'
-            });
-            this.viceFrameBuffer = Buffer.alloc(0);
-            return;
-        }
-
-        for (;;) {
-            if (this.viceFrameBuffer.length < COMMODORE_VICE_EMBED_BINARY_FRAME_MAGIC.length) {
-                return;
-            }
-            if (!startsWithViceEmbedBinaryFrame(this.viceFrameBuffer)) {
-                const binaryIndex = this.viceFrameBuffer.indexOf(
-                    COMMODORE_VICE_EMBED_BINARY_FRAME_MAGIC,
-                    1
-                );
-                if (binaryIndex >= 0) {
-                    this.viceFrameBuffer = this.viceFrameBuffer.subarray(binaryIndex);
-                    continue;
-                }
-                this.viceFrameBuffer = this.viceFrameBuffer.subarray(
-                    Math.max(
-                        0,
-                        this.viceFrameBuffer.length -
-                            (COMMODORE_VICE_EMBED_BINARY_FRAME_MAGIC.length - 1)
-                    )
-                );
-                return;
-            }
-
-            let recordLength: number | undefined;
-            try {
-                recordLength = getViceEmbedBinaryFrameRecordLength(this.viceFrameBuffer);
-            } catch (error) {
-                const message = error instanceof Error ? error.message : String(error);
-                this.emitStatus({
-                    state: 'error',
-                    message: `Invalid patched VICE binary frame: ${message}`
-                });
-                this.viceFrameBuffer = this.viceFrameBuffer.subarray(
-                    COMMODORE_VICE_EMBED_BINARY_FRAME_MAGIC.length
-                );
-                continue;
-            }
-            if (recordLength === undefined || this.viceFrameBuffer.length < recordLength) {
-                return;
-            }
-
-            const record = this.viceFrameBuffer.subarray(0, recordLength);
-            this.viceFrameBuffer = this.viceFrameBuffer.subarray(recordLength);
-            this.handleBinaryFrameRecord(record);
-        }
-    }
-
     protected handleBinaryFrameRecord(record: Buffer): void {
         try {
             const frame = parseViceEmbedBinaryFrameRecord(record);
@@ -485,74 +421,22 @@ export class CommodoreViceEmbedServiceImpl
 
     protected async startViceFrameServer(closeWhenSocketCloses: boolean): Promise<number> {
         this.closeViceFrameTransport();
-
-        const server = createServer((socket) => {
-            if (this.viceFrameSocket && this.viceFrameSocket !== socket) {
-                this.viceFrameSocket.destroy();
-            }
-            this.viceFrameSocket = socket;
-            this.viceFrameBuffer = Buffer.alloc(0);
-            socket.setNoDelay(true);
-            socket.on('data', (chunk: Buffer) => this.handleViceFrameData(chunk));
-            socket.on('error', (error) => {
-                this.logger.warn(`VICE frame transport socket error: ${error.message}`);
-            });
-            socket.on('close', () => {
-                if (this.viceFrameSocket === socket) {
-                    this.viceFrameSocket = undefined;
-                    this.viceFrameBuffer = Buffer.alloc(0);
-                }
+        return this.viceFrameTransport.start({
+            onDisconnect: () => {
                 if (closeWhenSocketCloses && !this.standaloneProcess.hasProcess) {
                     this.closeViceFrameTransport();
                 }
-            });
-        });
-        this.viceFrameServer = server;
-
-        return new Promise<number>((resolve, reject) => {
-            let resolved = false;
-            server.on('error', (error) => {
-                if (!resolved) {
-                    this.viceFrameServer = undefined;
-                    reject(error);
-                    return;
-                }
-                this.emitStatus({
-                    state: 'error',
-                    message: `VICE frame transport error: ${error.message}`
-                });
-            });
-            server.listen({ host: '127.0.0.1', port: 0 }, () => {
-                const address = server.address();
-                if (!address || typeof address === 'string') {
-                    this.closeViceFrameTransport();
-                    reject(new Error('VICE frame transport did not bind to a TCP port.'));
-                    return;
-                }
-                resolved = true;
-                resolve((address as AddressInfo).port);
-            });
+            }
         });
     }
 
     protected closeViceFrameTransport(): void {
-        if (this.viceFrameSocket) {
-            this.viceFrameSocket.destroy();
-            this.viceFrameSocket = undefined;
-        }
-        this.viceFrameBuffer = Buffer.alloc(0);
+        this.viceFrameTransport.stop();
         this.latestBinaryFrame = undefined;
-        if (this.viceFrameServer) {
-            this.viceFrameServer.close();
-            this.viceFrameServer = undefined;
-        }
     }
 
     protected currentViceFrameServerPort(): number | undefined {
-        const address = this.viceFrameServer?.address();
-        return address && typeof address !== 'string'
-            ? address.port
-            : undefined;
+        return this.viceFrameTransport.port;
     }
 
     protected broadcastBinaryFrame(record: Buffer): void {

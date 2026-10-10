@@ -105,6 +105,7 @@ test('VICE embed protocol parses binary frame records', () => {
   assert.equal(frame.pixelFormat, 'rgba8888');
   assert.equal(frame.timestamp, 12345);
   assert.deepEqual([...frame.data], [0, 0, 0, 255, 255, 255, 255, 255]);
+  assert.deepEqual(frame.record, record);
 });
 
 test('VICE embed protocol parses status events', () => {

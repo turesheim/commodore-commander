@@ -19,6 +19,8 @@ What is here:
   starting VICE without the binary monitor or `-initbreak`
 - VICE monitor protocol IDs, request builders, frame decoding, and response
   correlation
+- embedded CCB1 frame parsing through `packages/vice-runtime`; the adapter
+  retains its existing parsed-frame result without the raw transport record
 - DAP support for launch, source breakpoints, conditional source breakpoints,
   source hit conditions, source logpoints/tracepoints, data
   breakpoints/watchpoints, conditional data breakpoints, data hit conditions,
@@ -59,7 +61,7 @@ Real VICE e2e tests:
 
 The normal `npm test --workspace @commodore-commander/debug-adapter` command
 builds `vice-runtime` and the adapter, then runs parser/protocol/unit coverage.
-Shared process-lifecycle tests run separately with
+Shared process-lifecycle and native frame-transport tests run separately with
 `npm test --workspace @commodore-commander/vice-runtime`. The real emulator
 regression lane is opt-in:
 

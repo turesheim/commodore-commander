@@ -17,6 +17,8 @@ as an external process. It has no Theia, language-support, or DAP dependency.
   launch failures, and natural exit notifications
 - share embedded launch flags and keyboard/mouse defaults between the adapter
   and the Theia backend
+- parse native CCB1 binary frames through one shared implementation
+- own the emulator's loopback TCP frame listener, socket, and stream reassembly
 
 Resource discovery requires the caller's `runtimeDirectory`. The Theia wrapper
 passes its own backend directory so bundled assets remain relative to the
@@ -36,10 +38,18 @@ the previous standalone behavior: send SIGTERM without waiting for exit or
 applying the debugger's forced-kill policy. Natural exit and asynchronous spawn
 failure are delivered to the caller through callbacks.
 
+`ViceFrameTransport` listens on `127.0.0.1` with an ephemeral port and delivers
+validated CCB1 records through callbacks. Its decoder reassembles fragmented
+records, skips unrelated bytes, reports invalid frames, and bounds buffered
+data. Replacing a native socket resets partial records and ignores late events
+from the replaced socket. Explicit stop releases the listener and socket without
+calling the disconnect callback; the caller chooses session cleanup after a
+natural disconnect.
+
 The Theia backend still chooses standalone versus debug ownership, resolves
-machine/preferences, encodes protocol commands, reports status, and manages
-frame sockets and the browser WebSocket bridge. This extraction does not
-complete the runtime migration.
+machine/preferences, encodes protocol commands, reports status, handles the
+stdout protocol fallback, and manages the browser WebSocket bridge. This
+extraction does not complete the runtime migration.
 
 ## Verification
 
@@ -51,4 +61,5 @@ npm test --workspace @commodore-commander/vice-runtime
 
 The tests build the package and exercise resource/executable resolution,
 argument construction, process launch/termination, standalone command-pipe
-input, and callback isolation without requiring a VICE installation.
+input, callback isolation, binary frame validation/reassembly, and native socket
+lifecycle without requiring a VICE installation. Socket tests bind loopback TCP.

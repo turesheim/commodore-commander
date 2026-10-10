@@ -38,6 +38,27 @@ test('embedded debug frame transport refuses to replace a connected emulator', a
   assert.equal(service.frameServerStartCount, 1);
 });
 
+test('debug emulator disconnect releases the listener and cached frame before reserving again', { timeout: 5000 }, async (t) => {
+  const service = new TestViceEmbedService();
+  t.after(() => service.dispose());
+  const port = await service.reserveFrameTransport();
+  const socket = await connectLoopback(port);
+  t.after(() => socket.destroy());
+  socket.write(Buffer.from(
+    '43434231010120000400000009000000393000000000000001000100070000000a141eff',
+    'hex'
+  ));
+  await waitFor(() => service.hasLatestFrame());
+  socket.end();
+  await waitFor(() => !service.hasFrameServer());
+  assert.equal(service.hasLatestFrame(), false);
+  assert.equal(service.hasConnectedFrameSocket(), false);
+
+  await service.reserveFrameTransport();
+  assert.equal(service.hasFrameServer(), true);
+  assert.equal(service.frameServerStartCount, 2);
+});
+
 test('embedded VICE service drops frontend client when the RPC connection closes', () => {
   const service = new TestViceEmbedService();
   const client = new TestViceEmbedClient();
@@ -154,7 +175,7 @@ class TestViceEmbedService extends CommodoreViceEmbedServiceImpl {
   }
 
   hasConnectedFrameSocket(): boolean {
-    return this.viceFrameSocket !== undefined;
+    return this.viceFrameTransport.connected;
   }
 
   emitTestStatus(event: CommodoreViceEmbedStatusEvent): void {
