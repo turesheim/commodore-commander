@@ -270,7 +270,7 @@ function hasExited(child: ChildProcess): boolean {
   return child.exitCode !== null || child.signalCode !== null;
 }
 
-function resolveViceCommandInput(child: ChildProcess): Writable | undefined {
+export function resolveViceCommandInput(child: ChildProcess): Writable | undefined {
   const commandInput = child.stdio[VICE_EMBED_COMMAND_FD];
   return isWritableStream(commandInput) ? commandInput : child.stdin ?? undefined;
 }

@@ -57,6 +57,9 @@ jobs:
             npm ci --workspace @commodore-commander/debug-adapter --include-workspace-root=false --no-audit
           }
 
+      - name: Run VICE runtime unit tests
+        run: npm test --workspace @commodore-commander/vice-runtime
+
       - name: Install VICE
         run: |
           sudo apt-get update
