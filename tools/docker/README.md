@@ -14,7 +14,8 @@ is available, or export upstream VICE `v3.10` data when the distro package omits
 C64 ROM resources.
 
 The wrapper mounts the checkout at `/workspace`, installs only the
-`@commodore-commander/debug-adapter` workspace dependencies, and stores
+`@commodore-commander/debug-adapter` workspace dependencies and its local
+`@commodore-commander/vice-runtime` dependency, and stores
 `node_modules` plus the npm cache in Docker volumes:
 
 - `commodore-commander-vice-e2e-node-modules`

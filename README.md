@@ -179,11 +179,12 @@ while an embedded emulator is running.
 
 - launch and terminate VICE from Theia's built-in Run and Debug commands
 - Start Without Debugging through DAP `noDebug`, which starts VICE without the binary monitor
-- `commodoreCommander.VICE.launchMode` defaults to `patchedView`, the intended
+- `commodoreCommander.VICE.launchMode` defaults to `embedded`, the intended
   embedded VICE surface for patched runtimes with frame/input transport. The
   patched runtime is based on the VICE 3.10.0 release tag
-  `tags/v3.10/vice`; `externalWindow` keeps stock VICE in its own window as a
-  compatibility path
+  `tags/v3.10/vice`; `external` keeps stock VICE in its own window as a
+  compatibility path. Legacy `patchedView`/`externalWindow` values are mapped
+  to `embedded`/`external`
 - the embedded VICE view contributes a Theia canvas and process bridge for the
   patched SDL runtime. The first native patch and protocol notes live under
   `tools/vice-embed/`; run `npm run vice:assets` to build and sync the patched
@@ -225,6 +226,20 @@ The C64 Visual Debugger complements the DAP views with machine-specific state fr
 | --- | --- |
 | ![C64 Visual Debugger screen, character, and color RAM view](docs/theia-c64-visual-debugger-screen.png) | ![C64 Visual Debugger CIA and keyboard view](docs/theia-c64-visual-debugger-cia.png) |
 
+
+
+## Code organization
+
+The active product uses TypeScript workspaces for language/build planning
+(`packages/language-support`), reusable VICE discovery and process lifecycle
+(`packages/vice-runtime`), DAP/monitor debugging (`packages/debug-adapter`), and
+Theia integration (`packages/theia-extension`). The desktop application lives
+in `applications/electron`. `packages/core` holds preserved Java reference
+code and is outside the npm build.
+
+Runtime extraction is partial: the Theia backend still owns the standalone
+embedded process and frame/WebSocket bridge. See [Packages](packages/README.md)
+for boundaries and remaining extraction work.
 
 
 # Developer resources

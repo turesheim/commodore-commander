@@ -28,10 +28,12 @@
     "build": "tsc -p tsconfig.json",
     "clean": "rimraf lib",
     "test": "npm run build && node --test lib/test/*.test.js",
-    "test:e2e:vice": "npm run build && node --test lib/test/e2e/*.e2e.test.js"
+    "test:e2e:vice": "npm run build && node --test lib/test/e2e/*.e2e.test.js",
+    "prebuild": "npm run build --workspace @commodore-commander/vice-runtime"
   },
   "dependencies": {
-    "@vscode/debugprotocol": "^1.68.0"
+    "@vscode/debugprotocol": "^1.68.0",
+    "@commodore-commander/vice-runtime": "0.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

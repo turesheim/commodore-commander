@@ -2,15 +2,18 @@ export const COMMODORE_VICE_EMBED_PROTOCOL = 'commodore-vice-embed-v1';
 export const COMMODORE_VICE_EMBED_PROTOCOL_PREFIX = 'CCV1 ';
 export const COMMODORE_VICE_EMBED_DEBUG_EVENT =
   'commodoreCommander.viceEmbed';
-export const VICE_EMBED_FLAG = '-cc-embed';
-export const VICE_EMBED_FRAME_PORT_FLAG = '-cc-frame-port';
-export const VICE_EMBED_COMMAND_FD_FLAG = '-cc-command-fd';
-export const VICE_EMBED_COMMAND_FD = 3;
-export const VICE_EMBED_MOUSE_GRAB_FLAG = '-mouse';
-export const VICE_EMBED_KEYMAP_INDEX_FLAG = '-keymap';
-export const VICE_EMBED_SYMBOLIC_KEYMAP_INDEX = '0';
-export const VICE_EMBED_KEYBOARD_MAPPING_FLAG = '-keyboardmapping';
-export const VICE_EMBED_US_KEYBOARD_MAPPING = '0';
+// Keep protocol consumers compatible while the runtime owns launch flags.
+export {
+  VICE_EMBED_FLAG,
+  VICE_EMBED_FRAME_PORT_FLAG,
+  VICE_EMBED_COMMAND_FD_FLAG,
+  VICE_EMBED_COMMAND_FD,
+  VICE_EMBED_MOUSE_GRAB_FLAG,
+  VICE_EMBED_KEYMAP_INDEX_FLAG,
+  VICE_EMBED_SYMBOLIC_KEYMAP_INDEX,
+  VICE_EMBED_KEYBOARD_MAPPING_FLAG,
+  VICE_EMBED_US_KEYBOARD_MAPPING
+} from '@commodore-commander/vice-runtime';
 export const COMMODORE_VICE_EMBED_BINARY_FRAME_MAGIC = Buffer.from(
   'CCB1',
   'ascii'

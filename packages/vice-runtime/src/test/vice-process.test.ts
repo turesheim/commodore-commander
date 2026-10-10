@@ -1,16 +1,44 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { chmod, cp, mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { chmod, cp, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 
 import {
   createViceProcessArgs,
+  launchViceProcess,
   resolveViceCommand,
   terminateViceProcess
-} from '../vice-runtime';
+} from '../vice-process';
+
+test('no-debug process launch preserves the working directory and environment', async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'cc-vice-launch-'));
+  try {
+    const program = path.join(tempRoot, 'fake-vice.cjs');
+    await writeFile(program, 'console.log(JSON.stringify({ cwd: process.cwd(), initialCwd: process.env.VICE_INITIAL_CWD }));');
+    const launch = await launchViceProcess({
+      program,
+      cwd: tempRoot,
+      viceResourcesPath: tempRoot,
+      viceExecutable: process.execPath,
+      viceArgs: [],
+      enableMonitor: false
+    });
+    let output = '';
+    launch.child.stdout!.on('data', (chunk: Buffer) => { output += chunk.toString(); });
+    const [exitCode] = await once(launch.child, 'close');
+    assert.equal(exitCode, 0);
+    const state = JSON.parse(output);
+    assert.equal(state.cwd, await realpath(tempRoot));
+    assert.equal(state.initialCwd, tempRoot);
+    assert.equal(launch.monitorPort, undefined);
+    assert.equal(launch.commandInput, undefined);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+});
 
 test('createViceProcessArgs omits binary monitor arguments when monitor is disabled', () => {
   const args = createViceProcessArgs({

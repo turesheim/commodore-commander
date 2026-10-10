@@ -24,3 +24,5 @@ target
 /example-workspace/out
 /tools/vice-embed/build/
 /tools/vice-embed/dist/
+/packages/vice-runtime/lib/
+/packages/vice-runtime/node_modules/

@@ -1,5 +1,10 @@
-import { constants } from 'node:fs';
-import { access } from 'node:fs/promises';
+import {
+    resolveViceCommand,
+    VICE_EMBED_FLAG as EMBED_FLAG,
+    VICE_EMBED_FRAME_PORT_FLAG as EMBED_FRAME_PORT_FLAG,
+    VICE_EMBED_COMMAND_FD_FLAG as EMBED_COMMAND_FD_FLAG,
+    VICE_EMBED_COMMAND_FD as EMBED_COMMAND_FD
+} from '@commodore-commander/vice-runtime';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import type * as http from 'node:http';
 import type * as https from 'node:https';
@@ -10,7 +15,6 @@ import {
     type Server as NetServer,
     type Socket
 } from 'node:net';
-import path from 'node:path';
 
 import type { Disposable } from '@theia/core/lib/common/disposable';
 import { ILogger } from '@theia/core/lib/common/logger';
@@ -54,10 +58,6 @@ import {
 import { observeRpcClientClose } from './rpc-client-lifecycle';
 
 const DEFAULT_VICE_EMULATOR = 'x64sc';
-const EMBED_FLAG = '-cc-embed';
-const EMBED_FRAME_PORT_FLAG = '-cc-frame-port';
-const EMBED_COMMAND_FD_FLAG = '-cc-command-fd';
-const EMBED_COMMAND_FD = 3;
 const MAX_UNFRAMED_STDOUT_BYTES = 32 * 1024 * 1024;
 const MAX_FRAME_TRANSPORT_BUFFER_BYTES = 32 * 1024 * 1024;
 const MIN_FRAME_SOCKET_BACKPRESSURE_BYTES = 256 * 1024;
@@ -712,63 +712,7 @@ function isLoopbackHost(hostname: string): boolean {
         normalized === '[::1]';
 }
 
-async function resolveViceCommand(
-    viceResourcesPath: string,
-    viceExecutable: string
-): Promise<string> {
-    const executable = normalizeConfiguredValue(viceExecutable) ?? DEFAULT_VICE_EMULATOR;
-    if (isPathLike(executable)) {
-        const command = path.resolve(executable);
-        await assertExecutable(command, `VICE emulator ${viceExecutable}`);
-        return command;
-    }
-
-    for (const candidate of viceCommandCandidates(viceResourcesPath, executable)) {
-        if (await isExecutable(candidate)) {
-            return candidate;
-        }
-    }
-
-    return executable;
-}
-
-function viceCommandCandidates(
-    viceResourcesPath: string,
-    viceExecutable: string
-): string[] {
-    const executableNames = process.platform === 'win32' &&
-        !viceExecutable.toLowerCase().endsWith('.exe')
-        ? [viceExecutable, `${viceExecutable}.exe`]
-        : [viceExecutable];
-    return executableNames.flatMap((executableName) => [
-        path.join(viceResourcesPath, 'bin', executableName),
-        path.join(viceResourcesPath, executableName)
-    ]);
-}
-
-async function assertExecutable(filePath: string, description: string): Promise<void> {
-    try {
-        await access(filePath, constants.X_OK);
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`${description} is not executable: ${filePath}. ${message}`);
-    }
-}
-
-async function isExecutable(filePath: string): Promise<boolean> {
-    try {
-        await access(filePath, constants.X_OK);
-        return true;
-    } catch {
-        return false;
-    }
-}
-
 function normalizeConfiguredValue(value: string | undefined): string | undefined {
     const normalized = value?.trim();
     return normalized || undefined;
-}
-
-function isPathLike(value: string): boolean {
-    return path.isAbsolute(value) || /[\\/]/u.test(value);
 }

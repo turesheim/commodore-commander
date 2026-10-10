@@ -1,22 +1,15 @@
-# Core
+# Preserved Java Core
 
-`packages/core` contains the first reusable extraction pass:
+This directory contains Java domain code extracted from the Eclipse version:
+Kick Assembler debug-info models, a JAXB parser for `-debugdump` metadata, and
+numeric value parsing utilities.
 
-- Kick Assembler debug-info model classes without Eclipse workspace types
-- a JAXB parser for `-debugdump` metadata
-- numeric value parsing utilities reused by debugger-oriented code
+It is not an npm workspace and is not compiled into the Theia/Electron product.
+The active TypeScript debug-info parser, disassembler, and monitor integration
+live in `packages/debug-adapter`; language services and reference datasets live
+in `packages/language-support`; external VICE process helpers live in
+`packages/vice-runtime`.
 
-VICE-specific code intentionally stays outside `core`:
-
-- `packages/debug-adapter` for monitor protocol/adaptation
-- the Theia backend currently owns the minimal embedded VICE `.prg` launch path
-- any future reusable runtime/process package should be TypeScript-first
-
-What is intentionally not here yet:
-
-- Eclipse builder orchestration
-- console integration
-- source lookup integration
-- response-to-debug-event translation
-- reference XML assets and disassembler code that still need a second extraction
-  pass
+Keep this code as migration/reference material until its remaining consumers
+and domain semantics have been checked. Its presence does not imply a shared
+TypeScript core package has been implemented.

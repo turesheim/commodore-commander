@@ -1,19 +1,23 @@
 # Packages
 
-This directory contains the package-level modules for the Theia-oriented
-Commodore Commander architecture.
+Commodore Commander uses TypeScript npm workspaces for the active Theia product.
+The Electron application lives in `applications/electron`.
 
-The code here is intentionally additive:
+| Package | Responsibility |
+| --- | --- |
+| `language-support` | Documents, includes, symbols, editor services, machine profiles, reference data, and build planning. No Theia dependency. |
+| `vice-runtime` | VICE resource/executable discovery, launch flags, and external process launch/termination. No Theia or DAP dependency. |
+| `debug-adapter` | DAP sessions, VICE binary monitor connections, breakpoints, source mapping, stack reconstruction, and disassembly. Uses `vice-runtime` for process lifecycle. |
+| `theia-extension` | Theia commands, views, editors, preferences, build execution, and integration with the debug adapter and runtime. |
+| `core` | Preserved Java debug-info models/parser and numeric utilities. Outside the npm product build. |
 
-- `packages/language-support` is now TypeScript-first
-- `packages/debug-adapter` is now the TypeScript-first VICE DAP adapter for
-  Theia launch configurations and debug sessions
-- Java extractions that still matter outside the active language/debug runtime
-  are kept explicitly scoped
+Build the product from the repository root with `npm run theia:build`. The
+build order is language support, VICE runtime, debug adapter, Theia extension,
+and Electron frontend/backend bundling. The debug adapter's standalone build
+also builds its runtime dependency, including in the focused VICE CI lane.
 
-These packages are wired through the npm workspace and the Electron application
-under `applications/electron`.
-
-The runnable Theia application package now lives outside this folder in
-`applications/electron` so the package-level modules can stay focused on
-reusable logic and Theia integration seams.
+The runtime extraction is partial: the standalone embedded emulator process,
+frame socket/WebSocket bridge, and machine-selection policy still live in the
+Theia backend. DAP-specific monitor connection management stays in the debug
+adapter. Further extraction should preserve these different lifecycle owners
+and the existing launch behavior.

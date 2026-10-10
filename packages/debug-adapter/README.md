@@ -12,8 +12,9 @@ What is here:
 - launch-time `.dbg` discovery that falls back from the configured debug-info
   path to nearby PRG/output debug dumps with matching address ranges
 - a DAP stdio transport and VICE debug session
-- VICE process launch with Kick Assembler `.vs` monitor-command discovery and
-  binary monitor wiring for debugging
+- DAP launch orchestration with Kick Assembler `.vs` monitor-command discovery
+  and binary monitor wiring; external process helpers are supplied by
+  `packages/vice-runtime`
 - `noDebug` launch support for Theia/VS Code Start Without Debugging flows,
   starting VICE without the binary monitor or `-initbreak`
 - VICE monitor protocol IDs, request builders, frame decoding, and response
@@ -57,8 +58,10 @@ What is here:
 Real VICE e2e tests:
 
 The normal `npm test --workspace @commodore-commander/debug-adapter` command
-keeps running only parser/protocol/unit coverage. The real emulator regression
-lane is opt-in:
+builds `vice-runtime` and the adapter, then runs parser/protocol/unit coverage.
+Shared process-lifecycle tests run separately with
+`npm test --workspace @commodore-commander/vice-runtime`. The real emulator
+regression lane is opt-in:
 
 ```text
 VICE_E2E=1 npm run test:e2e:vice --workspace @commodore-commander/debug-adapter
@@ -90,8 +93,10 @@ What is not here yet:
   asynchronous interrupt provenance
 - arbitrary VICE textual monitor action commands for checkpoints; VICE binary
   monitor conditions are supported, but logpoint actions are adapter-managed
-- non-macOS embedded VICE payload discovery
-- complete replacement of every specialized debug view
+- a bundled patched embedded VICE build for Windows/Linux; shared runtime
+  discovery supports platform-specific asset paths and external installations
+- full parity with all legacy Eclipse debug views; Theia provides Memory and
+  C64 Visual Debugger views in `packages/theia-extension`
 
 Shutdown behavior:
 

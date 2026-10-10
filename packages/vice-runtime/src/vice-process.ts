@@ -15,7 +15,7 @@ import {
   VICE_EMBED_MOUSE_GRAB_FLAG,
   VICE_EMBED_SYMBOLIC_KEYMAP_INDEX,
   VICE_EMBED_US_KEYBOARD_MAPPING
-} from './vice-embed-protocol';
+} from './vice-launch-flags';
 
 const DEFAULT_TERMINATION_TIMEOUT_MS = 1500;
 const DEFAULT_FORCE_KILL_TIMEOUT_MS = 1000;
