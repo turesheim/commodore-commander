@@ -237,9 +237,10 @@ Theia integration (`packages/theia-extension`). The desktop application lives
 in `applications/electron`. `packages/core` holds preserved Java reference
 code and is outside the npm build.
 
-Runtime extraction is partial: the Theia backend still owns the standalone
-embedded process and frame/WebSocket bridge. See [Packages](packages/README.md)
-for boundaries and remaining extraction work.
+Runtime extraction is partial: `vice-runtime` owns the standalone embedded
+child process and command pipe. The Theia backend still coordinates launch
+ownership and manages the frame/WebSocket bridge. See
+[Packages](packages/README.md) for boundaries and remaining extraction work.
 
 
 # Developer resources
