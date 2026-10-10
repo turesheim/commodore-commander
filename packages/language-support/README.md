@@ -3,10 +3,10 @@
 `packages/language-support` is the TypeScript-first home for Commodore
 Commander language logic.
 
-This package intentionally stays below Theia and below the Eclipse runtime. It
-preserves the existing syntax assets, ports the smallest useful document/import/
-symbol foundations into TypeScript, and keeps the Java parser work as
-reference-only material.
+This package has no Theia or Eclipse runtime dependency. It supplies shared
+editor services and build planning to the desktop product and headless builds.
+Preserved Java/ANTLR parser material is reference-only; active code lives under
+`src/`.
 
 ## Contents
 
@@ -18,8 +18,11 @@ reference-only material.
 - `src/resolution/`
   - file-URI helpers, filesystem document loading, and include resolution
 - `src/parsing/`
-  - compatibility scanner for callers that still consume include/symbol/
-    diagnostic triples
+  - include/symbol/diagnostic scanner and outline parser
+- `src/langium/`
+  - Kick Assembler outline grammar, services, and generated parser assets
+- `src/outline/`
+  - Kick Assembler and SIDScore outline models
 - `src/semantic/`
   - expression parsing and the richer Kick Assembler semantic model
 - `src/lookup/`
@@ -35,7 +38,7 @@ reference-only material.
   - typed Commodore machine profiles for memory, ROM, display, CPU, banking,
     and VICE runtime metadata
 - `src/symbols/`
-  - symbol shapes and in-memory symbol index scaffolding
+  - symbol shapes and in-memory symbol index
 - `src/project/`
   - recursive project loading over `#import` / `#importif`
 - `src/build/`
@@ -49,16 +52,16 @@ reference-only material.
   - mixed runtime/reference assets, with XML datasets reused and Java/ANTLR
     material kept for behavior reference
 
-## What This Pass Does
+## Implemented services
 
 - preserves the existing grammar and language configuration assets
-- adds a first SIDScore editor grammar/configuration from the draft language
-  specification, without adding compiler semantics to this package
+- provides SIDScore syntax/configuration and outline services; compilation and
+  playback are handled by SIDScore through the Theia backend
 - provides a filesystem-backed `TextDocumentModel`
 - introduces explicit `SourceLocation` / `SourceRange` abstractions
 - resolves relative includes and optional include search roots
-- builds an initial symbol index for labels, `.const`, and `.var`
-- carries forward labeled data-block metadata as TypeScript scaffolding
+- indexes labels, `.const`, and `.var` declarations
+- records labeled data-block metadata in the symbol model
 - parses a richer semantic model for expressions, scopes, namespaces, macros,
   functions, pseudocommands, structs, enums, segments, conditionals,
   import-once, local/anonymous labels, generated symbols, parameters, and
@@ -70,7 +73,7 @@ reference-only material.
   fixes
 - parses preserved `6502.xml` and `c64io.xml` datasets for mnemonic and C64 I/O
   symbol definitions
-- adds first-pass Commodore machine profiles for C64, C128, VIC-20, Plus/4,
+- provides Commodore machine profiles for C64, C128, VIC-20, Plus/4,
   C16, PET, CBM-II, CBM-II 5x0, and C64DTV, including memory maps, I/O
   windows, ROM symbols, zero-page conventions, screen layouts, character-set
   metadata, bank-switching notes, CPU details, aliases, and VICE executable
@@ -89,15 +92,16 @@ reference-only material.
 - detects standalone workspace `.asm` files that are not included anywhere else
   so they can be assembled or run without being listed in project config
 
-## What This Pass Does Not Do
+## Limits and boundaries
 
-- run Java in the language-support runtime path
+- editor lookup does not run Java; executing Kick Assembler builds requires
+  Java and is owned by the Theia/headless build runner
 - provide compiler-accurate KickAss parser parity or macro expansion
 - provide compiler-accurate completion, rename, formatting, or diagnostic
   fix-all parity
 - provide exhaustive per-model reference data
 - implement debugging
-- provide include-graph-precise or incremental lookup yet
+- lookup does not yet maintain an incremental workspace index
 - own Theia UI wiring; that remains in `packages/theia-extension`
 
 ## Verification
@@ -105,11 +109,11 @@ reference-only material.
 The tests in `test/*.test.ts` run with Node's built-in type stripping:
 
 ```sh
-npm test
+npm test --workspace @commodore-commander/language-support
 ```
 
-The package also builds with `tsc`:
+The build regenerates the Langium outline parser, runs `tsc`, and syncs assets:
 
 ```sh
-npm run build
+npm run build --workspace @commodore-commander/language-support
 ```

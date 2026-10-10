@@ -17,7 +17,6 @@ import {
   getCommodoreCommanderToolPreferences
 } from '../common/commodore-commander-tool-preferences';
 import {
-  createEmbeddedViceArgs,
   createViceArgs,
   resolveViceRuntime
 } from '../node/vice-runtime-resolver';
@@ -329,92 +328,14 @@ test('createViceArgs keeps unfiltered display defaults before model and explicit
   ]);
 });
 
-test('createEmbeddedViceArgs enables VICE mouse grab for captured input', () => {
-  assert.deepEqual(
-    createEmbeddedViceArgs(['-model', 'c64']),
-    ['-mouse', '-model', 'c64', '-keymap', '0', '-keyboardmapping', '0']
-  );
-  assert.deepEqual(
-    createEmbeddedViceArgs(['+mouse', '-model', 'c64']),
-    ['+mouse', '-model', 'c64', '-keymap', '0', '-keyboardmapping', '0']
-  );
-  assert.deepEqual(
-    createEmbeddedViceArgs(['-mouse', '-model', 'c64']),
-    ['-mouse', '-model', 'c64', '-keymap', '0', '-keyboardmapping', '0']
-  );
-});
-
-test('resolveViceRuntime prefers configured runtime path over bundled runtime', async () => {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'cc-vice-runtime-'));
-
+test('Theia runtime wrapper keeps bundled assets relative to the extension backend', async () => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'cc-vice-theia-'));
   try {
-    const runtimeDirectory = path.join(tempRoot, 'app-runtime');
-    const bundledRoot = path.join(
-      runtimeDirectory,
-      'assets',
-      'vice',
-      `${process.platform}-${process.arch}`
-    );
-    const configuredRoot = path.join(tempRoot, 'configured-vice');
-
-    await mkdir(path.join(bundledRoot, 'share', 'vice'), { recursive: true });
-    await mkdir(path.join(configuredRoot, 'share', 'vice'), {
-      recursive: true
-    });
-
-    const resolved = await resolveViceRuntime({
-      runtimeDirectory,
-      resourcesPath: configuredRoot
-    });
-
-    assert.equal(resolved.resourcesPath, path.resolve(configuredRoot));
-  } finally {
-    await rm(tempRoot, { recursive: true, force: true });
-  }
-});
-
-test('resolveViceRuntime accepts a direct VICE data directory', async () => {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'cc-vice-runtime-'));
-
-  try {
-    const configuredRoot = path.join(tempRoot, 'vice-data');
-
-    await mkdir(path.join(configuredRoot, 'C64'), { recursive: true });
-
-    const resolved = await resolveViceRuntime({
-      resourcesPath: configuredRoot
-    });
-
-    assert.equal(resolved.resourcesPath, path.resolve(configuredRoot));
-  } finally {
-    await rm(tempRoot, { recursive: true, force: true });
-  }
-});
-
-test('resolveViceRuntime prefers resources beside explicit executable path over bundled runtime', async () => {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'cc-vice-runtime-'));
-
-  try {
-    const runtimeDirectory = path.join(tempRoot, 'app-runtime');
-    const bundledRoot = path.join(
-      runtimeDirectory,
-      'assets',
-      'vice',
-      `${process.platform}-${process.arch}`
-    );
-    const externalRoot = path.join(tempRoot, 'external-vice');
-    const externalExecutable = path.join(externalRoot, 'bin', 'x64sc');
-
-    await mkdir(path.join(bundledRoot, 'share', 'vice'), { recursive: true });
-    await mkdir(path.join(externalRoot, 'share', 'vice'), { recursive: true });
-
-    const resolved = await resolveViceRuntime({
-      runtimeDirectory,
-      executable: externalExecutable
-    });
-
-    assert.equal(resolved.resourcesPath, path.resolve(externalRoot));
-    assert.equal(resolved.executable, externalExecutable);
+    const extensionRoot = path.join(tempRoot, 'theia-extension');
+    const resourcesRoot = path.join(extensionRoot, 'assets', 'vice', `${process.platform}-${process.arch}`);
+    await mkdir(path.join(resourcesRoot, 'share', 'vice'), { recursive: true });
+    const runtime = await resolveViceRuntime({ runtimeDirectory: path.join(extensionRoot, 'lib', 'node') });
+    assert.equal(runtime.resourcesPath, resourcesRoot);
   } finally {
     await rm(tempRoot, { recursive: true, force: true });
   }

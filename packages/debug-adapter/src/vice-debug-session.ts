@@ -72,7 +72,7 @@ import {
   type TraceRegisterSnapshot,
   type TraceSnapshot
 } from './trace-history';
-import { launchViceProcess, terminateViceProcess } from './vice-runtime';
+import { launchViceProcess, terminateViceProcess } from '@commodore-commander/vice-runtime';
 import {
   COMMODORE_VICE_EMBED_BINARY_FRAME_MAGIC,
   COMMODORE_VICE_EMBED_DEBUG_EVENT,

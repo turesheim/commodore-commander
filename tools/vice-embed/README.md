@@ -77,7 +77,8 @@ The current patch is intentionally narrow:
   Nordic Mac `¤` to C64 `$`, C64 up-arrow/pi, DEL/Backspace, cursor keys, and
   `<`/`>`.
 - Mouse input is sent as relative movement and button commands from the browser
-  pointer-lock capture path and is pushed into VICE's SDL event queue.
+  pointer-lock capture path. The native patch applies these through VICE's
+  mouse driver (`mouse_move` and `mouse_button`) on the SDL/main loop.
 - The embedded transport can open VICE's SDL menu directly. Theia maps F12 to
   that command when the embedded emulator is active. While that menu is active,
   embedded keyboard commands are turned into SDL key events so the menu can be
@@ -94,9 +95,8 @@ The current patch is intentionally narrow:
 - Commodore Commander default launch arguments disable VICE render filters and
   request nearest GL filtering for the active video chip. The browser canvas is
   responsible for presentation scaling; SDL fullscreen custom resolution is not
-  used by the embedded view. The UI uses pixelated browser upscaling to fit the
-  available view and keeps wide frames at native size instead of applying
-  fractional downscaling.
+  used by the embedded view. The UI preserves the frame aspect ratio and scales
+  up or down to fit the available view, using pixelated browser rendering.
 - Embedded launches enable VICE mouse grab by default so browser pointer-lock
   mouse commands are accepted by VICE's mouse and paddle input path. Input
   device selection remains controlled by VICE's own menu or explicit launch

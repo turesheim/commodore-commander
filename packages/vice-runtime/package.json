@@ -1,0 +1,22 @@
+{
+  "name": "@commodore-commander/vice-runtime",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Theia-independent VICE resource discovery and external process lifecycle.",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf lib",
+    "test": "npm run build && node --test lib/test/*.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.0"
+  }
+}
