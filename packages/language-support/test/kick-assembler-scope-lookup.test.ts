@@ -115,10 +115,10 @@ test('a nearer declaration shadows the entire qualified path and root escape byp
   assert.equal(at(6)!.declarations[0]!.qualifiedName, 'Library.Target');
 });
 
-test('unsupported multi-label tokens cannot bind to an ordinary same-named label', () => {
+test('multi-label tokens cannot bind to an ordinary same-named label or be renamed individually', () => {
   const source = document(['loop:', '!loop:', 'bne !loop-', 'bne loop']);
   const { index, at } = fixture(source);
-  assert.equal(at(2), undefined);
+  assert.equal(at(2)!.declarations[0]!.location.range.start.line, 1);
   assert.equal(at(3)!.references.length, 1);
   assert.equal(prepareKickAssemblerRename(source, { line: 1, character: 2 }, index), undefined);
   assert.equal(buildKickAssemblerRenamePlan(source, { line: 1, character: 2 }, 'again', index), undefined);

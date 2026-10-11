@@ -2,6 +2,7 @@ import type { TextDocumentModel } from '../document/text-document-model.ts';
 import type { SourceLocation } from '../location/source-location.ts';
 import type { KickAssemblerLookupIndex } from '../lookup/kick-assembler-lookup-service.ts';
 import { parseKickAssemblerSemanticModel } from '../semantic/kick-assembler-semantic-parser.ts';
+import { multiLabelTokenEnd } from '../semantic/kick-assembler-multi-label.ts';
 import type { KickAssemblerSemanticSymbolKind } from '../semantic/kick-assembler-semantic-model.ts';
 import { isMos6502Mnemonic } from './kick-assembler-language-facts.ts';
 
@@ -228,7 +229,8 @@ function scanLexicalTokens(document: TextDocumentModel): LexicalToken[] {
     }
 
     if (isIdentifierStart(current)) {
-      const endOffset = scanWhile(text, offset + 1, /[A-Za-z0-9_.@!]/u);
+      const endOffset = current === '!' ? multiLabelTokenEnd(text, offset)
+        : scanWhile(text, offset + 1, /[A-Za-z0-9_.@!]/u);
       tokens.push(token(document, offset, endOffset, 'identifier'));
       offset = endOffset;
       continue;

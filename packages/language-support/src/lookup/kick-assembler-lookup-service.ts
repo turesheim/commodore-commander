@@ -11,6 +11,7 @@ import type {
   KickAssemblerSemanticSymbol
 } from '../semantic/kick-assembler-semantic-model.ts';
 import { KickAssemblerScopeResolver } from '../semantic/kick-assembler-scope-resolver.ts';
+import { multiLabelTokenEnd } from '../semantic/kick-assembler-multi-label.ts';
 import {
   createMachineProfileReferenceSymbolDefinitions
 } from '../reference/machine-profile-reference-symbols.ts';
@@ -452,6 +453,11 @@ export function findLookupTokenAtPosition(
 
   let probe = clamp(document.offsetAt(position), 0, document.text.length - 1);
 
+  // Clicking any direction sign must identify the full multi-label token.
+  if (!isLookupTokenCharacter(document.text[probe]) && !/[+-]/u.test(document.text[probe]!) &&
+      probe > 0 && /[+-]/u.test(document.text[probe - 1]!)) probe -= 1;
+  while (probe > 0 && /[+-]/u.test(document.text[probe]!)) probe -= 1;
+
   if (
     document.text[probe] === '#' &&
     isIdentifierStart(document.text[probe + 1])
@@ -484,6 +490,7 @@ export function findLookupTokenAtPosition(
     endOffset += 1;
   }
 
+  if (document.text[startOffset] === '!') endOffset = multiLabelTokenEnd(document.text, startOffset);
   const text = document.text.slice(startOffset, endOffset);
   const directiveText = directiveTokenText(document, startOffset, endOffset, text);
 
@@ -507,7 +514,7 @@ export function findLookupTokenAtPosition(
     };
   }
 
-  if (!IDENTIFIER_PATTERN.test(text)) {
+  if (!IDENTIFIER_PATTERN.test(text) && !text.startsWith('!')) {
     return undefined;
   }
 

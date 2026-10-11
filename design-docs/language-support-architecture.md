@@ -46,12 +46,17 @@ integration into their dependency graph.
    label members. Constants/variables stay lexical; reopened namespaces share
    their associated lexical scope. Resolution follows parents, with `@`
    selecting root directly; nearer entities shadow qualified paths.
+   `.filenamespace` enters an implicit namespace from the directive until EOF
+   or its enclosing brace closes; successive directives nest. Each multi-label
+   declaration has a private instance key. Direction/distance searches combine
+   visible scope declarations in document order, including same-line labels;
+   references crossing an import stay unresolved pending expanded include order.
    Scope body ranges end at their closing brace or EOF for unfinished text.
    Project declarations win; the active machine filters hardware references.
    Editor features consume this index/model and return framework-neutral edits,
    ranges, tokens and symbols. Rename changes the leaf identifier while keeping
    prefixes; semantic tokens use the same bindings, and workspace symbols carry
-   named containers. Namespace/label-scope owner and duplicate-declaration
+   named containers. Namespace/label-scope owner, multi-label and duplicate
    renames are rejected. Hover formatting preserves reference HTML.
 
 The long-lived lookup service caches project/XML analysis and the last assembled
@@ -64,10 +69,12 @@ result are preserved.
 
 Theia owns file selection, open-editor overlays, bundled XML and Monaco adapters.
 Its definition links carry the full source-token range; native CTRL/CMD+click
-and F12 use the same resolved targets. Monaco honors the multicursor preference
+and F12 use the same resolved targets. The language word pattern includes
+direction suffixes and anonymous multi-labels. Monaco honors the multicursor preference
 by moving click navigation to Alt/Option when CTRL/CMD is reserved for cursors.
 `tools/run-language-navigation-ui-e2e.mjs` exercises real modifier-clicks across
-files and separate label scopes; it runs with the existing Linux UI CI job.
+files, separate label scopes and directional labels; it runs with the existing
+Linux UI CI job. A language test also verifies target addresses with bundled KickAss.
 Its `KickAssemblerWorkspaceFiles` shares discovery per root across lookup,
 workspace symbols and include completion. Structural file notifications and
 completed operations invalidate overlapping roots, including moved directories.
@@ -101,9 +108,9 @@ outline/syntax slice.
 ## Remaining work
 
 - Per-document index updates beyond the implemented whole-snapshot reuse.
-- Directional multi-labels, `.filenamespace`, inline block bodies and import-site
-  namespace context. Scope-owner/prefix rename, scope-aware completion and
-  compiler-grade rename conflict checking also remain work.
+- Cross-file/import-crossing multi-labels, inline block bodies and import-site
+  namespace context. Scope-owner/prefix and multi-label rename, scope-aware
+  completion and compiler-grade rename conflict checking also remain work.
 - Include-graph-precise lookup and consistency between outline and semantic paths.
 - Compiler-accurate semantics/diagnostics: configured conditional evaluation,
   macro/pseudocommand expansion and generated-symbol materialization.

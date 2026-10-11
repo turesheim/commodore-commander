@@ -12,6 +12,7 @@ export type KickAssemblerSemanticScopeKind =
   | 'root'
   | 'block'
   | 'namespace'
+  | 'file-namespace'
   | 'macro'
   | 'function'
   | 'pseudocommand'

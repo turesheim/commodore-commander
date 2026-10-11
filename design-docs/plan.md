@@ -25,8 +25,9 @@ owns DAP-specific monitor behavior. See
    disk models, document analysis and assembled indexes. Input changes still
    trigger full assembly. Namespace and lexical identities now drive navigation
    (including CTRL/CMD+click), references, leaf rename and semantic tokens. Next,
-   handle directional multi-labels and `.filenamespace`, then make lookup follow
-   the include graph and align the project loader/Langium outline. Extend
+   make lookup follow the include graph and expanded source order, then align
+   the project loader/Langium outline. File namespaces and same-document
+   directional labels are supported. Extend
    compiler-relevant diagnostics without introducing a Java language server. See [language architecture](language-support-architecture.md)
    and the [language-support report](ts-language-support-report.md).
 
@@ -60,7 +61,7 @@ owns DAP-specific monitor behavior. See
 
 | Area | Implemented | Remaining |
 | --- | --- | --- |
-| Language | Monaco editor services, reference lookup, cached analysis/index assembly and bounded/event-invalidated file/disk snapshots | Directional multi-labels, file namespaces, include-precise lookup, delta updates and compiler-accurate semantics |
+| Language | Monaco editor services, reference lookup, cached analysis/index assembly and bounded/event-invalidated file/disk snapshots | Include-precise lookup, cross-file directional labels, delta updates and compiler-accurate semantics |
 | Build/project | File/path planner, program/profile/run config, backend and headless builds, Theia tasks/markers | Stronger validation, diagnostic attribution, clean-task and configuration UX |
 | Launch | Theia debug/no-debug configurations and generated build-before-debug tasks | Configured-run policy flow, run selection and Active Machine defaults |
 | Debug | DAP binary monitor, breakpoints/watchpoints, Memory/Visual Debugger/Monitor views, disassembly, observed trace history | Broader regressions, richer symbols/trace UX and execution-history provenance |

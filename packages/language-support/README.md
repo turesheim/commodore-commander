@@ -36,8 +36,11 @@ scope resolver separates anonymous blocks and parameters, follows lexical
 parents and `@` root escapes, and supports multiline namespace/label scopes
 (including `.label Name = value {`). Labels have qualified member names;
 constants/variables remain lexical, including in the shared scope of reopened
-namespaces. All declarations precede reference binding. Rename replaces the
-leaf name and preserves prefixes; workspace symbols expose named containers.
+namespaces. `.filenamespace` enters a namespace from its directive to EOF or
+the enclosing explicit scope end; successive directives nest. Named/anonymous
+multi-labels (`!loop--`, `!++`) resolve by direction and distance through visible
+scopes within one document. All declarations precede reference binding. Rename
+replaces the leaf name and preserves prefixes; workspace symbols expose named containers.
 Project symbols take precedence over reference symbols. Lookup filters hardware
 references by active machine while sharing 6502 mnemonic data; hover content
 preserves reference HTML. Machine profiles cover C64, C128, VIC-20, Plus/4, C16,
@@ -53,10 +56,12 @@ the Theia/headless runner; the language package plans those inputs.
 The semantic model and editor services are structural/name-based, not a full
 KickAss compiler. Conditional branches are represented without evaluating a
 configured symbol environment; macros/pseudocommands are not expanded.
-Directional multi-labels (`!loop+`/`!loop-`), `.filenamespace`, inline block
-bodies and import-site namespace context remain work. Namespace/label-scope
-owner/multi-label renames and ambiguous duplicate declarations are rejected; replacement
-names are single identifiers. Diagnostics and reference datasets remain incomplete.
+Multi-label lookup across files/import crossings, inline block bodies and
+import-site namespace context remain work. Multi-label references crossing an
+import stay unresolved until expanded source order is available. Namespace and
+label-scope owner renames, multi-label renames and ambiguous declarations are
+rejected; replacement names are single identifiers. Diagnostics and reference
+datasets remain incomplete.
 
 `KickAssemblerLookupService` caches project/XML analysis and the last assembled
 index. Reuse requires identical ordered URI/kind/text/language inputs and active
@@ -86,3 +91,4 @@ npm run build --workspace @commodore-commander/language-support
 Tests use Node's built-in type stripping. The build regenerates the Langium
 outline parser, runs `tsc` and copies assets to `dist`. The generated-runtime
 executable test is skipped when the local patched VICE package is unavailable.
+The compiler target-address regression requires Java and uses bundled KickAss.

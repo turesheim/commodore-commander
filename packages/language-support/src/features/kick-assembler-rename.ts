@@ -93,8 +93,8 @@ export function buildKickAssemblerRenamePlan(
 
 function canRenameDeclarations(declarations: readonly KickAssemblerLookupOccurrence[]): boolean {
   // Namespace/label-scope owner renames need edits to qualified member prefixes,
-  // not just directly bound references. Multi-label direction binding remains
-  // unsupported; avoid incomplete renames and ambiguous declarations as well.
+  // not just directly bound references. Renaming one multi-label can change its
+  // group's directional references; avoid incomplete and ambiguous edits.
   return declarations.length === 1 && declarations[0]?.kind !== 'namespace' &&
     declarations[0]?.kind !== 'local-label' && declarations[0]?.kind !== 'anonymous-label' &&
     !declarations[0]?.hasMemberScope;
