@@ -239,9 +239,10 @@ in `applications/electron`. `packages/core` holds preserved Java reference
 code and is outside the npm build.
 
 Runtime extraction is partial: `vice-runtime` owns the standalone embedded
-child process, command pipe, native loopback frame socket, and shared binary
-frame parsing. The Theia backend still coordinates launch ownership and
-manages the browser WebSocket bridge. See
+child process, command pipe, native loopback frame socket, shared binary frame
+parsing, and mixed stdout framing. The Theia backend still coordinates launch
+ownership, interprets standalone JSON events, and manages the browser WebSocket
+bridge. See
 [Packages](packages/README.md) for boundaries and remaining extraction work.
 
 

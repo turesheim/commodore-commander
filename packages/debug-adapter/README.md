@@ -21,6 +21,9 @@ What is here:
   correlation
 - embedded CCB1 frame parsing through `packages/vice-runtime`; the adapter
   retains its existing parsed-frame result without the raw transport record
+- shared embedded stdout framing through `ViceEmbeddedStdoutDecoder`; JSON
+  interpretation, DAP output/status reporting, overflow warnings, and disabling
+  DAP frame forwarding remain adapter policy
 - DAP support for launch, source breakpoints, conditional source breakpoints,
   source hit conditions, source logpoints/tracepoints, data
   breakpoints/watchpoints, conditional data breakpoints, data hit conditions,

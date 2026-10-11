@@ -6,7 +6,9 @@ import { test } from 'node:test';
 
 import type {
   CommodoreViceEmbedClient,
+  CommodoreViceEmbedFrameEvent,
   CommodoreViceEmbedLaunchRequest,
+  CommodoreViceEmbedOutputEvent,
   CommodoreViceEmbedStatusEvent
 } from '../common/commodore-vice-embed-service';
 import { CommodoreViceEmbedServiceImpl } from '../node/commodore-vice-embed-service-impl';
@@ -141,6 +143,48 @@ test('frontend RPC disconnection retains the owned standalone emulator', { timeo
   assert.equal(service.hasStandaloneProcess(), false);
 });
 
+test('standalone stdout fallback keeps logs, JSON frames, and binary validation policy', (t) => {
+  const service = new TestViceEmbedService();
+  const client = new TestViceEmbedClient();
+  t.after(() => service.dispose());
+  service.setClient(client);
+  const jsonFrame = 'CCV1 {"type":"frame","frameId":1,"width":1,"height":1,"pixelFormat":"rgba8888","data":"ChQe/w==","timestamp":12345}\n';
+  const record = Buffer.from('43434231010120000400000009000000393000000000000001000100070000000a141eff', 'hex');
+  const stream = Buffer.concat([Buffer.from(`log\nCCV1 broken JSON\n${jsonFrame}prefix`), record]);
+  for (const byte of stream) service.emitTestStdout(Buffer.from([byte]));
+  assert.deepEqual(client.outputs.map(event => event.text), ['log\n', 'CCV1 broken JSON\n', 'prefix']);
+  assert.equal(client.frames[0].frameId, 1);
+  assert.deepEqual(service.latestFrame(), record);
+  record[5] = 2;
+  service.emitTestStdout(record);
+  assert.deepEqual(client.statuses.map(event => event.state), ['error', 'error']);
+  assert.match(client.statuses[1].message!, /Unsupported VICE binary pixel format/u);
+  assert.notDeepEqual(service.latestFrame(), record);
+});
+
+test('standalone stop resets partial stdout before the next session', async (t) => {
+  const service = new TestViceEmbedService();
+  const client = new TestViceEmbedClient();
+  t.after(() => service.dispose());
+  service.setClient(client);
+  service.emitTestStdout(Buffer.from('CCV1 unfinished'));
+  await service.stop();
+  service.emitTestStdout(Buffer.from('fresh\n'));
+  assert.deepEqual(client.outputs, [{ stream: 'stdout', text: 'fresh\n' }]);
+});
+
+test('standalone stdout overflow forwards only the existing bounded prefix', (t) => {
+  const service = new TestViceEmbedService();
+  const client = new TestViceEmbedClient();
+  t.after(() => service.dispose());
+  service.setClient(client);
+  service.emitTestStdout(Buffer.alloc(32 * 1024 * 1024 + 1, 65));
+  assert.equal(client.outputs[0].text.length, 32 * 1024 * 1024);
+  assert.deepEqual(client.statuses, []);
+  service.emitTestStdout(Buffer.from('fresh\n'));
+  assert.deepEqual(client.outputs[1], { stream: 'stdout', text: 'fresh\n' });
+});
+
 class TestViceEmbedService extends CommodoreViceEmbedServiceImpl {
   frameServerStartCount = 0;
   fakeCommand = process.execPath;
@@ -164,6 +208,14 @@ class TestViceEmbedService extends CommodoreViceEmbedServiceImpl {
 
   hasLatestFrame(): boolean {
     return this.latestBinaryFrame !== undefined;
+  }
+
+  latestFrame(): Buffer | undefined {
+    return this.latestBinaryFrame;
+  }
+
+  emitTestStdout(chunk: Buffer): void {
+    this.handleStdout(chunk);
   }
 
   protected override async resolveLaunch(_request: CommodoreViceEmbedLaunchRequest, framePort: number) {
@@ -192,6 +244,8 @@ class TestViceEmbedService extends CommodoreViceEmbedServiceImpl {
 
 class TestViceEmbedClient implements CommodoreViceEmbedClient {
   readonly statuses: CommodoreViceEmbedStatusEvent[] = [];
+  readonly frames: CommodoreViceEmbedFrameEvent[] = [];
+  readonly outputs: CommodoreViceEmbedOutputEvent[] = [];
   private readonly closeListeners = new Set<() => void>();
 
   readonly onDidCloseConnection = (listener: () => void): { dispose(): void } => {
@@ -201,13 +255,17 @@ class TestViceEmbedClient implements CommodoreViceEmbedClient {
     };
   };
 
-  onViceEmbedFrame(): void {}
+  onViceEmbedFrame(event: CommodoreViceEmbedFrameEvent): void {
+    this.frames.push(event);
+  }
 
   onViceEmbedStatus(event: CommodoreViceEmbedStatusEvent): void {
     this.statuses.push(event);
   }
 
-  onViceEmbedOutput(): void {}
+  onViceEmbedOutput(event: CommodoreViceEmbedOutputEvent): void {
+    this.outputs.push(event);
+  }
 
   closeConnection(): void {
     for (const listener of this.closeListeners) {

@@ -19,6 +19,7 @@ as an external process. It has no Theia, language-support, or DAP dependency.
   and the Theia backend
 - parse native CCB1 binary frames through one shared implementation
 - own the emulator's loopback TCP frame listener, socket, and stream reassembly
+- separate embedded stdout text/JSON lines and fallback binary records
 
 Resource discovery requires the caller's `runtimeDirectory`. The Theia wrapper
 passes its own backend directory so bundled assets remain relative to the
@@ -46,10 +47,18 @@ from the replaced socket. Explicit stop releases the listener and socket without
 calling the disconnect callback; the caller chooses session cleanup after a
 natural disconnect.
 
+`ViceEmbeddedStdoutDecoder` reassembles the mixed stdout stream used by embedded
+VICE, delivering newline-terminated text, text preceding a CCB1 record, and
+complete binary records through callbacks. It validates record lengths and
+retains the existing 32 MiB buffer bound. Consumers interpret JSON, validate or
+discard binary payloads, and decide how overflow data is reported. `reset()`
+discards partial stdout when the caller changes sessions. This differs from
+the native frame decoder, which skips unrelated bytes and validates pixel data.
+
 The Theia backend still chooses standalone versus debug ownership, resolves
-machine/preferences, encodes protocol commands, reports status, handles the
-stdout protocol fallback, and manages the browser WebSocket bridge. This
-extraction does not complete the runtime migration.
+machine/preferences, encodes protocol commands, reports status, interprets
+stdout JSON events and fallback frames, and manages the browser WebSocket bridge.
+This extraction does not complete the runtime migration.
 
 ## Verification
 
@@ -61,5 +70,6 @@ npm test --workspace @commodore-commander/vice-runtime
 
 The tests build the package and exercise resource/executable resolution,
 argument construction, process launch/termination, standalone command-pipe
-input, callback isolation, binary frame validation/reassembly, and native socket
-lifecycle without requiring a VICE installation. Socket tests bind loopback TCP.
+input, callback isolation, binary frame validation/reassembly, native socket
+lifecycle, and mixed stdout framing without requiring a VICE installation.
+Socket tests bind loopback TCP.
