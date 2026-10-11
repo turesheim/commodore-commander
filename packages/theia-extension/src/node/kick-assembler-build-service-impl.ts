@@ -37,6 +37,7 @@ import type {
   KickAssemblerRunProgramSummary,
   KickAssemblerSetActiveProfileRequest,
   KickAssemblerWorkspaceBuildConfigurationSummary,
+  KickAssemblerWorkspaceLookupConfiguration,
   KickAssemblerBuildService
 } from '../common/kick-assembler-build-service';
 import {
@@ -151,6 +152,19 @@ export class KickAssemblerBuildServiceImpl implements KickAssemblerBuildService 
     request: KickAssemblerBuildConfigurationRequest
   ): Promise<KickAssemblerWorkspaceBuildConfigurationSummary> {
     return this.ensureWorkspaceBuildConfiguration(request);
+  }
+
+  async getWorkspaceLookupConfiguration(
+    request: KickAssemblerBuildConfigurationRequest
+  ): Promise<KickAssemblerWorkspaceLookupConfiguration> {
+    const configuration = await loadKickAssemblerBuildConfiguration(fileURLToPath(request.workspaceRootUri), {
+      environment: await this.getBuildEnvironment(request.resourceUri ?? request.workspaceRootUri)
+    });
+    return {
+      libraryRootUris: configuration.defaults.libraryRootPaths.map(pathToDocumentUri),
+      programs: configuration.programs.map(program => ({ entryUri: pathToDocumentUri(program.entryPath),
+        libraryRootUris: program.libraryRootPaths.map(pathToDocumentUri) }))
+    };
   }
 
   async getRunProgram(

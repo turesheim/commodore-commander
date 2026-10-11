@@ -293,3 +293,6 @@ export type {
   KickAssemblerProject,
   KickAssemblerSourceNode
 } from './project/kick-assembler-language-support.ts';
+
+export { KickAssemblerProjectLoader } from './project/kick-assembler-project-loader.ts';
+export type { KickAssemblerSourceGraph, KickAssemblerProjectLoaderOptions } from './project/kick-assembler-project-loader.ts';

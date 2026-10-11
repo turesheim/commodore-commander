@@ -209,3 +209,7 @@ export type {
   ReferenceSymbolDefinition,
   ReferenceSymbolKind
 } from '../reference/reference-symbol-catalog.ts';
+
+export { KickAssemblerProjectLoader } from '../project/kick-assembler-project-loader.ts';
+export type { KickAssemblerSourceGraph, KickAssemblerProjectLoaderOptions } from '../project/kick-assembler-project-loader.ts';
+export type { KickAssemblerSourceNode, KickAssemblerProject } from '../project/kick-assembler-project-loader.ts';

@@ -8,9 +8,10 @@ document analysis and assembled indexes are reused with explicit invalidation.
 Changed input still causes full assembly; per-document index updates remain work.
 
 1. Continue language consistency after namespace/lexical binding: implement
-   include-graph lookup and expanded source order, then align the project
-   loader/Langium outline. File namespaces and same-document directional labels
-   are supported. Native CTRL/CMD+click, references, leaf rename and semantic
+   expanded include order/import-site scope, then align project/outline and
+   discovery rules. Editor lookup reuses the existing include graph for program
+   selection. File namespaces and same-document directional labels are supported.
+   Native CTRL/CMD+click, references, leaf rename and semantic
    tokens share those bindings. Scope-owner/multi-label rename and scope-aware
    completion remain work.
 

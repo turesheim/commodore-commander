@@ -51,6 +51,13 @@ profiles, named runs and affected programs. It also models SIDScore-generated
 assembly dependencies. Executing Java/KickAss or SIDScore processes belongs to
 the Theia/headless runner; the language package plans those inputs.
 
+`KickAssemblerProjectLoader` is the browser-safe core of the existing recursive
+include graph. `KickAssemblerLanguageSupport` supplies Node filesystem adapters;
+Theia supplies URI readers and editor overlays. Graph diagnostics visit shared
+files once and report cycles without unbounded recursion. Editor lookup selects
+configured/inferred program closures; shared files retain multiple owners, and
+rename expands the declaration owners before producing edits.
+
 ## Limits
 
 The semantic model and editor services are structural/name-based, not a full
@@ -73,7 +80,7 @@ assembly using reusable document analysis; removed documents are evicted.
 Theia reuses file discovery and disk text models for up to five seconds, with
 file/workspace event invalidation and current editor text overriding disk data.
 Unchanged inputs reuse index assembly; per-document index updates and
-include-graph-precise lookup remain work.
+graph snapshot reuse and expanded import context remain work.
 SIDScore has syntax/outline support, but no compiler-accurate TypeScript language model.
 Debug metadata and VICE debugging belong to `debug-adapter`; Theia UI,
 preferences and process orchestration remain outside this package.

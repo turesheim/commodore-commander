@@ -49,8 +49,17 @@ leaf rename and semantic tokens share its bindings. Definition links include
 the full source-token range. Native CTRL+click (Windows/Linux), CMD+click
 (macOS) and F12 use those definitions; with `editor.multiCursorModifier` set
 to `ctrlCmd`, Monaco switches click navigation to Alt/Option to avoid a conflict.
-Workspace symbols display named containers. Include-graph file selection
-remains work.
+Workspace symbols display named containers and remain workspace-wide.
+
+`KickAssemblerWorkspaceLookup` adapts the existing language-package include graph
+to Theia URI readers and current editor overlays. Navigation selects configured
+program closures, or inferred roots when no configured owner exists. A shared
+library retains all owners; rename expands owners of the declaration, including
+callers outside the active program. External libraries can navigate back into
+owning workspace programs. A read-only build-service method supplies profile/
+program library paths; relative imports take precedence. Unavailable/invalid
+configuration reads fall back to the current file and relative imports. Expanded source order and
+import-site scope remain work; graph construction is repeated per request.
 
 The local `vice-runtime-resolver.ts` is an integration wrapper: it resolves the
 selected machine/model and supplies the extension's asset location and
@@ -110,5 +119,6 @@ scripts under `tools`. See the [root README](../../README.md) and
 Language navigation has a real Electron gesture regression: after building,
 run `npm run test:e2e:language:ui` from the repository root (on Linux, through
 `bash tools/run-with-xvfb.sh`). It checks cross-file and local-scope targets,
-including file namespaces, directional multi-labels, declaration line numbers
+including external library paths, unrelated duplicate symbols, file namespaces,
+directional multi-labels, declaration line numbers
 and full qualified/directional link ranges.

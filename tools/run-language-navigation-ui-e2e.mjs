@@ -25,8 +25,10 @@ async function main() {
   const temp = await fs.realpath(await fs.mkdtemp(path.join(tmpdir(), 'cc-language-navigation-')));
   const workspace = path.join(temp, 'workspace');
   const mainPath = path.join(workspace, 'main.asm');
-  await fs.mkdir(path.join(workspace, 'lib'), { recursive: true });
-  await fs.mkdir(path.join(workspace, '.theia'));
+  const library = path.join(temp, 'library');
+  const libraryPath = path.join(library, 'lib/target.asm');
+  await fs.mkdir(path.join(library, 'lib'), { recursive: true });
+  await fs.mkdir(path.join(workspace, '.theia'), { recursive: true });
   await fs.mkdir(path.join(temp, 'config'));
   await fs.mkdir(outputDir, { recursive: true });
   const source = [
@@ -37,7 +39,11 @@ async function main() {
     '  jmp !++', '!:', '  nop', '!:', '  rts'
   ].join('\n');
   await fs.writeFile(mainPath, source);
-  await fs.writeFile(path.join(workspace, 'lib/target.asm'), '// Distinct navigation target\n.filenamespace Library\nTarget:\n  rts\n');
+  await fs.writeFile(libraryPath, '// Distinct navigation target\n.filenamespace Library\nTarget:\n  rts\n  jsr Game.Second.loop\n');
+  await fs.writeFile(path.join(workspace, 'unrelated.asm'), '.filenamespace Library\nTarget:\n  rts\n');
+  await fs.writeFile(path.join(workspace, 'commodore-commander.build.json'), JSON.stringify({
+    libraryRoots: ['../library'], programs: [{ name: 'main', root: 'main.asm' }, { name: 'unrelated', root: 'unrelated.asm' }]
+  }));
   let log = '', ws, exitResult;
   const child = spawn(load('electron'), [path.join(root, 'applications/electron/lib/backend/electron-main.js'), workspace,
     '--disable-gpu', ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-dev-shm-usage'] : []), '--no-cluster', '--remote-debugging-port=0', `--user-data-dir=${path.join(temp, 'user-data')}`], {
@@ -93,8 +99,8 @@ async function main() {
       const shot = await send('Page.captureScreenshot', { format: 'png' });
       await fs.writeFile(path.join(outputDir, name), Buffer.from(shot.data, 'base64'));
     }
-    async function clickSymbol(needle, leaf, linkedText, expectedLine, targetComment) {
-      assert.equal(await evaluate(`${api}.openSourceFile(${JSON.stringify(mainPath)})`), true);
+    async function clickSymbol(needle, leaf, linkedText, expectedLine, targetComment, sourcePath = mainPath) {
+      assert.equal(await evaluate(`${api}.openSourceFile(${JSON.stringify(sourcePath)})`), true);
       assert.equal(await evaluate(`${api}.setEditorMarker(${JSON.stringify({ needle, offset: needle.indexOf(leaf) + 1 })})`), true);
       const point = await until(() => evaluate(`(() => {
         for (const line of document.querySelectorAll('.monaco-editor .view-line')) {
@@ -133,6 +139,7 @@ async function main() {
     }
     await clickSymbol('jsr Library.Target', 'Target', 'Library.Target', 3, 'Distinct navigation target');
     await capture('01-cross-file-definition.png');
+    await clickSymbol('jsr Game.Second.loop', 'loop', 'Game.Second.loop', 9, 'bne loop // second', libraryPath);
     await clickSymbol('bne loop // first', 'loop', 'loop', 5);
     await clickSymbol('bne loop // second', 'loop', 'loop', 9);
     await clickSymbol('jsr Game.First.loop', 'loop', 'Game.First.loop', 5);
@@ -141,7 +148,7 @@ async function main() {
     await clickSymbol('jmp !again++', '!again++', '!again++', 21);
     await clickSymbol('jmp !++', '!++', '!++', 26);
     await capture('03-directional-definition.png');
-    console.log('Language navigation UI e2e passed: file namespaces, local scopes and directional modifier-click navigation.');
+    console.log('Language navigation UI e2e passed: program include graphs, external libraries, local and directional targets.');
   } finally {
     clearTimeout(timer);
     ws?.close();

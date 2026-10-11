@@ -84,6 +84,12 @@ export interface KickAssemblerWorkspaceBuildConfigurationSummary {
   created: boolean;
 }
 
+/** Read-only editor inputs; fetching these never creates a build config. */
+export interface KickAssemblerWorkspaceLookupConfiguration {
+  libraryRootUris: readonly string[];
+  programs: readonly { entryUri: string; libraryRootUris: readonly string[] }[];
+}
+
 export interface KickAssemblerBuildRequestResult {
   queued: boolean;
 }
@@ -171,6 +177,9 @@ export interface KickAssemblerBuildService
   getWorkspaceBuildConfiguration(
     request: KickAssemblerBuildConfigurationRequest
   ): Promise<KickAssemblerWorkspaceBuildConfigurationSummary>;
+  getWorkspaceLookupConfiguration(
+    request: KickAssemblerBuildConfigurationRequest
+  ): Promise<KickAssemblerWorkspaceLookupConfiguration>;
   getRunProgram(
     request: KickAssemblerRunProgramRequest
   ): Promise<KickAssemblerRunProgramSummary>;
