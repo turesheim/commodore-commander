@@ -17,19 +17,23 @@ services to the Theia/Electron product.
   stopped-session memory transfers
 - SIDScore runtime/player, MIDI input, instrument and SFX controls, waveform
   and spectrogram views
-- embedded VICE canvas/input, standalone embedded process orchestration,
-  frame socket/WebSocket transport, and Electron sleep/resume recovery
+- embedded VICE canvas/input, standalone/debug launch coordination through
+  `vice-runtime`, frame socket/WebSocket transport, and Electron sleep/resume
+  recovery
 
 Language/build planning services belong to `packages/language-support`. DAP and
 binary-monitor behavior belong to `packages/debug-adapter`. VICE resource and
-executable discovery, shared launch flags, and debugger process lifecycle
-helpers belong to `packages/vice-runtime`.
+executable discovery, shared launch flags, debugger process lifecycle helpers,
+and standalone child-process/command-pipe ownership belong to
+`packages/vice-runtime`.
 
 The local `vice-runtime-resolver.ts` is an integration wrapper: it resolves the
 selected machine/model and supplies the extension's asset location and
 preference error hint to shared runtime discovery. Frame transport and the
-standalone embedded lifecycle remain here for now; moving them requires
-preserving RPC client ownership, debug/standalone ownership, and cleanup.
+policy choosing standalone versus debugger ownership remain here for now;
+further extraction requires preserving RPC client ownership, process ownership,
+and cleanup. Frontend RPC disconnection continues to detach the client without
+terminating an owned standalone emulator.
 
 ## Build and verification
 
