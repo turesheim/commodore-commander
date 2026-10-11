@@ -20,6 +20,7 @@ as an external process. It has no Theia, language-support, or DAP dependency.
 - parse native CCB1 binary frames through one shared implementation
 - own the emulator's loopback TCP frame listener, socket, and stream reassembly
 - separate embedded stdout text/JSON lines and fallback binary records
+- encode CCV1 JSON commands and parse the shared event envelope
 
 Resource discovery requires the caller's `runtimeDirectory`. The Theia wrapper
 passes its own backend directory so bundled assets remain relative to the
@@ -55,8 +56,16 @@ discard binary payloads, and decide how overflow data is reported. `reset()`
 discards partial stdout when the caller changes sessions. This differs from
 the native frame decoder, which skips unrelated bytes and validates pixel data.
 
+The CCV1 JSON codec owns the wire prefix, JSON serialization/parsing, supported
+event types, and `hello` version check. It preserves event fields without
+validating frame/status contents. The Theia consumer validates and normalizes
+those fields; the adapter preserves the envelope payload. Malformed prefixed
+JSON still throws, allowing each consumer to retain its error/output policy.
+Command fields are serialized unchanged. This codec does not implement reserved
+input commands in the native VICE patch.
+
 The Theia backend still chooses standalone versus debug ownership, resolves
-machine/preferences, encodes protocol commands, reports status, interprets
+machine/preferences, chooses protocol commands, reports status, interprets
 stdout JSON events and fallback frames, and manages the browser WebSocket bridge.
 This extraction does not complete the runtime migration.
 
@@ -71,5 +80,5 @@ npm test --workspace @commodore-commander/vice-runtime
 The tests build the package and exercise resource/executable resolution,
 argument construction, process launch/termination, standalone command-pipe
 input, callback isolation, binary frame validation/reassembly, native socket
-lifecycle, and mixed stdout framing without requiring a VICE installation.
-Socket tests bind loopback TCP.
+lifecycle, mixed stdout framing, and CCV1 JSON wire compatibility without
+requiring a VICE installation. Socket tests bind loopback TCP.

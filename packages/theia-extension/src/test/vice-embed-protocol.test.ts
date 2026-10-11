@@ -11,6 +11,36 @@ import {
   parseViceEmbedBinaryFrameRecord,
   parseViceEmbedProtocolLine
 } from '../node/commodore-vice-embed-protocol';
+import { COMMODORE_VICE_EMBED_PROTOCOL as RUNTIME_PROTOCOL } from '@commodore-commander/vice-runtime';
+
+test('Theia RPC protocol version matches the shared runtime wire version', () => {
+  assert.equal(COMMODORE_VICE_EMBED_PROTOCOL, RUNTIME_PROTOCOL);
+});
+
+test('Theia JSON parser retains strict frame and status validation after shared envelope parsing', () => {
+  for (const payload of [
+    { type: 'frame', frameId: 1 },
+    { type: 'frame', frameId: '1', width: 1, height: 1, pixelFormat: 'rgba8888', data: 'AAAA/w==' },
+    { type: 'status', state: 'unknown' }
+  ]) {
+    assert.equal(parseViceEmbedProtocolLine(`CCV1 ${JSON.stringify(payload)}\n`), undefined);
+  }
+  assert.throws(() => parseViceEmbedProtocolLine('CCV1 broken JSON\n'), SyntaxError);
+});
+
+test('Theia JSON parser sanitizes optional status fields while retaining explicit null exit values', () => {
+  assert.deepEqual(parseViceEmbedProtocolLine('CCV1 {"type":"status","state":"stopped","pid":"42","message":5,"exitCode":null,"signal":null,"extra":1}\n'), {
+    type: 'status', state: 'stopped', message: undefined, pid: undefined, exitCode: null, signal: null
+  });
+});
+
+test('Theia JSON frame timestamp retains its fallback for nonnumeric timestamps', () => {
+  const before = Date.now();
+  const frame = parseViceEmbedProtocolLine('CCV1 {"type":"frame","frameId":7,"width":1,"height":1,"pixelFormat":"rgba8888","data":"AAAA/w==","timestamp":"123"}\n');
+  assert.equal(frame?.type, 'frame');
+  if (frame?.type !== 'frame') throw new Error('Expected a frame');
+  assert.ok(frame.timestamp >= before && frame.timestamp <= Date.now());
+});
 
 test('VICE embed protocol encodes commands as prefixed JSON lines', () => {
   const encoded = encodeViceEmbedCommand({

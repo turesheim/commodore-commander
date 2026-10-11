@@ -1,4 +1,8 @@
 import {
+    encodeViceEmbedCommand as encodeRuntimeCommand,
+    parseViceEmbedProtocolLine as parseRuntimeProtocolLine
+} from '@commodore-commander/vice-runtime';
+import {
     COMMODORE_VICE_EMBED_PROTOCOL,
     type CommodoreViceEmbedJoystickEvent,
     type CommodoreViceEmbedKeyEvent,
@@ -8,8 +12,8 @@ import {
     type CommodoreViceEmbedStatusEvent,
 } from '../common/commodore-vice-embed-service';
 
-export const COMMODORE_VICE_EMBED_PROTOCOL_PREFIX = 'CCV1 ';
 export {
+    COMMODORE_VICE_EMBED_PROTOCOL_PREFIX,
     COMMODORE_VICE_EMBED_BINARY_FRAME_MAGIC,
     COMMODORE_VICE_EMBED_BINARY_FRAME_HEADER_BYTES,
     getViceEmbedBinaryFrameRecordLength,
@@ -28,25 +32,17 @@ export type CommodoreViceEmbedCommand =
     | { readonly type: 'quit' };
 
 export function encodeViceEmbedCommand(command: CommodoreViceEmbedCommand): string {
-    return `${COMMODORE_VICE_EMBED_PROTOCOL_PREFIX}${JSON.stringify(command)}\n`;
+    return encodeRuntimeCommand(command);
 }
 
 export function parseViceEmbedProtocolLine(line: string): CommodoreViceEmbedProtocolEvent | undefined {
-    const trimmedLine = line.trimEnd();
-    if (!trimmedLine.startsWith(COMMODORE_VICE_EMBED_PROTOCOL_PREFIX)) {
-        return undefined;
-    }
-
-    const payload = JSON.parse(trimmedLine.slice(COMMODORE_VICE_EMBED_PROTOCOL_PREFIX.length));
-    if (!payload || typeof payload !== 'object') {
+    const payload = parseRuntimeProtocolLine(line);
+    if (!payload) {
         return undefined;
     }
 
     switch (payload.type) {
         case 'hello':
-            if (payload.protocol !== COMMODORE_VICE_EMBED_PROTOCOL) {
-                return undefined;
-            }
             return {
                 type: 'hello',
                 protocol: COMMODORE_VICE_EMBED_PROTOCOL,
@@ -54,9 +50,9 @@ export function parseViceEmbedProtocolLine(line: string): CommodoreViceEmbedProt
             };
         case 'frame':
             if (
-                !Number.isFinite(payload.frameId) ||
-                !Number.isFinite(payload.width) ||
-                !Number.isFinite(payload.height) ||
+                !isFiniteNumber(payload.frameId) ||
+                !isFiniteNumber(payload.width) ||
+                !isFiniteNumber(payload.height) ||
                 payload.pixelFormat !== 'rgba8888' ||
                 typeof payload.data !== 'string'
             ) {
@@ -69,7 +65,7 @@ export function parseViceEmbedProtocolLine(line: string): CommodoreViceEmbedProt
                 height: payload.height,
                 pixelFormat: 'rgba8888',
                 data: payload.data,
-                timestamp: Number.isFinite(payload.timestamp) ? payload.timestamp : Date.now()
+                timestamp: isFiniteNumber(payload.timestamp) ? payload.timestamp : Date.now()
             };
         case 'status':
             if (!isStatusState(payload.state)) {
@@ -79,13 +75,17 @@ export function parseViceEmbedProtocolLine(line: string): CommodoreViceEmbedProt
                 type: 'status',
                 state: payload.state,
                 message: typeof payload.message === 'string' ? payload.message : undefined,
-                pid: Number.isFinite(payload.pid) ? payload.pid : undefined,
-                exitCode: Number.isFinite(payload.exitCode) || payload.exitCode === null ? payload.exitCode : undefined,
+                pid: isFiniteNumber(payload.pid) ? payload.pid : undefined,
+                exitCode: isFiniteNumber(payload.exitCode) || payload.exitCode === null ? payload.exitCode : undefined,
                 signal: typeof payload.signal === 'string' || payload.signal === null ? payload.signal : undefined
             };
         default:
             return undefined;
     }
+}
+
+function isFiniteNumber(value: unknown): value is number {
+    return typeof value === 'number' && Number.isFinite(value);
 }
 
 function isStatusState(value: unknown): value is CommodoreViceEmbedStatusEvent['state'] {

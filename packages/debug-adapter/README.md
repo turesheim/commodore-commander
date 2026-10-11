@@ -24,6 +24,9 @@ What is here:
 - shared embedded stdout framing through `ViceEmbeddedStdoutDecoder`; JSON
   interpretation, DAP output/status reporting, overflow warnings, and disabling
   DAP frame forwarding remain adapter policy
+- CCV1 JSON command encoding and event-envelope parsing through `vice-runtime`;
+  parsed event fields are preserved without applying Theia's stricter frame/status
+  validation. Debug-event names and forwarding policy remain in the adapter
 - DAP support for launch, source breakpoints, conditional source breakpoints,
   source hit conditions, source logpoints/tracepoints, data
   breakpoints/watchpoints, conditional data breakpoints, data hit conditions,
