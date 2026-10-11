@@ -133,6 +133,9 @@ jobs:
           brew untap aws/tap || true
           brew install autoconf automake dos2unix pkg-config sdl2_image subversion xa
 
+      - name: Test native packaging helpers
+        run: node --test tools/vice-embed/*.test.mjs
+
       - name: Prepare @vscode/ripgrep download cache
         env:
           TMPDIR: ${{ runner.temp }}
@@ -224,9 +227,6 @@ jobs:
 
           echo "CC_CODESIGN_IDENTITY=$identity" >> "$GITHUB_ENV"
           rm -f "$certificate_path"
-
-      - name: Test native packaging helpers
-        run: node --test tools/vice-embed/*.test.mjs
 
       - name: Package current platform
         shell: bash
