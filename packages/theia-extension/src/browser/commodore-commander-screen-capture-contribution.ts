@@ -89,7 +89,7 @@ export interface CommodoreCommanderScreenCaptureApi {
   openOutlineView?: () => Promise<boolean>;
   openSidSfxEditor?: () => Promise<boolean>;
   prepareC64VisualDebuggerDemoState?: () => Promise<boolean>;
-  powerOffMachine?: () => Promise<boolean>;
+  powerOffMachine?: (replayLateFrame?: boolean) => Promise<boolean>;
   openSourceFile?: (filePath: string) => Promise<boolean>;
   revealMemoryTextColumn?: () => Promise<boolean>;
   showMemoryRange?: (
@@ -195,7 +195,7 @@ export class CommodoreCommanderScreenCaptureContribution
       ),
       openOutlineView: async () => this.openOutlineViewForScreenCapture(),
       openSidSfxEditor: async () => this.openSidSfxEditorForScreenCapture(),
-      powerOffMachine: async () => this.powerOffMachineForScreenCapture(),
+      powerOffMachine: async (replayLateFrame) => this.powerOffMachineForScreenCapture(replayLateFrame),
       prepareC64VisualDebuggerDemoState: async () =>
         this.prepareC64VisualDebuggerDemoStateForScreenCapture(),
       openSourceFile: async (filePath) =>
@@ -498,11 +498,11 @@ export class CommodoreCommanderScreenCaptureContribution
     return widget.showVirtualKeyboardForScreenCapture(timeoutMs);
   }
 
-  protected async powerOffMachineForScreenCapture(): Promise<boolean> {
+  protected async powerOffMachineForScreenCapture(replayLateFrame = false): Promise<boolean> {
     const widget = await this.widgetManager.getOrCreateWidget<CommodoreMachineProfileWidget>(
       COMMODORE_MACHINE_PROFILE_WIDGET_ID
     );
-    return widget.powerOffForScreenCapture();
+    return widget.powerOffForScreenCapture(replayLateFrame);
   }
 
   protected async showC64VisualDebuggerViewForScreenCapture(

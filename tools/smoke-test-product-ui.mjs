@@ -14,6 +14,14 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
   await writeFile(sourcePath, '#import "lib/shared.asm"\n*=$1000\nStart: rts\n');
   await writeFile(path.join(workspace, 'lib', 'shared.asm'), '.label screen = $0400\n');
   const configPath = path.join(testRoot, 'config.json');
+  const chargen = await readFile(path.join(layout.appResourcesDir,
+    'lib', 'backend', 'assets', 'vice', 'darwin-arm64', 'VICE.app',
+    'Contents', 'Resources', 'share', 'vice', 'C64', 'chargen-901225-01.bin'));
+  // C64 screen codes for READY.; derive the expected pixels from the packaged ROM.
+  const readyScreenCodes = [18, 5, 1, 4, 25, 46];
+  const readyRows = Array.from({ length: 8 }, (_, row) => readyScreenCodes.flatMap(code =>
+    Array.from({ length: 8 }, (_, col) => (chargen[code * 8 + row] >> (7 - col)) & 1)
+  ));
   const captures = [1, 2].map(cycle => ({
     outputPath: path.join(outputDir, `machine-${cycle}.png`),
     steps: [
@@ -21,12 +29,12 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
       { type: 'showMachineVirtualKeyboard', timeoutMs: 20000 },
       { type: 'waitForVisibleText', selector: '.cc-machine-profile-widget', text: 'FPS', timeoutMs: 20000 },
       { type: 'waitForCanvasContent', selector: '.cc-machine-vice-screen canvas', timeoutMs: 20000 },
-      // C64 power-on RAM patterns arrive before the BASIC input loop is ready.
-      { type: 'wait', ms: 5000 },
+      // A RAM pattern proves painting, but not that BASIC accepts input yet.
+      { type: 'waitForCanvasGlyphs', selector: '.cc-machine-vice-screen canvas', rows: readyRows, timeoutMs: 20000 },
       { type: 'assertCanvasKeyboardResponse', selector: '.cc-machine-vice-screen canvas', text: 'poke 53280,2', timeoutMs: 10000 }
     ],
     afterSteps: [
-      { type: 'powerOffMachine' },
+      { type: 'powerOffMachine', replayLateFrame: true },
       { type: 'waitForVisibleText', selector: '.cc-machine-profile-widget', text: 'Powered off', timeoutMs: 10000 }
     ]
   }));
@@ -38,6 +46,7 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
   for (const capture of captures) {
     await rm(capture.outputPath, { force: true });
   }
+  await rm(path.join(outputDir, 'failure.png'), { force: true });
   const env = Object.fromEntries(Object.entries(process.env).filter(([name]) =>
     name !== 'ELECTRON_RUN_AS_NODE' && !name.startsWith('DYLD_') &&
     !name.startsWith('VICE_') && !name.startsWith('THEIA_UI_E2E_VICE_')
@@ -71,6 +80,12 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
     }
     if (log.split('Verified canvas keyboard response in .cc-machine-vice-screen canvas.').length - 1 !== captures.length) {
       throw new Error('Packaged app did not execute every keyboard-response assertion.');
+    }
+    if (log.split('Verified canvas glyphs in .cc-machine-vice-screen canvas.').length - 1 !== captures.length) {
+      throw new Error('Packaged app did not execute every BASIC-ready assertion.');
+    }
+    if (log.split('Replayed a queued Machine frame after power off.').length - 1 !== captures.length) {
+      throw new Error('Packaged app did not execute every late-frame regression check.');
     }
     for (const capture of captures) {
       const png = await readFile(capture.outputPath);

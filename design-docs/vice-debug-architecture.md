@@ -33,6 +33,10 @@ Theia `vice-runtime-resolver.ts` wrapper.
   Native disconnect releases the debug frame reservation and cached image.
 - Frontend RPC disconnection detaches the client without terminating the
   standalone emulator. Backend shutdown releases owned process/transport state.
+- Machine ignores frames and running status arriving after power-off/stopped
+  until a new standalone/debug start. Otherwise an in-flight browser frame can
+  revive the UI state and prevent the next power-on from launching a process.
+  Initial widgets still accept cached frames from an existing backend session.
 - The adapter uses the runtime termination helper with SIGKILL when terminating
   its debuggee, preserving the current workaround for macOS VICE exit-cleanup
   crashes. This does not apply the same shutdown policy to standalone sessions.
@@ -110,9 +114,13 @@ packaging includes the complete non-system dylib dependency graph, including
 `@rpath` references and sdl2-compat's dynamically loaded SDL3, and
 removes build-machine search paths so local Homebrew libraries cannot mask
 missing payloads. The same package check launches the packaged Electron app with
-isolated user data and verifies visible pixels in the Machine canvas. It sends
-`POKE 53280,2` through Electron keyboard events and requires a border-color
-change, then powers off and repeats after startup. This covers bundled discovery,
+isolated user data and verifies visible pixels in the Machine canvas. It matches
+BASIC `READY.` glyphs against the bundled C64 character ROM before sending
+`POKE 53280,2` through Electron keyboard events and requiring a border-color
+change, then powers off, replays a previously sent frame to verify the UI remains
+off, and repeats after startup. Readiness uses the default
+unfiltered C64 surface; a fixed delay or a power-on RAM pattern does not qualify.
+This covers bundled discovery,
 backend/browser transport, canvas painting and BASIC input/execution, rather than
 accepting FPS or an existing screenshot as success. Nightly logs/screenshots
 survive failed checks.
