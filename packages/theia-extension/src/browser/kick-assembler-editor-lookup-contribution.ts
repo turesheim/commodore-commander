@@ -77,6 +77,7 @@ import {
   CommodoreMachineProfileSelectionService
 } from './commodore-machine-profile-selection';
 import { KickAssemblerWorkspaceFiles } from './kick-assembler-workspace-files';
+import { KickAssemblerWorkspaceDocuments } from './kick-assembler-workspace-documents';
 
 const EXCLUDED_DIRECTORY_NAMES = new Set([
   '.git',
@@ -117,6 +118,9 @@ export class KickAssemblerEditorLookupContribution
     hasKickAssemblerExtension,
     EXCLUDED_DIRECTORY_NAMES
   );
+  protected readonly workspaceDocuments = new KickAssemblerWorkspaceDocuments(
+    async resource => (await this.fileService.read(resource)).value
+  );
   protected readonly toDispose = new DisposableCollection();
   protected readonly trackedEditors = new WeakSet<MonacoEditor>();
   protected readonly referenceHoverWidgets = new Map<
@@ -130,21 +134,26 @@ export class KickAssemblerEditorLookupContribution
   initialize(): void {
     this.toDispose.pushAll([
       this.fileService.onDidFilesChange(event => {
+        this.workspaceDocuments.invalidate(event.changes.map(change => change.resource));
         this.workspaceFiles.invalidate(event.changes
           .filter(change => change.type !== FileChangeType.UPDATED)
           .map(change => change.resource));
       }),
       this.fileService.onDidRunOperation(event => {
-        this.workspaceFiles.invalidate(event.target
+        const resources = event.target
           ? [event.resource, event.target.resource]
-          : [event.resource]);
+          : [event.resource];
+        this.workspaceFiles.invalidate(resources);
+        this.workspaceDocuments.invalidate(resources);
       }),
       this.workspaceService.onWorkspaceChanged(() => {
         this.workspaceFiles.clear();
+        this.workspaceDocuments.clear();
         this.lookupService.clearDocumentCache();
       }),
       this.workspaceService.onWorkspaceLocationChanged(() => {
         this.workspaceFiles.clear();
+        this.workspaceDocuments.clear();
         this.lookupService.clearDocumentCache();
       })
     ]);
@@ -429,6 +438,7 @@ export class KickAssemblerEditorLookupContribution
   onStop(): void {
     this.toDispose.dispose();
     this.workspaceFiles.clear();
+    this.workspaceDocuments.clear();
     this.lookupService.clearDocumentCache();
   }
 
@@ -757,6 +767,21 @@ export class KickAssemblerEditorLookupContribution
     const overlayTexts = this.collectOverlayTexts();
     const currentUri = new URI(currentModel.uri.toString());
     const candidateUris = await this.collectCandidateUris(currentUri);
+    const documents = await this.collectSourceDocuments(candidateUris, overlayTexts);
+
+    const currentKey = currentUri.toString();
+    if (!documents.some(input => input.document.uri === currentKey)) {
+      documents.push({ kind: 'kickassembler', document: currentDocument });
+    }
+    documents.push(...(await this.loadBundledReferenceDocuments()));
+    return documents;
+  }
+
+  protected async collectSourceDocuments(
+    candidateUris: readonly URI[],
+    overlayTexts: ReadonlyMap<string, string>
+  ): Promise<KickAssemblerLookupDocument[]> {
+    this.workspaceDocuments.retain(candidateUris);
     const documents: KickAssemblerLookupDocument[] = [];
     const seen = new Set<string>();
 
@@ -773,27 +798,12 @@ export class KickAssemblerEditorLookupContribution
         continue;
       }
 
-      try {
-        const content = await this.fileService.read(candidateUri);
-        documents.push(
-          createLookupDocument('kickassembler', key, content.value)
-        );
+      const document = await this.workspaceDocuments.getDocument(candidateUri);
+      if (document) {
+        documents.push({ kind: 'kickassembler', document });
         seen.add(key);
-      } catch {
-        continue;
       }
     }
-
-    const currentKey = currentUri.toString();
-    if (!seen.has(currentKey)) {
-      documents.push({
-        kind: 'kickassembler',
-        document: currentDocument
-      });
-    }
-
-    documents.push(...(await this.loadBundledReferenceDocuments()));
-
     return documents;
   }
 
@@ -900,31 +910,7 @@ export class KickAssemblerEditorLookupContribution
       candidateUris.push(...(await this.collectKickAssemblerFiles(root.resource)));
     }
 
-    const documents: KickAssemblerLookupDocument[] = [];
-    const seen = new Set<string>();
-
-    for (const candidateUri of candidateUris) {
-      const key = candidateUri.toString();
-      if (seen.has(key)) {
-        continue;
-      }
-
-      const overlayText = overlayTexts.get(key);
-      if (overlayText !== undefined) {
-        documents.push(createLookupDocument('kickassembler', key, overlayText));
-        seen.add(key);
-        continue;
-      }
-
-      try {
-        const content = await this.fileService.read(candidateUri);
-        documents.push(createLookupDocument('kickassembler', key, content.value));
-        seen.add(key);
-      } catch {
-        continue;
-      }
-    }
-
+    const documents = await this.collectSourceDocuments(candidateUris, overlayTexts);
     documents.push(...(await this.loadBundledReferenceDocuments()));
     return documents;
   }
@@ -1440,5 +1426,5 @@ interface KickAssemblerLookupContext {
 }
 
 // TODO(theia-ts-migration): Extend the shared document-analysis cache and Theia
-// file inventory with persistent workspace state. Content reads and index
-// assembly still happen for every request; file discovery has bounded reuse.
+// disk snapshots with persistent index state. Index assembly still happens for
+// every request; file discovery and disk reads have bounded/event-invalidated reuse.

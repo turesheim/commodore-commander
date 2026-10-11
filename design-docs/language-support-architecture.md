@@ -54,10 +54,16 @@ Theia owns file selection, open-editor overlays, bundled XML and Monaco adapters
 Its `KickAssemblerWorkspaceFiles` shares discovery per root across lookup,
 workspace symbols and include completion. Structural file notifications and
 completed operations invalidate overlapping roots, including moved directories.
-Workspace changes/shutdown clear both caches; an event during discovery forces
+Workspace changes/shutdown clear all caches; an event during discovery forces
 pending callers to use a fresh inventory. Complete inventories expire after five
 seconds to cover missed/excluded watcher events; filesystem failures are retried
-on the next request. Content reads and index assembly remain on demand.
+on the next request. `KickAssemblerWorkspaceDocuments` similarly shares disk
+reads/text models for five seconds, invalidating files/subtrees on all file
+notifications and operation endpoints. Current editor text always wins; files
+outside the latest candidate set are released without dropping concurrent reads.
+Events during a read refresh its result; failed reads are retried. Without a
+notification, disk content can remain stale until the next request after expiry.
+Index assembly still occurs per request.
 
 ## Project and build flow
 
@@ -76,8 +82,8 @@ outline/syntax slice.
 
 ## Remaining work
 
-- Persistent workspace state for content reads and index assembly beyond
-  document analysis caching and bounded/event-invalidated file discovery.
+- Persistent index reuse beyond document analysis and bounded/event-invalidated
+  file discovery/disk snapshots.
 - Include-graph-precise lookup and consistency between outline and semantic paths.
 - Compiler-accurate semantics/diagnostics: configured conditional evaluation,
   macro/pseudocommand expansion and generated-symbol materialization.

@@ -35,9 +35,9 @@ syntax assets are active product inputs and must remain packaged.
 ## Deferred and external responsibilities
 
 - Shared incremental workspace state and include-graph-precise lookup. Theia
-  reuses file discovery for up to five seconds with structural-event invalidation,
-  but still reads content and assembles request-local indexes, overlaying open
-  editor text. Unchanged document analysis is reused across requests.
+  reuses file discovery and disk text models for up to five seconds with file-event
+  invalidation, overlaying current editor text. Unchanged document analysis is
+  reused, but index maps are still assembled per request.
 - Compiler-accurate KickAss expression/directive edge cases, macro expansion,
   conditional evaluation and generated-symbol materialization.
 - Compiler-grade diagnostics, completion/rename/formatting/quick-fix parity,
@@ -56,9 +56,9 @@ Structural/tolerant parsing is appropriate for editing while full compiler
 parity remains explicitly unfinished. Paths/file URIs replace former workspace
 resource objects; framework adapters must not leak their APIs into this package.
 
-Document analysis caching and bounded/event-invalidated file discovery are
-implemented steps toward an incremental index. Next, define update/invalidation
-for content reads and persistent index assembly shared by editor features.
+Document analysis caching and bounded/event-invalidated file/disk snapshots are
+implemented steps toward an incremental index. Next, reuse assembled indexes
+with invalidation for document order/content and active-machine changes.
 Align outline, scanner, semantic and project views before expanding compiler-relevant behavior.
 See [language architecture](language-support-architecture.md) and
 [the implementation plan](plan.md).
