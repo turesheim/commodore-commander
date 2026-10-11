@@ -21,9 +21,9 @@ owns DAP-specific monitor behavior. See
 
 ## Next work
 
-1. **Shared language state.** Document analysis caching is implemented. Extend
-   it with workspace update/invalidation for file discovery, reads and persistent
-   lookup/editor indexes. Align the semantic parser,
+1. **Shared language state.** Document analysis caching and bounded/event-invalidated
+   file discovery are implemented. Extend them with workspace state for content
+   reads and persistent lookup/editor indexes. Align the semantic parser,
    compatibility scanner, project loader and Langium outline on common
    constructs. Extend compiler-relevant diagnostics without introducing a Java
    language server. See [language architecture](language-support-architecture.md)
@@ -59,7 +59,7 @@ owns DAP-specific monitor behavior. See
 
 | Area | Implemented | Remaining |
 | --- | --- | --- |
-| Language | Monaco registration, syntax, structural editor services, reference lookup and document analysis caching | Persistent workspace index, compiler-accurate semantics, broader diagnostics/reference coverage |
+| Language | Monaco editor services, reference lookup, document analysis caching and bounded/event-invalidated file discovery | Persistent workspace content/index state, compiler-accurate semantics, broader diagnostics/reference coverage |
 | Build/project | File/path planner, program/profile/run config, backend and headless builds, Theia tasks/markers | Stronger validation, diagnostic attribution, clean-task and configuration UX |
 | Launch | Theia debug/no-debug configurations and generated build-before-debug tasks | Configured-run policy flow, run selection and Active Machine defaults |
 | Debug | DAP binary monitor, breakpoints/watchpoints, Memory/Visual Debugger/Monitor views, disassembly, observed trace history | Broader regressions, richer symbols/trace UX and execution-history provenance |
