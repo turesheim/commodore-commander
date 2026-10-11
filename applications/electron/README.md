@@ -34,10 +34,10 @@ the current platform; the default output is under `dist/nightly`.
 The nightly workflow targets macOS, Windows, and Linux. It skips packaging when
 the branch commit matches its last successful run; manual dispatch can set
 `force` to rebuild it. Package smoke tests run before upload. Packages include
-app assets, bundled documentation,
-Kick Assembler, SIDScore, and applicable VICE assets. The patched embedded VICE
-build is currently supplied for macOS Apple Silicon; other platforms can use an
-external VICE installation.
+app assets, bundled documentation, Kick Assembler, SIDScore 0.8.0 (Java 21+),
+and applicable VICE assets. The patched embedded VICE build is currently
+supplied for macOS Apple Silicon; other platforms can use an external VICE
+installation.
 
 macOS bundles are ad-hoc signed by default. Developer ID signing is supported;
 notarization and installer image creation remain manual release steps. See the

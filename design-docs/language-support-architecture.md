@@ -140,8 +140,9 @@ The Theia/headless runner owns process execution and compiler-output markers.
 `reference/6502.xml` and `reference/c64/c64io.xml` are active lookup data;
 `reference/java` and `reference/antlr` retain migration behavior references.
 Syntax assets and language manifests expose Kick Assembler and initial SIDScore
-editing support. Compiler/player semantics stay outside the TypeScript SIDScore
-outline/syntax slice.
+editing support. The bundled SIDScore 0.8.0 CLI owns compiler/player semantics,
+including shared effect voice ownership across subtunes; these remain outside
+the TypeScript outline/syntax slice.
 
 ## Remaining work
 

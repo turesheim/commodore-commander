@@ -64,7 +64,8 @@ The editor provides:
 ## Music and sound effects
 
 Commodore Commander supports [SIDScore](https://github.com/turesheim/SIDScore),
-a DSL and toolchain for composing Commodore 64 SID music and sound effects. It
+a DSL and toolchain for composing Commodore 64 SID music and sound effects. The
+bundled CLI is the published 0.8.0 release and requires Java 21 or newer. It
 provides real-time auditioning, MIDI input, dedicated instrument controls, and
 export to ASM, PRG, SID, and WAV. Playback fidelity is improved by aligning the
 built-in `sidscore` driver with the timing of the real-time player while keeping

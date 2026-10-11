@@ -51,7 +51,8 @@ owns DAP-specific monitor behavior. See
 4. **Product gaps.** Use native Theia concepts for tasks, sessions, problems and
    launch configuration. Add custom views for Commodore-specific value. Grow
    SIDScore TypeScript editor services only as its semantics become testable;
-   preserve the external SIDScoreCLI player architecture. SIDScore behavior or
+   preserve the external SIDScoreCLI player architecture. The product bundles
+   the published SIDScore 0.8.0 CLI (Java 21+). SIDScore behavior or
    JAR updates must include the sibling `../SIDScore` source, or explicitly
    report that it is unavailable.
 

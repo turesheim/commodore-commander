@@ -62,14 +62,11 @@ Call `play` once per video frame for the score's `SYSTEM` setting; preserve A,
 X, and Y around an IRQ call. The module uses SID `$d400-$d418` and zero-page
 `$fb-$fc` during calls.
 
-Effects within one tune arbitrate by voice and priority. Effects from different
-tunes currently have separate ownership state: if they use the same SID voice
-at the same time, the later tune's register writes win. Use distinct fixed
-`VOICE` assignments for effects that must overlap. Effect timelines longer
-than 4096 frames fail export with a named error; all generated code and data
-must fit the chosen C64 memory range. Global filter, route, cutoff, resonance,
-and volume changes persist after an effect ends until music or another effect
-overwrites them.
+SIDScore 0.8.0 shares effect voice ownership across all tunes. Fixed-voice and
+`VOICE ANY` effects use common priority/retrigger rules. Music continues its
+timeline under an effect; its current SID voice state is restored when the
+effect completes. Effect timelines longer than 4096 frames fail export with a
+named error; all generated code and data must fit the chosen C64 memory range.
 
 The previous SIDScore `--asm` and `--sid` exports remain standalone output
 formats. They include fixed addresses and a BASIC stub, which makes them
