@@ -20,6 +20,9 @@ The runtime extraction is partial: the standalone embedded child process,
 command pipe, shared binary frame parser, native loopback frame socket, and
 mixed stdout framing now live in `vice-runtime`. Standalone/debug launch policy,
 the browser WebSocket bridge, and machine selection remain in the Theia backend.
+The browser bridge is isolated in `CommodoreViceFrameBridge` within
+`theia-extension`; emulator session coordination remains in
+`CommodoreViceEmbedServiceImpl`.
 JSON event interpretation and frame/output policy remain in the consuming
 Theia service and DAP session. DAP-specific monitor connection management stays
 in the debug adapter.

@@ -242,7 +242,7 @@ Runtime extraction is partial: `vice-runtime` owns the standalone embedded
 child process, command pipe, native loopback frame socket, shared binary frame
 parsing, and mixed stdout framing. The Theia backend still coordinates launch
 ownership, interprets standalone JSON events, and manages the browser WebSocket
-bridge. See
+bridge through a separate `CommodoreViceFrameBridge` in `theia-extension`. See
 [Packages](packages/README.md) for boundaries and remaining extraction work.
 
 

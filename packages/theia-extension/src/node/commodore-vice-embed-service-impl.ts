@@ -10,17 +10,14 @@ import {
 } from '@commodore-commander/vice-runtime';
 import type * as http from 'node:http';
 import type * as https from 'node:https';
-import type { Socket } from 'node:net';
 
 import type { Disposable } from '@theia/core/lib/common/disposable';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { PreferenceService } from '@theia/core/lib/common/preferences';
 import type { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { WebSocket, WebSocketServer } from 'ws';
 
 import {
-    CommodoreViceEmbedFrameSocketPath,
     COMMODORE_VICE_EMBED_PROTOCOL,
     type CommodoreViceEmbedClient,
     type CommodoreViceEmbedJoystickEvent,
@@ -49,10 +46,9 @@ import {
     type CommodoreViceEmbedCommand
 } from './commodore-vice-embed-protocol';
 import { observeRpcClientClose } from './rpc-client-lifecycle';
+import { CommodoreViceFrameBridge } from './commodore-vice-frame-bridge';
 
 const DEFAULT_VICE_EMULATOR = 'x64sc';
-const MIN_FRAME_SOCKET_BACKPRESSURE_BYTES = 256 * 1024;
-const MAX_FRAME_SOCKET_BUFFERED_BYTES = 2 * 1024 * 1024;
 
 interface ResolvedViceEmbedLaunch {
     readonly command: string;
@@ -112,28 +108,12 @@ export class CommodoreViceEmbedServiceImpl
         onError: (error) => this.emitStatus({ state: 'error', message: error.message }),
         onSocketError: (error) => this.logger.warn(`VICE frame transport socket error: ${error.message}`)
     });
-    protected frameSocketServer: WebSocketServer | undefined;
-    protected frameSockets = new Set<WebSocket>();
-    protected latestBinaryFrame: Buffer | undefined;
+    protected readonly frameBridge = new CommodoreViceFrameBridge((message) => this.logger.warn(message));
     protected clientConnectionCloseListener: Disposable | undefined;
-    protected frameSocketUpgradeListener:
-        | ((request: http.IncomingMessage, socket: Socket, head: Buffer) => void)
-        | undefined;
-    protected frameSocketServerHost: http.Server | https.Server | undefined;
 
     dispose(): void {
         this.stopProcess();
-        if (this.frameSocketUpgradeListener && this.frameSocketServerHost) {
-            this.frameSocketServerHost.off('upgrade', this.frameSocketUpgradeListener);
-        }
-        this.frameSocketUpgradeListener = undefined;
-        this.frameSocketServerHost = undefined;
-        for (const socket of this.frameSockets) {
-            socket.close();
-        }
-        this.frameSockets.clear();
-        this.frameSocketServer?.close();
-        this.frameSocketServer = undefined;
+        this.frameBridge.stop();
         this.clientConnectionCloseListener?.dispose();
         this.clientConnectionCloseListener = undefined;
         this.client = undefined;
@@ -144,27 +124,7 @@ export class CommodoreViceEmbedServiceImpl
     }
 
     onStart(server: http.Server | https.Server): void {
-        const frameSocketServer = new WebSocketServer({ noServer: true });
-        this.frameSocketServer = frameSocketServer;
-        this.frameSocketServerHost = server;
-        this.frameSocketUpgradeListener = (request, socket, head) => {
-            if (!isFrameSocketRequest(request.url)) {
-                return;
-            }
-            if (!isAllowedFrameSocketOrigin(request)) {
-                socket.destroy();
-                return;
-            }
-            frameSocketServer.handleUpgrade(request, socket, head, (webSocket) => {
-                this.frameSockets.add(webSocket);
-                webSocket.on('close', () => this.frameSockets.delete(webSocket));
-                webSocket.on('error', (error) => {
-                    this.logger.warn(`VICE frame socket error: ${error.message}`);
-                });
-                this.sendBinaryFrame(webSocket, this.latestBinaryFrame);
-            });
-        };
-        server.on('upgrade', this.frameSocketUpgradeListener);
+        this.frameBridge.start(server);
     }
 
     setClient(client: CommodoreViceEmbedClient | undefined): void {
@@ -387,7 +347,7 @@ export class CommodoreViceEmbedServiceImpl
 
     protected closeViceFrameTransport(): void {
         this.viceFrameTransport.stop();
-        this.latestBinaryFrame = undefined;
+        this.frameBridge.clearFrame();
     }
 
     protected currentViceFrameServerPort(): number | undefined {
@@ -395,38 +355,7 @@ export class CommodoreViceEmbedServiceImpl
     }
 
     protected broadcastBinaryFrame(record: Buffer): void {
-        this.latestBinaryFrame = record;
-        for (const socket of this.frameSockets) {
-            this.sendBinaryFrame(socket, record);
-        }
-    }
-
-    protected sendBinaryFrame(socket: WebSocket, record: Buffer | undefined): void {
-        if (!record || socket.readyState !== WebSocket.OPEN) {
-            return;
-        }
-        if (socket.bufferedAmount > MAX_FRAME_SOCKET_BUFFERED_BYTES) {
-            this.logger.warn(
-                `Closing slow VICE frame socket with ${socket.bufferedAmount} buffered bytes.`
-            );
-            this.frameSockets.delete(socket);
-            socket.terminate();
-            return;
-        }
-        const maxBufferedBytes = Math.max(
-            MIN_FRAME_SOCKET_BACKPRESSURE_BYTES,
-            record.length
-        );
-        if (socket.bufferedAmount > maxBufferedBytes || socket.bufferedAmount > 0) {
-            return;
-        }
-        socket.send(record, { binary: true }, (error) => {
-            if (error) {
-                this.frameSockets.delete(socket);
-                socket.terminate();
-                this.logger.warn(`VICE frame socket send failed: ${error.message}`);
-            }
-        });
+        this.frameBridge.broadcast(record);
     }
 
     protected emitStatus(event: CommodoreViceEmbedStatusEvent): void {
@@ -457,46 +386,6 @@ function formatViceProcessCloseMessage(
         return `Emulator quit after signal ${signal}`;
     }
     return 'Emulator quit with unknown exit code';
-}
-
-function isFrameSocketRequest(requestUrl: string | undefined): boolean {
-    if (!requestUrl) {
-        return false;
-    }
-    const pathname = new URL(requestUrl, 'http://localhost').pathname;
-    return pathname === CommodoreViceEmbedFrameSocketPath ||
-        pathname.endsWith(CommodoreViceEmbedFrameSocketPath);
-}
-
-function isAllowedFrameSocketOrigin(request: http.IncomingMessage): boolean {
-    const origin = request.headers.origin;
-    const host = request.headers.host;
-    if (!origin || !host) {
-        return true;
-    }
-    try {
-        const originUrl = new URL(origin);
-        if (originUrl.protocol === 'file:') {
-            return true;
-        }
-        if (originUrl.host === host) {
-            return true;
-        }
-        const hostUrl = new URL(`http://${host}`);
-        return originUrl.port === hostUrl.port &&
-            isLoopbackHost(originUrl.hostname) &&
-            isLoopbackHost(hostUrl.hostname);
-    } catch {
-        return false;
-    }
-}
-
-function isLoopbackHost(hostname: string): boolean {
-    const normalized = hostname.toLowerCase();
-    return normalized === 'localhost' ||
-        normalized === '127.0.0.1' ||
-        normalized === '::1' ||
-        normalized === '[::1]';
 }
 
 function normalizeConfiguredValue(value: string | undefined): string | undefined {
