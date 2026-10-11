@@ -207,11 +207,11 @@ class TestViceEmbedService extends CommodoreViceEmbedServiceImpl {
   }
 
   hasLatestFrame(): boolean {
-    return this.latestBinaryFrame !== undefined;
+    return this.frameBridge.latestFrame !== undefined;
   }
 
   latestFrame(): Buffer | undefined {
-    return this.latestBinaryFrame;
+    return this.frameBridge.latestFrame;
   }
 
   emitTestStdout(chunk: Buffer): void {

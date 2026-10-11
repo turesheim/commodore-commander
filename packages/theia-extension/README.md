@@ -43,6 +43,22 @@ fallback binary/JSON frames, reports malformed JSON as both status and output,
 and truncates overflow output to the existing 32 MiB limit. DAP intentionally
 uses different forwarding and overflow rules.
 
+[`CommodoreViceFrameBridge`](src/node/commodore-vice-frame-bridge.ts) owns the
+browser-facing WebSocket listener, origin/path checks, connected clients,
+latest-frame cache, and slow-client handling. It forwards opaque binary records;
+the runtime transport or standalone stdout consumer validates frames first.
+`clearFrame()` drops the cached image when an emulator session ends while
+retaining browser connections for the next session. `stop()` releases the
+listener and browser sockets as the backend shuts down. Restarting the bridge
+replaces its previous listener and retains the cached frame.
+
+[`CommodoreViceEmbedServiceImpl`](src/node/commodore-vice-embed-service-impl.ts)
+coordinates the process, native frame transport, stdout decoder, and browser
+bridge. RPC disconnection still detaches only the frontend client. The bridge
+does not own or terminate emulator processes. This separation remains inside
+the Theia package because browser origin rules and backend WebSocket integration
+are product integration policy.
+
 ## Build and verification
 
 Use `npm run theia:build` from the repository root to build all dependencies and
