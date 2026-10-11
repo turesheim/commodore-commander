@@ -48,9 +48,9 @@ integration into their dependency graph.
    selecting root directly; nearer entities shadow qualified paths.
    `.filenamespace` enters an implicit namespace from the directive until EOF
    or its enclosing brace closes; successive directives nest. Each multi-label
-   declaration has a private instance key. Direction/distance searches combine
-   visible scope declarations in document order, including same-line labels;
-   references crossing an import stay unresolved pending expanded include order.
+   declaration has a private instance key. Direction/distance searches visit
+   the nearest scope before parents, then use source order within each scope,
+   including same-line labels.
    Scope body ranges end at their closing brace or EOF for unfinished text.
    Project declarations win; the active machine filters hardware references.
    Editor features consume this index/model and return framework-neutral edits,
@@ -60,9 +60,9 @@ integration into their dependency graph.
    renames are rejected. Hover formatting preserves reference HTML.
 
 The long-lived lookup service caches project/XML analysis and the last assembled
-index. Reuse compares ordered URI/kind/text/language inputs and active machine,
-not model versions. Changed inputs trigger fresh assembly using reusable analysis;
-absent documents are evicted. A private index snapshot isolates first-build and
+index. Reuse compares ordered URI/kind/text/language inputs, file boundaries
+and active machine, not model versions. Changed inputs trigger fresh assembly
+using reusable analysis; absent documents are evicted. A private index snapshot isolates first-build and
 cache-hit callers, each receiving independent mutable maps, arrays, occurrences,
 locations, address ranges and token bindings. Reference aliases within one
 result are preserved.
@@ -105,7 +105,20 @@ diagnostics. `KickAssemblerLanguageSupport` supplies Node filesystem/relative/
 search-root adapters for the existing build flow; editor lookup supplies Theia
 URI/overlay adapters. Shared-file diagnostics are collected once, including
 structural cycle warnings. `#importif` remains conservative without evaluating
-conditions. A file graph is not expanded source order or import-site scope.
+conditions.
+
+`expandKickAssemblerSource` projects each ordinary import occurrence into ordered
+source lines, respecting `#importonce` and retaining original file/line mappings.
+`buildProgramIndex` supplies file boundaries to the semantic parser: every file
+starts in global scope, while returning restores the caller's namespace/block.
+A child's file namespace cannot capture following caller declarations. Program
+identities remain isolated; equivalent physical declarations merge references
+across owners, while incompatible or partially unresolved bindings reject rename.
+All editor locations refer to original files. The bundled compiler verifies scope
+boundaries and directional target addresses. Conditional preprocessing, legacy
+imports, missing files, unguarded cycles or projections over 2 MB/100,000 lines
+or 256 nested files fall back to document-local analysis for the selected context. This is structural
+source expansion, without macro execution or conditional evaluation.
 The build planner identifies standalone assembly roots and resolves programs,
 profiles, runs, output/generated assets and command-line settings. SIDScore
 module declarations/configuration contribute generated assembly dependencies.
@@ -120,11 +133,11 @@ outline/syntax slice.
 ## Remaining work
 
 - Per-document index updates beyond the implemented whole-snapshot reuse.
-- Cross-file/import-crossing multi-labels, inline block bodies and import-site
-  namespace context. Scope-owner/prefix and multi-label rename, scope-aware
-  completion and compiler-grade rename conflict checking also remain work.
-- Expanded include order/import-site scope and consistency between outline and
-  semantic paths. Graph snapshot reuse and build/editor discovery alignment.
+- Inline block bodies and legacy deferred imports.
+  Scope-owner/prefix and multi-label rename, scope-aware completion and
+  compiler-grade rename conflict checking.
+- Outline/semantic consistency, graph snapshot reuse and build/editor discovery
+  alignment.
 - Compiler-accurate semantics/diagnostics: configured conditional evaluation,
   macro/pseudocommand expansion and generated-symbol materialization.
 - Richer editor/reference coverage and build-config/diagnostic attribution.

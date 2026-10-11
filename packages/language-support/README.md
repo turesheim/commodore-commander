@@ -39,8 +39,8 @@ constants/variables remain lexical, including in the shared scope of reopened
 namespaces. `.filenamespace` enters a namespace from its directive to EOF or
 the enclosing explicit scope end; successive directives nest. Named/anonymous
 multi-labels (`!loop--`, `!++`) resolve by direction and distance through visible
-scopes within one document. All declarations precede reference binding. Rename
-replaces the leaf name and preserves prefixes; workspace symbols expose named containers.
+scopes within a document or expanded program. All declarations precede reference
+binding. Rename replaces the leaf name and preserves prefixes; workspace symbols expose named containers.
 Project symbols take precedence over reference symbols. Lookup filters hardware
 references by active machine while sharing 6502 mnemonic data; hover content
 preserves reference HTML. Machine profiles cover C64, C128, VIC-20, Plus/4, C16,
@@ -57,30 +57,34 @@ Theia supplies URI readers and editor overlays. Graph diagnostics visit shared
 files once and report cycles without unbounded recursion. Editor lookup selects
 configured/inferred program closures; shared files retain multiple owners, and
 rename expands the declaration owners before producing edits.
+`buildProgramIndex` expands ordinary `#import` occurrences in source order,
+respects `#importonce`, and returns physical source positions. Imported files
+start in global scope; file namespaces end on return to the caller. Equivalent
+shared declarations merge across owners; incompatible bindings reject rename.
 
 ## Limits
 
 The semantic model and editor services are structural/name-based, not a full
 KickAss compiler. Conditional branches are represented without evaluating a
 configured symbol environment; macros/pseudocommands are not expanded.
-Multi-label lookup across files/import crossings, inline block bodies and
-import-site namespace context remain work. Multi-label references crossing an
-import stay unresolved until expanded source order is available. Namespace and
-label-scope owner renames, multi-label renames and ambiguous declarations are
-rejected; replacement names are single identifiers. Diagnostics and reference
-datasets remain incomplete.
+Inline block bodies, conditional preprocessing and macro expansion remain
+work. Namespace/label-scope owner renames, multi-label renames and ambiguous or
+incompatible owner-context bindings are rejected; replacement names are single
+identifiers. Diagnostics and reference datasets remain incomplete.
 
 `KickAssemblerLookupService` caches project/XML analysis and the last assembled
-index. Reuse requires identical ordered URI/kind/text/language inputs and active
-machine; model versions alone do not invalidate it. `buildIndex()` returns
-independent mutable maps, arrays and occurrences. Changed inputs trigger fresh
+index. Reuse requires identical ordered URI/kind/text/language inputs, file
+boundaries and active machine; model versions alone do not invalidate it. Both
+index builders return independent mutable maps, arrays and occurrences. Changed inputs trigger fresh
 assembly using reusable document analysis; removed documents are evicted.
 `clearDocumentCache()` releases all language lookup state.
 
 Theia reuses file discovery and disk text models for up to five seconds, with
 file/workspace event invalidation and current editor text overriding disk data.
 Unchanged inputs reuse index assembly; per-document index updates and
-graph snapshot reuse and expanded import context remain work.
+graph snapshot reuse remain work. Conditional preprocessing (`#importif`/`#if`),
+legacy deferred imports, missing imports, unguarded cycles and expansions beyond
+2 MB/100,000 lines or 256 nested files use document-local lookup.
 SIDScore has syntax/outline support, but no compiler-accurate TypeScript language model.
 Debug metadata and VICE debugging belong to `debug-adapter`; Theia UI,
 preferences and process orchestration remain outside this package.

@@ -97,7 +97,7 @@ function canRenameDeclarations(declarations: readonly KickAssemblerLookupOccurre
   // group's directional references; avoid incomplete and ambiguous edits.
   return declarations.length === 1 && declarations[0]?.kind !== 'namespace' &&
     declarations[0]?.kind !== 'local-label' && declarations[0]?.kind !== 'anonymous-label' &&
-    !declarations[0]?.hasMemberScope;
+    !declarations[0]?.hasMemberScope && !declarations[0]?.hasMultipleContexts;
 }
 
 function leafName(name: string): string {

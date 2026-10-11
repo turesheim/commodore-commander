@@ -7,10 +7,9 @@ The bounded editor lookup-reuse round is implemented: discovery, disk models,
 document analysis and assembled indexes are reused with explicit invalidation.
 Changed input still causes full assembly; per-document index updates remain work.
 
-1. Continue language consistency after namespace/lexical binding: implement
-   expanded include order/import-site scope, then align project/outline and
-   discovery rules. Editor lookup reuses the existing include graph for program
-   selection. File namespaces and same-document directional labels are supported.
+1. Continue language consistency: align project/outline and discovery rules.
+   Editor lookup reuses the include graph and expands ordinary imports with
+   file scope boundaries, including cross-file directional labels. Conditional/macro expansion remains work.
    Native CTRL/CMD+click, references, leaf rename and semantic
    tokens share those bindings. Scope-owner/multi-label rename and scope-aware
    completion remain work.

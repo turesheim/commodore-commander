@@ -296,3 +296,6 @@ export type {
 
 export { KickAssemblerProjectLoader } from './project/kick-assembler-project-loader.ts';
 export type { KickAssemblerSourceGraph, KickAssemblerProjectLoaderOptions } from './project/kick-assembler-project-loader.ts';
+
+export { expandKickAssemblerSource } from './project/kick-assembler-expanded-source.ts';
+export type { KickAssemblerProgramSource, KickAssemblerExpandedSource } from './project/kick-assembler-expanded-source.ts';
