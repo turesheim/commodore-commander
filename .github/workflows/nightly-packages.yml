@@ -116,8 +116,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
-            autoconf automake dos2unix subversion xa65 patchelf \
-            libsdl2-dev libsdl2-image-dev \
+            autoconf automake bison flex texinfo dos2unix subversion xa65 patchelf \
+            libsdl2-dev libsdl2-image-dev libcurl4-openssl-dev libasound2-dev libpulse-dev zlib1g-dev \
             dbus-x11 libatk-bridge2.0-0 libgbm1 libgtk-3-0 libnss3 libxss1 libxtst6 xvfb \
             libsecret-1-dev \
             libx11-dev \

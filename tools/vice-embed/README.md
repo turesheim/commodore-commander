@@ -25,8 +25,9 @@ brew install autoconf automake dos2unix pkg-config sdl2_image subversion xa
 Ubuntu 24.04 x64 is the Linux build/test baseline:
 
 ```sh
-sudo apt-get install build-essential autoconf automake dos2unix pkg-config \
-  libsdl2-dev libsdl2-image-dev subversion xa65 patchelf
+sudo apt-get install build-essential autoconf automake bison flex texinfo dos2unix \
+  pkg-config libsdl2-dev libsdl2-image-dev libcurl4-openssl-dev \
+  libasound2-dev libpulse-dev zlib1g-dev subversion xa65 patchelf
 ```
 
 | Platform | Staged runtime | Resource root |
