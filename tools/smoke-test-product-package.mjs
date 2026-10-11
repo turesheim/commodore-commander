@@ -5,6 +5,7 @@ import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { inflateRawSync } from 'node:zlib';
+import { smokeTestVice } from './smoke-test-vice.mjs';
 
 const productName = 'Commodore Commander';
 const sidScoreCliJar = 'sidscore-cli-0.8.0.jar';
@@ -34,6 +35,12 @@ async function main() {
 
   const layout = resolvePackageLayout(options.packageDir);
   verifyPackageLayout(layout);
+  if (process.platform === 'darwin' && process.arch === 'arm64') {
+    await smokeTestVice(path.join(
+      layout.appResourcesDir, 'lib', 'backend', 'assets', 'vice',
+      'darwin-arm64', 'VICE.app', 'Contents', 'Resources'
+    ), options.timeoutMs);
+  }
   await smokeTestSidScore(layout, options);
   console.log(`Product package smoke test passed: ${path.relative(repoRoot, layout.packageDir)}`);
 }
@@ -778,7 +785,7 @@ Runs smoke tests against a packaged Commodore Commander product directory.
 Options:
   --package-dir <path>  Product package directory. Defaults to current platform output.
   --java-command <cmd>  Java command used for SIDScore. Default: java
-  --timeout <ms>        SIDScore startup/protocol timeout. Default: 15000
+  --timeout <ms>        Emulator/player startup timeout. Default: 15000
   -h, --help            Show this help
 `);
 }

@@ -18,6 +18,30 @@ diff --git a/src/arch/shared/macOS-launcher.c b/src/arch/shared/macOS-launcher.c
 +
  int main(int argc, char *argv[])
  {
+diff --git a/src/arch/shared/archdep_program_path.c b/src/arch/shared/archdep_program_path.c
+--- a/src/arch/shared/archdep_program_path.c
++++ b/src/arch/shared/archdep_program_path.c
+@@ -87,7 +87,11 @@
+  * Various OS calls use this buffer to store the path to the running binary, if
+  * such a call exists.
+  */
++#ifdef MACOS_COMPILE
++static char buffer[PROC_PIDPATHINFO_MAXSIZE];
++#else
+ static char buffer[ARCHDEP_PATH_MAX];
++#endif
+
+
+ /** \brief  Set reference to argv[0]
+@@ -201,7 +205,7 @@
+
+     /* get path via libproc */
+     pid_t pid = getpid();
+-    if (proc_pidpath(pid, buffer, sizeof(buffer) - 1) <= 0) {
++    if (proc_pidpath(pid, buffer, sizeof(buffer)) <= 0) {
+         log_error(LOG_DEFAULT,
+                 "failed to retrieve executable path, falling back"
+                 " to getcwd() + argv[0]");
 diff --git a/src/arch/sdl/cc_embed.h b/src/arch/sdl/cc_embed.h
 new file mode 100644
 --- /dev/null

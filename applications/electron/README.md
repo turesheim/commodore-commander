@@ -39,6 +39,10 @@ and applicable VICE assets. The patched embedded VICE build is currently
 supplied for macOS Apple Silicon; other platforms can use an external VICE
 installation.
 
+On macOS Apple Silicon, the package smoke test starts the bundled VICE and
+requires a complete embedded display frame. Its dylib dependency graph is
+bundled without relying on a Homebrew installation on the user's machine.
+
 macOS bundles are ad-hoc signed by default. Developer ID signing is supported;
 notarization and installer image creation remain manual release steps. See the
 [root README](../../README.md#product-packages) for signing configuration.

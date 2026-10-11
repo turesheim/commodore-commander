@@ -104,6 +104,14 @@ Real DAP and Electron UI lanes are described in the
 [VICE E2E rig](vice-e2e-test-rig.md). Linux CI uses stock external VICE; embedded
 transport cases need the patched runtime and are skipped when unsupported.
 
+macOS Apple Silicon product smoke tests check the bundled VICE's early startup
+and require continuing CCB1 frames with visible content over loopback. Native
+packaging includes the complete non-system dylib dependency graph, including
+`@rpath` references and sdl2-compat's dynamically loaded SDL3, and
+removes build-machine search paths so local Homebrew libraries cannot mask
+missing payloads. These checks cover native startup and frame delivery; browser
+painting still belongs to the Electron UI tests.
+
 Runtime extraction is partial. Theia still owns launch/session policy, machine
 selection, JSON validation, browser transport and RPC cleanup; the adapter
 retains its DAP-specific binary-monitor connection. Remaining product gaps

@@ -44,6 +44,7 @@ const supportsBundledViceAssets =
 const viceEmbedDir = path.join(repoRoot, 'tools', 'vice-embed');
 const viceEmbedBuildInputs = [
   path.join(viceEmbedDir, 'Makefile'),
+  path.join(viceEmbedDir, 'bundle-dylibs.mjs'),
   path.join(viceEmbedDir, 'vice-3.10.0-commodore-embed.patch')
 ];
 const target = path.join(
