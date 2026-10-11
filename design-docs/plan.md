@@ -25,7 +25,8 @@ owns DAP-specific monitor behavior. See
    disk models, document analysis and assembled indexes. Input changes still
    trigger full assembly. Namespace and lexical identities now drive navigation
    (including CTRL/CMD+click), references, leaf rename and semantic tokens. Next,
-   align build/editor discovery rules. Outline now uses semantic scopes,
+   maintain the shared default build/editor discovery policy and extend editor
+   filtering to configuration-specific paths. Outline now uses semantic scopes,
    including file namespaces and label blocks. Editor lookup reuses the
    include graph and expands ordinary imports with file scope boundaries; file
    namespaces and directional labels across those imports are supported. Extend
@@ -62,7 +63,7 @@ owns DAP-specific monitor behavior. See
 
 | Area | Implemented | Remaining |
 | --- | --- | --- |
-| Language | Monaco editor services, reference lookup, cached analysis/index assembly and bounded/event-invalidated file/disk snapshots | Conditional/macro expansion, discovery consistency, delta updates and compiler-accurate semantics |
+| Language | Monaco editor services, reference lookup, cached analysis/index assembly and bounded/event-invalidated file/disk snapshots | Conditional/macro expansion, configuration-specific discovery filters, delta updates and compiler-accurate semantics |
 | Build/project | File/path planner, program/profile/run config, backend and headless builds, Theia tasks/markers | Stronger validation, diagnostic attribution, clean-task and configuration UX |
 | Launch | Theia debug/no-debug configurations and generated build-before-debug tasks | Configured-run policy flow, run selection and Active Machine defaults |
 | Debug | DAP binary monitor, breakpoints/watchpoints, Memory/Visual Debugger/Monitor views, disassembly, observed trace history | Broader regressions, richer symbols/trace UX and execution-history provenance |

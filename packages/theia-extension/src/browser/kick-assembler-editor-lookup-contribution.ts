@@ -81,14 +81,6 @@ import { KickAssemblerWorkspaceDocuments } from './kick-assembler-workspace-docu
 import { KickAssemblerWorkspaceLookup } from './kick-assembler-workspace-lookup';
 import { KickAssemblerBuildService } from '../common/kick-assembler-build-service';
 
-const EXCLUDED_DIRECTORY_NAMES = new Set([
-  '.git',
-  '.metadata',
-  '.theia',
-  'node_modules',
-  'target'
-]);
-
 type ScreenCaptureApiWindow = Window & {
   [SCREEN_CAPTURE_API_KEY]?: CommodoreCommanderScreenCaptureApi;
 };
@@ -120,8 +112,7 @@ export class KickAssemblerEditorLookupContribution
   protected readonly lookupService = new KickAssemblerLookupService();
   protected readonly workspaceFiles = new KickAssemblerWorkspaceFiles(
     resource => this.fileService.resolve(resource),
-    hasKickAssemblerExtension,
-    EXCLUDED_DIRECTORY_NAMES
+    hasKickAssemblerExtension
   );
   protected readonly workspaceDocuments = new KickAssemblerWorkspaceDocuments(
     async resource => (await this.fileService.read(resource)).value

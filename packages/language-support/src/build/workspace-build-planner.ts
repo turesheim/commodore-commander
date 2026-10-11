@@ -17,16 +17,7 @@ import {
   type ResolvedKickAssemblerProgramConfiguration
 } from './kick-assembler-build-configuration.ts';
 
-const DEFAULT_EXCLUDED_DIRECTORY_NAMES = new Set([
-  '.git',
-  '.metadata',
-  '.theia',
-  'dist',
-  'node_modules',
-  'out',
-  'src-gen',
-  'target'
-]);
+import { DEFAULT_KICK_ASSEMBLER_EXCLUDED_DIRECTORY_NAMES } from '../project/kick-assembler-source-discovery.ts';
 
 const SID_SCORE_DIRECTIVE = /^\s*\/\/\s*@sidscore\b/iu;
 const SID_SCORE_DECLARATION = /^\s*\/\/\s*@sidscore\s+"((?:\\["\\]|[^"\\])*)"\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s+at\s+(\$[0-9a-f]+|0x[0-9a-f]+|[0-9]+)\s*$/iu;
@@ -88,7 +79,7 @@ export class KickAssemblerWorkspaceBuildPlanner {
 
   constructor(options: KickAssemblerWorkspaceBuildPlannerOptions = {}) {
     this.excludedDirectoryNames =
-      options.excludedDirectoryNames ?? DEFAULT_EXCLUDED_DIRECTORY_NAMES;
+      options.excludedDirectoryNames ?? new Set(DEFAULT_KICK_ASSEMBLER_EXCLUDED_DIRECTORY_NAMES);
   }
 
   async planWorkspaceBuild(

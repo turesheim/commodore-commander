@@ -743,3 +743,37 @@ test('KickAssemblerWorkspaceBuildPlanner limits affected programs to owning root
     [mainPath]
   );
 });
+
+test('default discovery omits generated directories but follows explicit imports and configured roots', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'commodore-commander-generated-discovery-'));
+  try {
+    await mkdir(path.join(root, 'src'), { recursive: true });
+    await writeFile(path.join(root, 'main.asm'), '#import "out/generated.inc"\nEntry: rts\n');
+    await writeFile(path.join(root, 'src', 'utility.asm'), 'Utility: rts\n');
+    await writeFile(path.join(root, 'helper.inc'), 'IncludeOnly: rts\n');
+    await writeFile(path.join(root, 'helper.ka'), 'AlternateExtension: rts\n');
+    for (const directory of ['.git', '.metadata', '.theia', 'dist', 'node_modules', 'out', 'src-gen', 'target']) {
+      await mkdir(path.join(root, directory), { recursive: true });
+      await writeFile(path.join(root, directory, 'copy.asm'), 'Copied: rts\n');
+    }
+    for (const directory of ['dist', 'out', 'src-gen']) {
+      await mkdir(path.join(root, 'src', directory), { recursive: true });
+      await writeFile(path.join(root, 'src', directory, 'copy.asm'), 'NestedCopy: rts\n');
+    }
+    await writeFile(path.join(root, 'out', 'generated.inc'), 'Generated: rts\n');
+    await writeFile(path.join(root, 'dist', 'explicit.asm'), 'Explicit: rts\n');
+    const configuration = resolveKickAssemblerBuildConfiguration(root, {
+      programs: [{ name: 'explicit', root: 'dist/explicit.asm' }]
+    }, { environment: {} });
+    const plan = await new KickAssemblerWorkspaceBuildPlanner().planWorkspaceBuild(root, undefined, { configuration });
+    assert.deepEqual(plan.programs.map(program => program.entryPath).sort(), [
+      path.join(root, 'dist', 'explicit.asm'), path.join(root, 'main.asm'), path.join(root, 'src', 'utility.asm')
+    ]);
+    const main = plan.programs.find(program => program.name === 'main')!;
+    assert.ok(main.dependencyPaths.includes(path.join(root, 'out', 'generated.inc')));
+    assert.ok(plan.sourcePaths.includes(path.join(root, 'dist', 'explicit.asm')));
+    assert.ok(plan.sourcePaths.includes(path.join(root, 'out', 'generated.inc')));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

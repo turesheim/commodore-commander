@@ -1,4 +1,5 @@
 import URI from '@theia/core/lib/common/uri';
+import { DEFAULT_KICK_ASSEMBLER_EXCLUDED_DIRECTORY_NAMES } from '@commodore-commander/language-support/runtime';
 
 interface WorkspaceFileStat {
   resource: URI;
@@ -25,7 +26,7 @@ export class KickAssemblerWorkspaceFiles {
   constructor(
     private readonly resolve: (resource: URI) => Promise<WorkspaceFileStat>,
     private readonly isSourceFile: (resource: URI) => boolean,
-    private readonly excludedDirectories: ReadonlySet<string>,
+    private readonly excludedDirectories: ReadonlySet<string> = new Set(DEFAULT_KICK_ASSEMBLER_EXCLUDED_DIRECTORY_NAMES),
     private readonly now: () => number = Date.now
   ) {}
 

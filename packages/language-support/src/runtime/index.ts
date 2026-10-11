@@ -216,3 +216,5 @@ export type { KickAssemblerSourceNode, KickAssemblerProject } from '../project/k
 
 export { expandKickAssemblerSource } from '../project/kick-assembler-expanded-source.ts';
 export type { KickAssemblerProgramSource, KickAssemblerExpandedSource } from '../project/kick-assembler-expanded-source.ts';
+
+export { DEFAULT_KICK_ASSEMBLER_EXCLUDED_DIRECTORY_NAMES } from '../project/kick-assembler-source-discovery.ts';
