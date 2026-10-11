@@ -4,7 +4,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_dir="$(cd "$script_dir/../.." && pwd)"
 kickass_jar="${KICKASS_JAR:-$repo_dir/resources/KickAss.jar}"
-sidscore_jar="${SIDSCORE_JAR:-$repo_dir/resources/sidscore-cli-0.7.2.jar}"
+sidscore_jar="${SIDSCORE_JAR:-$repo_dir/resources/sidscore-cli-0.7.3.jar}"
 output_jar="${OUTPUT_JAR:-$repo_dir/resources/sidscore-kickass-plugin.jar}"
 
 for dependency in "$kickass_jar" "$sidscore_jar"; do

@@ -4,7 +4,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_dir="$(cd "$script_dir/../.." && pwd)"
 kickass_jar="${KICKASS_JAR:-$repo_dir/resources/KickAss.jar}"
-sidscore_jar="${SIDSCORE_JAR:-$repo_dir/resources/sidscore-cli-0.7.2.jar}"
+sidscore_jar="${SIDSCORE_JAR:-$repo_dir/resources/sidscore-cli-0.7.3.jar}"
 plugin_jar="${OUTPUT_JAR:-$repo_dir/resources/sidscore-kickass-plugin.jar}"
 score_path="$script_dir/src/test/fixtures/effect_with_voice.sidscore"
 

@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { inflateRawSync } from 'node:zlib';
 
 const productName = 'Commodore Commander';
-const sidScoreCliJar = 'sidscore-cli-0.7.2.jar';
+const sidScoreCliJar = 'sidscore-cli-0.7.3.jar';
 const sidScorePluginJar = 'sidscore-kickass-plugin.jar';
 const sidScoreMainClass = 'net/resheim/sidscore/SIDScoreCLI.class';
 const sidScoreModuleExporterClass = 'net/resheim/sidscore/export/SIDScoreModuleExporter.class';
