@@ -67,14 +67,14 @@ test('namespace lookup separates identical leaf names and does not expose them a
 
 test('forward and reopened namespace lookup is independent of document order', () => {
   const usage = document('.namespace Shared {\n lda VALUE\n}\n lda Shared.VALUE', 'usage');
-  const declaration = document('.namespace Shared {\n .const VALUE = 1\n}', 'declaration');
+  const declaration = document('.namespace Shared {\n .label VALUE = 1\n}', 'declaration');
   const service = new KickAssemblerLookupService();
   for (const documents of [[usage, declaration], [declaration, usage]]) {
     const index = build(service, ...documents);
     const result = lookup(service, usage, index, 'Shared.VALUE')!;
     assert.equal(result.declarations[0]!.location.uri, declaration.uri);
     assert.equal(result.references.length, 2);
-    assert.equal(result.references.every(reference => reference.kind === 'constant'), true);
+    assert.equal(result.references.every(reference => reference.kind === 'label'), true);
   }
 });
 
@@ -88,12 +88,14 @@ test('nested namespaces resolve nearest declarations, parent names and explicit 
   const service = new KickAssemblerLookupService();
   const index = build(service, source);
   const expected = new Map([[6, 'Outer.Inner.VALUE'], [7, 'Outer.PARENT'], [8, 'VALUE'],
-    [10, 'Outer.VALUE'], [11, 'Outer.Inner.VALUE'], [13, 'VALUE'], [14, 'Outer.Inner.VALUE']]);
+    [10, 'Outer.VALUE'], [13, 'VALUE']]);
   for (const [line, name] of expected) {
     const result = service.lookupAtPosition(source, { line, character: 5 }, index)!;
     assert.equal(result.declarations[0]!.qualifiedName, name);
   }
   assert.equal(index.projectReferencesByName.get('VALUE')!.length, 2);
+  assert.equal(service.lookupAtPosition(source, { line: 11, character: 5 }, index), undefined);
+  assert.equal(service.lookupAtPosition(source, { line: 14, character: 5 }, index), undefined);
 });
 
 test('root-escaped declarations have the same identity through semantic, scanner and editor paths', () => {
@@ -173,9 +175,10 @@ test('workspace symbols expose namespace containers and semantic tokens use the 
   assert.deepEqual(symbols.map(symbol => symbol.containerName).sort(), ['Constants', 'Labels']);
   assert.equal(findKickAssemblerWorkspaceSymbols(index, 'Constants.Value').length, 1);
   const tokens = buildKickAssemblerSemanticTokens(source, index);
-  for (const [line, type] of [[2, 'label'], [6, 'variable'], [8, 'label'], [9, 'variable']] as const) {
+  for (const [line, type] of [[2, 'label'], [6, 'variable'], [8, 'label']] as const) {
     assert.equal(tokens.find(token => token.location.range.start.line === line && token.location.range.start.character === 4)!.type, type);
   }
+  assert.equal(tokens.find(token => token.location.range.start.line === 9 && token.location.range.start.character === 4), undefined);
 });
 
 test('cached bindings stay isolated and rebuild when unsaved namespace boundaries change', () => {

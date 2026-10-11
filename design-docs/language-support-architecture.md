@@ -40,16 +40,19 @@ integration into their dependency graph.
    its own path. SIDScore outline scans subtunes/effects. Aligning these paths
    with richer semantic lookup remains work.
 5. Lookup reads the semantic model directly and collects all declarations before
-   binding source tokens to case-sensitive qualified names. Multiline namespace
-   blocks resolve from the innermost namespace through parents to root; `@`
-   selects root directly. Reopened namespaces share names across supplied files.
+   binding source tokens to case-sensitive identities through
+   `KickAssemblerScopeResolver`. Anonymous blocks/parameters use private
+   document/scope keys; named namespaces and label scopes expose qualified
+   label members. Constants/variables stay lexical; reopened namespaces share
+   their associated lexical scope. Resolution follows parents, with `@`
+   selecting root directly; nearer entities shadow qualified paths.
    Scope body ranges end at their closing brace or EOF for unfinished text.
    Project declarations win; the active machine filters hardware references.
    Editor features consume this index/model and return framework-neutral edits,
    ranges, tokens and symbols. Rename changes the leaf identifier while keeping
    prefixes; semantic tokens use the same bindings, and workspace symbols carry
-   namespace containers. Namespace renames and duplicate-declaration renames are
-   rejected. Hover formatting preserves reference HTML.
+   named containers. Namespace/label-scope owner and duplicate-declaration
+   renames are rejected. Hover formatting preserves reference HTML.
 
 The long-lived lookup service caches project/XML analysis and the last assembled
 index. Reuse compares ordered URI/kind/text/language inputs and active machine,
@@ -60,6 +63,11 @@ locations, address ranges and token bindings. Reference aliases within one
 result are preserved.
 
 Theia owns file selection, open-editor overlays, bundled XML and Monaco adapters.
+Its definition links carry the full source-token range; native CTRL/CMD+click
+and F12 use the same resolved targets. Monaco honors the multicursor preference
+by moving click navigation to Alt/Option when CTRL/CMD is reserved for cursors.
+`tools/run-language-navigation-ui-e2e.mjs` exercises real modifier-clicks across
+files and separate label scopes; it runs with the existing Linux UI CI job.
 Its `KickAssemblerWorkspaceFiles` shares discovery per root across lookup,
 workspace symbols and include completion. Structural file notifications and
 completed operations invalidate overlapping roots, including moved directories.
@@ -93,8 +101,8 @@ outline/syntax slice.
 ## Remaining work
 
 - Per-document index updates beyond the implemented whole-snapshot reuse.
-- Lexical block/label scopes, local/anonymous labels, `.filenamespace`, namespace
-  rename and import-site namespace context. Namespace-aware completion and
+- Directional multi-labels, `.filenamespace`, inline block bodies and import-site
+  namespace context. Scope-owner/prefix rename, scope-aware completion and
   compiler-grade rename conflict checking also remain work.
 - Include-graph-precise lookup and consistency between outline and semantic paths.
 - Compiler-accurate semantics/diagnostics: configured conditional evaluation,

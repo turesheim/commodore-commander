@@ -92,9 +92,12 @@ export function buildKickAssemblerRenamePlan(
 }
 
 function canRenameDeclarations(declarations: readonly KickAssemblerLookupOccurrence[]): boolean {
-  // Namespace renames need edits to every qualified prefix, not just references
-  // bound to the namespace itself. Also avoid ambiguous duplicate declarations.
-  return declarations.length === 1 && declarations[0]?.kind !== 'namespace';
+  // Namespace/label-scope owner renames need edits to qualified member prefixes,
+  // not just directly bound references. Multi-label direction binding remains
+  // unsupported; avoid incomplete renames and ambiguous declarations as well.
+  return declarations.length === 1 && declarations[0]?.kind !== 'namespace' &&
+    declarations[0]?.kind !== 'local-label' && declarations[0]?.kind !== 'anonymous-label' &&
+    !declarations[0]?.hasMemberScope;
 }
 
 function leafName(name: string): string {

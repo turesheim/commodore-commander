@@ -183,6 +183,12 @@ jobs:
       - name: Run Theia debugger UI e2e tests
         run: bash tools/run-theia-ui-e2e-linux.sh
 
+      - name: Run language unit tests
+        run: npm test --workspace @commodore-commander/language-support
+
+      - name: Run language navigation UI e2e tests
+        run: bash tools/run-with-xvfb.sh npm run test:e2e:language:ui
+
       - name: Upload Theia UI e2e diagnostics
         if: failure()
         uses: actions/upload-artifact@v6
