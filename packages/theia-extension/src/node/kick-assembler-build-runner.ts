@@ -190,7 +190,7 @@ export function getBundledSidScoreKickAssPluginJarPath(
   );
 }
 
-function getBundledSidScoreCliJarPathForBuild(
+export function getBundledSidScoreCliJarPathForBuild(
   runtimeDirectory = __dirname
 ): string {
   return findBundledSidScoreJarPath(SID_SCORE_CLI_JAR_FILENAME, runtimeDirectory);

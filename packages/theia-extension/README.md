@@ -6,6 +6,8 @@ services to the Theia/Electron product.
 ## Responsibilities
 
 - branding, welcome page, menus, bundled help, and machine/profile selection
+- Help/welcome runtime setup report for Java 21+, bundled tool files and the
+  selected VICE executable/protocol; configuration and UI policy stay here
 - Monaco language registration, syntax, hover, completion, navigation, rename,
   outline, workspace symbols, semantic tokens, folding, formatting, and fixes
 - Kick Assembler build execution, build console, build-on-save, profile

@@ -127,6 +127,8 @@ import {
   installDebugSourceBreakpointTogglePatch
 } from './commodore-vice-debug-source-breakpoint-patch';
 import { CommodoreCommanderWelcomeContribution } from './commodore-commander-welcome-contribution';
+import { RuntimeSetupService, RuntimeSetupServicePath } from '../common/runtime-setup-service';
+import { RuntimeSetupContribution } from './runtime-setup-contribution';
 import { ViceMemoryContribution } from './vice-memory-contribution';
 import {
   VICE_MEMORY_WIDGET_ID,
@@ -202,6 +204,12 @@ const commodoreCommanderToolbarDefaults: typeof ToolbarDefaults = () => {
 };
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
+  bind(RuntimeSetupService).toDynamicValue(context =>
+    WebSocketConnectionProvider.createProxy(context.container, RuntimeSetupServicePath)
+  ).inSingletonScope();
+  bind(RuntimeSetupContribution).toSelf().inSingletonScope();
+  bind(CommandContribution).toService(RuntimeSetupContribution);
+  bind(MenuContribution).toService(RuntimeSetupContribution);
   installDebugSourceBreakpointTogglePatch();
   rebind(MonacoThemingService)
     .to(CommodoreCommanderThemingService)

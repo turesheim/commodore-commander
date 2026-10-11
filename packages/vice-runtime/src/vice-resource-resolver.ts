@@ -36,8 +36,9 @@ export async function resolveViceRuntime(
     ? executableResourceCandidates(executable)
     : [];
 
-  const resourceCandidates = [
-    ...(configuredResourcesPath ? [configuredResourcesPath] : []),
+  // A configured installation is an override, not a discovery hint. Falling
+  // back here can pair one installation's executable with another's ROMs.
+  const resourceCandidates = configuredResourcesPath ? [configuredResourcesPath] : [
     ...executableResourcesCandidates,
     ...bundledViceResourceCandidates(runtimeDirectory),
     ...systemViceResourceCandidates()
@@ -55,7 +56,9 @@ export async function resolveViceRuntime(
 
   if (configuredResourcesPath) {
     throw new Error(
-      `Configured VICE resources path does not contain ${VICE_RESOURCES_SUBDIRECTORY} or ${VICE_C64_RESOURCE_SUBDIRECTORY}: ${configuredResourcesPath}.`
+      `Configured VICE resources path does not contain ${VICE_RESOURCES_SUBDIRECTORY} or ${VICE_C64_RESOURCE_SUBDIRECTORY}: ${configuredResourcesPath}. ` +
+      `Correct the configured path or clear it to enable automatic discovery. ` +
+      (options.resourcesPathHint ?? '')
     );
   }
 

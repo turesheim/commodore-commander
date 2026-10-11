@@ -39,8 +39,12 @@ requirements.
 
 Platform scope bounds the other gates. Nightlies package macOS, Windows and
 Linux, but patched embedded VICE currently targets macOS Apple Silicon only;
-package availability does not establish identical feature support. Java 21+ is
-currently external. Nightlies skip unchanged commits unless explicitly forced.
+1.0 requires our patched display/input transport on all supported platforms.
+Stock external VICE remains a compatibility option, not a replacement for this
+release requirement. CPU/OS/model coverage still needs verification. Java 21+ is
+currently external; Check Runtime Setup reports loading/protocol readiness and
+configuration errors without booting a machine. Live frame/input/debug checks
+remain separate acceptance gates. Nightlies skip unchanged commits unless explicitly forced.
 Signing/notarization and stable-release installation remain work.
 
 Existing 1.0 feature commitments remain visible: SIDScore language reference and

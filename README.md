@@ -151,6 +151,13 @@ Note that export to SID/ASM is not a very efficient format. If you need to optim
 
 Commodore Commander contributes a Theia-native `commodore-vice` [Debug Adapter Protocol](https://microsoft.github.io/debug-adapter-protocol/) (DAP) adapter for launching PRG files in [VICE](https://vice-emu.sourceforge.io). Launch configurations can be provided in `.theia/launch.json`, generated from the active [Kick Assembler](https://theweb.dk/KickAssembler/Main.html#frontpage) file, or discovered from `commodore-commander.build.json`.
 
+Before the first build/run, use **Help → Check Runtime Setup** to check Java 21+,
+bundled tools and the selected VICE executable/protocol. The offline
+[Runtime Setup guide](bundled-docs/runtime-setup.md) explains current platform
+coverage, installation paths and troubleshooting. Our patched VICE display/input
+transport is required on all supported platforms for 1.0; Windows/Linux payloads
+are still pending. The setup probe does not replace live execution tests.
+
 Press **F5** from a Kick Assembler source file to build the active program,
 start a `commodore-vice` debug session, and attach Theia's debugger to VICE's
 binary monitor. The embedded **Emulator** view is the live VICE display used by
