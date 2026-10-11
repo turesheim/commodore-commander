@@ -80,7 +80,7 @@ export const COMMODORE_COMMANDER_TOOL_PREFERENCE_SCHEMA: PreferenceSchema = {
       type: 'string',
       default: '',
       description:
-        'Java command or absolute path used for Kick Assembler and SIDScore. COMMODORE_COMMANDER_JAVA_RUNTIME and explicit runtime requests take precedence.'
+        'Java command or absolute path used for Kick Assembler and SIDScore. SIDScore requires Java 21 or newer. Build configurations and explicit runtime requests can override this default.'
     }
   }
 };

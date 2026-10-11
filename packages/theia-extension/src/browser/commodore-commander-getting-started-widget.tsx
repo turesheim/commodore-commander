@@ -9,12 +9,14 @@ import {
   openBundledDocumentationPreview
 } from './commodore-commander-bundled-docs';
 import { COMMODORE_COMMANDER_APP_ICON_URL } from './commodore-commander-branding';
+import { COMMODORE_COMMANDER_PATCHED_VICE_BASE_VERSION } from '../common/commodore-vice-embed';
+import { CHECK_RUNTIME_SETUP } from './runtime-setup-contribution';
 
 // Source: net.sourceforge.vice/about.properties.
 const VICE_BRANDING = {
   name: 'Versatile Commodore Emulator',
   shortName: 'VICE',
-  version: '3.9',
+  version: COMMODORE_COMMANDER_PATCHED_VICE_BASE_VERSION,
   description:
     'An emulator supporting C64, the C64DTV, the C128, the VIC20, practically all PET models, the PLUS4 and the CBM-II (aka C610/C510). An extra emulator is provided for C64 expanded with the CMD SuperCPU.',
   copyright:
@@ -59,7 +61,7 @@ export class CommodoreCommanderGettingStartedWidget extends GettingStartedWidget
         </div>
         <div className='cc-welcome-summary'>
           <p>
-            Commodore Commander brings support for building applications for the classical 7-bit Commodore computers,
+            Build applications for classic 8-bit Commodore computers.
           </p>
           <p>
             The workbench keeps 6502 mnemonic help, C64 I/O register reference
@@ -80,14 +82,15 @@ export class CommodoreCommanderGettingStartedWidget extends GettingStartedWidget
         className='cc-welcome-embedded-runtime'
       >
         <div className='cc-welcome-runtime-heading'>
-          <span className='cc-welcome-runtime-kicker'>Embedded runtime</span>
+          <span className='cc-welcome-runtime-kicker'>Emulator runtime</span>
           <h2 id='cc-welcome-vice-heading'>
             {VICE_BRANDING.shortName} - {VICE_BRANDING.name}
           </h2>
         </div>
         <p>
-          Commodore Commander includes VICE {VICE_BRANDING.version} for local
-          emulator launch support. {VICE_BRANDING.description}
+          The macOS Apple Silicon package includes patched VICE {VICE_BRANDING.version}.
+          Other platforms currently require a configured VICE installation.
+          Use Check Runtime Setup to check Java and the selected emulator.
         </p>
         <p>
           {VICE_BRANDING.license}{' '}
@@ -110,6 +113,19 @@ export class CommodoreCommanderGettingStartedWidget extends GettingStartedWidget
           <i className={codicon('book')} />
           Help
         </h3>
+        <div className='gs-action-container'>
+          <a role='button' tabIndex={0}
+            onClick={() => this.commandRegistry.executeCommand(CHECK_RUNTIME_SETUP.id)}
+            onKeyDown={event => {
+              if (this.isEnterKey(event)) {
+                event.preventDefault();
+                void this.commandRegistry.executeCommand(CHECK_RUNTIME_SETUP.id);
+              }
+            }}>
+            Check Runtime Setup
+          </a>
+          <span className='gs-action-details'>Check Java, bundled tools and VICE before building or running</span>
+        </div>
         {BUNDLED_DOCUMENTS.map(document => (
           <div className='gs-action-container' key={document.path}>
             <a

@@ -70,6 +70,17 @@ test('resolveViceRuntime accepts a direct VICE data directory', async () => {
   }
 });
 
+test('an invalid explicit runtime cannot silently fall back to a valid bundled copy', async t => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'cc-vice-override-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const bundled = path.join(root, 'assets', 'vice', `${process.platform}-${process.arch}`);
+  await mkdir(path.join(bundled, 'share', 'vice'), { recursive: true });
+  await assert.rejects(resolveViceRuntime({
+    runtimeDirectory: root, resourcesPath: path.join(root, 'missing')
+  }), /Correct the configured path or clear it/u);
+  assert.equal((await resolveViceRuntime({ runtimeDirectory: root })).resourcesPath, bundled);
+});
+
 test('resolveViceRuntime prefers resources beside explicit executable path over bundled runtime', async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'cc-vice-runtime-'));
 

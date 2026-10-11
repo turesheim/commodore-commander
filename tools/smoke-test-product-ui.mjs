@@ -22,7 +22,7 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
   const readyRows = Array.from({ length: 8 }, (_, row) => readyScreenCodes.flatMap(code =>
     Array.from({ length: 8 }, (_, col) => (chargen[code * 8 + row] >> (7 - col)) & 1)
   ));
-  const captures = [1, 2].map(cycle => ({
+  const machineCaptures = [1, 2].map(cycle => ({
     outputPath: path.join(outputDir, `machine-${cycle}.png`),
     steps: [
       { type: 'openMachineView' },
@@ -38,6 +38,25 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
       { type: 'waitForVisibleText', selector: '.cc-machine-profile-widget', text: 'Powered off', timeoutMs: 10000 }
     ]
   }));
+  const captures = [
+    {
+      outputPath: path.join(outputDir, 'runtime-setup.png'),
+      steps: [
+        { type: 'executeCommand', commandId: 'commodoreCommander.checkRuntimeSetup' },
+        ...['Java: Ready', 'Bundled tools: Ready', 'VICE: Ready', 'embedded protocol detected'].map(text => ({
+          type: 'waitForVisibleText', selector: '[data-runtime-setup-report]', text, timeoutMs: 15000
+        }))
+      ],
+      afterSteps: [
+        { type: 'clickVisibleText', selector: '.dialogBlock button', text: 'Open Setup Guide', timeoutMs: 10000 }
+      ]
+    },
+    {
+      outputPath: path.join(outputDir, 'runtime-guide.png'),
+      steps: [{ type: 'waitForVisibleText', selector: 'body', text: 'Stock VICE cannot send frames', timeoutMs: 10000 }]
+    },
+    ...machineCaptures
+  ];
   await writeFile(configPath, JSON.stringify({
     outputDir, sourcePath, timeoutMs, viewportWidth: 1440, viewportHeight: 900, captures
   }, null, 2));
@@ -75,16 +94,16 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
         `Packaged Electron UI did not finish within ${timeoutMs} ms.`
       )), timeoutMs);
     });
-    if (log.split('Verified visible canvas content in .cc-machine-vice-screen canvas.').length - 1 !== captures.length) {
+    if (log.split('Verified visible canvas content in .cc-machine-vice-screen canvas.').length - 1 !== machineCaptures.length) {
       throw new Error('Packaged app did not execute every canvas-content assertion.');
     }
-    if (log.split('Verified canvas keyboard response in .cc-machine-vice-screen canvas.').length - 1 !== captures.length) {
+    if (log.split('Verified canvas keyboard response in .cc-machine-vice-screen canvas.').length - 1 !== machineCaptures.length) {
       throw new Error('Packaged app did not execute every keyboard-response assertion.');
     }
-    if (log.split('Verified canvas glyphs in .cc-machine-vice-screen canvas.').length - 1 !== captures.length) {
+    if (log.split('Verified canvas glyphs in .cc-machine-vice-screen canvas.').length - 1 !== machineCaptures.length) {
       throw new Error('Packaged app did not execute every BASIC-ready assertion.');
     }
-    if (log.split('Replayed a queued Machine frame after power off.').length - 1 !== captures.length) {
+    if (log.split('Replayed a queued Machine frame after power off.').length - 1 !== machineCaptures.length) {
       throw new Error('Packaged app did not execute every late-frame regression check.');
     }
     for (const capture of captures) {
@@ -93,7 +112,7 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
         throw new Error(`Missing valid UI screenshot: ${capture.outputPath}`);
       }
     }
-    console.log('Packaged Electron UI smoke test passed: editor opened, Machine rendered visible content and executed BASIC keyboard input, power off and restart succeeded.');
+    console.log('Packaged Electron UI smoke test passed: runtime setup and offline guide opened, Machine rendered visible content and executed BASIC keyboard input, power off and restart succeeded.');
   } catch (error) {
     throw new Error(`${error.message}\n${log.trim()}\nUI artifacts: ${outputDir}`);
   } finally {

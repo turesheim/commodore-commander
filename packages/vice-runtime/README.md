@@ -64,6 +64,12 @@ JSON still throws, allowing each consumer to retain its error/output policy.
 Command fields are serialized unchanged. This codec does not implement reserved
 input commands in the native VICE patch.
 
+`probeViceRuntime` runs a bounded `-version` process to check native executable
+loading. Embedded checks also pass `-cc-embed` and require the versioned CCV1
+hello; stock VICE cannot pass solely by printing a version. This does not boot
+a machine or validate live frames/input. Explicit invalid resource overrides
+fail instead of falling back to another installation.
+
 The Theia backend still chooses standalone versus debug ownership, resolves
 machine/preferences, chooses protocol commands, reports status, interprets
 stdout JSON events and fallback frames, and manages the browser WebSocket bridge.

@@ -61,6 +61,11 @@ export interface BundledDocumentationEntry {
 // copied into the product, but should not appear as standalone help items.
 export const BUNDLED_DOCUMENTS: readonly BundledDocumentationEntry[] = [
   {
+    path: 'runtime-setup.md',
+    label: 'Runtime Setup',
+    details: 'Java and VICE setup, current platform coverage and troubleshooting'
+  },
+  {
     path: 'editing-user-guide.md',
     label: 'Editing User Guide',
     details: 'Source editing, lookup, rename and build feedback workflows'

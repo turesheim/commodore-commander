@@ -101,6 +101,21 @@ files are authoritative for source-authored `.break` checkpoints. DAP-managed
 source breakpoints use the binary monitor. Detailed reconciliation, source
 fallback and diagnostic rules are in [Debugger Support](debugger.md).
 
+## Runtime setup checks
+
+The Theia `RuntimeSetupService` probes the first workspace folder's Java/tool
+defaults and the Active Machine emulator. The shared runtime probe invokes
+`-version`, adding `-cc-embed` when embedded mode is selected, and requires the
+CCV1 hello protocol in that mode. It checks executable loading, not live frames,
+keyboard input, all ROM/model files or successful DAP sessions. Probes have a
+five-second deadline and bounded output. Help and welcome expose the same report
+and offline setup guide. Explicit invalid runtime paths fail instead of silently
+mixing the chosen executable with another installation's resources.
+
+1.0 requires patched VICE display/input transport on every supported platform;
+stock external VICE remains an optional compatibility mode. Linux/Windows
+payloads and clean-host/minimum-OS acceptance remain unfinished.
+
 ## Verification and remaining work
 
 Runtime and adapter tests cover protocol, process, framing and monitor behavior.

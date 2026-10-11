@@ -23,8 +23,14 @@ import { KickAssemblerBuildServiceImpl } from './kick-assembler-build-service-im
 import { SidScoreRuntimeServiceImpl } from './sidscore-runtime-service-impl';
 import { CommodoreViceDebugAdapterContribution } from './commodore-vice-debug-adapter-contribution';
 import { CommodoreViceEmbedServiceImpl } from './commodore-vice-embed-service-impl';
+import { RuntimeSetupServicePath } from '../common/runtime-setup-service';
+import { RuntimeSetupServiceImpl } from './runtime-setup-service-impl';
 
 export default new ContainerModule((bind) => {
+  bind(RuntimeSetupServiceImpl).toSelf().inSingletonScope();
+  bind(ConnectionHandler).toDynamicValue(context =>
+    new RpcConnectionHandler(RuntimeSetupServicePath, () => context.container.get(RuntimeSetupServiceImpl))
+  ).inSingletonScope();
   bind(CommodorePrgServiceImpl).toSelf().inSingletonScope();
   bind(KickAssemblerBuildServiceImpl).toSelf().inSingletonScope();
   bind(SidScoreRuntimeServiceImpl).toSelf().inSingletonScope();
