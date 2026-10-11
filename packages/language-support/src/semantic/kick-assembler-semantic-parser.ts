@@ -93,14 +93,21 @@ const BUILD_DIRECTIVES = new Set([
   'importonce'
 ]);
 
+export interface KickAssemblerSourceFileBoundary {
+  startLine: number;
+  endLine: number;
+}
+
 export function parseKickAssemblerSemanticModel(
-  document: TextDocumentModel
+  document: TextDocumentModel,
+  fileBoundaries: readonly KickAssemblerSourceFileBoundary[] = []
 ): KickAssemblerSemanticModel {
-  return new KickAssemblerSemanticParser(document).parse();
+  return new KickAssemblerSemanticParser(document, fileBoundaries).parse();
 }
 
 class KickAssemblerSemanticParser {
   private readonly document: TextDocumentModel;
+  private readonly fileBoundaries: readonly KickAssemblerSourceFileBoundary[];
   private readonly scopes: KickAssemblerSemanticScope[] = [];
   private readonly symbols: KickAssemblerSemanticSymbol[] = [];
   private readonly imports: KickAssemblerSemanticImport[] = [];
@@ -114,15 +121,46 @@ class KickAssemblerSemanticParser {
   private pendingDataSymbol: KickAssemblerSemanticSymbol | undefined;
   private activeDataBlock: ActiveDataBlock | undefined;
 
-  constructor(document: TextDocumentModel) {
+  constructor(document: TextDocumentModel,
+    fileBoundaries: readonly KickAssemblerSourceFileBoundary[]) {
     this.document = document;
+    this.fileBoundaries = fileBoundaries;
   }
 
   parse(): KickAssemblerSemanticModel {
     const root = this.createScope('root', undefined, this.documentRangeLocation());
     this.scopeStack.push(root);
 
+    const boundariesByEnd = new Map<number, KickAssemblerSourceFileBoundary[]>();
+    const boundariesByStart = new Map<number, KickAssemblerSourceFileBoundary>();
+    const savedScopes = new Map<KickAssemblerSourceFileBoundary, KickAssemblerSemanticScope[]>();
+    for (const boundary of this.fileBoundaries) {
+      const boundaries = boundariesByEnd.get(boundary.endLine) ?? [];
+      boundaries.push(boundary);
+      boundariesByEnd.set(boundary.endLine, boundaries);
+      boundariesByStart.set(boundary.startLine, boundary);
+    }
     for (let lineIndex = 0; lineIndex < this.document.lineCount; lineIndex += 1) {
+      // #import starts in global scope; returning restores the caller's scope.
+      // Distinct file roots also prevent the caller's enclosing range from
+      // capturing a child's tokens. Their global multi-label scope is shared.
+      for (const boundary of boundariesByEnd.get(lineIndex) ?? []) {
+        for (const scope of this.scopeStack) {
+          if (scope !== root) scope.range.end = { line: lineIndex, character: 0 };
+        }
+        this.scopeStack.splice(0, this.scopeStack.length, ...(savedScopes.get(boundary) ?? [root]));
+      }
+      const boundary = boundariesByStart.get(lineIndex);
+      if (boundary) {
+        savedScopes.set(boundary, [...this.scopeStack]);
+        this.scopeStack.length = 0;
+        const fileRoot = this.createScope('root', undefined, {
+          uri: this.document.uri, range: { start: { line: lineIndex, character: 0 },
+            end: { line: boundary.endLine, character: 0 } }
+        });
+        fileRoot.range.end = { line: boundary.endLine, character: 0 };
+        this.scopeStack.push(fileRoot);
+      }
       const parsedLine = this.stripComments(this.document.lineAt(lineIndex));
       this.parseLine(parsedLine, lineIndex);
     }

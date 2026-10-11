@@ -101,8 +101,26 @@ test('rename expands shared declaration owners and preserves callers outside the
   assert.deepEqual(paths(navigation), ['/project/a.asm', '/project/shared.inc']);
   const context = await lookup.getDocuments(uri('/project/shared.inc'), candidates, new Map(), configuration, true);
   const source = context.documents.find(document => document.uri === 'file:///project/a.asm')!;
-  const index = new KickAssemblerLookupService().buildIndex(context.documents.map(document => ({ kind: 'kickassembler', document })));
+  const index = new KickAssemblerLookupService().buildProgramIndex(
+    context.documents.map(document => ({ kind: 'kickassembler', document })), context.programs);
   const rename = buildKickAssemblerRenamePlan(source, { line: 1, character: 5 }, 'Renamed', index)!;
   assert.deepEqual(rename.edits.map(edit => new URI(edit.uri).path.toString()).sort(),
     ['/project/a.asm', '/project/b.asm', '/project/shared.inc']);
+});
+
+
+test('workspace overlays reach expanded import targets without inheriting caller namespace', async () => {
+  const { lookup, candidates } = fixture([
+    ['/project/main.asm', '.namespace Caller {\n#import "library.inc"\nAfter: nop\njsr After\n}\njmp !cross+'],
+    ['/project/library.inc', 'Wrong: rts'], ['/project/next.inc', '!cross: nop\nGlobal: rts']
+  ]);
+  const overlays = new Map([['file:///project/main.asm',
+    '.namespace Caller {\n#import "next.inc"\nAfter: nop\njsr After\n}\njmp !cross-\njsr Global']]);
+  const context = await lookup.getDocuments(uri('/project/main.asm'), candidates, overlays, defaults);
+  const service = new KickAssemblerLookupService();
+  const index = service.buildProgramIndex(context.documents.map(document => ({ kind: 'kickassembler', document })), context.programs);
+  const main = context.documents.find(document => document.uri === 'file:///project/main.asm')!;
+  assert.equal(service.lookupAtPosition(main, { line: 3, character: 5 }, index)!.declarations[0]!.qualifiedName, 'Caller.After');
+  assert.equal(service.lookupAtPosition(main, { line: 5, character: 6 }, index)!.declarations[0]!.location.uri, 'file:///project/next.inc');
+  assert.equal(service.lookupAtPosition(main, { line: 6, character: 5 }, index)!.declarations[0]!.qualifiedName, 'Global');
 });

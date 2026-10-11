@@ -1,6 +1,6 @@
 import URI from '@theia/core/lib/common/uri';
 import { createTextDocumentModel, KickAssemblerProjectLoader,
-  type KickAssemblerSourceGraph, type TextDocumentModel } from '@commodore-commander/language-support/runtime';
+  type KickAssemblerSourceGraph, type KickAssemblerProgramSource, type TextDocumentModel } from '@commodore-commander/language-support/runtime';
 import type { KickAssemblerWorkspaceLookupConfiguration } from '../common/kick-assembler-build-service';
 
 /** URI/editor adapters around the same include graph used by the build planner. */
@@ -42,6 +42,7 @@ export class KickAssemblerWorkspaceLookup {
     };
     const key = current.toString();
     const selected = new Map<string, TextDocumentModel>();
+    const programs: KickAssemblerProgramSource[] = [];
     const add = (documents: Iterable<TextDocumentModel>) => {
       for (const document of documents) selected.set(document.uri, document);
     };
@@ -50,7 +51,10 @@ export class KickAssemblerWorkspaceLookup {
     const ownPrograms = configuration.programs.filter(program => program.entryUri === key);
     for (const program of ownPrograms.length > 0 && !includeAllOwners ? ownPrograms : configuration.programs) {
       const project = await graph([new URI(program.entryUri)], program.libraryRootUris);
-      if (project.documents.has(key)) add([...project.documents.values()].map(node => node.document));
+      if (project.documents.has(key)) {
+        add([...project.documents.values()].map(node => node.document));
+        programs.push({ graph: project, rootUri: program.entryUri });
+      }
     }
     let hasOwners = selected.size > 0;
     if (!hasOwners) {
@@ -62,14 +66,20 @@ export class KickAssemblerWorkspaceLookup {
       for (const root of sourceGraph.roots) {
         if (!candidateKeys.has(root.document.uri) || included.has(root.document.uri) || configured.has(root.document.uri)) continue;
         const closure = reachable(sourceGraph, root.document.uri);
-        if (closure.has(key)) add(closure.values());
+        if (closure.has(key)) {
+          add(closure.values());
+          programs.push({ graph: sourceGraph, rootUri: root.document.uri });
+        }
       }
       hasOwners = selected.size > 0;
       // Orphan files, cyclic components and files outside a workspace still
       // have their own reachable includes, never every unrelated workspace file.
-      if (selected.size === 0) add(reachable(sourceGraph, key).values());
+      if (selected.size === 0) {
+        add(reachable(sourceGraph, key).values());
+        programs.push({ graph: sourceGraph, rootUri: key });
+      }
     }
-    return { documents: [...selected.values()], resources: [...reads.keys()].map(uri => new URI(uri)), hasOwners };
+    return { documents: [...selected.values()], programs, resources: [...reads.keys()].map(uri => new URI(uri)), hasOwners };
   }
 }
 

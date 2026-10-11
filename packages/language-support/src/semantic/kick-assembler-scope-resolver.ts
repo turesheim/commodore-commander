@@ -6,16 +6,18 @@ import type {
   KickAssemblerSemanticSymbol
 } from './kick-assembler-semantic-model.ts';
 
-/** Structural lexical binding; expansion and import-site context remain caller work. */
+/** Lexical binding for a document or a caller-supplied expanded program. */
 export class KickAssemblerScopeResolver {
   private readonly model: KickAssemblerSemanticModel;
+  private readonly expandedSource: boolean;
   private readonly scopesById: ReadonlyMap<string, KickAssemblerSemanticScope>;
   private readonly scopeKeys = new Map<string, string>();
   private readonly memberScopeDeclarations: ReadonlySet<string>;
   private readonly multiLabelsByName = new Map<string, KickAssemblerSemanticSymbol[]>();
 
-  constructor(model: KickAssemblerSemanticModel) {
+  constructor(model: KickAssemblerSemanticModel, expandedSource = false) {
     this.model = model;
+    this.expandedSource = expandedSource;
     this.scopesById = new Map(model.scopes.map(scope => [scope.id, scope]));
     this.memberScopeDeclarations = new Set(model.scopes
       .filter(scope => scope.kind === 'block' && scope.name)
@@ -79,21 +81,25 @@ export class KickAssemblerScopeResolver {
   private resolveMultiLabel(position: DocumentPosition, name: string): string | undefined {
     const reference = parseMultiLabelReference(name);
     if (!reference) return undefined;
-    const visibleScopes = new Set<string>();
+    const visibleScopes = new Map<string, number>();
     let scope: KickAssemblerSemanticScope | undefined = this.scopeAt(position);
     while (scope) {
-      visibleScopes.add(this.privateScopeKey(scope));
+      visibleScopes.set(this.privateScopeKey(scope), visibleScopes.size);
       scope = scope.parentId ? this.scopesById.get(scope.parentId) : undefined;
     }
     const candidates = (this.multiLabelsByName.get(reference.name) ?? []).filter(symbol =>
       visibleScopes.has(this.privateScopeKey(this.scopesById.get(symbol.scopeId)!)) &&
       comparePositions(symbol.location.range.start, position) * reference.direction > 0)
-      .sort((a, b) => comparePositions(a.location.range.start, b.location.range.start) * reference.direction);
+      // Search the nearest lexical scope before outer scopes; imported root
+      // labels can occur after a nearer-scope declaration in source order.
+      .sort((a, b) => visibleScopes.get(this.privateScopeKey(this.scopesById.get(a.scopeId)!))! -
+        visibleScopes.get(this.privateScopeKey(this.scopesById.get(b.scopeId)!))! ||
+        comparePositions(a.location.range.start, b.location.range.start) * reference.direction);
     const target = candidates[reference.distance - 1];
     if (!target) return undefined;
-    // Imported source can insert nearer labels or change the requested rank.
-    // TODO: Resolve through expanded include order instead of guessing here.
-    if (this.model.imports.some(entry => entry.kind !== 'importonce' &&
+    // Document-local fallback cannot know labels inserted by imports. Expanded
+    // programs already contain those labels in the correct order.
+    if (!this.expandedSource && this.model.imports.some(entry => entry.kind !== 'importonce' &&
       comparePositions(entry.location.range.start, position) * reference.direction > 0 &&
       comparePositions(entry.location.range.start, target.location.range.start) * reference.direction < 0)) return undefined;
     return this.declarationKey(target);
@@ -128,6 +134,7 @@ export class KickAssemblerScopeResolver {
   }
 
   private privateScopeKey(scope: KickAssemblerSemanticScope): string {
+    if (scope.kind === 'root') return `\0${this.model.document.uri}\0${this.model.rootScope.id}`;
     if (scope.kind === 'namespace' || scope.kind === 'file-namespace') return `\0namespace\0${this.scopeKey(scope)}\0`;
     return `\0${this.model.document.uri}\0${scope.id}`;
   }

@@ -10,7 +10,7 @@ old emitted JS/declaration/map copies under `src/` have been removed.
 
 | Area | Current behavior |
 | --- | --- |
-| Documents/includes | Text/position/range models, file-URI/loading helpers, relative/search-root imports and recursive project graph |
+| Documents/includes | Text/position/range models, file-URI/loading helpers, relative/search-root imports, recursive graph and ordered ordinary-import projection |
 | Semantic model | Expressions, scopes, namespace/macro/function/pseudocommand/struct/enum constructs, imports/import-once, segments/PC, conditionals/loops, labels and generated/data metadata |
 | Scanner/outline | Scanner facade over semantics; separate Langium structural outline; SIDScore subtune/effect outline |
 | Lookup/editor | Cached project/XML analysis and last assembled index; namespace/lexical/directional definition/reference queries and leaf rename, named containers, HTML hovers, completion, semantic tokens, folding, formatting and quick fixes |
@@ -40,10 +40,11 @@ syntax assets are active product inputs and must remain packaged.
   reuse index assembly with independent mutable results; changed input still
   triggers full assembly. Editor file selection reuses the existing include
   graph through URI/overlay adapters and resolved program/library settings.
-- Cross-file/import-crossing multi-labels, inline block bodies, import-site
-  context, scope-owner/multi-label rename and scope-aware completion. Structural
-  binding covers blocks, parameters, namespace/label scopes, file namespaces
-  and same-document directional labels; compiler parity remains unfinished.
+- Inline block bodies, scope-owner/multi-label rename and scope-aware completion.
+  Ordinary imports retain source order, import-once behavior and file scope
+  boundaries; directional targets can cross imports. Unknown preprocessing,
+  incomplete graphs and oversized projections fall back to local analysis.
+  Compiler parity remains unfinished.
 - Compiler-accurate KickAss expression/directive edge cases, macro expansion,
   conditional evaluation and generated-symbol materialization.
 - Compiler-grade diagnostics, completion/rename/formatting/quick-fix parity,
@@ -67,8 +68,8 @@ analysis and assembled indexes. Comparison/result copying remains per request;
 delta updates and full compiler parity remain unfinished. Namespace lookup now
 uses semantic identities and source-token bindings through a lexical scope
 resolver. Editor lookup now uses the existing include graph for program file
-selection. Next, preserve expanded source order/import context and align outline
-and project views. Native CTRL/CMD+click shares definition targets; the Linux CI
-job exercises actual clicks and the debugger UI.
+selection and ordered ordinary-import projection. Next, align outline/project
+views and build/editor discovery rules. Native CTRL/CMD+click shares definition
+targets; the Linux CI job exercises actual clicks and the debugger UI.
 See [language architecture](language-support-architecture.md) and
 [the implementation plan](plan.md).

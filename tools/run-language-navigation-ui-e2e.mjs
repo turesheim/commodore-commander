@@ -36,10 +36,14 @@ async function main() {
     '  bne loop // first', '}', 'Second: {', 'loop:', '  bne loop // second', '}', '}',
     '  jsr Library.Target', '  jsr Game.First.loop', '!again:', '  nop',
     '  jmp !again-', '  jmp !again++', '!again:', '  nop', '!again:', '  rts',
-    '  jmp !++', '!:', '  nop', '!:', '  rts'
+    '  jmp !++', '!:', '  nop', '!:', '  rts',
+    '  jmp !cross+', '#import "lib/directions.asm"', '  jmp !cross-',
+    '.namespace ImportCaller {', '#import "lib/global.asm"', 'After:', '  jsr After', '}', '  jsr Imported'
   ].join('\n');
   await fs.writeFile(mainPath, source);
   await fs.writeFile(libraryPath, '// Distinct navigation target\n.filenamespace Library\nTarget:\n  rts\n  jsr Game.Second.loop\n');
+  await fs.writeFile(path.join(library, 'lib/directions.asm'), '// Imported direction target\n!cross:\n  nop\n');
+  await fs.writeFile(path.join(library, 'lib/global.asm'), '// Global import target\nImported:\n  rts\n');
   await fs.writeFile(path.join(workspace, 'unrelated.asm'), '.filenamespace Library\nTarget:\n  rts\n');
   await fs.writeFile(path.join(workspace, 'commodore-commander.build.json'), JSON.stringify({
     libraryRoots: ['../library'], programs: [{ name: 'main', root: 'main.asm' }, { name: 'unrelated', root: 'unrelated.asm' }]
@@ -102,7 +106,9 @@ async function main() {
     async function clickSymbol(needle, leaf, linkedText, expectedLine, targetComment, sourcePath = mainPath) {
       assert.equal(await evaluate(`${api}.openSourceFile(${JSON.stringify(sourcePath)})`), true);
       assert.equal(await evaluate(`${api}.setEditorMarker(${JSON.stringify({ needle, offset: needle.indexOf(leaf) + 1 })})`), true);
-      const point = await until(() => evaluate(`(() => {
+      let lastPoint;
+      const point = await until(async () => {
+        const candidate = await evaluate(`(() => {
         for (const line of document.querySelectorAll('.monaco-editor .view-line')) {
           if (!line.textContent.replace(/\\u00a0/g, ' ').includes(${JSON.stringify(needle)})) continue;
           const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
@@ -113,11 +119,20 @@ async function main() {
             const range = document.createRange();
             range.setStart(node, offset + 1); range.setEnd(node, offset + 2);
             const rect = range.getBoundingClientRect();
-            return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+            const x = rect.x + rect.width / 2, y = rect.y + rect.height / 2;
+            if (document.elementFromPoint(x, y)?.closest('.view-line') !== line) return undefined;
+            return { x, y };
           }
         }
         return undefined;
-      })()`));
+      })()`);
+        // Monaco can still be scrolling after the marker API returns. Click
+        // only a visible token whose screen coordinates have settled.
+        const stable = candidate && lastPoint && Math.abs(candidate.x - lastPoint.x) < 0.5 &&
+          Math.abs(candidate.y - lastPoint.y) < 0.5;
+        lastPoint = candidate;
+        return stable ? candidate : undefined;
+      });
       const mac = process.platform === 'darwin';
       // CDP modifier mask: Alt=1, Ctrl=2, Meta=4, Shift=8.
       const modifier = mac ? 4 : 2;
@@ -127,7 +142,13 @@ async function main() {
       await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode, modifiers: modifier });
       try {
         await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point, modifiers: modifier });
-        await until(() => evaluate(`Array.from(document.querySelectorAll('.goto-definition-link')).some(link => link.textContent === ${JSON.stringify(linkedText)})`));
+        try {
+          await until(() => evaluate(`Array.from(document.querySelectorAll('.goto-definition-link')).some(link => link.textContent === ${JSON.stringify(linkedText)})`));
+        } catch (error) {
+          await capture('99-failure.png');
+          console.error(await evaluate(`JSON.stringify({ links: Array.from(document.querySelectorAll('.goto-definition-link')).map(link => link.textContent), cursor: document.getElementById('status-bar-editor-status-cursor-position')?.textContent })`));
+          throw error;
+        }
         await send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1, modifiers: modifier });
         await send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1, modifiers: modifier });
       } finally {
@@ -148,7 +169,12 @@ async function main() {
     await clickSymbol('jmp !again++', '!again++', '!again++', 21);
     await clickSymbol('jmp !++', '!++', '!++', 26);
     await capture('03-directional-definition.png');
-    console.log('Language navigation UI e2e passed: program include graphs, external libraries, local and directional targets.');
+    await clickSymbol('jmp !cross+', '!cross+', '!cross+', 2, 'Imported direction target');
+    await clickSymbol('jmp !cross-', '!cross-', '!cross-', 2, 'Imported direction target');
+    await clickSymbol('jsr Imported', 'Imported', 'Imported', 2, 'Global import target');
+    await clickSymbol('jsr After', 'After', 'After', 33);
+    await capture('04-import-context-definition.png');
+    console.log('Language navigation UI e2e passed: program graphs, external libraries, import scope/order, local and directional targets.');
   } finally {
     clearTimeout(timer);
     ws?.close();

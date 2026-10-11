@@ -1,4 +1,7 @@
-import type { TextDocumentModel } from '../document/text-document-model.ts';
+import { expandKickAssemblerSource, originalExpandedLocation, type KickAssemblerProgramSource,
+  type KickAssemblerExpandedSource } from '../project/kick-assembler-expanded-source.ts';
+import type { KickAssemblerSourceFileBoundary } from '../semantic/kick-assembler-semantic-parser.ts';
+import { createTextDocumentModel, type TextDocumentModel } from '../document/text-document-model.ts';
 import type { SourceLocation } from '../location/source-location.ts';
 import type { DocumentPosition } from '../location/source-location.ts';
 import {
@@ -53,12 +56,16 @@ export type KickAssemblerLookupKind =
 export interface KickAssemblerLookupDocument {
   kind: KickAssemblerLookupDocumentKind;
   document: TextDocumentModel;
+  /** Internal expanded-file boundaries; ordinary documents omit these. */
+  fileBoundaries?: readonly KickAssemblerSourceFileBoundary[];
 }
 
 export interface KickAssemblerLookupOccurrence {
   name: string;
   qualifiedName?: string;
   hasMemberScope?: boolean;
+  /** Physical source used in incompatible import contexts: navigation only. */
+  hasMultipleContexts?: boolean;
   normalizedName: string;
   kind: KickAssemblerLookupKind;
   origin: KickAssemblerLookupOrigin;
@@ -104,6 +111,7 @@ interface TokenOccurrence extends KickAssemblerLookupTokenMatch {
 }
 
 interface ProjectDocumentAnalysis {
+  contextPrefix: string;
   symbols: readonly KickAssemblerSemanticSymbol[];
   scopeResolver: KickAssemblerScopeResolver;
   tokens: readonly TokenOccurrence[];
@@ -112,6 +120,7 @@ interface ProjectDocumentAnalysis {
 interface CachedDocumentAnalysis<T> {
   text: string;
   languageId: string;
+  context: string;
   analysis: T;
 }
 
@@ -120,6 +129,7 @@ interface IndexDocumentSnapshot {
   uri: string;
   text: string;
   languageId: string;
+  context: string;
 }
 
 interface CachedLookupIndex {
@@ -143,11 +153,13 @@ export class KickAssemblerLookupService {
     this.cachedIndex = undefined;
   }
 
-  protected analyzeProjectDocument(document: TextDocumentModel): ProjectDocumentAnalysis {
-    const model = parseKickAssemblerSemanticModel(document);
+  protected analyzeProjectDocument(document: TextDocumentModel,
+    fileBoundaries: readonly KickAssemblerSourceFileBoundary[] = []): ProjectDocumentAnalysis {
+    const model = parseKickAssemblerSemanticModel(document, fileBoundaries);
     return {
+      contextPrefix: fileBoundaries.length ? `\0program\0${document.uri}\0` : '',
       symbols: model.symbols,
-      scopeResolver: new KickAssemblerScopeResolver(model),
+      scopeResolver: new KickAssemblerScopeResolver(model, fileBoundaries.length > 0),
       tokens: collectTokenOccurrences(document)
     };
   }
@@ -172,14 +184,33 @@ export class KickAssemblerLookupService {
     const index = this.assembleIndex(documents, { machineProfileId });
     this.cachedIndex = {
       machineProfileId,
-      documents: documents.map(({ kind, document }) => ({
-        kind, uri: document.uri, text: document.text, languageId: document.languageId
+      documents: documents.map(({ kind, document, fileBoundaries }) => ({
+        kind, uri: document.uri, text: document.text, languageId: document.languageId,
+        context: JSON.stringify(fileBoundaries ?? [])
       })),
       // The existing public index remains mutable. Keep a private copy so both
       // first-build and cache-hit callers are isolated from subsequent results.
       index: copyLookupIndex(index)
     };
     return index;
+  }
+
+  /** Bind expanded programs, then map every editor target back to its source. */
+  buildProgramIndex(documents: readonly KickAssemblerLookupDocument[],
+    programs: readonly KickAssemblerProgramSource[], options: KickAssemblerLookupIndexOptions = {}): KickAssemblerLookupIndex {
+    if (programs.length === 0) return this.buildIndex(documents, options);
+    const expanded = programs.map(expandKickAssemblerSource);
+    // Never invent an ordering across unknown conditional/missing/cyclic imports.
+    if (expanded.some(source => !source)) return this.buildIndex(documents, options);
+    const sources = (expanded as KickAssemblerExpandedSource[]).map((source, context) => ({ ...source,
+      document: createTextDocumentModel({ uri: `${source.document.uri}#${context}`, text: source.document.text }) }));
+    const covered = new Set(sources.flatMap(source => source.lines.map(line => line.document.uri)));
+    const index = this.buildIndex([
+      ...sources.map(source => ({ kind: 'kickassembler' as const, document: source.document,
+        fileBoundaries: source.fileBoundaries })),
+      ...documents.filter(input => input.kind !== 'kickassembler' || !covered.has(input.document.uri))
+    ], options);
+    return restoreSourceLocations(index, sources);
   }
 
   protected assembleIndex(
@@ -217,14 +248,15 @@ export class KickAssemblerLookupService {
     const projectAnalyses = documents.filter(input => input.kind === 'kickassembler')
       .map(input => cachedDocumentAnalysis(
           this.projectAnalysis, input.document.uri, input.document,
-          () => this.analyzeProjectDocument(input.document)
+          () => this.analyzeProjectDocument(input.document, input.fileBoundaries),
+          JSON.stringify(input.fileBoundaries ?? [])
         ));
 
     // Collect every declaration before binding uses: forward/cross-file lookup
     // must not depend on the caller's document order.
     for (const analysis of projectAnalyses) {
       for (const symbol of analysis.symbols) {
-        const name = analysis.scopeResolver.declarationKey(symbol);
+        const name = analysis.contextPrefix + analysis.scopeResolver.declarationKey(symbol);
         const occurrence: KickAssemblerLookupOccurrence = {
           name: symbol.name,
           qualifiedName: symbol.qualifiedName,
@@ -286,9 +318,10 @@ export class KickAssemblerLookupService {
         }
 
         if (occurrence.kind === 'identifier') {
-          const name = analysis.scopeResolver.resolve(occurrence.location.range.start,
-            occurrence.text, key => projectDeclarationsByName.has(key));
-          if (name) {
+          const resolved = analysis.scopeResolver.resolve(occurrence.location.range.start,
+            occurrence.text, key => projectDeclarationsByName.has(analysis.contextPrefix + key));
+          if (resolved) {
+            const name = analysis.contextPrefix + resolved;
             projectBindingsByLocation.set(key, name);
             const reference = toProjectReferenceOccurrence(occurrence,
               toProjectSymbolKind(projectDeclarationsByName.get(name)?.[0]?.kind));
@@ -379,6 +412,93 @@ export class KickAssemblerLookupService {
   }
 }
 
+function restoreSourceLocations(index: KickAssemblerLookupIndex,
+  sources: readonly KickAssemblerExpandedSource[]): KickAssemblerLookupIndex {
+  const byUri = new Map(sources.map(source => [source.document.uri, source]));
+  const original = (location: SourceLocation) => {
+    const source = byUri.get(location.uri);
+    return source ? originalExpandedLocation(source, location) : location;
+  };
+  const remap = (map: Map<string, KickAssemblerLookupOccurrence[]>) => {
+    for (const [name, values] of map) {
+      const unique = new Map<string, KickAssemblerLookupOccurrence>();
+      for (const occurrence of values) {
+        occurrence.location = original(occurrence.location);
+        unique.set(locationKey(occurrence.location), occurrence);
+      }
+      map.set(name, [...unique.values()]);
+    }
+  };
+  remap(index.projectDeclarationsByName);
+  remap(index.projectReferencesByName);
+  remap(index.referenceReferencesByName);
+  // Equivalent physical declarations across owners share references/rename.
+  // Different targets remain isolated even when their public spelling matches.
+  const identities = new Map<string, string>();
+  const canonical = new Map<string, string>();
+  for (const [name, declarations] of index.projectDeclarationsByName) {
+    const signature = JSON.stringify(declarations.map(declaration =>
+      [locationKey(declaration.location), declaration.qualifiedName, declaration.kind]).sort());
+    const identity = identities.get(signature) ?? name;
+    identities.set(signature, identity);
+    canonical.set(name, identity);
+  }
+  const combine = (map: Map<string, KickAssemblerLookupOccurrence[]>) => {
+    const combined = new Map<string, Map<string, KickAssemblerLookupOccurrence>>();
+    for (const [name, values] of map) {
+      const identity = canonical.get(name) ?? name;
+      const occurrences = combined.get(identity) ?? new Map<string, KickAssemblerLookupOccurrence>();
+      for (const occurrence of values) {
+        occurrence.normalizedName = identity;
+        occurrences.set(locationKey(occurrence.location), occurrence);
+      }
+      combined.set(identity, occurrences);
+    }
+    map.clear();
+    for (const [name, occurrences] of combined) map.set(name, [...occurrences.values()]);
+  };
+  combine(index.projectDeclarationsByName);
+  combine(index.projectReferencesByName);
+  const bindings = new Map<string, Set<string | undefined>>();
+  // Include unbound tokens: a use resolved in only one owner context must
+  // not make a physical-source rename appear complete.
+  for (const source of sources) {
+    for (const token of collectTokenOccurrences(source.document)) {
+      const key = locationKey(original(token.location));
+      const names = bindings.get(key) ?? new Set<string | undefined>();
+      const name = index.projectBindingsByLocation.get(locationKey(token.location));
+      names.add(name ? canonical.get(name) ?? name : undefined);
+      bindings.set(key, names);
+    }
+  }
+  for (const [key, name] of index.projectBindingsByLocation) {
+    const match = /^(.*):(\d+):(\d+):(\d+):(\d+)$/u.exec(key)!;
+    if (!byUri.has(match[1]!)) bindings.set(key, new Set([canonical.get(name) ?? name]));
+  }
+  const ambiguousNames = new Set([...bindings.values()].filter(names => names.size > 1)
+    .flatMap(names => [...names].filter((name): name is string => name !== undefined)));
+  for (const name of ambiguousNames) {
+    for (const declaration of index.projectDeclarationsByName.get(name) ?? []) declaration.hasMultipleContexts = true;
+  }
+  index.projectBindingsByLocation.clear();
+  for (const [location, names] of bindings) {
+    const resolved = [...names].filter((name): name is string => name !== undefined);
+    if (resolved.length === 0) continue;
+    const name = names.size === 1 ? resolved[0]! : `\0contexts\0${location}`;
+    index.projectBindingsByLocation.set(location, name);
+    if (names.size > 1) {
+      const merge = (map: Map<string, KickAssemblerLookupOccurrence[]>) => {
+        const unique = new Map(resolved.flatMap(key => map.get(key) ?? [])
+          .map(occurrence => [locationKey(occurrence.location), occurrence]));
+        map.set(name, [...unique.values()]);
+      };
+      merge(index.projectDeclarationsByName);
+      merge(index.projectReferencesByName);
+    }
+  }
+  return index;
+}
+
 function matchesIndexDocuments(
   snapshots: readonly IndexDocumentSnapshot[],
   documents: readonly KickAssemblerLookupDocument[]
@@ -386,7 +506,8 @@ function matchesIndexDocuments(
   return snapshots.length === documents.length && snapshots.every((snapshot, index) => {
     const input = documents[index]!;
     return snapshot.kind === input.kind && snapshot.uri === input.document.uri &&
-      snapshot.text === input.document.text && snapshot.languageId === input.document.languageId;
+      snapshot.text === input.document.text && snapshot.languageId === input.document.languageId &&
+      snapshot.context === JSON.stringify(input.fileBoundaries ?? []);
   });
 }
 
@@ -531,14 +652,15 @@ function cachedDocumentAnalysis<T>(
   cache: Map<string, CachedDocumentAnalysis<T>>,
   key: string,
   document: TextDocumentModel,
-  analyze: () => T
+  analyze: () => T,
+  context = ''
 ): T {
   const cached = cache.get(key);
-  if (cached && cached.text === document.text && cached.languageId === document.languageId) {
+  if (cached && cached.text === document.text && cached.languageId === document.languageId && cached.context === context) {
     return cached.analysis;
   }
   const analysis = analyze();
-  cache.set(key, { text: document.text, languageId: document.languageId, analysis });
+  cache.set(key, { text: document.text, languageId: document.languageId, context, analysis });
   return analysis;
 }
 

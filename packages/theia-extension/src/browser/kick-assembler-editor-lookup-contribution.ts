@@ -764,8 +764,8 @@ export class KickAssemblerEditorLookupContribution
     model: monaco.editor.ITextModel,
     currentDocument: ReturnType<typeof createTextDocumentModel>
   ) {
-    const documents = await this.collectLookupDocuments(model, currentDocument);
-    return this.lookupService.buildIndex(documents, {
+    const context = await this.collectLookupDocuments(model, currentDocument);
+    return this.lookupService.buildProgramIndex(context.documents, context.programs, {
       machineProfileId: this.machineProfileSelection.getActiveMachineProfileId(
         new URI(model.uri.toString())
       )
@@ -780,9 +780,9 @@ export class KickAssemblerEditorLookupContribution
     if (result?.queryOrigin !== 'project' || result.declarations.length !== 1) return index;
     // A declaration can belong to more programs than its current caller does.
     // Expand its owners before preparing edits, including external libraries.
-    const documents = await this.collectLookupDocuments(model, document,
+    const context = await this.collectLookupDocuments(model, document,
       new URI(result.declarations[0]!.location.uri), true);
-    return this.lookupService.buildIndex(documents, {
+    return this.lookupService.buildProgramIndex(context.documents, context.programs, {
       machineProfileId: this.machineProfileSelection.getActiveMachineProfileId(new URI(model.uri.toString()))
     });
   }
@@ -792,7 +792,7 @@ export class KickAssemblerEditorLookupContribution
     currentDocument: ReturnType<typeof createTextDocumentModel>,
     contextUri = new URI(currentModel.uri.toString()),
     includeAllOwners = false
-  ): Promise<KickAssemblerLookupDocument[]> {
+  ) {
     const overlayTexts = this.collectOverlayTexts();
     const currentUri = new URI(currentModel.uri.toString());
     overlayTexts.set(currentUri.toString(), currentDocument.text);
@@ -823,7 +823,7 @@ export class KickAssemblerEditorLookupContribution
       documents.push({ kind: 'kickassembler', document: currentDocument });
     }
     documents.push(...(await this.loadBundledReferenceDocuments()));
-    return documents;
+    return { documents, programs: contexts.flatMap(selection => selection.programs) };
   }
 
   protected async collectSourceDocuments(

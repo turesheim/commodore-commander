@@ -58,8 +58,12 @@ library retains all owners; rename expands owners of the declaration, including
 callers outside the active program. External libraries can navigate back into
 owning workspace programs. A read-only build-service method supplies profile/
 program library paths; relative imports take precedence. Unavailable/invalid
-configuration reads fall back to the current file and relative imports. Expanded source order and
-import-site scope remain work; graph construction is repeated per request.
+configuration reads fall back to the current file and relative imports.
+`buildProgramIndex` expands ordinary imports and import-once occurrences,
+restores the caller's scope, and maps directional targets back to physical files.
+Imported sources start in global scope even inside a namespace/block. Unknown
+preprocessing or incomplete graphs retain document-local lookup. Graph/expansion
+construction is repeated per request.
 
 The local `vice-runtime-resolver.ts` is an integration wrapper: it resolves the
 selected machine/model and supplies the extension's asset location and
@@ -120,5 +124,5 @@ Language navigation has a real Electron gesture regression: after building,
 run `npm run test:e2e:language:ui` from the repository root (on Linux, through
 `bash tools/run-with-xvfb.sh`). It checks cross-file and local-scope targets,
 including external library paths, unrelated duplicate symbols, file namespaces,
-directional multi-labels, declaration line numbers
+directional multi-labels across imports, scope restoration, declaration line numbers
 and full qualified/directional link ranges.
