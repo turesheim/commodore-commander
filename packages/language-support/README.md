@@ -48,15 +48,17 @@ KickAss compiler. Conditional branches are represented without evaluating a
 configured symbol environment; macros/pseudocommands are not expanded.
 Diagnostics and reference datasets remain incomplete.
 
-`KickAssemblerLookupService` caches project symbols/tokens and XML definitions
-by document URI, kind, text and language ID. Each request assembles fresh index
-maps, preserving document order and active-machine filtering. Removed documents
-are evicted; `clearDocumentCache()` releases all cached analysis.
+`KickAssemblerLookupService` caches project/XML analysis and the last assembled
+index. Reuse requires identical ordered URI/kind/text/language inputs and active
+machine; model versions alone do not invalidate it. `buildIndex()` returns
+independent mutable maps, arrays and occurrences. Changed inputs trigger fresh
+assembly using reusable document analysis; removed documents are evicted.
+`clearDocumentCache()` releases all language lookup state.
 
 Theia reuses file discovery and disk text models for up to five seconds, with
 file/workspace event invalidation and current editor text overriding disk data.
-Index assembly remains on demand; persistent index reuse and include-graph-precise
-lookup remain work.
+Unchanged inputs reuse index assembly; per-document index updates and
+include-graph-precise lookup remain work.
 SIDScore has syntax/outline support, but no compiler-accurate TypeScript language model.
 Debug metadata and VICE debugging belong to `debug-adapter`; Theia UI,
 preferences and process orchestration remain outside this package.
