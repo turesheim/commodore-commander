@@ -122,8 +122,12 @@ mixing the chosen executable with another installation's resources.
 stock external VICE remains an optional compatibility mode. Windows
 payloads and clean-host/minimum-OS acceptance remain unfinished. Linux x64 uses
 the same POSIX frame socket/command fd as macOS and is staged as `bin/lib/share/vice`;
-its linked non-glibc libraries use relative ELF RUNPATHs. Ubuntu 24.04 is the
-pinned Linux build/test baseline. SDL desktop/graphics/audio drivers remain host-owned.
+its linked non-glibc libraries use relative ELF RUNPATHs.
+Linux SDL2 ROM discovery also uses the runtime's relative `bin/../share/vice`
+layout; the package test removes access to the configured build prefix and uses
+no ROM-directory override.
+Ubuntu 24.04 is the pinned Linux build/test baseline. SDL desktop/graphics/audio
+drivers remain host-owned.
 
 ## Verification and remaining work
 

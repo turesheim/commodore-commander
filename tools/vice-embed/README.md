@@ -42,6 +42,10 @@ linked dependencies, copies non-glibc libraries and sets relative `$ORIGIN`
 search paths on executables and libraries. Missing or unbundled linked dependencies
 fail packaging. The host supplies glibc/loader and SDL's dynamically loaded desktop,
 graphics and audio drivers; this does not promise portability to musl or older glibc.
+
+The Linux SDL2 runtime discovers ROMs relative to its `bin` directory, independent
+of the configured build prefix. Product tests move that prefix away and start the
+packaged emulator without a `-directory` override.
 The Linux nightly runner is pinned to Ubuntu 24.04. Minimum OS and fresh-host
 acceptance for 1.0 remain separate release work; Windows streaming is not ported yet.
 

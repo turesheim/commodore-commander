@@ -239,6 +239,8 @@ jobs:
           package_archive="dist/nightly/commodore-commander-nightly-${{ matrix.platform }}-${{ runner.arch }}.tar.gz"
           npm run package:current --workspace @commodore-commander/electron-app -- --output "$package_dir"
           if [ "${{ runner.os }}" = "Linux" ]; then
+            # The downloaded runtime must discover its own ROMs/libraries.
+            mv tools/vice-embed/build/linux-x64/prefix "$RUNNER_TEMP/vice-build-prefix"
             # Exercise the documented installed-package sandbox setup.
             sudo chown root:root "$package_dir/chrome-sandbox"
             sudo chmod 4755 "$package_dir/chrome-sandbox"
