@@ -21,6 +21,14 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
   const readyRows = Array.from({ length: 8 }, (_, row) => readyScreenCodes.flatMap(code =>
     Array.from({ length: 8 }, (_, col) => (chargen[code * 8 + row] >> (7 - col)) & 1)
   ));
+  const command = 'poke 53280,2';
+  const commandScreenCodes = [...command.toUpperCase()].map(char => {
+    const ascii = char.charCodeAt(0);
+    return ascii >= 64 && ascii < 96 ? ascii - 64 : ascii;
+  });
+  const echoRows = Array.from({ length: 8 }, (_, row) => commandScreenCodes.flatMap(code =>
+    Array.from({ length: 8 }, (_, col) => (chargen[code * 8 + row] >> (7 - col)) & 1)
+  ));
   const machineCaptures = [1, 2].map(cycle => ({
     outputPath: path.join(outputDir, `machine-${cycle}.png`),
     steps: [
@@ -30,7 +38,7 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
       { type: 'waitForCanvasContent', selector: '.cc-machine-vice-screen canvas', timeoutMs: 20000 },
       // A RAM pattern proves painting, but not that BASIC accepts input yet.
       { type: 'waitForCanvasGlyphs', selector: '.cc-machine-vice-screen canvas', rows: readyRows, timeoutMs: 20000 },
-      { type: 'assertCanvasKeyboardResponse', selector: '.cc-machine-vice-screen canvas', text: 'poke 53280,2', timeoutMs: 10000 }
+      { type: 'assertCanvasKeyboardResponse', selector: '.cc-machine-vice-screen canvas', text: command, echoRows, timeoutMs: 10000 }
     ],
     afterSteps: [
       { type: 'powerOffMachine', replayLateFrame: true },

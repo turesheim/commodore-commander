@@ -7,6 +7,7 @@ import test from 'node:test';
 import { bundleLinuxLibraries, isHostLibrary, parseDependencies } from './bundle-linux-libs.mjs';
 
 test('ldd missing dependencies fail packaging instead of producing an incomplete payload', () => {
+  assert.deepEqual(parseDependencies('statically linked\n'), []);
   assert.throws(() => parseDependencies('libSDL2.so => not found'), /Missing Linux VICE dependency/u);
   assert.throws(() => parseDependencies('unexpected loader output'), /Unrecognized ldd output/u);
 });

@@ -51,8 +51,9 @@ then requires the emulated border color to change. Uniform or transparent frames
 fail; FPS alone does not pass. Logs and screenshots, including the UI state on
 failure, are retained as nightly test artifacts. The power-off check deliberately
 replays an already-sent frame and requires the view to stay off before restarting.
-Keyboard pacing allows C64 scanning on slower CI runners; this is not a typing
-throughput benchmark. Run locally:
+The test waits for each typed prefix to appear as ROM glyphs before releasing the
+key, then holds Return until the border changes. Fixed host-time key holds can
+miss C64 keyboard scans on slow runners; this is not a typing throughput benchmark. Run locally:
 
 ```sh
 npm run test:product-package -- --package-dir "dist/nightly/Commodore Commander.app"

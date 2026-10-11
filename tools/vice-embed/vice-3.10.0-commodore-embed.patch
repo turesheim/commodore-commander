@@ -7,15 +7,12 @@ diff --git a/src/arch/sdl/Makefile.am b/src/arch/sdl/Makefile.am
 diff --git a/src/arch/shared/macOS-launcher.c b/src/arch/shared/macOS-launcher.c
 --- a/src/arch/shared/macOS-launcher.c
 +++ b/src/arch/shared/macOS-launcher.c
-@@ -24,8 +24,9 @@
- #include <stdio.h>
- #include <stdlib.h>
+@@ -26,6 +26,7 @@
  #include <unistd.h>
  #include <libgen.h>
  #include <limits.h>
--
 +#include <mach-o/dyld.h>
-+
+
  int main(int argc, char *argv[])
  {
 diff --git a/src/arch/shared/archdep_program_path.c b/src/arch/shared/archdep_program_path.c

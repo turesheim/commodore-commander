@@ -12,6 +12,8 @@ export function isHostLibrary(name) {
 export function parseDependencies(output) {
   const dependencies = [];
   for (const line of output.split('\n').map(value => value.trim()).filter(Boolean)) {
+    // ldd reports this for shared ELF libraries with no DT_NEEDED entries too.
+    if (line === 'statically linked') { continue; }
     if (/^linux-vdso[^ ]* /u.test(line)) { continue; }
     if (/=> not found$/u.test(line)) { throw new Error(`Missing Linux VICE dependency: ${line}`); }
     const linked = /^(\S+) => (\/.*?) \(0x[\da-f]+\)$/u.exec(line);

@@ -134,8 +134,8 @@ removes build-machine search paths so local Homebrew libraries cannot mask
 missing payloads. The same package check launches the packaged Electron app with
 isolated user data and verifies visible pixels in the Machine canvas. It matches
 BASIC `READY.` glyphs against the bundled C64 character ROM before sending
-`POKE 53280,2` through Electron keyboard events and requiring a border-color
-change, then powers off, replays a previously sent frame to verify the UI remains
+`POKE 53280,2` through Electron keyboard events, waiting for each prefix to echo as ROM glyphs
+before releasing its key, and requiring a border-color change after Return, then powers off, replays a previously sent frame to verify the UI remains
 off, and repeats after startup. Readiness uses the default
 unfiltered C64 surface; a fixed delay or a power-on RAM pattern does not qualify.
 This covers bundled discovery,
