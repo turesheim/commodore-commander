@@ -52,7 +52,7 @@ async function elfFiles(directory) {
 
 export async function bundleLinuxLibraries(runtimeRoot) {
   if (process.platform !== 'linux') { throw new Error('Linux VICE bundling must run on Linux.'); }
-  const root = path.resolve(runtimeRoot);
+  const root = await realpath(path.resolve(runtimeRoot));
   const libDir = path.join(root, 'lib');
   await mkdir(libDir, { recursive: true });
   const binaries = await elfFiles(path.join(root, 'bin'));
@@ -86,7 +86,7 @@ export async function bundleLinuxLibraries(runtimeRoot) {
   // without loader overrides, rejecting fallbacks to build-host libraries.
   for (const file of visited) {
     for (const { name, source } of parseDependencies(run('ldd', [file]))) {
-      if (!isHostLibrary(name) && !source.startsWith(`${libDir}${path.sep}`)) {
+      if (!isHostLibrary(name) && path.dirname(await realpath(source)) !== libDir) {
         throw new Error(`Unbundled Linux dependency in ${file}: ${name} => ${source}`);
       }
     }

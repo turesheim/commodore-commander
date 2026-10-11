@@ -1113,10 +1113,10 @@ async function assertCanvasKeyboardResponse(
   }
   window.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Enter' });
   try {
-  await waitForCondition(window, `(() => {
-    const pixel = ${pixelExpression};
-    return pixel !== null && pixel !== ${JSON.stringify(before)};
-  })()`, timeoutMs, `Canvas border did not respond to keyboard input in ${selector}.`);
+    await waitForCondition(window, `(() => {
+      const pixel = ${pixelExpression};
+      return pixel !== null && pixel !== ${JSON.stringify(before)};
+    })()`, timeoutMs, `Canvas border did not respond to keyboard input in ${selector}.`);
   } finally {
     window.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Enter' });
   }
