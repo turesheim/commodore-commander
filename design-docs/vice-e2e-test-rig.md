@@ -118,6 +118,9 @@ The nightly package lane exercises bundled discovery and Electron keyboard input
 on macOS Apple Silicon and Linux x64 (Ubuntu 24.04, Xvfb/software rendering).
 Linux configures the packaged Electron sandbox helper as root-owned mode 4755,
 matching `LINUX-SETUP.txt`; the product test does not disable Chromium sandboxing.
+Native startup uses the normal sound initialization. GUI failures retain a bounded
+Machine status/native-output report as well as screenshots, so an initialized
+blank frame cannot hide later emulator startup failures.
 The ELF packaging fixture runs after removing build libraries and moving the runtime.
 Physical keyboard/mouse behavior, Windows packaged UI/embedded transport and
 fresh-host/minimum-OS acceptance remain outside this coverage.

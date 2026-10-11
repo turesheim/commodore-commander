@@ -60,8 +60,7 @@ export async function smokeTestVice(resourcesPath, timeoutMs = 15000) {
     const port = await transport.start();
     child = spawn(executable, [
       '-default', '-cc-embed', '-cc-frame-port', String(port),
-      '-cc-command-fd', '3', '-directory', path.join(resourcesPath, 'share', 'vice'),
-      '+sound'
+      '-cc-command-fd', '3', '-directory', path.join(resourcesPath, 'share', 'vice')
     ], {
       cwd: workingDirectory,
       // Do not inherit user VICE configuration or dynamic-loader overrides.

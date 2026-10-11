@@ -160,6 +160,10 @@ jobs:
           npm_config_msvs_version: "2022"
         run: npm run theia:build
 
+      - name: Run Theia extension unit tests
+        if: runner.os == 'Linux'
+        run: node --test packages/theia-extension/lib/test/*.test.js
+
       - name: Import macOS signing certificate
         if: runner.os == 'macOS'
         shell: bash

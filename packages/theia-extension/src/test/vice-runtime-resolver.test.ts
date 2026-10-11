@@ -144,7 +144,8 @@ test('patched VICE keeps refreshing hidden embedded SDL canvases', async () => {
   assert.match(patch, /diff --git a\/src\/sid\/sid\.c/u);
   assert.match(patch, /if \(cc_embed_is_enabled\(\)\) \{\n\+        return value;/u);
   assert.match(patch, /return SDLK_F12/u);
-  assert.match(patch, /send\(cc_embed_frame_socket/u);
+  // Partial sends and record integrity are exercised by the compiled native
+  // socket fixture in tools/vice-embed/frame-writer.test.mjs.
   assert.doesNotMatch(patch, /cc_embed_write_base64/u);
   assert.doesNotMatch(patch, /fwrite\(rgba, 1, length, stdout\)/u);
   assert.match(patch, /cc_embed_publish_frame/u);

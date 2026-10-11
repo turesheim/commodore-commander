@@ -183,6 +183,9 @@ jobs:
           test -x "$VICE_EXECUTABLE"
           file "$VICE_EXECUTABLE"
 
+      - name: Run Theia extension unit tests
+        run: node --test packages/theia-extension/lib/test/*.test.js
+
       - name: Run Theia debugger UI e2e tests
         run: bash tools/run-theia-ui-e2e-linux.sh
 

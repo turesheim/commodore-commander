@@ -362,6 +362,14 @@ function installElectronScreenCapture(): void {
         clearTimeout(startupTimer);
         console.error(screenCaptureErrorMessage(error));
         try {
+          const diagnostics = await callScreenCaptureApi<Record<string, unknown>>(
+            window, 'machineRuntimeDiagnostics', [], {}, 3000
+          );
+          console.error('Machine runtime diagnostics:', JSON.stringify(diagnostics));
+        } catch (diagnosticError) {
+          console.error('Unable to read Machine runtime diagnostics.', diagnosticError);
+        }
+        try {
           await capturePage(window, path.join(config.outputDir, 'failure.png'));
         } catch (captureError) {
           console.error('Unable to capture failed UI state.', captureError);

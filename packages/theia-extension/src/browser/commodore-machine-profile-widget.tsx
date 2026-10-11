@@ -146,6 +146,7 @@ export class CommodoreMachineProfileWidget
   protected status: CommodoreViceEmbedStatusState = 'idle';
   protected statusMessage = 'Off';
   protected lastOutput = '';
+  protected recentRuntimeOutput = '';
   protected starting = false;
   // Initially allow cached frames when reconnecting to an existing backend.
   // After stop, queued WebSocket frames must not revive a powered-off machine.
@@ -711,6 +712,15 @@ export class CommodoreMachineProfileWidget
       () => this.virtualKeyboardVisible && this.virtualKeyboardOverlayElement !== undefined,
       timeoutMs
     );
+  }
+
+  runtimeDiagnosticsForScreenCapture(): Record<string, unknown> {
+    return {
+      status: this.status, message: this.statusMessage, output: this.recentRuntimeOutput,
+      owner: this.runtimeOwner, acceptingFrames: this.acceptingFrames,
+      frame: this.frame ? { width: this.frame.width, height: this.frame.height } : undefined,
+      visibility: document.visibilityState
+    };
   }
 
   async powerOffForScreenCapture(replayLateFrame = false): Promise<boolean> {
@@ -1522,6 +1532,7 @@ export class CommodoreMachineProfileWidget
   }
 
   protected applyOutput(event: CommodoreViceEmbedOutputEvent): void {
+    this.recentRuntimeOutput = (this.recentRuntimeOutput + `[${event.stream}] ${event.text}`).slice(-4096);
     const text = event.text.trim();
     if (text) {
       this.lastOutput = `${event.stream}: ${text.slice(0, 200)}`;
