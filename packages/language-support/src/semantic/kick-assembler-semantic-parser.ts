@@ -1,5 +1,5 @@
 import type { TextDocumentModel } from '../document/text-document-model.ts';
-import type { SourceLocation, SourceRange } from '../location/source-location.ts';
+import type { DocumentPosition, SourceLocation, SourceRange } from '../location/source-location.ts';
 import type {
   DataSymbolMetadata,
   NumericPresentation,
@@ -152,7 +152,7 @@ class KickAssemblerSemanticParser {
       return;
     }
 
-    code = this.closeLeadingScopes(code);
+    code = this.closeLeadingScopes(code, lineIndex);
     if (code.trim().length === 0) {
       this.finalizeDataBlock();
       this.pendingDataSymbol = undefined;
@@ -211,7 +211,7 @@ class KickAssemblerSemanticParser {
     }
   }
 
-  private closeLeadingScopes(code: string): string {
+  private closeLeadingScopes(code: string, lineIndex: number): string {
     let cursor = 0;
     while (cursor < code.length) {
       const character = code[cursor];
@@ -219,7 +219,7 @@ class KickAssemblerSemanticParser {
         break;
       }
       if (character === '}') {
-        this.popScope();
+        this.popScope({ line: lineIndex, character: cursor });
       }
       cursor += 1;
     }
@@ -566,7 +566,7 @@ class KickAssemblerSemanticParser {
       }
     }
 
-    if (!hasOpeningBrace(rawLine)) {
+    if (!hasOpeningBrace(operands)) {
       this.popScope();
     }
   }
@@ -907,7 +907,12 @@ class KickAssemblerSemanticParser {
       id,
       kind,
       location,
-      range: location.range,
+      // A scope covers its body, independently of the declaration location.
+      // Unclosed scopes extend to EOF while the user is editing.
+      range: {
+        start: { ...location.range.start },
+        end: { ...this.documentRangeLocation().range.end }
+      },
       childScopeIds: [],
       symbolIds: []
     };
@@ -933,11 +938,12 @@ class KickAssemblerSemanticParser {
     return scope;
   }
 
-  private popScope(): void {
+  private popScope(end?: DocumentPosition): void {
     if (this.scopeStack.length <= 1) {
       return;
     }
-    this.scopeStack.pop();
+    const scope = this.scopeStack.pop()!;
+    scope.range.end = { ...(end ?? scope.location.range.end) };
   }
 
   private currentScope(): KickAssemblerSemanticScope {
@@ -964,6 +970,9 @@ class KickAssemblerSemanticParser {
   }
 
   private joinQualifier(name: string): string {
+    if (name.startsWith('@')) {
+      return name.slice(1);
+    }
     const qualifiers = this.scopeStack
       .filter((scope) => scope.kind === 'namespace' && scope.name)
       .map((scope) => scope.name as string);

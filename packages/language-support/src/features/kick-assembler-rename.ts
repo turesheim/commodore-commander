@@ -33,22 +33,23 @@ export function prepareKickAssemblerRename(
   index: KickAssemblerLookupIndex
 ): KickAssemblerPrepareRenameResult | undefined {
   const token = findLookupTokenAtPosition(document, position);
-  if (!token || !isRenameableSymbolName(token.text)) {
+  if (!token || !isRenameableSymbolName(token.text) ||
+      document.offsetAt(position) < token.endOffset - leafName(token.text).length) {
     return undefined;
   }
 
   const lookup = new KickAssemblerLookupService()
     .lookupAtPosition(document, position, index);
-  if (!lookup || lookup.queryOrigin !== 'project') {
+  if (!lookup || lookup.queryOrigin !== 'project' || !canRenameDeclarations(lookup.declarations)) {
     return undefined;
   }
 
   return {
-    range: {
+    range: leafRange({
       start: document.positionAt(token.startOffset),
       end: document.positionAt(token.endOffset)
-    },
-    placeholder: token.text
+    }, token.text),
+    placeholder: leafName(token.text)
   };
 }
 
@@ -59,13 +60,15 @@ export function buildKickAssemblerRenamePlan(
   index: KickAssemblerLookupIndex
 ): KickAssemblerRenamePlan | undefined {
   const token = findLookupTokenAtPosition(document, position);
-  if (!token || !isRenameableSymbolName(token.text) || !isRenameableSymbolName(newName)) {
+  if (!token || !isRenameableSymbolName(token.text) ||
+      document.offsetAt(position) < token.endOffset - leafName(token.text).length ||
+      !/^[A-Za-z_][A-Za-z0-9_]*$/u.test(newName)) {
     return undefined;
   }
 
   const lookup = new KickAssemblerLookupService()
     .lookupAtPosition(document, position, index);
-  if (!lookup || lookup.queryOrigin !== 'project') {
+  if (!lookup || lookup.queryOrigin !== 'project' || !canRenameDeclarations(lookup.declarations)) {
     return undefined;
   }
 
@@ -78,13 +81,30 @@ export function buildKickAssemblerRenamePlan(
   }
 
   return {
-    oldName: token.text,
+    oldName: leafName(token.text),
     newName,
     edits: occurrences.map((occurrence) => ({
       uri: occurrence.location.uri,
-      range: occurrence.location.range,
+      range: leafRange(occurrence.location.range, occurrence.name),
       newText: newName
     }))
+  };
+}
+
+function canRenameDeclarations(declarations: readonly KickAssemblerLookupOccurrence[]): boolean {
+  // Namespace renames need edits to every qualified prefix, not just references
+  // bound to the namespace itself. Also avoid ambiguous duplicate declarations.
+  return declarations.length === 1 && declarations[0]?.kind !== 'namespace';
+}
+
+function leafName(name: string): string {
+  return name.slice(Math.max(name.lastIndexOf('.') + 1, name.startsWith('@') ? 1 : 0));
+}
+
+function leafRange(range: SourceRange, name: string): SourceRange {
+  return {
+    start: { ...range.start, character: range.start.character + name.length - leafName(name).length },
+    end: { ...range.end }
   };
 }
 
