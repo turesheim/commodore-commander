@@ -45,7 +45,7 @@ the emitted PRG bytes, then exercise SIDScore startup and its SRAP/MIDI protocol
 On macOS Apple Silicon and Linux x64 they also start bundled VICE, require visible native
 frames, and launch the packaged Electron app in an isolated workspace/profile.
 The UI test opens an assembly source and checks Machine canvas pixels through
-two power-on/off cycles. It types `POKE 53280,2` through Electron keyboard input
+two power-on/off cycles. It types `POKE53280,2` through Electron keyboard input
 after matching the BASIC `READY.` glyphs against the bundled C64 character ROM,
 then requires the emulated border color to change. Uniform or transparent frames
 fail; FPS alone does not pass. Logs and screenshots, including the UI state on

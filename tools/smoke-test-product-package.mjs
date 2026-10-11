@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { inflateRawSync } from 'node:zlib';
 import { promisify } from 'node:util';
-import { bundledViceLayout, packagedViceResources } from './vice-embed/runtime-layout.mjs';
+import { bundledViceLayout, packagedViceResources } from './vice-embed/runtime-layout.cjs';
 import { smokeTestVice } from './smoke-test-vice.mjs';
 import { smokeTestProductUi } from './smoke-test-product-ui.mjs';
 

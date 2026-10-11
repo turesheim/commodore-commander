@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { packagedViceResources } from './vice-embed/runtime-layout.mjs';
+import { packagedViceResources } from './vice-embed/runtime-layout.cjs';
 
 // Launch the packaged application, with its own backend/frontend and bundled
 // runtime discovery. A development Electron entry point would miss packaging bugs.
@@ -21,7 +21,9 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
   const readyRows = Array.from({ length: 8 }, (_, row) => readyScreenCodes.flatMap(code =>
     Array.from({ length: 8 }, (_, col) => (chargen[code * 8 + row] >> (7 - col)) & 1)
   ));
-  const command = 'poke 53280,2';
+  // Every echoed prefix must change pixels; a space is indistinguishable from
+  // an unfilled cell until the cursor moves. BASIC accepts this without spaces.
+  const command = 'poke53280,2';
   const commandScreenCodes = [...command.toUpperCase()].map(char => {
     const ascii = char.charCodeAt(0);
     return ascii >= 64 && ascii < 96 ? ascii - 64 : ascii;

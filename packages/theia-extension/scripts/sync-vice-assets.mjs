@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { access, cp, chmod, lstat, mkdir, open, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { bundledViceLayout } from '../../../tools/vice-embed/runtime-layout.mjs';
+import { bundledViceLayout } from '../../../tools/vice-embed/runtime-layout.cjs';
 
 const MACHO_MAGIC = new Set([
   0xfeedface,
@@ -39,7 +39,7 @@ const viceEmbedBuildInputs = [
   path.join(viceEmbedDir, 'Makefile'),
   path.join(viceEmbedDir, 'bundle-dylibs.mjs'),
   path.join(viceEmbedDir, 'bundle-linux-libs.mjs'),
-  path.join(viceEmbedDir, 'runtime-layout.mjs'),
+  path.join(viceEmbedDir, 'runtime-layout.cjs'),
   path.join(viceEmbedDir, 'vice-3.10.0-commodore-embed.patch')
 ];
 const target = path.join(scriptDir, '..', 'assets', 'vice', layout?.packagePath ?? 'unsupported');

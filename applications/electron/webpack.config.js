@@ -9,6 +9,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const childProcess = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { bundledViceLayout } = require('../../tools/vice-embed/runtime-layout.cjs');
 
 const frontendOutputPath = configs[0].output.path;
 const outputPath = nodeConfig.config.output.path;
@@ -17,26 +18,16 @@ const bundledDocsTargetPath = path.resolve(frontendOutputPath, 'assets', 'docs')
 const sidScoreCliJar = 'sidscore-cli-0.8.0.jar';
 const sidScorePluginJar = 'sidscore-kickass-plugin.jar';
 const sidScoreAssetsTargetPath = path.resolve(outputPath, 'assets', 'sidscore');
-const supportsBundledViceAssets =
-    process.platform === 'darwin' && process.arch === 'arm64';
+const viceLayout = bundledViceLayout();
 const skipViceAssets =
-    process.env.COMMODORE_COMMANDER_SKIP_VICE_ASSETS === '1' ||
-    !supportsBundledViceAssets;
-const viceInfoPlistPath = skipViceAssets
-    ? undefined
-    : require.resolve(
-        '@commodore-commander/theia-extension/assets/vice/darwin-arm64/VICE.app/Contents/Info.plist'
-    );
-const viceAppPath = viceInfoPlistPath
-    ? path.resolve(path.dirname(viceInfoPlistPath), '..')
-    : undefined;
-const viceAppTargetPath = path.resolve(
-    outputPath,
-    'assets',
-    'vice',
-    'darwin-arm64',
-    'VICE.app'
+    process.env.COMMODORE_COMMANDER_SKIP_VICE_ASSETS === '1' || !viceLayout;
+const viceAppPath = skipViceAssets ? undefined : path.resolve(
+    path.dirname(require.resolve('@commodore-commander/theia-extension/package.json')),
+    'assets', 'vice', viceLayout.packagePath
 );
+const viceAppTargetPath = viceLayout ? path.resolve(
+    outputPath, 'assets', 'vice', viceLayout.packagePath
+) : undefined;
 
 class CleanSidScoreAssetsPlugin {
     apply(compiler) {
@@ -54,9 +45,9 @@ class CleanBundledDocsAssetsPlugin {
     }
 }
 
-class CopyViceAppBundlePlugin {
+class CopyViceRuntimePlugin {
     apply(compiler) {
-        compiler.hooks.afterEmit.tap('CopyViceAppBundlePlugin', () => {
+        compiler.hooks.afterEmit.tap('CopyViceRuntimePlugin', () => {
             fs.rmSync(viceAppTargetPath, { recursive: true, force: true });
             fs.cpSync(viceAppPath, viceAppTargetPath, {
                 recursive: true,
@@ -238,10 +229,10 @@ nodeConfig.config.plugins.push(
 nodeConfig.config.plugins.push(new CleanSidScoreAssetsPlugin());
 if (skipViceAssets) {
     console.warn(
-        `Skipping bundled VICE app copy for ${process.platform}-${process.arch}.`
+        `Skipping bundled VICE runtime copy for ${process.platform}-${process.arch}.`
     );
 } else {
-    nodeConfig.config.plugins.push(new CopyViceAppBundlePlugin());
+    nodeConfig.config.plugins.push(new CopyViceRuntimePlugin());
 }
 
 module.exports = [
