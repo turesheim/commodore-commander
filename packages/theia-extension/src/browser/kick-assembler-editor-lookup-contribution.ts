@@ -401,6 +401,7 @@ export class KickAssemblerEditorLookupContribution
 
   onStop(): void {
     this.toDispose.dispose();
+    this.lookupService.clearDocumentCache();
   }
 
   protected registerReferenceHoverWidgets(): void {
@@ -1455,6 +1456,6 @@ interface KickAssemblerLookupContext {
   token: KickAssemblerLookupTokenMatch;
 }
 
-// TODO(theia-ts-migration): Replace this on-demand file crawl with an
-// incremental workspace/project service once the language-support index has a
-// backend-neutral cache boundary.
+// TODO(theia-ts-migration): Replace this on-demand file crawl with a shared
+// workspace/project update boundary. Lookup reuses document analysis, but file
+// discovery and request-local index assembly still happen for every request.

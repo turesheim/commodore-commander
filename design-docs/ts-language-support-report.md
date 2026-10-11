@@ -13,7 +13,7 @@ old emitted JS/declaration/map copies under `src/` have been removed.
 | Documents/includes | Text/position/range models, file-URI/loading helpers, relative/search-root imports and recursive project graph |
 | Semantic model | Expressions, scopes, namespace/macro/function/pseudocommand/struct/enum constructs, imports/import-once, segments/PC, conditionals/loops, labels and generated/data metadata |
 | Scanner/outline | Scanner facade over semantics; separate Langium structural outline; SIDScore subtune/effect outline |
-| Lookup/editor | Project/reference definition and reference queries, HTML hovers, completion, rename, workspace symbols, semantic tokens, folding, formatting and quick fixes |
+| Lookup/editor | Cached project/XML document analysis; definition/reference queries, HTML hovers, completion, rename, workspace symbols, semantic tokens, folding, formatting and quick fixes |
 | Hardware reference | Bundled 6502/C64 I/O XML plus typed machine profiles and machine-filtered I/O/ROM/memory/zero-page facts |
 | Build planning | Program/profile/run settings, standalone root detection, affected-program dependencies, output/generated assets, machine overrides and KickAss command rendering |
 | Diagnostics | Structural/include diagnostics and KickAss output parsing/range expansion; Theia translates results to markers |
@@ -35,7 +35,8 @@ syntax assets are active product inputs and must remain packaged.
 ## Deferred and external responsibilities
 
 - Shared incremental workspace state and include-graph-precise lookup. Theia
-  still crawls files/builds request-local indexes and overlays open editor text.
+  still discovers/reads files and assembles request-local indexes, overlaying
+  open editor text. Unchanged document analysis is reused across requests.
 - Compiler-accurate KickAss expression/directive edge cases, macro expansion,
   conditional evaluation and generated-symbol materialization.
 - Compiler-grade diagnostics, completion/rename/formatting/quick-fix parity,
@@ -54,8 +55,9 @@ Structural/tolerant parsing is appropriate for editing while full compiler
 parity remains explicitly unfinished. Paths/file URIs replace former workspace
 resource objects; framework adapters must not leak their APIs into this package.
 
-The next language architecture step is an incremental index with explicit
-update/invalidation contracts shared by lookup/editor features. Align outline,
+Document analysis caching is the first implemented step toward an incremental
+index. Next, add workspace update/invalidation boundaries for discovery, reads
+and persistent index assembly shared by lookup/editor features. Align outline,
 scanner, semantic and project views before expanding compiler-relevant behavior.
 See [language architecture](language-support-architecture.md) and
 [the implementation plan](plan.md).

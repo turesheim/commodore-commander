@@ -15,7 +15,7 @@ import {
   type ReferenceSymbolDefinition,
   type ReferenceSymbolKind
 } from '../reference/reference-symbol-catalog.ts';
-import type { KickAssemblerSymbolKind } from '../symbols/symbol-types.ts';
+import type { KickAssemblerSymbol, KickAssemblerSymbolKind } from '../symbols/symbol-types.ts';
 import {
   KICK_ASSEMBLER_DIRECTIVES,
   type KickAssemblerDirectiveInfo
@@ -92,15 +92,57 @@ interface TokenOccurrence extends KickAssemblerLookupTokenMatch {
   location: SourceLocation;
 }
 
+interface ProjectDocumentAnalysis {
+  symbols: readonly KickAssemblerSymbol[];
+  tokens: readonly TokenOccurrence[];
+}
+
+interface CachedDocumentAnalysis<T> {
+  text: string;
+  languageId: string;
+  analysis: T;
+}
+
 export interface KickAssemblerLookupIndexOptions {
   machineProfileId?: CommodoreMachineProfileId;
 }
 
 export class KickAssemblerLookupService {
+  private readonly projectAnalysis = new Map<string, CachedDocumentAnalysis<ProjectDocumentAnalysis>>();
+  private readonly referenceAnalysis = new Map<string, CachedDocumentAnalysis<readonly ReferenceSymbolDefinition[]>>();
+
+  clearDocumentCache(): void {
+    this.projectAnalysis.clear();
+    this.referenceAnalysis.clear();
+  }
+
+  protected analyzeProjectDocument(document: TextDocumentModel): ProjectDocumentAnalysis {
+    return {
+      symbols: scanKickAssemblerDocument(document).symbols,
+      tokens: collectTokenOccurrences(document)
+    };
+  }
+
+  protected analyzeReferenceDocument(
+    kind: ReferenceDocumentKind,
+    document: TextDocumentModel
+  ): readonly ReferenceSymbolDefinition[] {
+    return parseReferenceSymbolDefinitions(kind, document);
+  }
+
   buildIndex(
     documents: readonly KickAssemblerLookupDocument[],
     options: KickAssemblerLookupIndexOptions = {}
   ): KickAssemblerLookupIndex {
+    // Keep only the latest supplied document set; workspace discovery/overlays
+    // remain caller-owned. Text, rather than model version, controls reuse.
+    retainDocumentAnalyses(this.projectAnalysis, new Set(documents
+      .filter(input => input.kind === 'kickassembler')
+      .map(input => input.document.uri)));
+    retainDocumentAnalyses(this.referenceAnalysis, new Set(documents
+      .filter(input => input.kind !== 'kickassembler')
+      .map(input => referenceDocumentKey(input.kind, input.document.uri))));
+
     const projectDeclarationsByName = new Map<string, KickAssemblerLookupOccurrence[]>();
     const projectReferencesByName = new Map<string, KickAssemblerLookupOccurrence[]>();
     const referenceDeclarationsByName = new Map<string, KickAssemblerLookupOccurrence[]>();
@@ -127,10 +169,14 @@ export class KickAssemblerLookupService {
         continue;
       }
 
-      for (const definition of parseReferenceSymbolDefinitions(
-        input.kind,
-        input.document
-      )) {
+      const referenceKind = input.kind;
+      const definitions = cachedDocumentAnalysis(
+        this.referenceAnalysis,
+        referenceDocumentKey(referenceKind, input.document.uri),
+        input.document,
+        () => this.analyzeReferenceDocument(referenceKind, input.document)
+      );
+      for (const definition of definitions) {
         addReferenceDefinition(
           definition,
           referenceKeys,
@@ -158,16 +204,21 @@ export class KickAssemblerLookupService {
         continue;
       }
 
-      const scan = scanKickAssemblerDocument(input.document);
+      const analysis = cachedDocumentAnalysis(
+        this.projectAnalysis,
+        input.document.uri,
+        input.document,
+        () => this.analyzeProjectDocument(input.document)
+      );
       const declarationKeys = new Set<string>();
 
-      for (const symbol of scan.symbols) {
+      for (const symbol of analysis.symbols) {
         const occurrence: KickAssemblerLookupOccurrence = {
           name: symbol.name,
           normalizedName: symbol.name,
           kind: symbol.kind,
           origin: 'project' as const,
-          location: symbol.location
+          location: copyLocation(symbol.location)
         };
         if (symbol.detail) {
           occurrence.detail = symbol.detail;
@@ -181,7 +232,7 @@ export class KickAssemblerLookupService {
         );
       }
 
-      for (const occurrence of collectTokenOccurrences(input.document)) {
+      for (const occurrence of analysis.tokens) {
         if (declarationKeys.has(locationKey(occurrence.location))) {
           continue;
         }
@@ -382,6 +433,40 @@ export function findLookupTokenAtPosition(
   };
 }
 
+function cachedDocumentAnalysis<T>(
+  cache: Map<string, CachedDocumentAnalysis<T>>,
+  key: string,
+  document: TextDocumentModel,
+  analyze: () => T
+): T {
+  const cached = cache.get(key);
+  if (cached && cached.text === document.text && cached.languageId === document.languageId) {
+    return cached.analysis;
+  }
+  const analysis = analyze();
+  cache.set(key, { text: document.text, languageId: document.languageId, analysis });
+  return analysis;
+}
+
+function retainDocumentAnalyses<T>(cache: Map<string, T>, keys: ReadonlySet<string>): void {
+  for (const key of cache.keys()) {
+    if (!keys.has(key)) {
+      cache.delete(key);
+    }
+  }
+}
+
+function referenceDocumentKey(kind: KickAssemblerLookupDocumentKind, uri: string): string {
+  return `${kind}:${uri}`;
+}
+
+function copyLocation(location: SourceLocation): SourceLocation {
+  return {
+    uri: location.uri,
+    range: { start: { ...location.range.start }, end: { ...location.range.end } }
+  };
+}
+
 function collectTokenOccurrences(
   document: TextDocumentModel
 ): TokenOccurrence[] {
@@ -481,7 +566,7 @@ function toProjectReferenceOccurrence(
     normalizedName: occurrence.text,
     kind: kind ?? 'label',
     origin: 'project',
-    location: occurrence.location
+    location: copyLocation(occurrence.location)
   };
 }
 
@@ -496,7 +581,7 @@ function toReferenceLookupOccurrence(
       kind ??
       fallbackReferenceKind(occurrence),
     origin: 'reference',
-    location: occurrence.location
+    location: copyLocation(occurrence.location)
   };
 }
 
@@ -508,11 +593,11 @@ function toReferenceOccurrence(
     normalizedName: definition.normalizedName,
     kind: definition.kind,
     origin: 'reference',
-    location: definition.location
+    location: copyLocation(definition.location)
   };
 
   if (definition.addressRange) {
-    occurrence.addressRange = definition.addressRange;
+    occurrence.addressRange = { ...definition.addressRange };
   }
   if (definition.machineProfileId) {
     occurrence.machineProfileId = definition.machineProfileId;

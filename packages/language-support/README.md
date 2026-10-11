@@ -48,8 +48,13 @@ KickAss compiler. Conditional branches are represented without evaluating a
 configured symbol environment; macros/pseudocommands are not expanded.
 Diagnostics and reference datasets remain incomplete.
 
-Theia editor lookup still crawls files and builds a request-local index. Shared
-incremental indexing and include-graph-precise lookup remain work. SIDScore has
+`KickAssemblerLookupService` caches project symbols/tokens and XML definitions
+by document URI, kind, text and language ID. Each request assembles fresh index
+maps, preserving document order and active-machine filtering. Removed documents
+are evicted; `clearDocumentCache()` releases all cached analysis.
+
+Theia editor lookup still discovers and reads files on demand. Persistent
+workspace indexing and include-graph-precise lookup remain work. SIDScore has
 syntax/outline support, but no compiler-accurate TypeScript language model.
 Debug metadata and VICE debugging belong to `debug-adapter`; Theia UI,
 preferences and process orchestration remain outside this package.
