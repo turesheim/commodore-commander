@@ -67,14 +67,22 @@ cache-hit callers, each receiving independent mutable maps, arrays, occurrences,
 locations, address ranges and token bindings. Reference aliases within one
 result are preserved.
 
-Theia owns file selection, open-editor overlays, bundled XML and Monaco adapters.
+Theia owns URI access, open-editor overlays, bundled XML and Monaco adapters.
+`KickAssemblerWorkspaceLookup` uses the existing `KickAssemblerProjectLoader`
+include graph to select configured program closures or inferred roots. Shared
+files retain all owners; rename expands the declaration owners before preparing
+edits. External libraries are matched against owning workspace programs. Relative
+imports precede library roots supplied by a read-only build-configuration RPC.
+Workspace symbols remain workspace-wide. Invalid configuration falls back to the
+current file/relative imports. Graphs are rebuilt per request; existing discovery,
+disk and language-analysis caches still provide bounded reuse.
 Its definition links carry the full source-token range; native CTRL/CMD+click
 and F12 use the same resolved targets. The language word pattern includes
 direction suffixes and anonymous multi-labels. Monaco honors the multicursor preference
 by moving click navigation to Alt/Option when CTRL/CMD is reserved for cursors.
 `tools/run-language-navigation-ui-e2e.mjs` exercises real modifier-clicks across
-files, separate label scopes and directional labels; it runs with the existing
-Linux UI CI job. A language test also verifies target addresses with bundled KickAss.
+external libraries, program boundaries, label scopes and directional labels in
+the existing Linux UI CI job. A language test also verifies target addresses with bundled KickAss.
 Its `KickAssemblerWorkspaceFiles` shares discovery per root across lookup,
 workspace symbols and include completion. Structural file notifications and
 completed operations invalidate overlapping roots, including moved directories.
@@ -92,8 +100,12 @@ the result. Changed input causes full assembly, not per-document index updates.
 
 ## Project and build flow
 
-The Node project loader resolves `#import`/`#importif` using source-relative or
-configured search roots and builds a source graph, symbol index and diagnostics.
+`KickAssemblerProjectLoader` owns the shared recursive include graph and
+diagnostics. `KickAssemblerLanguageSupport` supplies Node filesystem/relative/
+search-root adapters for the existing build flow; editor lookup supplies Theia
+URI/overlay adapters. Shared-file diagnostics are collected once, including
+structural cycle warnings. `#importif` remains conservative without evaluating
+conditions. A file graph is not expanded source order or import-site scope.
 The build planner identifies standalone assembly roots and resolves programs,
 profiles, runs, output/generated assets and command-line settings. SIDScore
 module declarations/configuration contribute generated assembly dependencies.
@@ -111,7 +123,8 @@ outline/syntax slice.
 - Cross-file/import-crossing multi-labels, inline block bodies and import-site
   namespace context. Scope-owner/prefix and multi-label rename, scope-aware
   completion and compiler-grade rename conflict checking also remain work.
-- Include-graph-precise lookup and consistency between outline and semantic paths.
+- Expanded include order/import-site scope and consistency between outline and
+  semantic paths. Graph snapshot reuse and build/editor discovery alignment.
 - Compiler-accurate semantics/diagnostics: configured conditional evaluation,
   macro/pseudocommand expansion and generated-symbol materialization.
 - Richer editor/reference coverage and build-config/diagnostic attribution.

@@ -78,6 +78,8 @@ import {
 } from './commodore-machine-profile-selection';
 import { KickAssemblerWorkspaceFiles } from './kick-assembler-workspace-files';
 import { KickAssemblerWorkspaceDocuments } from './kick-assembler-workspace-documents';
+import { KickAssemblerWorkspaceLookup } from './kick-assembler-workspace-lookup';
+import { KickAssemblerBuildService } from '../common/kick-assembler-build-service';
 
 const EXCLUDED_DIRECTORY_NAMES = new Set([
   '.git',
@@ -112,6 +114,9 @@ export class KickAssemblerEditorLookupContribution
   @inject(CommodoreMachineProfileSelectionService)
   protected readonly machineProfileSelection!: CommodoreMachineProfileSelectionService;
 
+  @inject(KickAssemblerBuildService)
+  protected readonly buildService!: KickAssemblerBuildService;
+
   protected readonly lookupService = new KickAssemblerLookupService();
   protected readonly workspaceFiles = new KickAssemblerWorkspaceFiles(
     resource => this.fileService.resolve(resource),
@@ -120,6 +125,9 @@ export class KickAssemblerEditorLookupContribution
   );
   protected readonly workspaceDocuments = new KickAssemblerWorkspaceDocuments(
     async resource => (await this.fileService.read(resource)).value
+  );
+  protected readonly workspaceLookup = new KickAssemblerWorkspaceLookup(
+    resource => this.workspaceDocuments.getDocument(resource)
   );
   protected readonly toDispose = new DisposableCollection();
   protected readonly trackedEditors = new WeakSet<MonacoEditor>();
@@ -275,7 +283,7 @@ export class KickAssemblerEditorLookupContribution
             }
 
             const document = toTextDocumentModel(model);
-            const index = await this.buildLookupIndexForModel(model, document);
+            const index = await this.buildRenameIndexForModel(model, document, position);
             const prepared = prepareKickAssemblerRename(
               document,
               toDocumentPosition(position),
@@ -302,7 +310,7 @@ export class KickAssemblerEditorLookupContribution
           },
           provideRenameEdits: async (model, position, newName) => {
             const document = toTextDocumentModel(model);
-            const index = await this.buildLookupIndexForModel(model, document);
+            const index = await this.buildRenameIndexForModel(model, document, position);
             const plan = buildKickAssemblerRenamePlan(
               document,
               toDocumentPosition(position),
@@ -764,14 +772,51 @@ export class KickAssemblerEditorLookupContribution
     });
   }
 
+  protected async buildRenameIndexForModel(
+    model: monaco.editor.ITextModel, document: TextDocumentModel, position: monaco.Position
+  ) {
+    const index = await this.buildLookupIndexForModel(model, document);
+    const result = this.lookupService.lookupAtPosition(document, toDocumentPosition(position), index);
+    if (result?.queryOrigin !== 'project' || result.declarations.length !== 1) return index;
+    // A declaration can belong to more programs than its current caller does.
+    // Expand its owners before preparing edits, including external libraries.
+    const documents = await this.collectLookupDocuments(model, document,
+      new URI(result.declarations[0]!.location.uri), true);
+    return this.lookupService.buildIndex(documents, {
+      machineProfileId: this.machineProfileSelection.getActiveMachineProfileId(new URI(model.uri.toString()))
+    });
+  }
+
   protected async collectLookupDocuments(
     currentModel: monaco.editor.ITextModel,
-    currentDocument: ReturnType<typeof createTextDocumentModel>
+    currentDocument: ReturnType<typeof createTextDocumentModel>,
+    contextUri = new URI(currentModel.uri.toString()),
+    includeAllOwners = false
   ): Promise<KickAssemblerLookupDocument[]> {
     const overlayTexts = this.collectOverlayTexts();
     const currentUri = new URI(currentModel.uri.toString());
-    const candidateUris = await this.collectCandidateUris(currentUri);
-    const documents = await this.collectSourceDocuments(candidateUris, overlayTexts);
+    overlayTexts.set(currentUri.toString(), currentDocument.text);
+    const root = currentUri.scheme === 'file' ? this.workspaceService.getWorkspaceRootUri(currentUri) : undefined;
+    const roots = root ? [root] : currentUri.scheme === 'file'
+      ? this.workspaceService.tryGetRoots().map(entry => entry.resource) : [];
+    const selections = await Promise.all(roots.map(async workspaceRoot => {
+      const candidates = await this.collectKickAssemblerFiles(workspaceRoot);
+      const configuration = await this.buildService.getWorkspaceLookupConfiguration({
+        workspaceRootUri: workspaceRoot.toString(), resourceUri: currentUri.toString()
+      }).catch(() => undefined);
+      // Invalid/unavailable configuration must not disable basic editor lookup
+      // or silently reintroduce every unrelated workspace symbol.
+      if (!configuration) return { ...await this.workspaceLookup.getDocuments(contextUri, [], overlayTexts,
+        { programs: [], libraryRootUris: [] }), hasOwners: false };
+      return this.workspaceLookup.getDocuments(contextUri, candidates, overlayTexts, configuration, includeAllOwners);
+    }));
+    let contexts = selections.filter(selection => selection.hasOwners);
+    if (contexts.length === 0 && root) contexts = selections;
+    if (contexts.length === 0) contexts = [await this.workspaceLookup.getDocuments(contextUri, [], overlayTexts,
+      { programs: [], libraryRootUris: [] }, includeAllOwners)];
+    this.workspaceDocuments.retain([...selections, ...contexts].flatMap(selection => selection.resources));
+    const sources = new Map(contexts.flatMap(selection => selection.documents).map(document => [document.uri, document]));
+    const documents: KickAssemblerLookupDocument[] = [...sources.values()].map(document => ({ kind: 'kickassembler', document }));
 
     const currentKey = currentUri.toString();
     if (!documents.some(input => input.document.uri === currentKey)) {
@@ -867,23 +912,6 @@ export class KickAssemblerEditorLookupContribution
       );
     }
     return response.text();
-  }
-
-  protected async collectCandidateUris(currentUri: URI): Promise<readonly URI[]> {
-    if (!hasKickAssemblerExtension(currentUri) && currentUri.scheme !== 'file') {
-      return [currentUri];
-    }
-
-    const workspaceRoot =
-      currentUri.scheme === 'file'
-        ? this.workspaceService.getWorkspaceRootUri(currentUri)
-        : undefined;
-
-    if (!workspaceRoot) {
-      return [currentUri];
-    }
-
-    return this.collectKickAssemblerFiles(workspaceRoot);
   }
 
   protected collectKickAssemblerFiles(rootUri: URI): Promise<readonly URI[]> {
@@ -1430,5 +1458,5 @@ interface KickAssemblerLookupContext {
 }
 
 // TODO(theia-ts-migration): Extend snapshot reuse with per-document index updates
-// and include-graph-precise lookup. Changed input still triggers full assembly;
+// and graph snapshots. Changed input still triggers full assembly;
 // Theia file discovery and disk reads have bounded/event-invalidated reuse.

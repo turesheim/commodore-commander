@@ -34,11 +34,12 @@ syntax assets are active product inputs and must remain packaged.
 
 ## Deferred and external responsibilities
 
-- Shared incremental workspace state and include-graph-precise lookup. Theia
+- Shared incremental workspace state and graph snapshots. Theia
   reuses file discovery and disk text models for up to five seconds with file-event
   invalidation, overlaying current editor text. Unchanged ordered inputs/machine
   reuse index assembly with independent mutable results; changed input still
-  triggers full assembly.
+  triggers full assembly. Editor file selection reuses the existing include
+  graph through URI/overlay adapters and resolved program/library settings.
 - Cross-file/import-crossing multi-labels, inline block bodies, import-site
   context, scope-owner/multi-label rename and scope-aware completion. Structural
   binding covers blocks, parameters, namespace/label scopes, file namespaces
@@ -65,8 +66,9 @@ The bounded lookup-reuse round covers file discovery, disk models, document
 analysis and assembled indexes. Comparison/result copying remains per request;
 delta updates and full compiler parity remain unfinished. Namespace lookup now
 uses semantic identities and source-token bindings through a lexical scope
-resolver. Next, use the include graph for file selection and expanded source
-order, then align outline and project views. Native CTRL/CMD+click shares
-definition targets; the Linux CI job exercises actual clicks and the debugger UI.
+resolver. Editor lookup now uses the existing include graph for program file
+selection. Next, preserve expanded source order/import context and align outline
+and project views. Native CTRL/CMD+click shares definition targets; the Linux CI
+job exercises actual clicks and the debugger UI.
 See [language architecture](language-support-architecture.md) and
 [the implementation plan](plan.md).
