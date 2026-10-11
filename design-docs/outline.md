@@ -61,7 +61,7 @@ Codicon names, use `codicon-file` for file entries and
 | Segment definition (`.segmentdef`) | `segment-definition` | `Class` | [![symbol-class](../docs/icons/outline/symbol-class.svg)](../docs/icons/outline/symbol-class.svg) | `codicon-symbol-class` | A segment definition describes a named structural definition used by later segment entries. |
 | Active segment selection (`.segment`) | `segment` | `Module` | [![symbol-module](../docs/icons/outline/symbol-module.svg)](../docs/icons/outline/symbol-module.svg) | `codicon-symbol-module` | A segment groups following declarations and labels into a logical output area. |
 | Program counter placement or block (`.pc`) | `program-counter` | `Number` | [![symbol-number](../docs/icons/outline/symbol-number.svg)](../docs/icons/outline/symbol-number.svg) | `codicon-symbol-number` | Program-counter entries are address-oriented and should stand apart from namespace-like groups. |
-| Namespace block (`.namespace`) | `namespace` | `Namespace` | [![symbol-namespace](../docs/icons/outline/symbol-namespace.svg)](../docs/icons/outline/symbol-namespace.svg) | `codicon-symbol-namespace` | This is the direct Monaco equivalent. |
+| Namespace block or implicit file namespace (`.namespace`, `.filenamespace`) | `namespace` | `Namespace` | [![symbol-namespace](../docs/icons/outline/symbol-namespace.svg)](../docs/icons/outline/symbol-namespace.svg) | `codicon-symbol-namespace` | This is the direct Monaco equivalent. |
 | Macro block (`.macro`) | `macro` | `Method` | [![symbol-method](../docs/icons/outline/symbol-method.svg)](../docs/icons/outline/symbol-method.svg) | `codicon-symbol-method` | Macros are callable assembler templates, but should remain visually distinct from Kick Assembler functions. |
 | Function block (`.function`) | `function` | `Function` | [![symbol-function](../docs/icons/outline/symbol-function.svg)](../docs/icons/outline/symbol-function.svg) | `codicon-symbol-function` | This is the direct Monaco equivalent for a callable function. |
 | Struct block (`.struct`) | `struct` | `Struct` | [![symbol-struct](../docs/icons/outline/symbol-struct.svg)](../docs/icons/outline/symbol-struct.svg) | `codicon-symbol-struct` | This is the direct Monaco equivalent. |
@@ -86,3 +86,19 @@ Codicon CSS classes shown in the table.
   grouping is intentional.
 - Generic blocks, blank lines, and unrecognized lines should not receive their
   own outline icon unless they become explicit outline constructs.
+
+## Tree ownership
+
+Kick Assembler outline uses the semantic model used by lookup. File namespaces
+last until EOF or their enclosing brace closes; successive directives nest.
+`Name: { ... }` and `.label Name = value { ... }` own their block declarations.
+Reopened namespaces remain separate source occurrences. Anonymous/control
+blocks are invisible, but their declarations remain visible.
+
+Segments and unbraced `.pc` entries group following declarations for display;
+they do not create lookup namespaces. Braced `.pc` entries own only their body.
+Imports remain visible in their lexical container and do not expand other files.
+Selection ranges target semantic declaration tokens; parent ranges contain all
+children. Unclosed scopes extend to the current EOF. Inline block bodies remain
+a semantic-parser limitation. The Langium parse API is retained for compatibility
+and no longer determines outline ownership.

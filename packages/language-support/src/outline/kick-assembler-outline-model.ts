@@ -1,46 +1,19 @@
-import { GrammarUtils, type AstNode, type CstNode } from 'langium';
-
-import type { SourceLocation, SourceRange } from '../location/source-location.ts';
 import {
-  createRange
+  createTextDocumentModel,
+  type TextDocumentModel
+} from '../document/text-document-model.ts';
+import {
+  comparePositions,
+  containsPosition,
+  type SourceLocation,
+  type SourceRange
 } from '../location/source-location.ts';
-import type { TextDocumentModel } from '../document/text-document-model.ts';
+import type { KickAssemblerOutlineParseResult } from '../parsing/kick-assembler-outline-parser.ts';
 import type {
-  EnumBlock,
-  FunctionBlock,
-  GenericBlock,
-  ImportStatement,
-  LabelStatement,
-  MacroBlock,
-  NamespaceBlock,
-  OutlineFile,
-  ProgramCounterStatement,
-  PseudocommandBlock,
-  SegmentDefinition,
-  SegmentStatement,
-  Statement,
-  StructBlock,
-  SymbolDirectiveStatement
-} from '../langium/generated/ast.ts';
-import {
-  isEnumBlock,
-  isFunctionBlock,
-  isGenericBlock,
-  isImportStatement,
-  isLabelStatement,
-  isMacroBlock,
-  isNamespaceBlock,
-  isProgramCounterStatement,
-  isPseudocommandBlock,
-  isSegmentDefinition,
-  isSegmentStatement,
-  isStructBlock,
-  isSymbolDirectiveStatement
-} from '../langium/generated/ast.ts';
-import {
-  parseKickAssemblerOutlineDocument,
-  type KickAssemblerOutlineParseResult
-} from '../parsing/kick-assembler-outline-parser.ts';
+  KickAssemblerSemanticScope,
+  KickAssemblerSemanticSymbol
+} from '../semantic/kick-assembler-semantic-model.ts';
+import { parseKickAssemblerSemanticModel } from '../semantic/kick-assembler-semantic-parser.ts';
 
 export type KickAssemblerOutlineSymbolKind =
   | 'import'
@@ -66,483 +39,185 @@ export interface KickAssemblerOutlineSymbol {
   children: KickAssemblerOutlineSymbol[];
 }
 
+/** Document-local declarations; imported files belong to project lookup, not this outline. */
 export function buildKickAssemblerOutline(
   document: TextDocumentModel
 ): KickAssemblerOutlineSymbol[] {
-  return buildKickAssemblerOutlineFromParsed(
-    parseKickAssemblerOutlineDocument(document)
-  );
+  const model = parseKickAssemblerSemanticModel(document);
+  const declarations = new Map<string, KickAssemblerOutlineSymbol>();
+  for (const symbol of model.symbols) {
+    const kind = outlineKind(symbol);
+    if (!kind) continue;
+    const directive = model.directives.find(entry =>
+      entry.location.range.start.line === symbol.location.range.start.line
+      && symbol.detail === `.${entry.name}`);
+    const suffix = directive?.operands.slice(symbol.name.length).trim();
+    const entry = createSymbol(symbol.name, kind, symbol.location,
+      suffix ? `${symbol.detail} ${suffix}` : symbol.detail);
+    entry.location.range = directive ? copyRange(directive.location.range) : {
+      start: { ...symbol.location.range.start },
+      end: { line: symbol.location.range.start.line,
+        character: document.lineAt(symbol.location.range.start.line).length }
+    };
+    declarations.set(symbol.id, entry);
+  }
+
+  // Bind a scope to its declaration occurrence, never just to a qualified name:
+  // reopened namespaces and repeated local labels remain separate outline entries.
+  const scopeOwners = new Map<string, KickAssemblerOutlineSymbol>();
+  for (const scope of model.scopes) {
+    const owner = model.symbols.find(symbol =>
+      declarations.has(symbol.id)
+      && symbol.scopeId === scope.parentId
+      && symbol.name === scope.name
+      && symbol.location.range.start.line === scope.location.range.start.line);
+    const entry = owner && declarations.get(owner.id);
+    if (entry) scopeOwners.set(scope.id, entry);
+  }
+
+  const sections = new Map<string, KickAssemblerOutlineSymbol>();
+  for (const segment of model.segments) {
+    if (!segment.scopeId) continue; // Definitions are already declarations.
+    let selection = segment.location.range;
+    let name = segment.name;
+    const directive = model.directives.find(entry =>
+      entry.location.range.start.line === segment.location.range.start.line
+      && entry.name === (segment.kind === 'selection' ? 'segment' : 'pc'));
+    if (directive) {
+      const operands = directive.operands;
+      const token = segment.kind === 'selection'
+        ? /^("(?:[^"\\]|\\.)*"|[^\s{]+)/u.exec(operands)?.[0]
+        : /"(?:[^"\\]|\\.)*"/u.exec(operands)?.[0]
+          ?? /^=?\s*([^\s{]+)/u.exec(operands)?.[1];
+      if (token) {
+        const line = document.lineAt(segment.location.range.start.line);
+        const start = line.indexOf(token, segment.location.range.start.character + directive.name.length + 1);
+        selection = {
+          start: { line: segment.location.range.start.line, character: start },
+          end: { line: segment.location.range.start.line, character: start + token.length }
+        };
+        if (segment.kind === 'program-counter' && segment.name === '.pc') name = `.pc ${token}`;
+      }
+    }
+    const entry = createSymbol(name,
+      segment.kind === 'selection' ? 'segment' : 'program-counter',
+      { uri: document.uri, range: selection },
+      directive ? `.${directive.name} ${directive.operands}` : undefined);
+    entry.location.range = copyRange(segment.location.range);
+    sections.set(segment.scopeId, entry);
+    scopeOwners.set(segment.scopeId, entry);
+  }
+
+  const scopes = new Map(model.scopes.map(scope => [scope.id, scope]));
+  const importsByScope = new Map<string, KickAssemblerOutlineSymbol[]>();
+  for (const entry of model.imports) {
+    // The deepest containing lexical scope owns the import. An active output
+    // section is only presentation and must not change that ownership.
+    let owner = model.rootScope;
+    for (const scope of model.scopes) {
+      if (containsPosition(scope.range, entry.location.range.start)
+        && comparePositions(scope.range.start, owner.range.start) >= 0) owner = scope;
+    }
+    const symbol = createSymbol(entry.specifier ?? `#${entry.kind}`, 'import',
+      entry.specifierLocation ?? entry.location, document.getText(entry.location.range).trim());
+    symbol.location.range = copyRange(entry.location.range);
+    const entries = importsByScope.get(owner.id) ?? [];
+    entries.push(symbol);
+    importsByScope.set(owner.id, entries);
+  }
+
+  function collect(scope: KickAssemblerSemanticScope): KickAssemblerOutlineSymbol[] {
+    const items: { symbol: KickAssemblerOutlineSymbol; section?: KickAssemblerSemanticScope }[] = [];
+    for (const id of scope.symbolIds) {
+      const symbol = declarations.get(id);
+      if (symbol) items.push({ symbol });
+    }
+    for (const symbol of importsByScope.get(scope.id) ?? []) items.push({ symbol });
+    for (const id of scope.childScopeIds) {
+      const child = scopes.get(id)!;
+      const owner = scopeOwners.get(id);
+      const children = collect(child);
+      if (owner) {
+        owner.children.push(...children);
+        extendRange(owner, child.range);
+        if (sections.has(id)) items.push({ symbol: owner, section: child });
+      } else {
+        // Anonymous/control scopes stay invisible but keep their declarations.
+        for (const symbol of children) items.push({ symbol });
+      }
+    }
+    items.sort((a, b) => comparePositions(a.symbol.selectionRange.start, b.symbol.selectionRange.start));
+    const result: KickAssemblerOutlineSymbol[] = [];
+    let segment: KickAssemblerOutlineSymbol | undefined;
+    let active: KickAssemblerOutlineSymbol | undefined;
+    for (const { symbol, section } of items) {
+      if (symbol.kind === 'segment') {
+        result.push(symbol);
+        segment = active = symbol;
+      } else if (symbol.kind === 'program-counter') {
+        (segment?.children ?? result).push(symbol);
+        // A braced .pc owns only its body; an unbraced .pc groups following items.
+        if (section && comparePositions(section.range.end, section.location.range.end) === 0) active = symbol;
+      } else if (symbol.kind === 'import' || symbol.kind === 'segment-definition') {
+        result.push(symbol);
+      } else {
+        (active?.children ?? result).push(symbol);
+      }
+    }
+    for (const symbol of result) extendToChildren(symbol);
+    return result;
+  }
+  return collect(model.rootScope);
 }
 
+/** Retained for callers of the public Langium parse API; semantics own tree shape. */
 export function buildKickAssemblerOutlineFromParsed(
   parsed: KickAssemblerOutlineParseResult
 ): KickAssemblerOutlineSymbol[] {
-  return collectSymbols(parsed.document.uri.toString(), parsed.model);
+  return buildKickAssemblerOutline(parsed.sourceDocument ?? createTextDocumentModel({
+    uri: parsed.document.uri.toString(), text: parsed.document.textDocument.getText()
+  }));
 }
 
-function collectSymbols(
-  uri: string,
-  container: OutlineFile | { statements: readonly Statement[] }
-): KickAssemblerOutlineSymbol[] {
-  const symbols: KickAssemblerOutlineSymbol[] = [];
-  let activeSection: KickAssemblerOutlineSymbol | undefined;
-
-  for (const statement of container.statements) {
-    if (isImportStatement(statement)) {
-      symbols.push(createImportSymbol(uri, statement));
-      continue;
-    }
-
-    if (isSegmentDefinition(statement)) {
-      symbols.push(createSegmentDefinitionSymbol(uri, statement));
-      continue;
-    }
-
-    if (isSegmentStatement(statement)) {
-      const symbol = createSegmentSymbol(uri, statement);
-      symbols.push(symbol);
-      activeSection = symbol;
-      continue;
-    }
-
-    if (isProgramCounterStatement(statement)) {
-      const symbol = createProgramCounterSymbol(uri, statement);
-      appendSymbol(symbols, activeSection, symbol);
-
-      if (hasBlock(statement)) {
-        symbol.children.push(...collectSymbols(uri, statement.block));
-      } else {
-        activeSection = symbol;
-      }
-
-      continue;
-    }
-
-    if (isNamespaceBlock(statement)) {
-      appendSymbol(symbols, activeSection, createNamedBlockSymbol(
-        uri,
-        statement,
-        'namespace',
-        '.namespace'
-      ));
-      continue;
-    }
-
-    if (isMacroBlock(statement)) {
-      appendSymbol(symbols, activeSection, createNamedBlockSymbol(
-        uri,
-        statement,
-        'macro',
-        '.macro'
-      ));
-      continue;
-    }
-
-    if (isFunctionBlock(statement)) {
-      appendSymbol(symbols, activeSection, createNamedBlockSymbol(
-        uri,
-        statement,
-        'function',
-        '.function'
-      ));
-      continue;
-    }
-
-    if (isStructBlock(statement)) {
-      appendSymbol(symbols, activeSection, createNamedBlockSymbol(
-        uri,
-        statement,
-        'struct',
-        '.struct'
-      ));
-      continue;
-    }
-
-    if (isEnumBlock(statement)) {
-      appendSymbol(symbols, activeSection, createNamedBlockSymbol(
-        uri,
-        statement,
-        'enum',
-        '.enum'
-      ));
-      continue;
-    }
-
-    if (isPseudocommandBlock(statement)) {
-      appendSymbol(symbols, activeSection, createNamedBlockSymbol(
-        uri,
-        statement,
-        'pseudocommand',
-        '.pseudocommand'
-      ));
-      continue;
-    }
-
-    if (isSymbolDirectiveStatement(statement)) {
-      appendSymbol(symbols, activeSection, createDirectiveSymbol(uri, statement));
-      continue;
-    }
-
-    if (isLabelStatement(statement)) {
-      appendSymbol(symbols, activeSection, createLabelSymbol(uri, statement));
-      continue;
-    }
-
-    if (isGenericBlock(statement)) {
-      const nested = collectSymbols(uri, statement.block);
-      for (const symbol of nested) {
-        appendSymbol(symbols, activeSection, symbol);
-      }
-    }
-  }
-
-  return symbols;
-}
-
-function appendSymbol(
-  root: KickAssemblerOutlineSymbol[],
-  activeSection: KickAssemblerOutlineSymbol | undefined,
-  symbol: KickAssemblerOutlineSymbol
-): void {
-  if (activeSection) {
-    activeSection.children.push(symbol);
-    return;
-  }
-
-  root.push(symbol);
-}
-
-function createImportSymbol(
-  uri: string,
-  statement: ImportStatement
-): KickAssemblerOutlineSymbol {
-  const lastIndex = statement.parts.length - 1;
-  const name = firstOrFallback(
-    lastIndex >= 0 ? [statement.parts[lastIndex] ?? statement.directive] : [],
-    statement.directive
-  );
-  const selection = lastIndex >= 0
-    ? selectionRangeForPart(statement, lastIndex)
-    : nodeRange(statement);
-
-  return createSymbol(uri, statement, {
-    kind: 'import',
-    name,
-    detail: buildDetail(statement.directive, statement.parts),
-    selection
-  });
-}
-
-function createSegmentDefinitionSymbol(
-  uri: string,
-  statement: SegmentDefinition
-): KickAssemblerOutlineSymbol {
-  return createSymbol(uri, statement, {
-    kind: 'segment-definition',
-    name: statement.name,
-    detail: buildDetail('.segmentdef', statement.parts),
-    selection: propertyRange(statement, 'name')
-  });
-}
-
-function createSegmentSymbol(
-  uri: string,
-  statement: SegmentStatement
-): KickAssemblerOutlineSymbol {
-  return createSymbol(uri, statement, {
-    kind: 'segment',
-    name: stripQuotes(statement.name),
-    detail: buildDetail('.segment', statement.parts),
-    selection: propertyRange(statement, 'name')
-  });
-}
-
-function createProgramCounterSymbol(
-  uri: string,
-  statement: ProgramCounterStatement
-): KickAssemblerOutlineSymbol {
-  const label = programCounterLabel(statement.parts);
-  const selection = selectionRangeForPc(statement);
-
-  return createSymbol(uri, statement, {
-    kind: 'program-counter',
-    name: label,
-    detail: buildDetail('.pc', statement.parts),
-    selection
-  });
-}
-
-function createNamedBlockSymbol(
-  uri: string,
-  statement:
-    | NamespaceBlock
-    | MacroBlock
-    | FunctionBlock
-    | StructBlock
-    | EnumBlock
-    | PseudocommandBlock,
-  kind:
-    | 'namespace'
-    | 'macro'
-    | 'function'
-    | 'struct'
-    | 'enum'
-    | 'pseudocommand',
-  directive: string
-): KickAssemblerOutlineSymbol {
-  const symbol = createSymbol(uri, statement, {
-    kind,
-    name: statement.name,
-    detail: buildDetail(directive, statement.parts),
-    selection: propertyRange(statement, 'name')
-  });
-
-  if (hasBlock(statement)) {
-    symbol.children.push(...collectSymbols(uri, statement.block));
-  }
-
-  return symbol;
-}
-
-function createDirectiveSymbol(
-  uri: string,
-  statement: SymbolDirectiveStatement
-): KickAssemblerOutlineSymbol {
-  return createSymbol(uri, statement, {
-    kind: toDirectiveKind(statement.directive),
-    name: statement.name,
-    detail: buildDetail(statement.directive, statement.parts),
-    selection: propertyRange(statement, 'name')
-  });
-}
-
-function createLabelSymbol(
-  uri: string,
-  statement: LabelStatement
-): KickAssemblerOutlineSymbol {
-  const name = labelName(statement);
-
-  return createSymbol(uri, statement, {
-    kind: 'label',
-    name,
-    detail: statement.parts.length > 0
-      ? statement.parts.join(' ')
-      : undefined,
-    selection: labelSelectionRange(statement, name)
-  });
-}
-
-function createSymbol(
-  uri: string,
-  node: AstNode,
-  options: {
-    kind: KickAssemblerOutlineSymbolKind;
-    name: string;
-    selection?: SourceRange | undefined;
-    detail?: string | undefined;
-  }
-): KickAssemblerOutlineSymbol {
-  const range = nodeRange(node);
-
-  return {
-    name: options.name,
-    kind: options.kind,
-    detail: options.detail,
-    location: {
-      uri,
-      range
-    },
-    selectionRange: options.selection ?? range,
-    children: []
-  };
-}
-
-function nodeRange(node: AstNode): SourceRange {
-  return toSourceRange(node.$cstNode);
-}
-
-function propertyRange(
-  node: AstNode,
-  property: string,
-  index?: number
-): SourceRange | undefined {
-  const propertyNode = GrammarUtils.findNodeForProperty(
-    node.$cstNode,
-    property,
-    index
-  );
-  return propertyNode ? toSourceRange(propertyNode) : undefined;
-}
-
-function selectionRangeForPart(
-  node: AstNode,
-  index: number
-): SourceRange | undefined {
-  return propertyRange(node, 'parts', index);
-}
-
-function selectionRangeForPc(
-  statement: ProgramCounterStatement
-): SourceRange | undefined {
-  if (statement.parts.length > 2 && statement.parts[0] === '=') {
-    return selectionRangeForPart(statement, statement.parts.length - 1);
-  }
-
-  if (statement.parts.length > 1 && statement.parts[0] === '=') {
-    return selectionRangeForPart(statement, 1);
-  }
-
-  return statement.parts.length > 0
-    ? selectionRangeForPart(statement, 0)
-    : nodeRange(statement);
-}
-
-function toSourceRange(node: CstNode | undefined): SourceRange {
-  if (!node) {
-    return createRange(0, 0, 0, 0);
-  }
-
-  return createRange(
-    node.range.start.line,
-    node.range.start.character,
-    node.range.end.line,
-    node.range.end.character
-  );
-}
-
-function labelName(statement: LabelStatement): string {
-  const localName = readStringProperty(statement, 'localName');
-  if (localName) {
-    return localName;
-  }
-
-  const name = readStringProperty(statement, 'name');
-  if (name) {
-    return name;
-  }
-
-  return '!';
-}
-
-function labelSelectionRange(
-  statement: LabelStatement,
-  name: string
-): SourceRange | undefined {
-  const localNameRange = propertyRange(statement, 'localName');
-  if (localNameRange) {
-    return localNameRange;
-  }
-
-  const nameRange = propertyRange(statement, 'name');
-  if (nameRange) {
-    return nameRange;
-  }
-
-  const bangOnlyRange = propertyRange(statement, 'bangOnly');
-  if (bangOnlyRange) {
-    return bangOnlyRange;
-  }
-
-  return findTextRange(statement, name);
-}
-
-function findTextRange(
-  node: AstNode,
-  text: string
-): SourceRange | undefined {
-  const cstNode = node.$cstNode;
-  const document = node.$document?.textDocument;
-
-  if (!cstNode || !document || text.length === 0) {
-    return undefined;
-  }
-
-  const offset = cstNode.text.indexOf(text);
-  if (offset < 0) {
-    return undefined;
-  }
-
-  const start = document.positionAt(cstNode.offset + offset);
-  const end = document.positionAt(cstNode.offset + offset + text.length);
-
-  return createRange(
-    start.line,
-    start.character,
-    end.line,
-    end.character
-  );
-}
-
-
-function toDirectiveKind(
-  directive: SymbolDirectiveStatement['directive']
-): KickAssemblerOutlineSymbolKind {
-  switch (directive) {
-    case '.const':
-      return 'constant';
-    case '.var':
-      return 'variable';
-    case '.label':
-      return 'label';
+function outlineKind(symbol: KickAssemblerSemanticSymbol): KickAssemblerOutlineSymbolKind | undefined {
+  switch (symbol.kind) {
+    case 'local-label':
+    case 'anonymous-label': return 'label';
+    case 'label':
+    case 'constant':
+    case 'variable':
+    case 'namespace':
+    case 'macro':
+    case 'function':
+    case 'pseudocommand':
+    case 'struct':
+    case 'enum':
+    case 'segment-definition': return symbol.kind;
+    // Parameters, enum members and compiler-generated placeholders keep their
+    // existing lookup roles without adding new outline constructs.
+    default: return undefined;
   }
 }
 
-function buildDetail(
-  directive: string,
-  parts: readonly string[]
-): string | undefined {
-  const suffix = parts.join(' ');
-  return suffix ? `${directive} ${suffix}` : directive;
+function createSymbol(name: string, kind: KickAssemblerOutlineSymbolKind,
+  location: SourceLocation, detail?: string): KickAssemblerOutlineSymbol {
+  return { name, kind, detail,
+    location: { uri: location.uri, range: copyRange(location.range) },
+    selectionRange: copyRange(location.range), children: [] };
 }
 
-function programCounterLabel(parts: readonly string[]): string {
-  if (parts.length > 2 && parts[0] === '=') {
-    return parts[parts.length - 1] ?? '.pc';
+function copyRange(range: SourceRange): SourceRange {
+  return { start: { ...range.start }, end: { ...range.end } };
+}
+
+function extendRange(symbol: KickAssemblerOutlineSymbol, range: SourceRange): void {
+  if (comparePositions(range.start, symbol.location.range.start) < 0) symbol.location.range.start = { ...range.start };
+  if (comparePositions(range.end, symbol.location.range.end) > 0) symbol.location.range.end = { ...range.end };
+}
+
+function extendToChildren(symbol: KickAssemblerOutlineSymbol): void {
+  for (const child of symbol.children) {
+    extendToChildren(child);
+    extendRange(symbol, child.location.range);
   }
-
-  if (parts.length > 1 && parts[0] === '=' && parts[1]) {
-    return `.pc ${parts[1]}`;
-  }
-
-  if (parts[0]) {
-    return `.pc ${parts[0]}`;
-  }
-
-  return '.pc';
-}
-
-function firstOrFallback(parts: readonly string[], fallback: string): string {
-  return parts[0] ? stripQuotes(parts[0]) : fallback;
-}
-
-function readStringProperty(
-  node: AstNode,
-  property: string
-): string | undefined {
-  const value = (node as unknown as Record<string, unknown>)[property];
-  return typeof value === 'string' ? value : undefined;
-}
-
-function hasBlock(
-  node:
-    | ProgramCounterStatement
-    | NamespaceBlock
-    | MacroBlock
-    | FunctionBlock
-    | StructBlock
-    | EnumBlock
-    | PseudocommandBlock
-): node is typeof node & { block: { statements: Statement[] } } {
-  return Boolean(node.block);
-}
-
-function isQuotedString(value: string): boolean {
-  return value.startsWith('"') && value.endsWith('"');
-}
-
-function stripQuotes(value: string | undefined): string {
-  if (!value) {
-    return '';
-  }
-  return isQuotedString(value) ? value.slice(1, -1) : value;
 }

@@ -12,7 +12,7 @@ old emitted JS/declaration/map copies under `src/` have been removed.
 | --- | --- |
 | Documents/includes | Text/position/range models, file-URI/loading helpers, relative/search-root imports, recursive graph and ordered ordinary-import projection |
 | Semantic model | Expressions, scopes, namespace/macro/function/pseudocommand/struct/enum constructs, imports/import-once, segments/PC, conditionals/loops, labels and generated/data metadata |
-| Scanner/outline | Scanner facade over semantics; separate Langium structural outline; SIDScore subtune/effect outline |
+| Scanner/outline | Scanner and Kick Assembler outline over semantics; SIDScore subtune/effect outline |
 | Lookup/editor | Cached project/XML analysis and last assembled index; namespace/lexical/directional definition/reference queries and leaf rename, named containers, HTML hovers, completion, semantic tokens, folding, formatting and quick fixes |
 | Hardware reference | Bundled 6502/C64 I/O XML plus typed machine profiles and machine-filtered I/O/ROM/memory/zero-page facts |
 | Build planning | Program/profile/run settings, standalone root detection, affected-program dependencies, output/generated assets, machine overrides and KickAss command rendering |
@@ -68,8 +68,9 @@ analysis and assembled indexes. Comparison/result copying remains per request;
 delta updates and full compiler parity remain unfinished. Namespace lookup now
 uses semantic identities and source-token bindings through a lexical scope
 resolver. Editor lookup now uses the existing include graph for program file
-selection and ordered ordinary-import projection. Next, align outline/project
-views and build/editor discovery rules. Native CTRL/CMD+click shares definition
+selection and ordered ordinary-import projection. Outline now uses those same
+semantic scope rules within the current file; segment/PC grouping remains
+presentation. Next, align build/editor discovery rules. Native CTRL/CMD+click shares definition
 targets; the Linux CI job exercises actual clicks and the debugger UI.
 See [language architecture](language-support-architecture.md) and
 [the implementation plan](plan.md).

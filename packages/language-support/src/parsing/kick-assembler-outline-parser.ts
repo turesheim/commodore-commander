@@ -13,6 +13,8 @@ import type { OutlineFile } from '../langium/generated/ast.ts';
 export interface KickAssemblerOutlineParseResult {
   document: LangiumDocument<OutlineFile>;
   model: OutlineFile;
+  /** Original text preserves EOF ranges before Langium newline normalization. */
+  sourceDocument?: TextDocumentModel;
 }
 
 export function parseKickAssemblerOutlineDocument(
@@ -30,7 +32,8 @@ export function parseKickAssemblerOutlineDocument(
 
   return {
     document: langiumDocument,
-    model: langiumDocument.parseResult.value
+    model: langiumDocument.parseResult.value,
+    sourceDocument: document
   };
 }
 

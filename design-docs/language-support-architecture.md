@@ -11,7 +11,7 @@ executing KickAss builds, not for editor lookup.
 | --- | --- |
 | `document`, `location`, `resolution` | Text/range models, URI conversion, filesystem loading and include resolution |
 | `semantic`, `parsing` | Tolerant semantic model and compatibility projections for existing callers |
-| `langium`, `outline` | Structural grammar/AST and editor-neutral outline models |
+| `langium`, `outline` | Retained structural parse API and semantic editor-neutral outline |
 | `lookup`, `features`, `symbols` | Cached document analysis/index assembly and editor features |
 | `reference`, `machines` | XML assets, hardware facts, profiles and filtered lookup |
 | `project`, `build` | Recursive include graph, diagnostics and program/profile/run planning |
@@ -36,9 +36,13 @@ integration into their dependency graph.
 3. `scanKickAssemblerDocument` projects that model into the existing
    include/symbol/diagnostic shape. It is a compatibility facade, not a separate
    semantic authority.
-4. The Langium structural parser produces the Kick Assembler outline through
-   its own path. SIDScore outline scans subtunes/effects. Aligning these paths
-   with richer semantic lookup remains work.
+4. Kick Assembler outline projects the same semantic declarations and lexical
+   scopes, including file namespaces and label blocks. Segment/PC groups remain
+   presentation only; anonymous/control scopes are flattened, and imported
+   files stay outside the current document outline. Selection ranges match
+   semantic declarations; container ranges include their children. The public
+   Langium structural parse API remains available for compatibility. SIDScore
+   outline scans subtunes/effects.
 5. Lookup reads the semantic model directly and collects all declarations before
    binding source tokens to case-sensitive identities through
    `KickAssemblerScopeResolver`. Anonymous blocks/parameters use private
@@ -136,8 +140,7 @@ outline/syntax slice.
 - Inline block bodies and legacy deferred imports.
   Scope-owner/prefix and multi-label rename, scope-aware completion and
   compiler-grade rename conflict checking.
-- Outline/semantic consistency, graph snapshot reuse and build/editor discovery
-  alignment.
+- Graph snapshot reuse and build/editor discovery alignment.
 - Compiler-accurate semantics/diagnostics: configured conditional evaluation,
   macro/pseudocommand expansion and generated-symbol materialization.
 - Richer editor/reference coverage and build-config/diagnostic attribution.

@@ -25,7 +25,7 @@ TypeScript directly through Node's type stripping.
 | --- | --- |
 | `document`, `location`, `resolution` | Text/position models, file-URI helpers, loading and include resolution |
 | `semantic`, `parsing` | Tolerant expression/scope/import/directive model and a compatibility scanner facade |
-| `langium`, `outline` | Structural Kick Assembler outline and SIDScore subtune/effect outline |
+| `langium`, `outline` | Retained structural parse API, semantic Kick Assembler outline and SIDScore subtune/effect outline |
 | `lookup`, `features`, `symbols` | Definitions/references, hover content, completion, rename, workspace symbols, semantic tokens, folding, formatting and quick fixes |
 | `reference`, `machines` | XML mnemonic/C64 I/O data and typed machine/profile facts |
 | `project`, `build` | Include graph, program/profile/run settings, standalone roots, generated assets and KickAss invocation planning |
@@ -45,6 +45,10 @@ Project symbols take precedence over reference symbols. Lookup filters hardware
 references by active machine while sharing 6502 mnemonic data; hover content
 preserves reference HTML. Machine profiles cover C64, C128, VIC-20, Plus/4, C16,
 PET, CBM-II/5x0 and C64DTV.
+
+Kick Assembler outline uses the same document-local semantic declarations and
+scopes, including file namespaces and label blocks. Segment/PC groups remain
+visual sections; imported files are not expanded in the outline.
 
 Build planning resolves runtimes, library roots, output paths, machine overrides,
 profiles, named runs and affected programs. It also models SIDScore-generated
