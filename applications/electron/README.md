@@ -31,8 +31,10 @@ options for using an external runtime.
 `dist/mac/Commodore Commander.app`. `npm run package:current` builds and packages
 the current platform; the default output is under `dist/nightly`.
 
-The nightly workflow targets macOS, Windows, and Linux and runs package smoke
-tests before upload. Packaging includes the app assets, bundled documentation,
+The nightly workflow targets macOS, Windows, and Linux. It skips packaging when
+the branch commit matches its last successful run; manual dispatch can set
+`force` to rebuild it. Package smoke tests run before upload. Packages include
+app assets, bundled documentation,
 Kick Assembler, SIDScore, and applicable VICE assets. The patched embedded VICE
 build is currently supplied for macOS Apple Silicon; other platforms can use an
 external VICE installation.

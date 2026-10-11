@@ -4,12 +4,60 @@ on:
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild even when the commit is unchanged
+        type: boolean
+        default: false
+
+concurrency:
+  group: nightly-packages-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Check for nightly changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    outputs:
+      should_build: ${{ steps.decision.outputs.should_build }}
+
+    steps:
+      - name: Compare with last successful run
+        id: decision
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const force = context.eventName === 'workflow_dispatch'
+              && (context.payload.inputs?.force === 'true' || context.payload.inputs?.force === true);
+            let previous;
+            if (!force) {
+              const { data } = await github.rest.actions.listWorkflowRuns({
+                ...context.repo,
+                workflow_id: 'nightly-packages.yml',
+                branch: context.ref.replace(/^refs\/heads\//, ''),
+                status: 'success',
+                per_page: 1
+              });
+              previous = data.workflow_runs[0];
+            }
+            const shouldBuild = force || !previous || previous.head_sha !== context.sha;
+            const reason = force ? 'Manual rebuild requested.'
+              : !previous ? 'No successful nightly run exists for this branch yet.'
+              : shouldBuild ? `Commit changed since successful run ${previous.id}.`
+              : `Commit already verified by successful run ${previous.id}; packaging skipped.`;
+            core.setOutput('should_build', String(shouldBuild));
+            core.info(reason);
+            await core.summary.addHeading('Nightly packaging decision').addRaw(reason).addEOL().write();
+
   package:
+    needs: changes
+    if: needs.changes.outputs.should_build == 'true'
     name: Package ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
