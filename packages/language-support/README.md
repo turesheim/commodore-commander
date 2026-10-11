@@ -53,9 +53,10 @@ by document URI, kind, text and language ID. Each request assembles fresh index
 maps, preserving document order and active-machine filtering. Removed documents
 are evicted; `clearDocumentCache()` releases all cached analysis.
 
-Theia reuses file discovery for up to five seconds, invalidating it on structural
-file/workspace events. Content reads and index assembly remain on demand.
-Persistent workspace indexing and include-graph-precise lookup remain work.
+Theia reuses file discovery and disk text models for up to five seconds, with
+file/workspace event invalidation and current editor text overriding disk data.
+Index assembly remains on demand; persistent index reuse and include-graph-precise
+lookup remain work.
 SIDScore has syntax/outline support, but no compiler-accurate TypeScript language model.
 Debug metadata and VICE debugging belong to `debug-adapter`; Theia UI,
 preferences and process orchestration remain outside this package.

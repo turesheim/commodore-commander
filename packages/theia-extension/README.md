@@ -36,8 +36,13 @@ and completed file operations invalidate overlapping roots; workspace changes
 and shutdown clear the inventory. Complete snapshots expire after five seconds
 to cover missed/excluded watcher events; incomplete discovery is retried on the
 next request. Traversal order, source extensions and excluded directories are
-preserved. Content reads, open-editor overlays, active-machine selection and
-fresh lookup-map assembly remain here; persistent workspace indexing is pending.
+preserved. `KickAssemblerWorkspaceDocuments` shares disk reads/text models for
+up to five seconds; all file changes and operation endpoints invalidate matching
+files/subtrees. Missing/unreadable files are retried, and snapshots outside the
+latest candidate set are released without dropping concurrent callers. Open
+editor text always overrides disk snapshots. Workspace changes/shutdown clear
+all caches. Active-machine selection and fresh index assembly remain here;
+persistent index reuse is pending.
 
 The local `vice-runtime-resolver.ts` is an integration wrapper: it resolves the
 selected machine/model and supplies the extension's asset location and

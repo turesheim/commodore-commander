@@ -50,7 +50,7 @@ export class KickAssemblerWorkspaceFiles {
         }
         if (complete) {
           // Workspace watchers may exclude files or miss events. Bound reuse
-          // to five seconds; content reads and editor overlays are never cached.
+          // to five seconds. Disk snapshots have a separate invalidation boundary.
           snapshot.expiresAt = this.now() + 5000;
         } else {
           this.snapshots.delete(key);

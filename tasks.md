@@ -3,8 +3,8 @@
 The implementation plan and migration gap are tracked in
 `design-docs/plan.md`. This file is a short priority index.
 
-1. Extend document analysis caching and bounded/event-invalidated file discovery
-   with workspace state for content reads and persistent lookup/editor indexes.
+1. Reuse assembled lookup/editor indexes on top of document analysis caching and
+   bounded/event-invalidated file/disk snapshots, with content/order/machine invalidation.
 
 2. Align the semantic parser, Langium outline path, compatibility scanner, and
    project loader so shared editor services do not diverge on common Kick
