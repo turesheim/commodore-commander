@@ -1,11 +1,15 @@
 #!/usr/bin/env node
-import { spawn } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { inflateRawSync } from 'node:zlib';
+import { promisify } from 'node:util';
 import { smokeTestVice } from './smoke-test-vice.mjs';
+import { smokeTestProductUi } from './smoke-test-product-ui.mjs';
 
 const productName = 'Commodore Commander';
 const sidScoreCliJar = 'sidscore-cli-0.8.0.jar';
@@ -35,6 +39,7 @@ async function main() {
 
   const layout = resolvePackageLayout(options.packageDir);
   verifyPackageLayout(layout);
+  await smokeTestKickAssembler(layout, options);
   if (process.platform === 'darwin' && process.arch === 'arm64') {
     await smokeTestVice(path.join(
       layout.appResourcesDir, 'lib', 'backend', 'assets', 'vice',
@@ -42,6 +47,9 @@ async function main() {
     ), options.timeoutMs);
   }
   await smokeTestSidScore(layout, options);
+  if (process.platform === 'darwin' && process.arch === 'arm64') {
+    await smokeTestProductUi(layout, options.outputDir, options.uiTimeoutMs);
+  }
   console.log(`Product package smoke test passed: ${path.relative(repoRoot, layout.packageDir)}`);
 }
 
@@ -50,6 +58,8 @@ function parseArgs(args) {
     packageDir: defaultPackageDir(),
     javaCommand: process.env.COMMODORE_COMMANDER_JAVA_RUNTIME ?? 'java',
     timeoutMs: 15000,
+    uiTimeoutMs: 90000,
+    outputDir: path.join(repoRoot, 'test-results', 'product-package'),
     help: false
   };
 
@@ -64,6 +74,12 @@ function parseArgs(args) {
         break;
       case '--timeout':
         options.timeoutMs = positiveInteger(valueArg(args, ++index, arg), arg);
+        break;
+      case '--ui-timeout':
+        options.uiTimeoutMs = positiveInteger(valueArg(args, ++index, arg), arg);
+        break;
+      case '--output-dir':
+        options.outputDir = resolvePathArg(valueArg(args, ++index, arg));
         break;
       case '-h':
       case '--help':
@@ -176,6 +192,28 @@ function verifyPackageLayout(layout) {
     if ((mode & 0o111) === 0) {
       throw new Error(`Product executable is not executable: ${layout.executablePath}`);
     }
+  }
+}
+
+async function smokeTestKickAssembler(layout, options) {
+  const workingDirectory = await mkdtemp(path.join(os.tmpdir(), 'cc-kickass-smoke-'));
+  try {
+    const source = path.join(workingDirectory, 'main.asm');
+    const program = path.join(workingDirectory, 'main.prg');
+    await writeFile(source, '*=$1000\nStart: lda #$2a\nsta $0400\nrts\n');
+    await promisify(execFile)(options.javaCommand, [
+      '-jar', layout.kickAssemblerJarPath, source, '-o', program
+    ], { cwd: workingDirectory, timeout: options.timeoutMs, killSignal: 'SIGKILL' });
+    const actual = await readFile(program);
+    const expected = Buffer.from([0x00, 0x10, 0xa9, 0x2a, 0x8d, 0x00, 0x04, 0x60]);
+    if (!actual.equals(expected)) {
+      throw new Error(`Kick Assembler emitted unexpected PRG bytes: ${actual.toString('hex')}`);
+    }
+    console.log('Packaged Kick Assembler compiled a program with the expected load address and 6502 instructions.');
+  } catch (error) {
+    throw new Error(`Packaged Kick Assembler smoke test failed: ${error.message}\n${error.stdout ?? ''}${error.stderr ?? ''}`);
+  } finally {
+    await rm(workingDirectory, { recursive: true, force: true });
   }
 }
 
@@ -784,8 +822,10 @@ Runs smoke tests against a packaged Commodore Commander product directory.
 
 Options:
   --package-dir <path>  Product package directory. Defaults to current platform output.
-  --java-command <cmd>  Java command used for SIDScore. Default: java
-  --timeout <ms>        Emulator/player startup timeout. Default: 15000
+  --java-command <cmd>  Java command for Kick Assembler and SIDScore. Default: java
+  --timeout <ms>        Compiler/emulator/player startup timeout. Default: 15000
+  --ui-timeout <ms>     Packaged macOS UI timeout. Default: 90000
+  --output-dir <path>   Packaged UI logs/screenshots. Default: test-results/product-package
   -h, --help            Show this help
 `);
 }

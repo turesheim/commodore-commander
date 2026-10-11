@@ -109,8 +109,15 @@ and require continuing CCB1 frames with visible content over loopback. Native
 packaging includes the complete non-system dylib dependency graph, including
 `@rpath` references and sdl2-compat's dynamically loaded SDL3, and
 removes build-machine search paths so local Homebrew libraries cannot mask
-missing payloads. These checks cover native startup and frame delivery; browser
-painting still belongs to the Electron UI tests.
+missing payloads. The same package check launches the packaged Electron app with
+isolated user data and verifies visible pixels in the Machine canvas. It sends
+`POKE 53280,2` through Electron keyboard events and requires a border-color
+change, then powers off and repeats after startup. This covers bundled discovery,
+backend/browser transport, canvas painting and BASIC input/execution, rather than
+accepting FPS or an existing screenshot as success. Nightly logs/screenshots
+survive failed checks.
+Package-level UI verification currently covers macOS Apple Silicon only; debug
+stepping and richer UI flows remain in the separate Electron/DAP E2E lanes.
 
 Runtime extraction is partial. Theia still owns launch/session policy, machine
 selection, JSON validation, browser transport and RPC cleanup; the adapter

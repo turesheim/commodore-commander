@@ -280,6 +280,17 @@ type ElectronScreenCaptureStep =
     }
   | { readonly type: 'stopDebugSession' }
   | {
+      readonly type: 'assertCanvasKeyboardResponse';
+      readonly selector: string;
+      readonly text: string;
+      readonly timeoutMs?: number;
+    }
+  | {
+      readonly type: 'waitForCanvasContent';
+      readonly selector: string;
+      readonly timeoutMs?: number;
+    }
+  | {
       readonly type: 'waitForVisibleText';
       readonly selector: string;
       readonly text: string;
@@ -792,6 +803,14 @@ async function runScreenCaptureStep(
       }
       return;
     }
+    case 'assertCanvasKeyboardResponse':
+      await assertCanvasKeyboardResponse(window, step.selector, step.text, step.timeoutMs ?? timeoutMs);
+      console.log(`Verified canvas keyboard response in ${step.selector}.`);
+      return;
+    case 'waitForCanvasContent':
+      await waitForCanvasContent(window, step.selector, step.timeoutMs ?? timeoutMs);
+      console.log(`Verified visible canvas content in ${step.selector}.`);
+      return;
     case 'waitForVisibleText':
       await waitForVisibleText(
         window,
@@ -995,6 +1014,70 @@ async function callScreenCaptureApi<T>(
     })()`,
     fallback,
     timeoutMs
+  );
+}
+
+async function assertCanvasKeyboardResponse(
+  window: BrowserWindow,
+  selector: string,
+  text: string,
+  timeoutMs: number
+): Promise<void> {
+  const pixelExpression = `(() => {
+    const canvas = document.querySelector(${JSON.stringify(selector)});
+    if (!(canvas instanceof HTMLCanvasElement)) { return null; }
+    canvas.focus();
+    const data = canvas.getContext('2d')?.getImageData(0, 0, 1, 1).data;
+    return data?.[3] > 0 ? [...data].slice(0, 3).join(',') : null;
+  })()`;
+  const before = await evaluateInWindow<string | null>(window, pixelExpression, null);
+  if (!before) {
+    throw new Error(`No opaque canvas pixel before keyboard input in ${selector}.`);
+  }
+  for (const key of [...text, 'Enter']) {
+    window.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
+    // Hold/release long enough for the C64 keyboard scan, without key repeat.
+    await delay(60);
+    window.webContents.sendInputEvent({ type: 'keyUp', keyCode: key });
+    await delay(60);
+  }
+  await waitForCondition(window, `(() => {
+    const pixel = ${pixelExpression};
+    return pixel !== null && pixel !== ${JSON.stringify(before)};
+  })()`, timeoutMs, `Canvas border did not respond to keyboard input in ${selector}.`);
+}
+
+async function waitForCanvasContent(
+  window: BrowserWindow,
+  selector: string,
+  timeoutMs: number
+): Promise<void> {
+  await waitForCondition(
+    window,
+    `(() => {
+      const canvas = document.querySelector(${JSON.stringify(selector)});
+      if (!(canvas instanceof HTMLCanvasElement) || canvas.width < 256 || canvas.height < 200) {
+        return false;
+      }
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0 ||
+          !canvas.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) {
+        return false;
+      }
+      const context = canvas.getContext('2d');
+      if (!context) { return false; }
+      const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+      let differentPixels = 0;
+      for (let offset = 4; offset < data.length; offset += 4) {
+        if (data[offset + 3] > 0 &&
+            (data[offset] !== data[0] || data[offset + 1] !== data[1] || data[offset + 2] !== data[2])) {
+          if (++differentPixels >= 64) { return true; }
+        }
+      }
+      return false;
+    })()`,
+    timeoutMs,
+    `Timed out waiting for visible canvas content in ${selector}.`
   );
 }
 
