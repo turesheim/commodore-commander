@@ -28,6 +28,11 @@ standalone child-process/command-pipe ownership, binary frame parsing, native
 loopback frame transport, embedded stdout framing, and the CCV1 JSON wire codec
 belong to `packages/vice-runtime`.
 
+Editor lookup keeps a long-lived `KickAssemblerLookupService` and clears its
+document analysis cache on frontend shutdown. Workspace file discovery/reads,
+open-editor overlays and active-machine selection remain here. Each request
+still assembles fresh lookup maps; persistent workspace indexing remains work.
+
 The local `vice-runtime-resolver.ts` is an integration wrapper: it resolves the
 selected machine/model and supplies the extension's asset location and
 preference error hint to shared runtime discovery. The browser WebSocket bridge,

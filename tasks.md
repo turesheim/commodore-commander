@@ -3,9 +3,8 @@
 The implementation plan and migration gap are tracked in
 `design-docs/plan.md`. This file is a short priority index.
 
-1. Add an incremental TypeScript workspace index for Kick Assembler lookup,
-   completion, rename, workspace symbols, hovers, semantic tokens, and
-   diagnostics.
+1. Extend document analysis caching with workspace update/invalidation for
+   file discovery, reads and persistent lookup/editor indexes.
 
 2. Align the semantic parser, Langium outline path, compatibility scanner, and
    project loader so shared editor services do not diverge on common Kick

@@ -12,7 +12,7 @@ executing KickAss builds, not for editor lookup.
 | `document`, `location`, `resolution` | Text/range models, URI conversion, filesystem loading and include resolution |
 | `semantic`, `parsing` | Tolerant semantic model and compatibility projections for existing callers |
 | `langium`, `outline` | Structural grammar/AST and editor-neutral outline models |
-| `lookup`, `features`, `symbols` | Request-local symbol/reference index and editor features |
+| `lookup`, `features`, `symbols` | Cached document analysis, request-local symbol/reference index and editor features |
 | `reference`, `machines` | XML assets, hardware facts, profiles and filtered lookup |
 | `project`, `build` | Recursive include graph, diagnostics and program/profile/run planning |
 
@@ -45,9 +45,13 @@ integration into their dependency graph.
    ranges, tokens and symbols. Hover formatting preserves reference HTML.
 
 The Theia contribution selects workspace files, overlays open editor text,
-loads bundled XML and translates feature results to Monaco. It still crawls and
-builds the lookup index on demand; removing stale source build artifacts does
-not implement persistent indexing.
+loads bundled XML and translates feature results to Monaco. Its long-lived
+lookup service caches project symbols/tokens and XML definitions by URI, kind,
+text and language ID. Comparing text keeps unsaved editor changes current even
+when model versions coincide. Each request assembles fresh maps in document
+order with current machine filtering; copied locations isolate cached analysis
+from mutable results. Documents absent from the latest input are evicted, and
+frontend shutdown clears the cache. File discovery and reads remain on demand.
 
 ## Project and build flow
 
@@ -66,7 +70,8 @@ outline/syntax slice.
 
 ## Remaining work
 
-- A shared incremental index with explicit update/invalidation boundaries.
+- Workspace update/invalidation boundaries for file discovery, reads and
+  persistent index assembly beyond the existing document analysis cache.
 - Include-graph-precise lookup and consistency between outline and semantic paths.
 - Compiler-accurate semantics/diagnostics: configured conditional evaluation,
   macro/pseudocommand expansion and generated-symbol materialization.
