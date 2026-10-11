@@ -24,7 +24,7 @@ export function findKickAssemblerWorkspaceSymbols(
   for (const occurrence of occurrences) {
     if (
       normalizedQuery.length > 0 &&
-      !occurrence.name.toLowerCase().includes(normalizedQuery)
+      !(occurrence.qualifiedName ?? occurrence.name).toLowerCase().includes(normalizedQuery)
     ) {
       continue;
     }
@@ -47,6 +47,10 @@ export function findKickAssemblerWorkspaceSymbols(
       };
       if (occurrence.detail) {
         symbol.detail = occurrence.detail;
+      }
+      const separator = occurrence.qualifiedName?.lastIndexOf('.') ?? -1;
+      if (separator >= 0) {
+        symbol.containerName = occurrence.qualifiedName!.slice(0, separator);
       }
       return symbol;
     });

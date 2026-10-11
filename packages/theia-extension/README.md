@@ -43,7 +43,11 @@ latest candidate set are released without dropping concurrent callers. Open
 editor text always overrides disk snapshots. Workspace changes/shutdown clear
 all caches. Active-machine selection remains here. The language service reuses
 the last assembled index for equivalent ordered inputs/machine, returning an
-independent mutable copy; changed inputs trigger fresh assembly.
+independent mutable copy; changed inputs trigger fresh assembly. Namespace
+resolution and token binding belong to the language service: navigation,
+references, leaf rename and semantic tokens use its qualified names; the
+workspace-symbol adapter displays the supplied namespace container. Lexical
+scopes and include-graph-precise file selection remain work.
 
 The local `vice-runtime-resolver.ts` is an integration wrapper: it resolves the
 selected machine/model and supplies the extension's asset location and

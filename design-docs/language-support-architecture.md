@@ -39,17 +39,25 @@ integration into their dependency graph.
 4. The Langium structural parser produces the Kick Assembler outline through
    its own path. SIDScore outline scans subtunes/effects. Aligning these paths
    with richer semantic lookup remains work.
-5. Lookup combines project declarations/references with XML and machine facts.
+5. Lookup reads the semantic model directly and collects all declarations before
+   binding source tokens to case-sensitive qualified names. Multiline namespace
+   blocks resolve from the innermost namespace through parents to root; `@`
+   selects root directly. Reopened namespaces share names across supplied files.
+   Scope body ranges end at their closing brace or EOF for unfinished text.
    Project declarations win; the active machine filters hardware references.
    Editor features consume this index/model and return framework-neutral edits,
-   ranges, tokens and symbols. Hover formatting preserves reference HTML.
+   ranges, tokens and symbols. Rename changes the leaf identifier while keeping
+   prefixes; semantic tokens use the same bindings, and workspace symbols carry
+   namespace containers. Namespace renames and duplicate-declaration renames are
+   rejected. Hover formatting preserves reference HTML.
 
 The long-lived lookup service caches project/XML analysis and the last assembled
 index. Reuse compares ordered URI/kind/text/language inputs and active machine,
 not model versions. Changed inputs trigger fresh assembly using reusable analysis;
 absent documents are evicted. A private index snapshot isolates first-build and
 cache-hit callers, each receiving independent mutable maps, arrays, occurrences,
-locations and address ranges. Reference aliases within one result are preserved.
+locations, address ranges and token bindings. Reference aliases within one
+result are preserved.
 
 Theia owns file selection, open-editor overlays, bundled XML and Monaco adapters.
 Its `KickAssemblerWorkspaceFiles` shares discovery per root across lookup,
@@ -85,6 +93,9 @@ outline/syntax slice.
 ## Remaining work
 
 - Per-document index updates beyond the implemented whole-snapshot reuse.
+- Lexical block/label scopes, local/anonymous labels, `.filenamespace`, namespace
+  rename and import-site namespace context. Namespace-aware completion and
+  compiler-grade rename conflict checking also remain work.
 - Include-graph-precise lookup and consistency between outline and semantic paths.
 - Compiler-accurate semantics/diagnostics: configured conditional evaluation,
   macro/pseudocommand expansion and generated-symbol materialization.

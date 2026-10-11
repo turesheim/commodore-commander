@@ -100,7 +100,8 @@ export function buildKickAssemblerSemanticTokens(
       continue;
     }
 
-    const declaration = index?.projectDeclarationsByName.get(token.text)?.[0];
+    const name = index?.projectBindingsByLocation.get(locationKey(token.location));
+    const declaration = name ? index?.projectDeclarationsByName.get(name)?.[0] : undefined;
     if (declaration && isProjectSymbolKind(declaration.kind)) {
       push({
         location: token.location,
