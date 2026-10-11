@@ -272,8 +272,12 @@ npm run package:current
 ```
 
 Nightly product packages are built by GitHub Actions for macOS, Windows, and
-Linux. The scheduled workflow uploads run artifacts and refreshes the mutable
-`nightly` prerelease after all three platform packages build successfully.
+Linux when the branch commit differs from its last successful nightly run.
+A small check runs each night; unchanged commits skip all packaging and release
+jobs. Failed new-commit builds remain eligible for retry. Manual dispatch follows
+the same rule unless `force` is enabled. Any new commit qualifies, including docs.
+Successful packages are uploaded as run artifacts and refresh the mutable
+`nightly` prerelease on `main` after all three platform builds succeed.
 Each product package is smoke-tested before upload by starting the bundled
 SIDScore player server from the packaged Kick Assembler and SIDScore assets and
 running a MIDI-device scan through the SRAP protocol. The smoke test also

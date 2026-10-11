@@ -55,8 +55,11 @@ owns DAP-specific monitor behavior. See
    JAR updates must include the sibling `../SIDScore` source, or explicitly
    report that it is unavailable.
 
-5. **Distribution.** Existing nightly workflows package macOS, Windows and
-   Linux. Bundled patched embedded VICE currently targets macOS Apple Silicon;
+5. **Distribution.** Nightly packaging for macOS, Windows and Linux runs only
+   for a new branch commit since the last successful run, or an explicit manual
+   `force` rebuild. Unchanged nights skip packaging/publishing; failed new-commit
+   builds remain eligible for retry. Bundled patched embedded VICE targets
+   macOS Apple Silicon;
    other payloads, signing/notarization and installer polish remain work.
 
 ## Remaining gaps
