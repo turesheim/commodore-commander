@@ -72,16 +72,13 @@ import {
   type TraceRegisterSnapshot,
   type TraceSnapshot
 } from './trace-history';
-import { launchViceProcess, terminateViceProcess } from '@commodore-commander/vice-runtime';
+import { launchViceProcess, terminateViceProcess, ViceEmbeddedStdoutDecoder } from '@commodore-commander/vice-runtime';
 import {
-  COMMODORE_VICE_EMBED_BINARY_FRAME_MAGIC,
   COMMODORE_VICE_EMBED_DEBUG_EVENT,
   COMMODORE_VICE_EMBED_PROTOCOL,
   encodeViceEmbedCommand,
-  getViceEmbedBinaryFrameRecordLength,
   isViceEmbedProtocolLine,
   parseViceEmbedProtocolLine,
-  startsWithViceEmbedBinaryFrame,
   type ViceEmbedCommand,
   type ViceEmbedProtocolEvent
 } from './vice-embed-protocol';
@@ -103,7 +100,6 @@ const VICE_MONITOR_CONNECT_ATTEMPTS = 150;
 const VICE_MONITOR_CONNECT_DELAY_MS = 100;
 const WATCH_MEMORY_PREVIEW_BYTES = 64;
 const TRACE_HISTORY_CAPACITY = 200;
-const MAX_EMBED_STDOUT_BUFFER_BYTES = 32 * 1024 * 1024;
 const PROGRAMMED_BREAKPOINTS_EVENT = 'commodoreViceProgrammedBreakpoints';
 const PROGRAMMED_BREAKPOINT_RAW_ID = 'commodoreViceProgrammedBreakpointId';
 
@@ -257,7 +253,25 @@ export class ViceDebugSession {
   private terminated = false;
   private clientSupportsMemoryEvent = false;
   private clientSupportsInvalidatedEvent = false;
-  private viceEmbedStdoutBuffer = Buffer.alloc(0);
+  private readonly viceEmbedStdoutDecoder = new ViceEmbeddedStdoutDecoder({
+    onLine: (line) => this.handleViceStdoutLine(line),
+    onText: (text) => {
+      this.connection.sendOutput(text, 'stdout');
+      this.sendViceEmbedOutput('stdout', text);
+    },
+    onBinaryFrame: (record) => this.handleViceStdoutBinaryFrame(record),
+    onInvalidFrame: (error) => this.sendViceEmbedEvent({
+      type: 'status', state: 'error',
+      message: `Invalid patched VICE binary frame: ${error.message}`
+    }),
+    onOverflow: (buffer) => {
+      const text = buffer.toString('utf8');
+      this.connection.sendOutput('Dropped oversized VICE embedded stdout buffer.\n', 'stderr');
+      if (!isViceEmbedProtocolLine(text)) {
+        this.sendViceEmbedOutput('stdout', text);
+      }
+    }
+  });
   private droppedViceEmbedFrameNoticeSent = false;
   private viceMonitorCommandDirectory: string | undefined;
 
@@ -432,7 +446,7 @@ export class ViceDebugSession {
     this.memoryDisassemblySources.clear();
     this.nextSourceReference = MEMORY_DISASSEMBLY_SOURCE_REFERENCE_BASE;
     this.traceHistory.clear();
-    this.viceEmbedStdoutBuffer = Buffer.alloc(0);
+    this.viceEmbedStdoutDecoder.reset();
     this.viceCommandInput = undefined;
     this.droppedViceEmbedFrameNoticeSent = false;
     this.initialStopSeen = false;
@@ -598,82 +612,7 @@ export class ViceDebugSession {
       return;
     }
 
-    const ownedChunk = Buffer.from(chunk);
-    this.viceEmbedStdoutBuffer =
-      this.viceEmbedStdoutBuffer.length === 0
-        ? ownedChunk
-        : Buffer.concat([this.viceEmbedStdoutBuffer, ownedChunk]);
-    if (this.viceEmbedStdoutBuffer.length > MAX_EMBED_STDOUT_BUFFER_BYTES) {
-      const text = this.viceEmbedStdoutBuffer.toString('utf8');
-      this.viceEmbedStdoutBuffer = Buffer.alloc(0);
-      this.connection.sendOutput(
-        'Dropped oversized VICE embedded stdout buffer.\n',
-        'stderr'
-      );
-      if (!isViceEmbedProtocolLine(text)) {
-        this.sendViceEmbedOutput('stdout', text);
-      }
-      return;
-    }
-
-    for (;;) {
-      if (startsWithViceEmbedBinaryFrame(this.viceEmbedStdoutBuffer)) {
-        let recordLength: number | undefined;
-        try {
-          recordLength = getViceEmbedBinaryFrameRecordLength(
-            this.viceEmbedStdoutBuffer
-          );
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          this.sendViceEmbedEvent({
-            type: 'status',
-            state: 'error',
-            message: `Invalid patched VICE binary frame: ${message}`
-          });
-          this.viceEmbedStdoutBuffer = this.viceEmbedStdoutBuffer.subarray(
-            COMMODORE_VICE_EMBED_BINARY_FRAME_MAGIC.length
-          );
-          continue;
-        }
-        if (
-          recordLength === undefined ||
-          this.viceEmbedStdoutBuffer.length < recordLength
-        ) {
-          return;
-        }
-        const record = this.viceEmbedStdoutBuffer.subarray(0, recordLength);
-        this.viceEmbedStdoutBuffer =
-          this.viceEmbedStdoutBuffer.subarray(recordLength);
-        this.handleViceStdoutBinaryFrame(record);
-        continue;
-      }
-
-      const binaryIndex = this.viceEmbedStdoutBuffer.indexOf(
-        COMMODORE_VICE_EMBED_BINARY_FRAME_MAGIC
-      );
-      const newlineIndex = this.viceEmbedStdoutBuffer.indexOf(0x0a);
-      if (newlineIndex >= 0 && (binaryIndex < 0 || newlineIndex < binaryIndex)) {
-        const line = this.viceEmbedStdoutBuffer
-          .subarray(0, newlineIndex + 1)
-          .toString('utf8');
-        this.viceEmbedStdoutBuffer =
-          this.viceEmbedStdoutBuffer.subarray(newlineIndex + 1);
-        this.handleViceStdoutLine(line);
-        continue;
-      }
-      if (binaryIndex > 0) {
-        const text = this.viceEmbedStdoutBuffer
-          .subarray(0, binaryIndex)
-          .toString('utf8');
-        this.viceEmbedStdoutBuffer =
-          this.viceEmbedStdoutBuffer.subarray(binaryIndex);
-        this.connection.sendOutput(text, 'stdout');
-        this.sendViceEmbedOutput('stdout', text);
-        continue;
-      }
-
-      return;
-    }
+    this.viceEmbedStdoutDecoder.accept(chunk);
   }
 
   private handleViceStdoutBinaryFrame(_record: Buffer): void {

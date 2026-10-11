@@ -101,11 +101,14 @@ The current patch is intentionally narrow:
   mouse commands are accepted by VICE's mouse and paddle input path. Input
   device selection remains controlled by VICE's own menu or explicit launch
   arguments.
-- The Theia backend opens a local frame socket, passes it to VICE with
-  `-cc-frame-port <port>`, passes command input with `-cc-command-fd 3`, parses
-  binary frames from that socket, and forwards them to the browser over a
-  dedicated binary WebSocket. stdout remains for JSON status/logging and as a
+- The Theia backend reserves a local frame socket through `vice-runtime`, passes
+  it to VICE with `-cc-frame-port <port>`, passes command input with
+  `-cc-command-fd 3`, receives binary frames through the shared runtime
+  transport, and forwards them to the browser over a dedicated binary WebSocket.
+  stdout remains for JSON status/logging and as a
   compatibility fallback for manual `-cc-embed` launches without a frame port.
+  The shared runtime stdout decoder separates text lines and binary records;
+  Theia and DAP retain their own JSON and forwarding rules.
   Debug launches use the same frame socket and command fd; the debug adapter
   does not forward video frames as DAP events.
 

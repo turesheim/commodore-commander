@@ -5,3 +5,4 @@ export * from './vice-standalone-process';
 export * from './vice-binary-frame';
 export * from './vice-frame-decoder';
 export * from './vice-frame-transport';
+export * from './vice-embedded-stdout-decoder';

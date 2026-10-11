@@ -24,18 +24,24 @@ services to the Theia/Electron product.
 Language/build planning services belong to `packages/language-support`. DAP and
 binary-monitor behavior belong to `packages/debug-adapter`. VICE resource and
 executable discovery, shared launch flags, debugger process lifecycle helpers,
-standalone child-process/command-pipe ownership, binary frame parsing, and
-native loopback frame transport belong to
+standalone child-process/command-pipe ownership, binary frame parsing, native
+loopback frame transport, and embedded stdout framing belong to
 `packages/vice-runtime`.
 
 The local `vice-runtime-resolver.ts` is an integration wrapper: it resolves the
 selected machine/model and supplies the extension's asset location and
 preference error hint to shared runtime discovery. The browser WebSocket bridge,
-stdout protocol handling, and policy choosing standalone versus debugger
-ownership remain here for now. The backend also chooses when a native frame
-disconnect releases the listener. Further extraction requires preserving RPC
+JSON stdout event handling, frame/output policy, and choosing standalone versus
+debugger ownership remain here for now. The backend also chooses when a native
+frame disconnect releases the listener. Further extraction requires preserving RPC
 client ownership, process ownership, and cleanup. Frontend RPC disconnection
 continues to detach the client without terminating an owned standalone emulator.
+
+The shared stdout decoder only separates text lines, text preceding a binary
+record, and complete CCB1 records. This backend still validates and forwards
+fallback binary/JSON frames, reports malformed JSON as both status and output,
+and truncates overflow output to the existing 32 MiB limit. DAP intentionally
+uses different forwarding and overflow rules.
 
 ## Build and verification
 
