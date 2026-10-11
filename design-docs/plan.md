@@ -7,7 +7,7 @@ Keep changes small and preserve working domain/protocol behavior.
 
 | Package | Current role |
 | --- | --- |
-| `language-support` | Framework-neutral documents, include resolution, semantic parsing, Langium outline, editor services, machine/reference data and build planning |
+| `language-support` | Framework-neutral documents, include resolution, semantic parsing/outline, editor services, machine/reference data and build planning |
 | `vice-runtime` | Shared discovery, launch/process helpers, standalone command pipe, native CCB1 transport, stdout framing and CCV1 JSON codec |
 | `debug-adapter` | DAP over stdio, VICE binary monitor, debug-info/source mapping, breakpoints/watchpoints, memory/register operations, stack reconstruction and disassembly |
 | `theia-extension` | Monaco/Theia adaptation, build execution/tasks, launch integration, session policy, browser emulator bridge and product views/help |
@@ -25,7 +25,8 @@ owns DAP-specific monitor behavior. See
    disk models, document analysis and assembled indexes. Input changes still
    trigger full assembly. Namespace and lexical identities now drive navigation
    (including CTRL/CMD+click), references, leaf rename and semantic tokens. Next,
-   align project/Langium outline and discovery rules. Editor lookup reuses the
+   align build/editor discovery rules. Outline now uses semantic scopes,
+   including file namespaces and label blocks. Editor lookup reuses the
    include graph and expands ordinary imports with file scope boundaries; file
    namespaces and directional labels across those imports are supported. Extend
    compiler-relevant diagnostics without introducing a Java language server. See [language architecture](language-support-architecture.md)
@@ -61,7 +62,7 @@ owns DAP-specific monitor behavior. See
 
 | Area | Implemented | Remaining |
 | --- | --- | --- |
-| Language | Monaco editor services, reference lookup, cached analysis/index assembly and bounded/event-invalidated file/disk snapshots | Conditional/macro expansion, outline/discovery consistency, delta updates and compiler-accurate semantics |
+| Language | Monaco editor services, reference lookup, cached analysis/index assembly and bounded/event-invalidated file/disk snapshots | Conditional/macro expansion, discovery consistency, delta updates and compiler-accurate semantics |
 | Build/project | File/path planner, program/profile/run config, backend and headless builds, Theia tasks/markers | Stronger validation, diagnostic attribution, clean-task and configuration UX |
 | Launch | Theia debug/no-debug configurations and generated build-before-debug tasks | Configured-run policy flow, run selection and Active Machine defaults |
 | Debug | DAP binary monitor, breakpoints/watchpoints, Memory/Visual Debugger/Monitor views, disassembly, observed trace history | Broader regressions, richer symbols/trace UX and execution-history provenance |
