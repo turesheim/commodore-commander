@@ -58,6 +58,9 @@ VICE sends complete RGBA8888 SDL surfaces without downsampling or compression.
 The native patch limits ordinary frame emission to a minimum 16 ms interval;
 frame dimensions follow the emitted surface. Browser presentation handles
 scaling. Debug frames bypass DAP custom events and adapter stdout forwarding.
+The native nonblocking sender retains at most one partially sent record, resumes
+it on SDL/input polls, and drops newer frames until it drains. A full socket
+buffer does not close the connection or block input; transport errors still do.
 
 `ViceFrameTransport` owns the loopback listener and record validation/reassembly.
 `CommodoreViceFrameBridge` stays in Theia and owns WebSocket endpoint/origin

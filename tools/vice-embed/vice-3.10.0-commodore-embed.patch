@@ -1,9 +1,11 @@
 diff --git a/src/arch/sdl/Makefile.am b/src/arch/sdl/Makefile.am
 --- a/src/arch/sdl/Makefile.am
 +++ b/src/arch/sdl/Makefile.am
-@@ -96,0 +97,2 @@
+@@ -96,0 +97,4 @@
 +	cc_embed.c \
 +	cc_embed.h \
++	cc_frame_writer.c \
++	cc_frame_writer.h \
 diff --git a/src/arch/shared/macOS-launcher.c b/src/arch/shared/macOS-launcher.c
 --- a/src/arch/shared/macOS-launcher.c
 +++ b/src/arch/shared/macOS-launcher.c
@@ -111,7 +113,7 @@ diff --git a/src/arch/sdl/cc_embed.c b/src/arch/sdl/cc_embed.c
 new file mode 100644
 --- /dev/null
 +++ b/src/arch/sdl/cc_embed.c
-@@ -0,0 +1,946 @@
+@@ -0,0 +1,933 @@
 +/*
 + * cc_embed.c - Commodore Commander VICE embedding transport.
 + *
@@ -146,6 +148,7 @@ new file mode 100644
 +#endif
 +
 +#include "cc_embed.h"
++#include "cc_frame_writer.h"
 +#include "kbd.h"
 +#include "machine.h"
 +#include "mouse.h"
@@ -173,6 +176,7 @@ new file mode 100644
 +static int cc_embed_frame_port = 0;
 +static int cc_embed_command_fd = 0;
 +static int cc_embed_frame_socket = -1;
++static cc_frame_writer_t cc_embed_frame_writer;
 +static uint32_t cc_embed_frame_id = 0;
 +static uint32_t cc_embed_last_frame_ticks = 0;
 +static int cc_embed_force_next_frame = 0;
@@ -301,6 +305,12 @@ new file mode 100644
 +
 +void cc_embed_poll_commands(void)
 +{
++    /* Advance a partial record without blocking the SDL/input loop. */
++    if (cc_embed_frame_socket >= 0 &&
++        cc_frame_writer_flush(&cc_embed_frame_writer, cc_embed_frame_socket) < 0) {
++        cc_embed_close_frame_socket();
++        cc_embed_emit_status("error", "Could not write embedded frame socket.");
++    }
 +    (void)cc_embed_read_commands();
 +}
 +
@@ -503,6 +513,7 @@ new file mode 100644
 +
 +static void cc_embed_close_frame_socket(void)
 +{
++    cc_frame_writer_reset(&cc_embed_frame_writer);
 +#ifndef WINDOWS_COMPILE
 +    if (cc_embed_frame_socket >= 0) {
 +        close(cc_embed_frame_socket);
@@ -925,8 +936,25 @@ new file mode 100644
 +                                       width,
 +                                       height,
 +                                       (uint32_t)payload_length);
-+    if (!cc_embed_frame_socket_accepts_frame(frame_length)) {
-+        return 0;
++    if (cc_embed_should_use_frame_socket()) {
++        int result;
++        if (cc_embed_frame_socket < 0) { return 0; }
++        result = cc_frame_writer_flush(&cc_embed_frame_writer, cc_embed_frame_socket);
++        if (result == 0) { return 0; }
++        if (result < 0) {
++            cc_embed_close_frame_socket();
++            cc_embed_emit_status("error", "Could not write embedded frame socket.");
++            return 0;
++        }
++        if (!cc_embed_frame_socket_accepts_frame(frame_length)) { return 0; }
++        result = cc_frame_writer_queue(&cc_embed_frame_writer, cc_embed_frame_socket,
++                                       header, sizeof(header), payload, payload_length);
++        if (result < 0) {
++            cc_embed_close_frame_socket();
++            cc_embed_emit_status("error", "Could not queue embedded frame socket.");
++            return 0;
++        }
++        return 1; /* Accepted, possibly still draining on later SDL ticks. */
 +    }
 +    if (!cc_embed_write_frame_bytes(header, sizeof(header))) {
 +        return 0;
@@ -961,45 +989,6 @@ new file mode 100644
 +
 +static int cc_embed_write_frame_bytes(const void *buffer, size_t length)
 +{
-+#ifndef WINDOWS_COMPILE
-+    if (cc_embed_should_use_frame_socket()) {
-+        const uint8_t *cursor = (const uint8_t *)buffer;
-+        size_t remaining = length;
-+        if (cc_embed_frame_socket < 0) {
-+            return 0;
-+        }
-+        while (remaining > 0) {
-+            ssize_t written;
-+#ifdef MSG_NOSIGNAL
-+            written = send(cc_embed_frame_socket, cursor, remaining, MSG_NOSIGNAL);
-+#else
-+            written = send(cc_embed_frame_socket, cursor, remaining, 0);
-+#endif
-+            if (written < 0) {
-+                if (errno == EINTR) {
-+                    continue;
-+                }
-+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
-+                    cc_embed_close_frame_socket();
-+                    cc_embed_emit_status("error", "Embedded frame socket would block.");
-+                    return 0;
-+                }
-+                cc_embed_close_frame_socket();
-+                cc_embed_emit_status("error", "Could not write embedded frame socket.");
-+                return 0;
-+            }
-+            if (written == 0) {
-+                cc_embed_close_frame_socket();
-+                cc_embed_emit_status("error", "Embedded frame socket closed.");
-+                return 0;
-+            }
-+            cursor += written;
-+            remaining -= (size_t)written;
-+        }
-+        return 1;
-+    }
-+#endif
-+
 +    if (fwrite(buffer, 1, length, stdout) != length) {
 +        cc_embed_emit_status("error", "Could not write embedded frame stream.");
 +        return 0;
@@ -1057,6 +1046,108 @@ new file mode 100644
 +{
 +    cc_embed_write_u32_le(target, (uint32_t)(value & 0xffffffffu));
 +    cc_embed_write_u32_le(target + 4, (uint32_t)((value >> 32) & 0xffffffffu));
++}
+diff --git a/src/arch/sdl/cc_frame_writer.h b/src/arch/sdl/cc_frame_writer.h
+new file mode 100644
+--- /dev/null
++++ b/src/arch/sdl/cc_frame_writer.h
+@@ -0,0 +1,19 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later */
++#ifndef VICE_CC_FRAME_WRITER_H
++#define VICE_CC_FRAME_WRITER_H
++#include <stddef.h>
++#include <stdint.h>
++
++typedef struct cc_frame_writer_s {
++    uint8_t *data;
++    size_t length;
++    size_t offset;
++} cc_frame_writer_t;
++
++/* 1: complete, 0: pending (drop new frames), -1: error. One owned record only. */
++int cc_frame_writer_flush(cc_frame_writer_t *writer, int fd);
++int cc_frame_writer_queue(cc_frame_writer_t *writer, int fd,
++                         const void *header, size_t header_length,
++                         const void *payload, size_t payload_length);
++void cc_frame_writer_reset(cc_frame_writer_t *writer);
++#endif
+diff --git a/src/arch/sdl/cc_frame_writer.c b/src/arch/sdl/cc_frame_writer.c
+new file mode 100644
+--- /dev/null
++++ b/src/arch/sdl/cc_frame_writer.c
+@@ -0,0 +1,73 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later */
++#include "cc_frame_writer.h"
++#include <errno.h>
++#include <stdlib.h>
++#include <string.h>
++#ifndef WINDOWS_COMPILE
++#include <sys/socket.h>
++#include <sys/types.h>
++#endif
++
++void cc_frame_writer_reset(cc_frame_writer_t *writer)
++{
++    free(writer->data);
++    writer->data = NULL;
++    writer->length = 0;
++    writer->offset = 0;
++}
++
++int cc_frame_writer_flush(cc_frame_writer_t *writer, int fd)
++{
++#ifndef WINDOWS_COMPILE
++    while (writer->offset < writer->length) {
++        ssize_t written;
++#ifdef MSG_NOSIGNAL
++        written = send(fd, writer->data + writer->offset,
++                       writer->length - writer->offset, MSG_NOSIGNAL);
++#else
++        written = send(fd, writer->data + writer->offset,
++                       writer->length - writer->offset, 0);
++#endif
++        if (written < 0 && errno == EINTR) {
++            continue;
++        }
++        if (written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
++            return 0;
++        }
++        if (written <= 0) {
++            if (written == 0) { errno = EPIPE; }
++            return -1;
++        }
++        writer->offset += (size_t)written;
++    }
++    cc_frame_writer_reset(writer);
++    return 1;
++#else
++    (void)writer;
++    (void)fd;
++    errno = ENOSYS;
++    return -1;
++#endif
++}
++
++int cc_frame_writer_queue(cc_frame_writer_t *writer, int fd,
++                         const void *header, size_t header_length,
++                         const void *payload, size_t payload_length)
++{
++    int flushed = cc_frame_writer_flush(writer, fd);
++    if (flushed != 1) { return flushed; }
++    if (payload_length > SIZE_MAX - header_length) {
++        errno = EOVERFLOW;
++        return -1;
++    }
++    writer->length = header_length + payload_length;
++    if (writer->length == 0) { return 1; }
++    writer->data = malloc(writer->length);
++    if (!writer->data) {
++        writer->length = 0;
++        return -1;
++    }
++    memcpy(writer->data, header, header_length);
++    memcpy(writer->data + header_length, payload, payload_length);
++    return cc_frame_writer_flush(writer, fd);
 +}
 diff --git a/src/arch/sdl/ui.c b/src/arch/sdl/ui.c
 --- a/src/arch/sdl/ui.c

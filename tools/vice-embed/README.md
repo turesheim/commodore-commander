@@ -62,7 +62,9 @@ keyboard execution, power off and restart. Linux runs under Xvfb with software
 rendering. Logs/screenshots survive failures; see the
 [product test instructions](../../applications/electron/README.md).
 `node --test tools/vice-embed/*.test.mjs` additionally verifies ELF relocation on
-Linux after deleting the original build libraries. A copy or protocol hello alone
+Linux after deleting the original build libraries and compiles the actual native
+frame writer to test partial sends, dropped newer frames and disconnect cleanup
+with a deliberately small nonblocking socket buffer. A copy or protocol hello alone
 does not establish live runtime behavior.
 
 The patch adds a small SDL-only transport enabled with `-cc-embed`. The patched
@@ -104,6 +106,9 @@ The current patch is intentionally narrow:
   frame emission to a minimum interval of 16 ms, which is fast enough for 50 Hz
   display while still avoiding unbounded frame traffic during warp or
   over-rendering.
+- The nonblocking socket sender owns at most one pending frame. Partial sends
+  resume on SDL/input polls; newer frames are dropped until that record drains.
+  Socket backpressure must not truncate a CCB1 record or block input handling.
 - Commodore Commander default launch arguments disable VICE render filters and
   request nearest GL filtering for the active video chip. The browser canvas is
   responsible for presentation scaling; SDL fullscreen custom resolution is not
