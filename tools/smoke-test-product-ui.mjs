@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { packagedViceResources } from './vice-embed/runtime-layout.mjs';
 
 // Launch the packaged application, with its own backend/frontend and bundled
 // runtime discovery. A development Electron entry point would miss packaging bugs.
@@ -14,9 +15,7 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
   await writeFile(sourcePath, '#import "lib/shared.asm"\n*=$1000\nStart: rts\n');
   await writeFile(path.join(workspace, 'lib', 'shared.asm'), '.label screen = $0400\n');
   const configPath = path.join(testRoot, 'config.json');
-  const chargen = await readFile(path.join(layout.appResourcesDir,
-    'lib', 'backend', 'assets', 'vice', 'darwin-arm64', 'VICE.app',
-    'Contents', 'Resources', 'share', 'vice', 'C64', 'chargen-901225-01.bin'));
+  const chargen = await readFile(path.join(packagedViceResources(layout.appResourcesDir), 'share', 'vice', 'C64', 'chargen-901225-01.bin'));
   // C64 screen codes for READY.; derive the expected pixels from the packaged ROM.
   const readyScreenCodes = [18, 5, 1, 4, 25, 46];
   const readyRows = Array.from({ length: 8 }, (_, row) => readyScreenCodes.flatMap(code =>
@@ -67,7 +66,7 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
   }
   await rm(path.join(outputDir, 'failure.png'), { force: true });
   const env = Object.fromEntries(Object.entries(process.env).filter(([name]) =>
-    name !== 'ELECTRON_RUN_AS_NODE' && !name.startsWith('DYLD_') &&
+    name !== 'ELECTRON_RUN_AS_NODE' && !name.startsWith('DYLD_') && name !== 'LD_LIBRARY_PATH' && name !== 'LD_PRELOAD' &&
     !name.startsWith('VICE_') && !name.startsWith('THEIA_UI_E2E_VICE_')
   ));
   env.COMMODORE_COMMANDER_SCREEN_CAPTURE_CONFIG = configPath;

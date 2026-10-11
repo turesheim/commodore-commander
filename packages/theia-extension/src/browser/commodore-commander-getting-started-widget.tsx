@@ -88,8 +88,8 @@ export class CommodoreCommanderGettingStartedWidget extends GettingStartedWidget
           </h2>
         </div>
         <p>
-          The macOS Apple Silicon package includes patched VICE {VICE_BRANDING.version}.
-          Other platforms currently require a configured VICE installation.
+          The macOS Apple Silicon and Linux x64 packages include patched VICE {VICE_BRANDING.version}.
+          Windows embedded streaming is still pending. External VICE is available as a compatibility mode.
           Use Check Runtime Setup to check Java and the selected emulator.
         </p>
         <p>

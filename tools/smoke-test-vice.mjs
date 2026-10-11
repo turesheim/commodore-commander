@@ -11,7 +11,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 export async function smokeTestVice(resourcesPath, timeoutMs = 15000) {
   const executable = path.join(resourcesPath, 'bin', 'x64sc');
   const env = Object.fromEntries(Object.entries(process.env)
-    .filter(([name]) => !name.startsWith('DYLD_')));
+    .filter(([name]) => !name.startsWith('DYLD_') && name !== 'LD_LIBRARY_PATH' && name !== 'LD_PRELOAD'));
   // Exercise early path discovery too; it precedes normal argv initialization.
   try {
     await promisify(execFile)(executable, ['-version'], {
@@ -97,7 +97,7 @@ export async function smokeTestVice(resourcesPath, timeoutMs = 15000) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   if (!process.argv[2]) {
-    console.error('Usage: node tools/smoke-test-vice.mjs <VICE.app/Contents/Resources>');
+    console.error('Usage: node tools/smoke-test-vice.mjs <runtime root containing bin and share/vice>');
     process.exitCode = 1;
   } else {
     smokeTestVice(path.resolve(process.argv[2])).catch(error => {

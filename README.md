@@ -155,8 +155,9 @@ Before the first build/run, use **Help → Check Runtime Setup** to check Java 2
 bundled tools and the selected VICE executable/protocol. The offline
 [Runtime Setup guide](bundled-docs/runtime-setup.md) explains current platform
 coverage, installation paths and troubleshooting. Our patched VICE display/input
-transport is required on all supported platforms for 1.0; Windows/Linux payloads
-are still pending. The setup probe does not replace live execution tests.
+transport is required on all supported platforms for 1.0; Windows payloads
+are still pending. Linux x64 uses an Ubuntu 24.04 build/test baseline; fresh-host
+and minimum-OS acceptance remain release work. The setup probe does not replace live execution tests.
 
 Press **F5** from a Kick Assembler source file to build the active program,
 start a `commodore-vice` debug session, and attach Theia's debugger to VICE's
@@ -288,8 +289,8 @@ Successful packages are uploaded as run artifacts and refresh the mutable
 `nightly` prerelease on `main` after all three platform builds succeed.
 Before upload, package tests compile a program with the bundled Kick Assembler
 and verify its PRG bytes, then start SIDScore and exercise SRAP/MIDI. On macOS
-Apple Silicon they also verify native VICE display frames and open the packaged
-Electron app: Machine must render visible pixels, execute a typed BASIC command
+Apple Silicon and Linux x64 they also verify native VICE display frames and open
+the packaged Electron app: Machine must render visible pixels, execute a typed BASIC command
 with an observable border-color change, power off and repeat after startup.
 UI logs/screenshots are retained as run artifacts. See the
 [Electron harness README](applications/electron/README.md) for local execution

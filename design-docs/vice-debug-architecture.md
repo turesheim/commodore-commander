@@ -113,17 +113,20 @@ and offline setup guide. Explicit invalid runtime paths fail instead of silently
 mixing the chosen executable with another installation's resources.
 
 1.0 requires patched VICE display/input transport on every supported platform;
-stock external VICE remains an optional compatibility mode. Linux/Windows
-payloads and clean-host/minimum-OS acceptance remain unfinished.
+stock external VICE remains an optional compatibility mode. Windows
+payloads and clean-host/minimum-OS acceptance remain unfinished. Linux x64 uses
+the same POSIX frame socket/command fd as macOS and is staged as `bin/lib/share/vice`;
+its linked non-glibc libraries use relative ELF RUNPATHs. Ubuntu 24.04 is the
+pinned Linux build/test baseline. SDL desktop/graphics/audio drivers remain host-owned.
 
 ## Verification and remaining work
 
 Runtime and adapter tests cover protocol, process, framing and monitor behavior.
 Real DAP and Electron UI lanes are described in the
-[VICE E2E rig](vice-e2e-test-rig.md). Linux CI uses stock external VICE; embedded
+[VICE E2E rig](vice-e2e-test-rig.md). The debugger development lane uses stock external VICE; embedded
 transport cases need the patched runtime and are skipped when unsupported.
 
-macOS Apple Silicon product smoke tests check the bundled VICE's early startup
+macOS Apple Silicon and Linux x64 product smoke tests check the bundled VICE's early startup
 and require continuing CCB1 frames with visible content over loopback. Native
 packaging includes the complete non-system dylib dependency graph, including
 `@rpath` references and sdl2-compat's dynamically loaded SDL3, and
@@ -139,12 +142,13 @@ This covers bundled discovery,
 backend/browser transport, canvas painting and BASIC input/execution, rather than
 accepting FPS or an existing screenshot as success. Nightly logs/screenshots
 survive failed checks.
-Package-level UI verification currently covers macOS Apple Silicon only; debug
+Linux packaged UI runs under Xvfb with software rendering. Package-level UI
+verification covers macOS Apple Silicon and Linux x64; debug
 stepping and richer UI flows remain in the separate Electron/DAP E2E lanes.
 
 Runtime extraction is partial. Theia still owns launch/session policy, machine
 selection, JSON validation, browser transport and RPC cleanup; the adapter
 retains its DAP-specific binary-monitor connection. Remaining product gaps
-include joystick/resize native hooks, bundled Linux/Windows/Intel macOS embedded
+include joystick/resize native hooks, bundled Windows/Intel macOS embedded
 payloads, cycle-accurate execution provenance, richer symbol presentation and
 configured-run build policies. See [the implementation plan](plan.md).

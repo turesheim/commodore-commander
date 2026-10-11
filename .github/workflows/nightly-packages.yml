@@ -75,7 +75,8 @@ jobs:
             os: windows-2022
             package-dir: commodore-commander-windows
           - platform: linux
-            os: ubuntu-latest
+            # Pin the glibc build baseline for the bundled native runtime.
+            os: ubuntu-24.04
             package-dir: commodore-commander-linux
 
     steps:
@@ -115,6 +116,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
+            autoconf automake dos2unix subversion xa65 patchelf \
+            libsdl2-dev libsdl2-image-dev \
+            dbus-x11 libatk-bridge2.0-0 libgbm1 libgtk-3-0 libnss3 libxss1 libxtst6 xvfb \
             libsecret-1-dev \
             libx11-dev \
             libxkbfile-dev \
@@ -221,18 +225,25 @@ jobs:
           echo "CC_CODESIGN_IDENTITY=$identity" >> "$GITHUB_ENV"
           rm -f "$certificate_path"
 
+      - name: Test native packaging helpers
+        run: node --test tools/vice-embed/*.test.mjs
+
       - name: Package current platform
         shell: bash
         run: |
           package_dir="dist/nightly/${{ matrix.package-dir }}"
           package_archive="dist/nightly/commodore-commander-nightly-${{ matrix.platform }}-${{ runner.arch }}.tar.gz"
           npm run package:current --workspace @commodore-commander/electron-app -- --output "$package_dir"
-          npm run test:product-package -- --package-dir "$package_dir"
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            XVFB_SCREEN=1600x1200x24 bash tools/run-with-xvfb.sh npm run test:product-package -- --package-dir "$package_dir"
+          else
+            npm run test:product-package -- --package-dir "$package_dir"
+          fi
           tar -czf "$package_archive" -C "$(dirname "$package_dir")" "$(basename "$package_dir")"
           echo "Packaged $package_archive"
 
       - name: Upload package test diagnostics
-        if: always() && runner.os == 'macOS'
+        if: always() && runner.os != 'Windows'
         uses: actions/upload-artifact@v6
         with:
           name: product-package-tests-${{ matrix.platform }}-${{ runner.arch }}
