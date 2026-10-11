@@ -51,6 +51,15 @@ export class ViceStandaloneProcess {
     });
     this.child = child;
     this.commandInput = resolveViceCommandInput(child);
+    this.commandInput?.on('error', (error: Error) => {
+      // A queued quit/write may fail after stop or replacement has released
+      // this child. The stream still needs a listener to avoid crashing Node.
+      if (this.child !== child) {
+        return;
+      }
+      this.stop();
+      this.callbacks.onError?.(new Error(`VICE command pipe failed: ${error.message}`), child.pid);
+    });
 
     child.stdout.on('data', (chunk: Buffer) => {
       if (this.child === child) {

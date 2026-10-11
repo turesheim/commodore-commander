@@ -25,6 +25,9 @@ Theia `vice-runtime-resolver.ts` wrapper.
   `ViceStandaloneProcess`, stdout decoding and the native frame listener.
   Explicit stop sends SIGTERM and releases ownership immediately; late child
   callbacks cannot affect a replacement session.
+  Active command-pipe failure stops/releases that child and reports an error;
+  pipe errors from already released children are ignored, including queued quit
+  writes interrupted by stop.
 - Debug/no-debug: `ViceDebugSession` owns the launched process. For embedded
   launches, Theia reserves a frame port before starting the adapter. Repeated
   resolution reuses an unconnected reservation; an already connected emulator

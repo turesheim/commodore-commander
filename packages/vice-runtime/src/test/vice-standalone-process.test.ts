@@ -147,6 +147,45 @@ test('explicit standalone stop is idempotent and suppresses the later close call
   assert.equal(runtime.pid, undefined);
 });
 
+test('closed standalone command pipe reports failure and releases the owned child', processTestOptions, async (t) => {
+  const ready = deferred<void>();
+  const failed = deferred<Error>();
+  const runtime = new ViceStandaloneProcess({ onStdout: () => ready.resolve(), onError: failed.resolve });
+  t.after(() => runtime.stop());
+  const pid = runtime.start({
+    command: process.execPath,
+    args: ['-e', "console.log('ready'); setTimeout(() => require('node:fs').closeSync(3), 50); setInterval(() => {}, 1000);"],
+    cwd: process.cwd()
+  });
+  await ready.promise;
+  // Keep bytes pending when the peer closes so the write actually fails,
+  // rather than merely observing an already-ended Duplex stream.
+  runtime.sendCommand('x'.repeat(1024 * 1024));
+  assert.match((await failed.promise).message, /VICE command pipe failed/u);
+  assert.equal(runtime.hasProcess, false);
+  await waitForProcessExit(pid!);
+});
+
+test('stopping with queued command bytes suppresses pipe errors from the released child', processTestOptions, async (t) => {
+  const ready = deferred<void>();
+  const runtime = new ViceStandaloneProcess({
+    onStdout: () => ready.resolve(),
+    onError: () => assert.fail('A released child must not report a pipe failure.'),
+    onClose: () => assert.fail('The caller reports explicit stop.')
+  });
+  t.after(() => runtime.stop());
+  const pid = runtime.start({
+    command: process.execPath,
+    args: ['-e', "console.log('ready'); setInterval(() => {}, 1000);"],
+    cwd: process.cwd()
+  });
+  await ready.promise;
+  runtime.sendCommand('x'.repeat(1024 * 1024));
+  runtime.stop();
+  await waitForProcessExit(pid!);
+  assert.equal(runtime.hasProcess, false);
+});
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((done) => { resolve = done; });

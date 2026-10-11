@@ -39,6 +39,9 @@ suppresses its later output and exit callbacks. Explicit stop retains
 the previous standalone behavior: send SIGTERM without waiting for exit or
 applying the debugger's forced-kill policy. Natural exit and asynchronous spawn
 failure are delivered to the caller through callbacks.
+Command-pipe failure while active stops/releases the owned child and reports
+`onError`; late pipe errors after stop/replacement are handled without affecting
+the replacement session or crashing the backend.
 
 `ViceFrameTransport` listens on `127.0.0.1` with an ephemeral port and delivers
 validated CCB1 records through callbacks. Its decoder reassembles fragmented
