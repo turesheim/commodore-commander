@@ -7,7 +7,7 @@ diff --git a/src/arch/sdl/Makefile.am b/src/arch/sdl/Makefile.am
 diff --git a/src/arch/shared/macOS-launcher.c b/src/arch/shared/macOS-launcher.c
 --- a/src/arch/shared/macOS-launcher.c
 +++ b/src/arch/shared/macOS-launcher.c
-@@ -24,7 +24,8 @@
+@@ -24,8 +24,9 @@
  #include <stdio.h>
  #include <stdlib.h>
  #include <unistd.h>
