@@ -19,61 +19,54 @@ package or mark it complete: Theia owns product/session policy and the adapter
 owns DAP-specific monitor behavior. See
 [VICE architecture](vice-debug-architecture.md) for current boundaries.
 
-## Next work
+## 1.0 release priorities
 
-1. **Language consistency.** The bounded lookup-reuse round covers discovery,
-   disk models, document analysis and assembled indexes. Input changes still
-   trigger full assembly. Namespace and lexical identities now drive navigation
-   (including CTRL/CMD+click), references, leaf rename and semantic tokens. Next,
-   maintain the shared default build/editor discovery policy and extend editor
-   filtering to configuration-specific paths. Outline now uses semantic scopes,
-   including file namespaces and label blocks. Editor lookup reuses the
-   include graph and expands ordinary imports with file scope boundaries; file
-   namespaces and directional labels across those imports are supported. Extend
-   compiler-relevant diagnostics without introducing a Java language server. See [language architecture](language-support-architecture.md)
-   and the [language-support report](ts-language-support-report.md).
+The goal is reliable installation and edit/build/run/debug workflows for the
+supported product. Track acceptance evidence and scope decisions in
+[the 1.0 release checklist](https://github.com/turesheim/commodore-commander/issues/114).
+Full Eclipse feature parity and complete architectural migration are not release
+requirements.
 
-2. **Build and launch integration.** Keep program/profile/run definitions in
-   `commodore-commander.build.json`. Build tasks and generated `preLaunchTask`
-   wiring already exist; harden validation, diagnostic attribution,
-   generated-asset handling and clean/headless-equivalent task behavior.
-   Configured-run `ifStale`/`always`/`never` policies and workspace Active Machine
-   defaults are not fully wired into generated launches. See
-   [Program/Profile/Run](target-build-run.md).
-
-3. **Runtime and debugger boundaries.** Reuse `vice-runtime` where shared callers
-   need the same mechanism. Preserve distinct standalone/debug shutdown,
-   stdout-validation and launch policies. Keep expanding
-   [real VICE and Electron UI regressions](vice-e2e-test-rig.md), source/label
-   presentation and watchpoint/trace UX. Avoid speculative abstractions or
-   moving Theia origin/preferences policy into the runtime.
-
-4. **Product gaps.** Use native Theia concepts for tasks, sessions, problems and
-   launch configuration. Add custom views for Commodore-specific value. Grow
-   SIDScore TypeScript editor services only as its semantics become testable;
-   preserve the external SIDScoreCLI player architecture. The product bundles
-   the published SIDScore 0.8.0 CLI (Java 21+). SIDScore behavior or
-   JAR updates must include the sibling `../SIDScore` source, or explicitly
-   report that it is unavailable.
-
-5. **Distribution.** Nightly packaging for macOS, Windows and Linux runs only
-   for a new branch commit since the last successful run, or an explicit manual
-   `force` rebuild. Unchanged nights skip packaging/publishing; failed new-commit
-   builds remain eligible for retry. Bundled patched embedded VICE targets
-   macOS Apple Silicon;
-   other payloads, signing/notarization and installer polish remain work.
-
-## Remaining gaps
-
-| Area | Implemented | Remaining |
+| Order | Required outcome | Issue |
 | --- | --- | --- |
-| Language | Monaco editor services, reference lookup, cached analysis/index assembly and bounded/event-invalidated file/disk snapshots | Conditional/macro expansion, configuration-specific discovery filters, delta updates and compiler-accurate semantics |
-| Build/project | File/path planner, program/profile/run config, backend and headless builds, Theia tasks/markers | Stronger validation, diagnostic attribution, clean-task and configuration UX |
-| Launch | Theia debug/no-debug configurations and generated build-before-debug tasks | Configured-run policy flow, run selection and Active Machine defaults |
-| Debug | DAP binary monitor, breakpoints/watchpoints, Memory/Visual Debugger/Monitor views, disassembly, observed trace history | Broader regressions, richer symbols/trace UX and execution-history provenance |
-| Runtime | Shared mechanism with separate standalone/debug owners | Further extraction only where reuse is clear; cross-platform embedded payloads |
-| SIDScore | Syntax registration and external player-server integration | Language intelligence, diagnostics, export workflow and controls |
-| Distribution | Electron package and nightly platform workflows | Signing/notarization and installer-specific work |
+| 1 | Explicit OS/CPU/machine support matrix, usable Java/VICE setup and clean-host verification | [#107](https://github.com/turesheim/commodore-commander/issues/107) |
+| 2 | Reliable emulator restart/model switching, recovery and bounded process cleanup | [#108](https://github.com/turesheim/commodore-commander/issues/108) |
+| 3 | Named-run selection, build policies and machine defaults through native Theia launches | [#109](https://github.com/turesheim/commodore-commander/issues/109) |
+| 4 | Asset editor save/reopen/export integrity | [#110](https://github.com/turesheim/commodore-commander/issues/110) |
+| 5 | Actual packaged UI, build/debug and SIDScore workflows tested on supported platforms | [#111](https://github.com/turesheim/commodore-commander/issues/111) |
+| 6 | Verified first-run guide and complete offline Help | [#113](https://github.com/turesheim/commodore-commander/issues/113) |
+| 7 | Versioned, tested release artifacts, installation/trust checks and redistribution material | [#112](https://github.com/turesheim/commodore-commander/issues/112) |
+
+Platform scope bounds the other gates. Nightlies package macOS, Windows and
+Linux, but patched embedded VICE currently targets macOS Apple Silicon only;
+package availability does not establish identical feature support. Java 21+ is
+currently external. Nightlies skip unchanged commits unless explicitly forced.
+Signing/notarization and stable-release installation remain work.
+
+Existing 1.0 feature commitments remain visible: SIDScore language reference and
+editor assistance (#67), simple BASIC editing/running (#19/#15), and numeric
+conversion hover (#52). Complete them or explicitly revise scope before tagging;
+they have not been silently deferred. Kick Assembler directive help (#16) is
+implemented. SIDScore 0.8.0 syntax, outline, external playback and export
+integration already exist; language intelligence and broader workflow validation
+remain work. SIDScore behavior/JAR changes must include sibling `../SIDScore`
+source, or explicitly report its absence.
+
+## Engineering boundaries and deferred work
+
+- Preserve shared build/editor discovery and lexical/namespace identities for
+  navigation, CTRL/CMD+click, references, rename, semantic tokens and outline.
+  Config-specific discovery filters and compiler-relevant diagnostics remain
+  gaps. Delta indexes and broader macro/conditional semantics can wait unless
+  needed to fix promised workflows. See [language architecture](language-support-architecture.md)
+  and the [language-support report](ts-language-support-report.md).
+- Keep Program/Profile/Run in `commodore-commander.build.json`; existing tasks
+  and `preLaunchTask` wiring need policy integration, validation, diagnostics and
+  clean/headless-equivalent behavior. See [build and launch design](target-build-run.md).
+- Preserve separate standalone/debug owners and shutdown/validation policies;
+  extend the [existing real VICE/UI test rig](vice-e2e-test-rig.md). Further runtime
+  extraction and richer trace provenance are not blanket release prerequisites.
+  Keep Theia origin/preferences policy out of the shared runtime.
 
 ## Completion criteria for each change
 
