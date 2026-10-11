@@ -77,6 +77,9 @@ async function packagePortableApplication(packageJson, executableName) {
   await replaceDirectory(outputPath, electronRuntimeRoot);
   preparePortableRuntime(executableName);
   await installApplicationPayload(packageJson, path.join(outputPath, 'resources', 'app'));
+  if (process.platform === 'linux') {
+    await fs.promises.copyFile(path.join(scriptDir, 'linux-package-setup.txt'), path.join(outputPath, 'LINUX-SETUP.txt'));
+  }
 }
 
 function assertBuiltApplication() {

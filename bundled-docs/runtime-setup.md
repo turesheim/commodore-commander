@@ -22,6 +22,21 @@ Minimum OS versions and clean-host support still need release verification.
 Machine profiles provide reference/configuration data; their presence in the
 selector does not mean every model has passed packaged acceptance tests.
 
+## Linux installation
+
+Extract the Linux archive to a permanent location. From its directory, configure
+the bundled Electron sandbox helper, then start the IDE as your normal user:
+
+```sh
+sudo chown root:root ./chrome-sandbox
+sudo chmod 4755 ./chrome-sandbox
+./commodore-commander
+```
+
+Repeat the helper setup after replacing the package. The installation filesystem
+must permit setuid execution. `LINUX-SETUP.txt` beside the executable gives these
+instructions before the IDE can open; Java and VICE setup follow below.
+
 ## Java
 
 Install Java **21 or newer** for the complete tool workflow. Java is currently

@@ -1,0 +1,19 @@
+Commodore Commander — Linux x64 package
+
+Ubuntu 24.04 is the current build/test baseline. Extract the archive into a
+permanent location. From the extracted directory, configure the bundled Electron
+sandbox helper once (and again after replacing the package):
+
+  sudo chown root:root ./chrome-sandbox
+  sudo chmod 4755 ./chrome-sandbox
+  ./commodore-commander
+
+Run the IDE as your normal user. The helper uses root ownership and setuid mode
+to establish Chromium's sandbox on hosts that restrict unprivileged user
+namespaces. A filesystem mounted nosuid cannot provide this helper mode; choose
+an installation location that permits it or use an administrator-managed
+user-namespace policy.
+
+Install Java 21 or newer for Kick Assembler and SIDScore. The matching patched
+VICE display/input runtime is included. Help → Runtime Setup Guide describes
+runtime selection and the remaining release coverage.

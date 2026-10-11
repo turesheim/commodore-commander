@@ -40,6 +40,11 @@ supplied for macOS Apple Silicon and Linux x64 (Ubuntu 24.04 baseline). Windows
 embedded streaming remains required for 1.0 and is not bundled yet. Stock external
 VICE is an optional compatibility mode.
 
+The Linux archive includes `LINUX-SETUP.txt`: configure its Electron
+`chrome-sandbox` helper as root-owned mode 4755 once after extraction/update,
+then launch the IDE as the normal user. CI tests this installed-package setup
+without `--no-sandbox`; Ubuntu 24.04 restricts unprivileged user namespaces.
+
 Package tests compile a small program with the bundled Kick Assembler and verify
 the emitted PRG bytes, then exercise SIDScore startup and its SRAP/MIDI protocol.
 On macOS Apple Silicon and Linux x64 they also start bundled VICE, require visible native

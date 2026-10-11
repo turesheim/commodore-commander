@@ -235,6 +235,9 @@ jobs:
           package_archive="dist/nightly/commodore-commander-nightly-${{ matrix.platform }}-${{ runner.arch }}.tar.gz"
           npm run package:current --workspace @commodore-commander/electron-app -- --output "$package_dir"
           if [ "${{ runner.os }}" = "Linux" ]; then
+            # Exercise the documented installed-package sandbox setup.
+            sudo chown root:root "$package_dir/chrome-sandbox"
+            sudo chmod 4755 "$package_dir/chrome-sandbox"
             XVFB_SCREEN=1600x1200x24 bash tools/run-with-xvfb.sh npm run test:product-package -- --package-dir "$package_dir"
           else
             npm run test:product-package -- --package-dir "$package_dir"

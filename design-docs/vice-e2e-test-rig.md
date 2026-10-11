@@ -116,6 +116,8 @@ changes against product behavior, not just changed addresses.
 
 The nightly package lane exercises bundled discovery and Electron keyboard input
 on macOS Apple Silicon and Linux x64 (Ubuntu 24.04, Xvfb/software rendering).
+Linux configures the packaged Electron sandbox helper as root-owned mode 4755,
+matching `LINUX-SETUP.txt`; the product test does not disable Chromium sandboxing.
 The ELF packaging fixture runs after removing build libraries and moving the runtime.
 Physical keyboard/mouse behavior, Windows packaged UI/embedded transport and
 fresh-host/minimum-OS acceptance remain outside this coverage.

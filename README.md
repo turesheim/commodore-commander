@@ -295,6 +295,8 @@ with an observable border-color change, power off and repeat after startup.
 UI logs/screenshots are retained as run artifacts. See the
 [Electron harness README](applications/electron/README.md) for local execution
 and current platform coverage.
+The Linux archive includes `LINUX-SETUP.txt` with the required Electron sandbox
+helper setup after extraction/update; see the [offline setup guide](bundled-docs/runtime-setup.md#linux-installation).
 The macOS nightly package is ad-hoc signed unless these repository secrets are
 configured:
 
