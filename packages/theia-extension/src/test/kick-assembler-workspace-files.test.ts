@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import URI from '@theia/core/lib/common/uri';
+import { DEFAULT_KICK_ASSEMBLER_EXCLUDED_DIRECTORY_NAMES } from '@commodore-commander/language-support/runtime';
 
 import { isKickAssemblerFileExtension } from '../browser/kick-assembler-file-associations';
 import { KickAssemblerWorkspaceFiles } from '../browser/kick-assembler-workspace-files';
@@ -15,7 +16,7 @@ interface TestStat {
 
 const uri = (path: string) => new URI(`file://${path}`);
 const sourceFile = (resource: URI) => isKickAssemblerFileExtension(resource.path.ext);
-const excluded = new Set(['.git', '.metadata', '.theia', 'node_modules', 'target']);
+const excluded = new Set(DEFAULT_KICK_ASSEMBLER_EXCLUDED_DIRECTORY_NAMES);
 const paths = (files: readonly URI[]) => files.map(file => file.path.toString());
 
 function file(path: string): TestStat {
@@ -195,4 +196,25 @@ test('file roots and overlapping workspace roots keep their original discovery b
   assert.deepEqual(paths(await inventory.getFiles(uri('/project'))), [
     '/project/main.asm', '/project/lib/new.asm'
   ]);
+});
+
+test('default inventory skips nested generated directories without hiding source folders', async () => {
+  const fs = filesystem(folder('/project',
+    file('/project/main.asm'),
+    folder('/project/src',
+      file('/project/src/helper.inc'),
+      folder('/project/src/dist', file('/project/src/dist/copy.asm')),
+      folder('/project/src/out', file('/project/src/out/copy.inc')),
+      folder('/project/src/src-gen', file('/project/src/src-gen/copy.ka'))),
+    folder('/project/dist', file('/project/dist/main.asm')),
+    folder('/project/out', file('/project/out/main.inc')),
+    folder('/project/src-gen', file('/project/src-gen/main.ka')),
+    folder('/project/output', file('/project/output/handwritten.asm'))
+  ));
+  // Use the actual default, not a test-local approximation of the product list.
+  const inventory = new KickAssemblerWorkspaceFiles(fs.resolve, sourceFile);
+  assert.deepEqual(paths(await inventory.getFiles(uri('/project'))), [
+    '/project/main.asm', '/project/output/handwritten.asm', '/project/src/helper.inc'
+  ]);
+  assert.deepEqual(fs.reads, ['/project', '/project/output', '/project/src']);
 });

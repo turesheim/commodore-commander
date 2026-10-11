@@ -35,8 +35,10 @@ lookup, workspace symbols and include completion. Create/delete notifications
 and completed file operations invalidate overlapping roots; workspace changes
 and shutdown clear the inventory. Complete snapshots expire after five seconds
 to cover missed/excluded watcher events; incomplete discovery is retried on the
-next request. Traversal order, source extensions and excluded directories are
-preserved. `KickAssemblerWorkspaceDocuments` shares disk reads/text models for
+next request. Discovery uses the shared language-package default exclusions,
+including `dist`, `out` and `src-gen`; explicit imports and configured roots
+remain resolvable. Configuration-specific exclusions/output paths are still
+owned by build planning. `KickAssemblerWorkspaceDocuments` shares disk reads/text models for
 up to five seconds; all file changes and operation endpoints invalidate matching
 files/subtrees. Missing/unreadable files are retried, and snapshots outside the
 latest candidate set are released without dropping concurrent callers. Open

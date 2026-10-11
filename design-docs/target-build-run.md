@@ -16,6 +16,10 @@ A program is a source root such as `src/game.asm`, `src/loader.asm`, or
 `experiments/sprite-test.asm`. Programs may be declared in
 `commodore-commander.build.json`, but the workspace planner also auto-detects
 standalone `.asm` files that are not included by another source file.
+Automatic build/editor discovery shares default directory exclusions, including
+`dist`, `out` and `src-gen`; explicit imports and configured roots remain valid
+inside those folders. Build planning applies additional configured path/name
+filters. See [language architecture](language-support-architecture.md).
 
 A program can define:
 

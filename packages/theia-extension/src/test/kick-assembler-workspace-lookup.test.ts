@@ -124,3 +124,27 @@ test('workspace overlays reach expanded import targets without inheriting caller
   assert.equal(service.lookupAtPosition(main, { line: 5, character: 6 }, index)!.declarations[0]!.location.uri, 'file:///project/next.inc');
   assert.equal(service.lookupAtPosition(main, { line: 6, character: 5 }, index)!.declarations[0]!.qualifiedName, 'Global');
 });
+
+test('discovery exclusions do not block explicit generated imports or configured program roots', async () => {
+  const { lookup, candidates } = fixture([
+    ['/project/main.asm', '#import "out/generated.inc"\njsr Generated'],
+    ['/project/out/generated.inc', 'Generated: rts'],
+    ['/project/dist/explicit.asm', '#import "../src-gen/helper.inc"\njsr Helper'],
+    ['/project/src-gen/helper.inc', 'Helper: rts'],
+    ['/project/src-gen/unrelated.asm', 'Generated: rts']
+  ]);
+  const inventory = candidates.filter(candidate => candidate.path.toString() === '/project/main.asm');
+  const inferred = await lookup.getDocuments(uri('/project/main.asm'), inventory, new Map(), defaults);
+  assert.deepEqual(paths(inferred), ['/project/main.asm', '/project/out/generated.inc']);
+  const service = new KickAssemblerLookupService();
+  const index = service.buildProgramIndex(inferred.documents.map(document => ({ kind: 'kickassembler', document })), inferred.programs);
+  const main = inferred.documents.find(document => document.uri === 'file:///project/main.asm')!;
+  assert.equal(service.lookupAtPosition(main, { line: 1, character: 6 }, index)?.declarations[0]?.location.uri,
+    'file:///project/out/generated.inc');
+  const configuration = { libraryRootUris: [], programs: [
+    { entryUri: 'file:///project/dist/explicit.asm', libraryRootUris: [] }
+  ] };
+  const configured = await lookup.getDocuments(uri('/project/src-gen/helper.inc'), inventory, new Map(), configuration);
+  assert.equal(configured.hasOwners, true);
+  assert.deepEqual(paths(configured), ['/project/dist/explicit.asm', '/project/src-gen/helper.inc']);
+});

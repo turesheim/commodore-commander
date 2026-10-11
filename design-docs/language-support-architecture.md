@@ -123,6 +123,15 @@ boundaries and directional target addresses. Conditional preprocessing, legacy
 imports, missing files, unguarded cycles or projections over 2 MB/100,000 lines
 or 256 nested files fall back to document-local analysis for the selected context. This is structural
 source expansion, without macro execution or conditional evaluation.
+Automatic editor/build discovery uses the browser-safe default directory policy
+in `project/kick-assembler-source-discovery.ts`: `.git`, `.metadata`, `.theia`,
+`dist`, `node_modules`, `out`, `src-gen` and `target`. Matching directory names
+are skipped at every traversal depth. This filters automatic inventory, not
+explicit imports or configured program roots. Build detection remains `.asm`-only;
+editor inventories retain registered language extensions. Build planning also
+honors configuration-specific excluded names/output/library/generated paths;
+those additional filters are not yet supplied to the editor inventory.
+
 The build planner identifies standalone assembly roots and resolves programs,
 profiles, runs, output/generated assets and command-line settings. SIDScore
 module declarations/configuration contribute generated assembly dependencies.
@@ -140,7 +149,8 @@ outline/syntax slice.
 - Inline block bodies and legacy deferred imports.
   Scope-owner/prefix and multi-label rename, scope-aware completion and
   compiler-grade rename conflict checking.
-- Graph snapshot reuse and build/editor discovery alignment.
+- Graph snapshot reuse and editor adoption of configuration-specific discovery
+  exclusions.
 - Compiler-accurate semantics/diagnostics: configured conditional evaluation,
   macro/pseudocommand expansion and generated-symbol materialization.
 - Richer editor/reference coverage and build-config/diagnostic attribution.

@@ -52,7 +52,13 @@ visual sections; imported files are not expanded in the outline.
 
 Build planning resolves runtimes, library roots, output paths, machine overrides,
 profiles, named runs and affected programs. It also models SIDScore-generated
-assembly dependencies. Executing Java/KickAss or SIDScore processes belongs to
+assembly dependencies. Automatic build/editor discovery shares the default
+directory exclusions in
+[`kick-assembler-source-discovery.ts`](src/project/kick-assembler-source-discovery.ts).
+Explicit imports and configured program roots still resolve within excluded
+directories. Standalone build detection remains limited to `.asm`; editor
+inventories retain all registered Kick Assembler extensions.
+Executing Java/KickAss or SIDScore processes belongs to
 the Theia/headless runner; the language package plans those inputs.
 
 `KickAssemblerProjectLoader` is the browser-safe core of the existing recursive

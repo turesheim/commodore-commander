@@ -34,6 +34,9 @@ syntax assets are active product inputs and must remain packaged.
 
 ## Deferred and external responsibilities
 
+- Configuration-specific editor discovery exclusions. Editor/build inventories
+  share default directory exclusions; additional configured output/library/
+  generated paths and excluded names remain build-planner filters.
 - Shared incremental workspace state and graph snapshots. Theia
   reuses file discovery and disk text models for up to five seconds with file-event
   invalidation, overlaying current editor text. Unchanged ordered inputs/machine
@@ -70,7 +73,9 @@ uses semantic identities and source-token bindings through a lexical scope
 resolver. Editor lookup now uses the existing include graph for program file
 selection and ordered ordinary-import projection. Outline now uses those same
 semantic scope rules within the current file; segment/PC grouping remains
-presentation. Next, align build/editor discovery rules. Native CTRL/CMD+click shares definition
+presentation. Default build/editor directory exclusions are shared, including
+generated folders. Graph snapshots and configuration-specific editor filtering
+remain follow-up work. Native CTRL/CMD+click shares definition
 targets; the Linux CI job exercises actual clicks and the debugger UI.
 See [language architecture](language-support-architecture.md) and
 [the implementation plan](plan.md).
