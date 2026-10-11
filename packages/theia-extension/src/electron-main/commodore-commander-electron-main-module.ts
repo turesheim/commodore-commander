@@ -239,7 +239,7 @@ type ElectronScreenCaptureStep =
   | { readonly type: 'openOutlineView' }
   | { readonly type: 'openSidSfxEditor' }
   | { readonly type: 'prepareC64VisualDebuggerDemoState' }
-  | { readonly type: 'powerOffMachine' }
+  | { readonly type: 'powerOffMachine'; readonly replayLateFrame?: boolean }
   | { readonly type: 'revealMemoryTextColumn' }
   | {
       readonly type: 'editInputValue';
@@ -279,6 +279,23 @@ type ElectronScreenCaptureStep =
       readonly workspaceFolderUri?: string;
     }
   | { readonly type: 'stopDebugSession' }
+  | {
+      readonly type: 'waitForCanvasGlyphs';
+      readonly selector: string;
+      readonly rows: readonly (readonly number[])[];
+      readonly timeoutMs?: number;
+    }
+  | {
+      readonly type: 'assertCanvasKeyboardResponse';
+      readonly selector: string;
+      readonly text: string;
+      readonly timeoutMs?: number;
+    }
+  | {
+      readonly type: 'waitForCanvasContent';
+      readonly selector: string;
+      readonly timeoutMs?: number;
+    }
   | {
       readonly type: 'waitForVisibleText';
       readonly selector: string;
@@ -339,10 +356,15 @@ function installElectronScreenCapture(): void {
         clearTimeout(startupTimer);
         await runElectronScreenCapture(window, config);
       })
-      .catch((error) => {
+      .catch(async (error) => {
         started = true;
         clearTimeout(startupTimer);
         console.error(screenCaptureErrorMessage(error));
+        try {
+          await capturePage(window, path.join(config.outputDir, 'failure.png'));
+        } catch (captureError) {
+          console.error('Unable to capture failed UI state.', captureError);
+        }
         app.exit(1);
       });
   });
@@ -642,12 +664,15 @@ async function runScreenCaptureStep(
       const poweredOff = await callScreenCaptureApi<boolean>(
         window,
         'powerOffMachine',
-        [],
+        [step.replayLateFrame ?? false],
         false,
         timeoutMs
       );
       if (!poweredOff) {
         throw new Error('Unable to power off Machine view emulator.');
+      }
+      if (step.replayLateFrame) {
+        console.log('Replayed a queued Machine frame after power off.');
       }
       return;
     }
@@ -792,6 +817,18 @@ async function runScreenCaptureStep(
       }
       return;
     }
+    case 'waitForCanvasGlyphs':
+      await waitForCanvasGlyphs(window, step.selector, step.rows, step.timeoutMs ?? timeoutMs);
+      console.log(`Verified canvas glyphs in ${step.selector}.`);
+      return;
+    case 'assertCanvasKeyboardResponse':
+      await assertCanvasKeyboardResponse(window, step.selector, step.text, step.timeoutMs ?? timeoutMs);
+      console.log(`Verified canvas keyboard response in ${step.selector}.`);
+      return;
+    case 'waitForCanvasContent':
+      await waitForCanvasContent(window, step.selector, step.timeoutMs ?? timeoutMs);
+      console.log(`Verified visible canvas content in ${step.selector}.`);
+      return;
     case 'waitForVisibleText':
       await waitForVisibleText(
         window,
@@ -995,6 +1032,113 @@ async function callScreenCaptureApi<T>(
     })()`,
     fallback,
     timeoutMs
+  );
+}
+
+async function waitForCanvasGlyphs(
+  window: BrowserWindow,
+  selector: string,
+  rows: readonly (readonly number[])[],
+  timeoutMs: number
+): Promise<void> {
+  await waitForCondition(window, `(() => {
+    const canvas = document.querySelector(${JSON.stringify(selector)});
+    if (!(canvas instanceof HTMLCanvasElement)) { return false; }
+    // The test uses the default unfiltered C64 surface: 384 logical pixels.
+    const scale = canvas.width / 384;
+    if (!Number.isInteger(scale) || scale < 1) { return false; }
+    const context = canvas.getContext('2d');
+    if (!context) { return false; }
+    const rows = ${JSON.stringify(rows)};
+    const data = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const pixels = new Uint32Array(data.buffer);
+    const foregroundOffset = rows[0].indexOf(1) * scale;
+    for (let y = 0; y <= canvas.height - rows.length * scale; y += scale) {
+      for (let x = 0; x <= canvas.width - rows[0].length * scale; x += scale) {
+        const background = pixels[y * canvas.width + x];
+        const foreground = pixels[y * canvas.width + x + foregroundOffset];
+        if (background === foreground || (background >>> 24) === 0 || (foreground >>> 24) === 0) {
+          continue;
+        }
+        let matches = true;
+        for (let row = 0; row < rows.length && matches; row++) {
+          for (let col = 0; col < rows[row].length; col++) {
+            if (pixels[(y + row * scale) * canvas.width + x + col * scale] !==
+                (rows[row][col] ? foreground : background)) {
+              matches = false;
+              break;
+            }
+          }
+        }
+        if (matches) { return true; }
+      }
+    }
+    return false;
+  })()`, timeoutMs, `Timed out waiting for C64 BASIC READY glyphs in ${selector}.`);
+}
+
+async function assertCanvasKeyboardResponse(
+  window: BrowserWindow,
+  selector: string,
+  text: string,
+  timeoutMs: number
+): Promise<void> {
+  const pixelExpression = `(() => {
+    const canvas = document.querySelector(${JSON.stringify(selector)});
+    if (!(canvas instanceof HTMLCanvasElement)) { return null; }
+    canvas.focus();
+    const data = canvas.getContext('2d')?.getImageData(0, 0, 1, 1).data;
+    return data?.[3] > 0 ? [...data].slice(0, 3).join(',') : null;
+  })()`;
+  const before = await evaluateInWindow<string | null>(window, pixelExpression, null);
+  if (!before) {
+    throw new Error(`No opaque canvas pixel before keyboard input in ${selector}.`);
+  }
+  for (const key of [...text, 'Enter']) {
+    window.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
+    // Allow multiple C64 keyboard scans even when a CI runner renders slowly.
+    // This checks functional input/execution, not maximum typing throughput.
+    await delay(150);
+    window.webContents.sendInputEvent({ type: 'keyUp', keyCode: key });
+    await delay(150);
+  }
+  await waitForCondition(window, `(() => {
+    const pixel = ${pixelExpression};
+    return pixel !== null && pixel !== ${JSON.stringify(before)};
+  })()`, timeoutMs, `Canvas border did not respond to keyboard input in ${selector}.`);
+}
+
+async function waitForCanvasContent(
+  window: BrowserWindow,
+  selector: string,
+  timeoutMs: number
+): Promise<void> {
+  await waitForCondition(
+    window,
+    `(() => {
+      const canvas = document.querySelector(${JSON.stringify(selector)});
+      if (!(canvas instanceof HTMLCanvasElement) || canvas.width < 256 || canvas.height < 200) {
+        return false;
+      }
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0 ||
+          !canvas.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) {
+        return false;
+      }
+      const context = canvas.getContext('2d');
+      if (!context) { return false; }
+      const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+      let differentPixels = 0;
+      for (let offset = 4; offset < data.length; offset += 4) {
+        if (data[offset + 3] > 0 &&
+            (data[offset] !== data[0] || data[offset + 1] !== data[1] || data[offset + 2] !== data[2])) {
+          if (++differentPixels >= 64) { return true; }
+        }
+      }
+      return false;
+    })()`,
+    timeoutMs,
+    `Timed out waiting for visible canvas content in ${selector}.`
   );
 }
 

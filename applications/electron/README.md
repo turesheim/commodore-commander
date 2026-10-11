@@ -39,6 +39,29 @@ and applicable VICE assets. The patched embedded VICE build is currently
 supplied for macOS Apple Silicon; other platforms can use an external VICE
 installation.
 
+Package tests compile a small program with the bundled Kick Assembler and verify
+the emitted PRG bytes, then exercise SIDScore startup and its SRAP/MIDI protocol.
+On macOS Apple Silicon they also start bundled VICE, require visible native
+frames, and launch the packaged Electron app in an isolated workspace/profile.
+The UI test opens an assembly source and checks Machine canvas pixels through
+two power-on/off cycles. It types `POKE 53280,2` through Electron keyboard input
+after matching the BASIC `READY.` glyphs against the bundled C64 character ROM,
+then requires the emulated border color to change. Uniform or transparent frames
+fail; FPS alone does not pass. Logs and screenshots, including the UI state on
+failure, are retained as nightly test artifacts. The power-off check deliberately
+replays an already-sent frame and requires the view to stay off before restarting.
+Keyboard pacing allows C64 scanning on slower CI runners; this is not a typing
+throughput benchmark. Run locally:
+
+```sh
+npm run test:product-package -- --package-dir "dist/nightly/Commodore Commander.app"
+```
+
+The VICE dylib dependency graph is bundled without requiring Homebrew on the
+user's machine. Packaged UI coverage currently applies to macOS Apple Silicon;
+Windows/Linux UI and external VICE remain covered by separate development tests,
+not by this package test.
+
 macOS bundles are ad-hoc signed by default. Developer ID signing is supported;
 notarization and installer image creation remain manual release steps. See the
 [root README](../../README.md#product-packages) for signing configuration.

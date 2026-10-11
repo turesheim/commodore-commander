@@ -147,6 +147,9 @@ export class CommodoreMachineProfileWidget
   protected statusMessage = 'Off';
   protected lastOutput = '';
   protected starting = false;
+  // Initially allow cached frames when reconnecting to an existing backend.
+  // After stop, queued WebSocket frames must not revive a powered-off machine.
+  protected acceptingFrames = true;
   protected runtimeOwner: ViceRuntimeOwner | undefined;
   protected activeDebugSessionId: string | undefined;
   protected frameRate: number | undefined;
@@ -603,6 +606,7 @@ export class CommodoreMachineProfileWidget
   };
 
   protected async powerOnStandalone(): Promise<void> {
+    this.acceptingFrames = true;
     this.starting = true;
     this.runtimeOwner = 'standalone';
     this.status = 'starting';
@@ -625,6 +629,7 @@ export class CommodoreMachineProfileWidget
   }
 
   protected async powerOff(): Promise<void> {
+    this.acceptingFrames = false;
     this.releaseMouseCapture();
     this.clearVirtualKeyboardState(true);
     this.virtualKeyboardVisible = false;
@@ -708,9 +713,14 @@ export class CommodoreMachineProfileWidget
     );
   }
 
-  async powerOffForScreenCapture(): Promise<boolean> {
+  async powerOffForScreenCapture(replayLateFrame = false): Promise<boolean> {
+    const previousFrame = this.frame;
     if (this.isPowered()) {
       await this.powerOff();
+    }
+    if (replayLateFrame && previousFrame) {
+      // Deterministically exercise an already-sent frame arriving after stop.
+      this.applyFrame(previousFrame, 'standalone');
     }
     return true;
   }
@@ -916,6 +926,7 @@ export class CommodoreMachineProfileWidget
     if (!this.isEmbeddedViceDebugSession(session)) {
       return;
     }
+    this.acceptingFrames = true;
     this.runtimeOwner = 'debug';
     this.activeDebugSessionId = session.id;
     this.starting = true;
@@ -982,6 +993,14 @@ export class CommodoreMachineProfileWidget
     event: CommodoreViceEmbedStatusEvent,
     owner: ViceRuntimeOwner | undefined
   ): void {
+    if (!this.acceptingFrames && event.state === 'running') {
+      return;
+    }
+    if (event.state === 'starting') {
+      this.acceptingFrames = true;
+    } else if (event.state === 'stopped') {
+      this.acceptingFrames = false;
+    }
     this.runtimeOwner = event.state === 'running' || event.state === 'starting'
       ? owner ?? this.runtimeOwner
       : event.state === 'stopped' || event.state === 'error'
@@ -1007,6 +1026,9 @@ export class CommodoreMachineProfileWidget
     event: ViceEmbedRenderableFrame,
     owner: ViceRuntimeOwner | undefined
   ): void {
+    if (!this.acceptingFrames) {
+      return;
+    }
     const previousFrame = this.frame;
     const shouldUpdate = this.starting ||
       this.status !== 'running' ||

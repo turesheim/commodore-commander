@@ -231,6 +231,15 @@ jobs:
           tar -czf "$package_archive" -C "$(dirname "$package_dir")" "$(basename "$package_dir")"
           echo "Packaged $package_archive"
 
+      - name: Upload package test diagnostics
+        if: always() && runner.os == 'macOS'
+        uses: actions/upload-artifact@v6
+        with:
+          name: product-package-tests-${{ matrix.platform }}-${{ runner.arch }}
+          path: test-results/product-package
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Upload package artifact
         uses: actions/upload-artifact@v6
         with:

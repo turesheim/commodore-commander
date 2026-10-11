@@ -94,7 +94,7 @@ $(INSTALL_STAMP): $(CONFIGURE_STAMP) Makefile
 	 $(MAKE) -C "$(SOURCE_DIR)" install
 	 touch "$@"
 
-$(PACKAGE_STAMP): $(INSTALL_STAMP) Makefile
+$(PACKAGE_STAMP): $(INSTALL_STAMP) Makefile bundle-dylibs.mjs
 	 rm -rf "$(APP_DIR)"
 	 mkdir -p "$(APP_RESOURCES_DIR)" "$(APP_MACOS_DIR)"
 	 cp -R "$(PREFIX_DIR)/bin" "$(APP_RESOURCES_DIR)/"
@@ -129,31 +129,7 @@ $(PACKAGE_STAMP): $(INSTALL_STAMP) Makefile
 	 touch "$@"
 
 bundle-dylibs: $(PACKAGE_STAMP)
-	 if command -v otool >/dev/null 2>&1 && command -v install_name_tool >/dev/null 2>&1; then \
-	   mkdir -p "$(APP_RESOURCES_DIR)/lib"; \
-	   for pass in 1 2 3 4; do \
-	     find "$(APP_RESOURCES_DIR)/bin" "$(APP_RESOURCES_DIR)/lib" -type f 2>/dev/null | while IFS= read -r file; do \
-	       otool -L "$$file" 2>/dev/null | awk 'NR > 1 { print $$1 }' | grep -E '^(/opt/homebrew|/usr/local|$(PREFIX_DIR))/' | while IFS= read -r dependency; do \
-	         dependency_name="$$(basename "$$dependency")"; \
-	         if [ ! -f "$(APP_RESOURCES_DIR)/lib/$$dependency_name" ]; then \
-	           cp "$$dependency" "$(APP_RESOURCES_DIR)/lib/$$dependency_name"; \
-	           chmod u+w "$(APP_RESOURCES_DIR)/lib/$$dependency_name"; \
-	         fi; \
-	       done; \
-	     done; \
-	   done; \
-	   find "$(APP_RESOURCES_DIR)/lib" -name '*.dylib' -type f | while IFS= read -r dylib; do \
-	     install_name_tool -id "@executable_path/../lib/$$(basename "$$dylib")" "$$dylib" 2>/dev/null || true; \
-	   done; \
-	   find "$(APP_RESOURCES_DIR)/bin" "$(APP_RESOURCES_DIR)/lib" -type f 2>/dev/null | while IFS= read -r file; do \
-	     chmod u+w "$$file" 2>/dev/null || true; \
-	     otool -L "$$file" 2>/dev/null | awk 'NR > 1 { print $$1 }' | grep -E '^(/opt/homebrew|/usr/local|$(PREFIX_DIR))/' | while IFS= read -r dependency; do \
-	       install_name_tool -change "$$dependency" "@executable_path/../lib/$$(basename "$$dependency")" "$$file" 2>/dev/null || true; \
-	     done; \
-	   done; \
-	 else \
-	   echo "Skipping dylib bundling; otool/install_name_tool not available."; \
-	 fi
+	node "$(CURDIR)/bundle-dylibs.mjs" "$(APP_RESOURCES_DIR)"
 
 sign: $(PACKAGE_STAMP)
 	 if command -v codesign >/dev/null 2>&1; then \
@@ -178,6 +154,7 @@ check-platform:
 	 test "$(PLATFORM)" = "darwin-arm64" || { echo "Only PLATFORM=darwin-arm64 is packaged as VICE.app in this Makefile."; exit 1; }
 
 check-prereqs:
+	 command -v node >/dev/null 2>&1 || { echo "Node.js is required to bundle VICE dylibs."; exit 1; }
 	 command -v svn >/dev/null 2>&1 || { echo "svn is required to export VICE source."; exit 1; }
 	 command -v patch >/dev/null 2>&1 || { echo "patch is required to apply $(PATCH_FILE)."; exit 1; }
 	 command -v make >/dev/null 2>&1 || { echo "make is required to build VICE."; exit 1; }

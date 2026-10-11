@@ -33,6 +33,10 @@ Theia `vice-runtime-resolver.ts` wrapper.
   Native disconnect releases the debug frame reservation and cached image.
 - Frontend RPC disconnection detaches the client without terminating the
   standalone emulator. Backend shutdown releases owned process/transport state.
+- Machine ignores frames and running status arriving after power-off/stopped
+  until a new standalone/debug start. Otherwise an in-flight browser frame can
+  revive the UI state and prevent the next power-on from launching a process.
+  Initial widgets still accept cached frames from an existing backend session.
 - The adapter uses the runtime termination helper with SIGKILL when terminating
   its debuggee, preserving the current workaround for macOS VICE exit-cleanup
   crashes. This does not apply the same shutdown policy to standalone sessions.
@@ -103,6 +107,25 @@ Runtime and adapter tests cover protocol, process, framing and monitor behavior.
 Real DAP and Electron UI lanes are described in the
 [VICE E2E rig](vice-e2e-test-rig.md). Linux CI uses stock external VICE; embedded
 transport cases need the patched runtime and are skipped when unsupported.
+
+macOS Apple Silicon product smoke tests check the bundled VICE's early startup
+and require continuing CCB1 frames with visible content over loopback. Native
+packaging includes the complete non-system dylib dependency graph, including
+`@rpath` references and sdl2-compat's dynamically loaded SDL3, and
+removes build-machine search paths so local Homebrew libraries cannot mask
+missing payloads. The same package check launches the packaged Electron app with
+isolated user data and verifies visible pixels in the Machine canvas. It matches
+BASIC `READY.` glyphs against the bundled C64 character ROM before sending
+`POKE 53280,2` through Electron keyboard events and requiring a border-color
+change, then powers off, replays a previously sent frame to verify the UI remains
+off, and repeats after startup. Readiness uses the default
+unfiltered C64 surface; a fixed delay or a power-on RAM pattern does not qualify.
+This covers bundled discovery,
+backend/browser transport, canvas painting and BASIC input/execution, rather than
+accepting FPS or an existing screenshot as success. Nightly logs/screenshots
+survive failed checks.
+Package-level UI verification currently covers macOS Apple Silicon only; debug
+stepping and richer UI flows remain in the separate Electron/DAP E2E lanes.
 
 Runtime extraction is partial. Theia still owns launch/session policy, machine
 selection, JSON validation, browser transport and RPC cleanup; the adapter

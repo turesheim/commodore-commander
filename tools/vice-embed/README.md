@@ -49,9 +49,30 @@ before copying the runtime into `packages/theia-extension/assets`.
 
 The Makefile exports VICE `v3.10` from SourceForge SVN, applies
 `vice-3.10.0-commodore-embed.patch`, runs VICE autotools/configure, builds,
-installs to a local prefix, stages a `VICE.app` layout, bundles non-system
-Homebrew/local dylibs when possible, ad-hoc signs on macOS, and verifies that
-`x64sc` contains the embedded `-cc-embed` transport flag.
+installs to a local prefix and stages a `VICE.app` layout. The Node.js
+`bundle-dylibs.mjs` script follows the complete non-system dependency graph,
+including `@rpath` references and sdl2-compat's dynamically loaded SDL3. It
+rewrites dependencies to bundled libraries and removes build-machine search
+paths. Missing dependencies fail packaging. The bundle is
+then ad-hoc signed and checked for the embedded `-cc-embed` transport flag.
+
+The macOS path-discovery patch supplies `proc_pidpath` with its required buffer
+size, including during early startup before VICE has saved `argv[0]`.
+After building the shared runtime TypeScript package, check native startup and
+frame delivery with:
+
+```sh
+npm run build --workspace @commodore-commander/vice-runtime
+node tools/smoke-test-vice.mjs tools/vice-embed/dist/darwin-arm64/VICE.app/Contents/Resources
+```
+
+The product package smoke test runs this check on the bundled macOS Apple
+Silicon emulator and requires continuing frames with visible content. It also
+launches the packaged Electron app and verifies Machine painting and BASIC
+keyboard execution through two power cycles; see the
+[product test instructions](../../applications/electron/README.md).
+A successful file copy or signature check alone does not establish runtime
+behavior.
 
 The patch adds a small SDL-only transport enabled with `-cc-embed`. The patched
 emulator still runs as an external process, but its SDL window is hidden while
