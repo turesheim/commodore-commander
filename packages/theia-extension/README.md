@@ -110,4 +110,5 @@ scripts under `tools`. See the [root README](../../README.md) and
 Language navigation has a real Electron gesture regression: after building,
 run `npm run test:e2e:language:ui` from the repository root (on Linux, through
 `bash tools/run-with-xvfb.sh`). It checks cross-file and local-scope targets,
-including declaration line numbers and qualified link ranges.
+including file namespaces, directional multi-labels, declaration line numbers
+and full qualified/directional link ranges.

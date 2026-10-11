@@ -8,10 +8,11 @@ document analysis and assembled indexes are reused with explicit invalidation.
 Changed input still causes full assembly; per-document index updates remain work.
 
 1. Continue language consistency after namespace/lexical binding: implement
-   directional multi-labels and `.filenamespace`, then include-graph lookup and
-   alignment with the project loader/Langium outline. Native CTRL/CMD+click,
-   references, leaf rename and semantic tokens share those bindings; scope-owner
-   rename and scope-aware completion remain work.
+   include-graph lookup and expanded source order, then align the project
+   loader/Langium outline. File namespaces and same-document directional labels
+   are supported. Native CTRL/CMD+click, references, leaf rename and semantic
+   tokens share those bindings. Scope-owner/multi-label rename and scope-aware
+   completion remain work.
 
 2. Harden existing Theia build/pre-launch tasks and add missing clean and
    headless-equivalent task behavior.

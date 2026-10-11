@@ -1,4 +1,5 @@
 import { comparePositions, type DocumentPosition } from '../location/source-location.ts';
+import { parseMultiLabelReference } from './kick-assembler-multi-label.ts';
 import type {
   KickAssemblerSemanticModel,
   KickAssemblerSemanticScope,
@@ -11,6 +12,7 @@ export class KickAssemblerScopeResolver {
   private readonly scopesById: ReadonlyMap<string, KickAssemblerSemanticScope>;
   private readonly scopeKeys = new Map<string, string>();
   private readonly memberScopeDeclarations: ReadonlySet<string>;
+  private readonly multiLabelsByName = new Map<string, KickAssemblerSemanticSymbol[]>();
 
   constructor(model: KickAssemblerSemanticModel) {
     this.model = model;
@@ -18,6 +20,12 @@ export class KickAssemblerScopeResolver {
     this.memberScopeDeclarations = new Set(model.scopes
       .filter(scope => scope.kind === 'block' && scope.name)
       .map(scope => memberScopeKey(scope.parentId ?? '', scope.name!, scope.location.range.start.line)));
+    for (const symbol of model.symbols) {
+      if (symbol.kind !== 'local-label' && symbol.kind !== 'anonymous-label') continue;
+      const declarations = this.multiLabelsByName.get(symbol.name) ?? [];
+      declarations.push(symbol);
+      this.multiLabelsByName.set(symbol.name, declarations);
+    }
   }
 
   hasMemberScope(symbol: KickAssemblerSemanticSymbol): boolean {
@@ -27,6 +35,9 @@ export class KickAssemblerScopeResolver {
   }
 
   declarationKey(symbol: KickAssemblerSemanticSymbol): string {
+    if (symbol.kind === 'local-label' || symbol.kind === 'anonymous-label') {
+      return `\0multi\0${this.model.document.uri}\0${symbol.id}`;
+    }
     if (symbol.name.startsWith('@')) return symbol.name.slice(1);
     const scope = this.scopesById.get(symbol.scopeId)!;
     // Constants/variables are lexical symbols, not fields of Namespace or
@@ -41,6 +52,7 @@ export class KickAssemblerScopeResolver {
     name: string,
     hasDeclaration: (key: string) => boolean
   ): string | undefined {
+    if (name.startsWith('!')) return this.resolveMultiLabel(position, name);
     if (name.startsWith('@')) {
       const rootName = name.slice(1);
       return hasDeclaration(rootName) ? rootName : undefined;
@@ -64,6 +76,29 @@ export class KickAssemblerScopeResolver {
     return undefined;
   }
 
+  private resolveMultiLabel(position: DocumentPosition, name: string): string | undefined {
+    const reference = parseMultiLabelReference(name);
+    if (!reference) return undefined;
+    const visibleScopes = new Set<string>();
+    let scope: KickAssemblerSemanticScope | undefined = this.scopeAt(position);
+    while (scope) {
+      visibleScopes.add(this.privateScopeKey(scope));
+      scope = scope.parentId ? this.scopesById.get(scope.parentId) : undefined;
+    }
+    const candidates = (this.multiLabelsByName.get(reference.name) ?? []).filter(symbol =>
+      visibleScopes.has(this.privateScopeKey(this.scopesById.get(symbol.scopeId)!)) &&
+      comparePositions(symbol.location.range.start, position) * reference.direction > 0)
+      .sort((a, b) => comparePositions(a.location.range.start, b.location.range.start) * reference.direction);
+    const target = candidates[reference.distance - 1];
+    if (!target) return undefined;
+    // Imported source can insert nearer labels or change the requested rank.
+    // TODO: Resolve through expanded include order instead of guessing here.
+    if (this.model.imports.some(entry => entry.kind !== 'importonce' &&
+      comparePositions(entry.location.range.start, position) * reference.direction > 0 &&
+      comparePositions(entry.location.range.start, target.location.range.start) * reference.direction < 0)) return undefined;
+    return this.declarationKey(target);
+  }
+
   private scopeAt(position: DocumentPosition): KickAssemblerSemanticScope {
     for (let index = this.model.scopes.length - 1; index >= 0; index -= 1) {
       const scope = this.model.scopes[index]!;
@@ -79,7 +114,7 @@ export class KickAssemblerScopeResolver {
     let key: string;
     if (scope.kind === 'root') {
       key = '';
-    } else if (scope.kind === 'namespace' || scope.kind === 'block' && scope.name) {
+    } else if (scope.kind === 'namespace' || scope.kind === 'file-namespace' || scope.kind === 'block' && scope.name) {
       const parent = scope.parentId ? this.scopesById.get(scope.parentId) : undefined;
       key = scope.name?.startsWith('@') ? scope.name.slice(1)
         : joinName(parent ? this.scopeKey(parent) : '', scope.name ?? '');
@@ -93,7 +128,7 @@ export class KickAssemblerScopeResolver {
   }
 
   private privateScopeKey(scope: KickAssemblerSemanticScope): string {
-    if (scope.kind === 'namespace') return `\0namespace\0${this.scopeKey(scope)}\0`;
+    if (scope.kind === 'namespace' || scope.kind === 'file-namespace') return `\0namespace\0${this.scopeKey(scope)}\0`;
     return `\0${this.model.document.uri}\0${scope.id}`;
   }
 }

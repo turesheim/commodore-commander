@@ -113,7 +113,6 @@ class KickAssemblerSemanticParser {
   private importOnce = false;
   private pendingDataSymbol: KickAssemblerSemanticSymbol | undefined;
   private activeDataBlock: ActiveDataBlock | undefined;
-  private lastGlobalLabel: KickAssemblerSemanticSymbol | undefined;
 
   constructor(document: TextDocumentModel) {
     this.document = document;
@@ -340,10 +339,6 @@ class KickAssemblerSemanticParser {
       generated: this.isGeneratedSymbolScope()
     });
 
-    if (kind === 'label') {
-      this.lastGlobalLabel = symbol;
-    }
-
     return {
       symbol,
       endOffset: (match.index ?? 0) + match[0].length
@@ -388,6 +383,11 @@ class KickAssemblerSemanticParser {
       return { isDataDirective: false };
     }
 
+    if (directiveName === 'filenamespace') {
+      this.parseFileNamespace(operands, rawLine, lineIndex);
+      return { isDataDirective: false };
+    }
+
     if (DATA_DIRECTIVES.has(directiveName)) {
       this.parseDataDirective(directiveName, operands, rawLine, lineIndex, location);
       return { isDataDirective: true };
@@ -424,6 +424,22 @@ class KickAssemblerSemanticParser {
     }
 
     return { isDataDirective: false };
+  }
+
+  private parseFileNamespace(operands: string, rawLine: string, lineIndex: number): void {
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/u.test(operands)) {
+      this.diagnostics.push({ code: 'invalid-file-namespace', message: 'Expected a single namespace identifier.',
+        severity: 'error', location: this.location(lineIndex, 0, rawLine.length) });
+      return;
+    }
+    const start = rawLine.indexOf(operands, rawLine.indexOf('.filenamespace') + '.filenamespace'.length);
+    const location = this.location(lineIndex, start, start + operands.length);
+    const symbol = this.addSymbol({ name: operands, kind: 'namespace', location,
+      detail: '.filenamespace', generated: false });
+    // No brace is opened: this namespace lasts until EOF or the enclosing
+    // explicit scope closes. Successive directives nest, as in KickAss.
+    const scope = this.pushScope('file-namespace', operands, location);
+    scope.qualifiedName = symbol.qualifiedName;
   }
 
   private parseSymbolDirective(
@@ -891,7 +907,7 @@ class KickAssemblerSemanticParser {
     const symbol: KickAssemblerSemanticSymbol = {
       id,
       name: options.name,
-      qualifiedName: this.qualifiedName(options.name, options.kind),
+      qualifiedName: this.qualifiedName(options.name),
       kind: options.kind,
       scopeId: currentScope.id,
       location: options.location,
@@ -954,8 +970,11 @@ class KickAssemblerSemanticParser {
     if (this.scopeStack.length <= 1) {
       return;
     }
-    const scope = this.scopeStack.pop()!;
-    scope.range.end = { ...(end ?? scope.location.range.end) };
+    let scope: KickAssemblerSemanticScope;
+    do {
+      scope = this.scopeStack.pop()!;
+      scope.range.end = { ...(end ?? scope.location.range.end) };
+    } while (scope.kind === 'file-namespace' && this.scopeStack.length > 1);
   }
 
   private currentScope(): KickAssemblerSemanticScope {
@@ -966,14 +985,7 @@ class KickAssemblerSemanticParser {
     return scope;
   }
 
-  private qualifiedName(
-    name: string,
-    kind: KickAssemblerSemanticSymbolKind
-  ): string {
-    if (kind === 'local-label' || kind === 'anonymous-label') {
-      const localParent = this.lastGlobalLabel?.qualifiedName;
-      return localParent ? `${localParent}.${name}` : this.joinQualifier(name);
-    }
+  private qualifiedName(name: string): string {
     return this.joinQualifier(name);
   }
 
@@ -987,7 +999,7 @@ class KickAssemblerSemanticParser {
     }
     for (let index = this.scopeStack.length - 1; index >= 0; index -= 1) {
       const scope = this.scopeStack[index]!;
-      if ((scope.kind === 'namespace' || scope.kind === 'block' && scope.name) && scope.qualifiedName) {
+      if ((scope.kind === 'namespace' || scope.kind === 'file-namespace' || scope.kind === 'block' && scope.name) && scope.qualifiedName) {
         return `${scope.qualifiedName}.${name}`;
       }
     }

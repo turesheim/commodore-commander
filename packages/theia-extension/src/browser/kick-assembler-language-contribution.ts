@@ -35,6 +35,7 @@ const KICK_ASSEMBLER_GRAMMAR_DEFINITION: GrammarDefinition = {
 
 function toLanguageConfiguration(): monaco.languages.LanguageConfiguration {
   return {
+    wordPattern: new RegExp(kickAssemblerLanguageConfiguration.wordPattern, 'g'),
     comments: {
       lineComment: kickAssemblerLanguageConfiguration.comments.lineComment,
       blockComment: [

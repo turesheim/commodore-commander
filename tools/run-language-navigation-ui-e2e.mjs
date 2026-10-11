@@ -29,9 +29,15 @@ async function main() {
   await fs.mkdir(path.join(workspace, '.theia'));
   await fs.mkdir(path.join(temp, 'config'));
   await fs.mkdir(outputDir, { recursive: true });
-  const source = ['*=$1000', '#import "lib/target.asm"', '.namespace Game {', 'First: {', 'loop:', '  bne loop // first', '}', 'Second: {', 'loop:', '  bne loop // second', '}', '}', '  jsr Library.Target', '  jsr Game.First.loop'].join('\n');
+  const source = [
+    '*=$1000', '#import "lib/target.asm"', '.namespace Game {', 'First: {', 'loop:',
+    '  bne loop // first', '}', 'Second: {', 'loop:', '  bne loop // second', '}', '}',
+    '  jsr Library.Target', '  jsr Game.First.loop', '!again:', '  nop',
+    '  jmp !again-', '  jmp !again++', '!again:', '  nop', '!again:', '  rts',
+    '  jmp !++', '!:', '  nop', '!:', '  rts'
+  ].join('\n');
   await fs.writeFile(mainPath, source);
-  await fs.writeFile(path.join(workspace, 'lib/target.asm'), '// Distinct navigation target\n.namespace Library {\nTarget:\n  rts\n}\n');
+  await fs.writeFile(path.join(workspace, 'lib/target.asm'), '// Distinct navigation target\n.filenamespace Library\nTarget:\n  rts\n');
   let log = '', ws, exitResult;
   const child = spawn(load('electron'), [path.join(root, 'applications/electron/lib/backend/electron-main.js'), workspace,
     '--disable-gpu', ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-dev-shm-usage'] : []), '--no-cluster', '--remote-debugging-port=0', `--user-data-dir=${path.join(temp, 'user-data')}`], {
@@ -131,7 +137,11 @@ async function main() {
     await clickSymbol('bne loop // second', 'loop', 'loop', 9);
     await clickSymbol('jsr Game.First.loop', 'loop', 'Game.First.loop', 5);
     await capture('02-local-scope-definition.png');
-    console.log('Language navigation UI e2e passed: cross-file and local-scope modifier-click navigation.');
+    await clickSymbol('jmp !again-', '!again-', '!again-', 15);
+    await clickSymbol('jmp !again++', '!again++', '!again++', 21);
+    await clickSymbol('jmp !++', '!++', '!++', 26);
+    await capture('03-directional-definition.png');
+    console.log('Language navigation UI e2e passed: file namespaces, local scopes and directional modifier-click navigation.');
   } finally {
     clearTimeout(timer);
     ws?.close();
