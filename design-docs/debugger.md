@@ -1,315 +1,149 @@
 # Debugger Support
 
-Commodore Commander implements debugger support through Theia's native Debug
-Adapter Protocol integration. The product contributes a `commodore-vice` debug
-type, starts the TypeScript debug adapter from Theia's backend debug service,
-and keeps emulator communication inside the adapter through VICE's binary
-monitor protocol.
+## Integration and ownership
 
-There is no parallel Commodore-specific run/debug UI. Theia's own Start
-Debugging and Start Without Debugging commands create or use
-`.theia/launch.json` configurations. `noDebug` launches start VICE without the
-binary monitor.
+The product contributes `commodore-vice` to Theia's native DAP integration.
+Start Debugging and Start Without Debugging create/use `.theia/launch.json`;
+`noDebug` launches omit the binary monitor and initial break. The standalone
+embedded emulator remains a separate lifecycle.
 
-## Runtime Architecture
+`ViceDebugSession` owns the debug/no-debug process and binary-monitor connection.
+`vice-runtime` supplies discovery, launch/process helpers and shared embedded
+wire mechanisms. Theia owns launch/machine preferences, UI adaptation and the
+browser frame bridge. See [VICE architecture](vice-debug-architecture.md) for
+frame/input paths, shutdown policies and the partial runtime extraction.
 
-- `packages/theia-extension` contributes the Theia debug type, launch schema,
-  launch creation bridge, Memory view, and related frontend views.
-- `packages/debug-adapter` implements DAP over stdio and owns the VICE binary
-  monitor socket.
-- `packages/debug-adapter/src/vice-monitor.ts` encodes and decodes the VICE
-  binary monitor frames for memory, registers, checkpoints, stepping, pause,
-  resume, and process shutdown.
-- The adapter emits a `commodoreViceMonitorLog` DAP custom event for VICE
-  binary monitor diagnostics. The Theia VICE Monitor view consumes those
-  events and shows adapter notes (`LOG`), outbound monitor commands (`TX`),
-  and inbound monitor responses (`RX`) with request IDs, command/response
-  names, byte counts, decoded summaries, and hex payload previews.
-- For embedded debug launches, the Theia backend owns one reserved VICE frame
-  transport per Commodore Commander instance, while the debug adapter owns the
-  emulator process and binary monitor port. Repeated launch-resolution calls
-  reuse the reserved frame port, and a second debug launch cannot silently
-  replace a frame transport that is already connected to an emulator.
-- Kick Assembler produces `.dbg` files when builds run with `-debugdump`.
-  Those files are parsed by the adapter to map source lines, labels, loaded
-  sources, stack frame locations, breakpoint locations, source breakpoints,
-  and `.break` debug-info breakpoints.
-- Debug launches use the configured `.dbg` file only when it matches the
-  launched `.prg` basename. If no matching configured dump is available,
-  fallback candidates are limited to exact launched-PRG basename matches, such
-  as `program.prg` -> `program.dbg`, in the launch directory, `cwd`, and
-  workspace `out` folder. The adapter must not choose arbitrary nearby debug
-  dumps by address overlap, because unrelated programs often occupy the same
-  C64 address range.
-- VICE consumes Kick Assembler `.vs` VICE symbol files natively through
-  `-moncommands`; it does not consume `.dbg` files directly. For debug
-  launches, the adapter looks for the `.vs` file next to the selected `.dbg`
-  file or launched PRG and passes it to VICE. This lets VICE install labels
-  and any `break` commands emitted by Kick Assembler. If no `.vs` file is
-  available, the adapter falls back to a generated labels-only monitor command
-  file derived from `.dbg` labels. Monitor command files do not resume the
-  machine; VICE remains under the `-initbreak ready` startup stop while Theia
-  sends breakpoints and the adapter installs DAP source breakpoints through
-  the binary monitor. An explicit `-moncommands` entry in `viceArgs` is left
-  untouched, but the adapter still inspects the referenced file so `.dbg`
-  `.break` entries are not double-installed when the same address is already
-  present as a VICE `break` command.
-- Source breakpoints use `<Segment>` line mappings from Kick Assembler debug
-  dumps. The `.dbg` `<Breakpoints>` block may be empty for ordinary editor
-  breakpoints; it is not required for DAP source breakpoints.
-- UI-created source breakpoints are adapter-managed DAP breakpoints. They are
-  not appended to the Kick Assembler `.vs` file. Breakpoints received before
-  VICE is ready are mapped through `.dbg` and submitted as binary-monitor
-  execution checkpoints on the first CPU halt. Breakpoints added after the
-  machine is already running are submitted through the binary monitor as soon
-  as the monitor connection is available. Theia filters disabled source
-  breakpoints out of the standard DAP `setBreakpoints` request, so the Theia
-  extension also sends a Commodore-specific full source-breakpoint state
-  request containing marker IDs and enabled flags. Once that full state has
-  been seen for a source file, missing entries in the DAP `setBreakpoints`
-  list are treated as disabled, not removed. Disabled UI breakpoints are
-  toggled with VICE `CHECKPOINT_TOGGLE`; removed UI breakpoints are deleted
-  through the binary monitor with `CHECKPOINT_DELETE`.
-- Kick Assembler `.break` directives are written in assembly source code.
-  When the source is compiled, Kick Assembler emits them into the `.dbg`
-  `<Breakpoints>` block and emits matching `break` commands in the `.vs`
-  monitor command file. The `.vs` file is the runtime authority for these
-  programmed breakpoints: VICE installs them natively from `-moncommands`,
-  while `.dbg` is used by the adapter to map stopped addresses back to source
-  and to avoid double-installing the same address. If no `.vs` file is
-  available, the adapter can install `.dbg` breakpoint entries as a fallback.
-  Source-authored programmed breakpoints are source-owned and are not deleted
-  through UI breakpoint removal; removing the `.break` directive from source
-  and rebuilding removes them from the authoritative `.vs` file. The Theia
-  extension exposes these source-owned breakpoints as managed markers in the
-  normal Breakpoints view. They can be enabled or disabled there, but remove
-  actions are ignored or restored and must not delete or hide the marker. UI
-  removal also does not delete the VICE checkpoint because the `.vs` file
-  remains authoritative. Programmed breakpoint markers are excluded from
-  persisted user-authored breakpoints. The custom Theia breakpoint manager
-  protects programmed markers during normal `setBreakpoints` and
-  `removeBreakpoints` rewrites so debug-session startup, DAP response updates,
-  and enable/disable actions cannot accidentally drop them. The explicit
-  `DebugSourceBreakpoint.remove()` path is patched to ignore programmed
-  markers. The Theia
-  source breakpoint toggle path is patched to update marker ids in place,
-  because Theia's default implementation can otherwise turn disable into
-  remove when a DAP adapter resolves a breakpoint to a different executable
-  line. The full source-breakpoint state sync carries a marker flag so the
-  adapter toggles these entries with `CHECKPOINT_TOGGLE` but never reconciles
-  them as UI-owned checkpoints. The standard DAP `setBreakpoints` request is
-  not authoritative for programmed breakpoints: Theia omits disabled markers
-  from that request, so the adapter reports programmed breakpoint status in
-  the response but does not refresh, toggle, or re-emit programmed breakpoint
-  state from that path. VICE checkpoint numbers for `.vs`-owned programmed
-  breakpoints
-  are monitor-local and volatile: before toggling one from the UI, the adapter
-  refreshes the association with `CHECKPOINT_LIST`; if VICE rejects a toggle
-  because the remembered object no longer exists, the adapter clears the stale
-  number, refreshes again, and retries with the current number. Fallback `.dbg`
-  breakpoint entries installed by the adapter use the same non-removable UI
-  path.
-- Explicit VICE monitor command files can also install breakpoints outside the
-  adapter's checkpoint map, for example Kick Assembler `.vs` files containing
-  `break` commands. Unknown VICE checkpoint hits are reported as DAP
-  `breakpoint` stops instead of being auto-resumed.
-- DAP source breakpoints are remembered when Theia sends `setBreakpoints`,
-  even if that happens before `launch` has loaded Kick Assembler debug info.
-  The adapter advertises `supportsConfigurationDoneRequest` so Theia completes
-  breakpoint setup with `configurationDone`. After `.dbg` loading, the adapter
-  re-resolves pending source breakpoints, sends DAP breakpoint-changed events
-  for newly verified bindings, and synchronizes VICE checkpoints at the first
-  stopped monitor state before the initial resume. This avoids losing
-  breakpoints in embedded/autostart launch timing.
-- VICE can report more than one startup stop while `-moncommands` and
-  `-initbreak ready` settle. The adapter serializes initial stop handling and
-  only reports one DAP `stopped` event until the client continues or steps.
-- If a requested source breakpoint line has no exact mapping, the adapter can
-  bind it to the next nearby mapped line in the same source file. This supports
-  common editor clicks on comments or blank lines immediately above executable
-  assembler statements while still rejecting distant unmapped lines.
-- For C64 launches, the adapter loads bundled VICE BASIC/KERNAL ROM images and
-  parses VICE monitor aliases from `share/vice/C64/c64mem.sym` to expose
-  generated ROM disassembly sources for OS addresses. `c64mem.sym` is VICE
-  metadata copied into the packaged runtime, not original Commodore source.
-- Stack-frame source locations prefer exact address mappings and otherwise use
-  a bounded nearest-line fallback for call-stack navigation. If no source line
-  can be correlated, the adapter falls back to a generated sourceReference
-  document built by disassembling the launched PRG image, then to a generated
-  sourceReference document disassembled from live VICE memory at the frame
-  address.
+Memory and Visual Debugger requests use the active DAP session. The VICE Monitor
+view consumes diagnostic DAP events; none of these views opens another monitor
+socket. Embedded video uses the backend's native frame transport/WebSocket,
+not DAP frame forwarding.
 
-The implementation follows the VICE binary monitor command format: memory
-reads/writes carry side-effect, memory-space, and bank fields; register writes
-use the `REGISTERS_SET` command; source breakpoints and data breakpoints both
-use VICE checkpoints with different CPU-operation masks; conditional source and
-data breakpoints use the VICE checkpoint condition command.
+## Debug metadata and source selection
 
-Protocol reference: [VICE Manual, Binary monitor](https://vice-emu.sourceforge.io/vice_13.html).
+Kick Assembler `-debugdump` produces `.dbg` mappings for lines, labels, sources,
+watch entries and programmed `.break` locations. VICE reads `.vs` monitor
+commands, not `.dbg` files.
 
-## Implemented DAP Features
+Configured debug info must match the launched PRG basename. Fallback discovery
+looks for that same basename beside the PRG, in `cwd`, and in relevant `out`
+directories. Address overlap may produce a warning but must not select an
+unrelated dump: different C64 programs commonly occupy the same address range.
 
-- Launch and terminate VICE through Theia.
-- Start Without Debugging through DAP `noDebug`, without `-binarymonitor`.
-- Source breakpoints backed by Kick Assembler `.dbg` line mappings.
-- VICE monitor labels derived from the selected Kick Assembler `.dbg` labels
-  and passed through `-moncommands`.
-- Nearby unmapped source breakpoint lines resolved to the next mapped
-  executable line.
-- Kick Assembler `.break` programmed breakpoints installed by VICE from the
-  selected `.vs` monitor command file, with `.dbg` used for source mapping and
-  fallback installation when needed.
-- Conditional source breakpoints through VICE checkpoint conditions.
-- Hit-count source breakpoints interpreted by the adapter before surfacing a
-  stop to the DAP client.
-- Source logpoints/tracepoints. Static logpoints use non-stopping VICE
-  checkpoints; logpoints that need live register values stop briefly so the
-  adapter can refresh registers, emit the log message, and resume.
-- Breakpoint-location discovery for valid assembled instruction lines.
-- Data breakpoints/watchpoints for C64 memory labels or addresses, using VICE
-  load/store checkpoints.
-- Conditional data breakpoints/watchpoints through VICE checkpoint conditions.
-- Hit-count data breakpoints/watchpoints interpreted by the adapter.
-- Read/write watchpoints are installed as separate VICE load and store
-  checkpoints so a hit can report the actual access type.
-- Watchpoint stops include the watched range, actual read/write access type,
-  current PC, and current watched byte values in the stopped-event description
-  and Debug Console output.
-- A persistent Theia watchpoint manager supports add, enable/disable, edit,
-  delete, clear, and reinstall actions without requiring a custom debug view.
-- Watch expressions for registers, labels, and address expressions. In Watch
-  context, labels and addresses show the current byte value and keep a DAP
-  memory reference for Memory view navigation.
-- Kick Assembler `.watch` entries from debug dumps appear as a live memory
-  scope in the Variables view.
-- Adapter-observed Trace History appears as a Variables scope and can also be
-  queried from the Debug Console with `.trace`, `.lastwrite`, and
-  `.regchanges`. It records stopped/logpoint PC samples, register snapshots,
-  register changes, watched memory accesses, and debugger-originated memory
-  writes.
-- Continue, pause, step in, step over, and step out.
-- Stack frame for the current CPU PC, with source mapping where available.
-- Register and Kick Assembler label scopes.
-- Register editing through DAP `setVariable`.
-- Evaluation of registers, labels, and addresses.
-- Memory reads and writes through DAP `readMemory` and `writeMemory`.
-- DAP memory events after debugger-originated memory writes when the client
-  declares memory-event support.
-- Loaded sources and complete NMOS 6502 disassembly, including undocumented
-  opcodes.
-- Generated PRG disassembly sources for stack-frame addresses that cannot be
-  mapped back to original source.
-- Generated C64 BASIC/KERNAL ROM disassembly sources for stack-frame addresses
-  in bundled ROM ranges.
-- Generated live-memory disassembly sources for stack-frame addresses outside
-  the launched PRG image.
-- VICE Monitor protocol view backed by DAP custom events from the adapter's
-  binary monitor connection.
+The adapter prefers a `.vs` file beside the selected dump/PRG. Without one it
+can generate a labels-only monitor file from `.dbg`. Explicit `-moncommands`
+arguments are preserved and inspected for existing `break` addresses to avoid
+double-installation. Monitor command files do not resume execution.
 
-## Memory View
+Source breakpoints use `<Segment>` mappings; an empty `.dbg` `<Breakpoints>`
+block does not prevent ordinary editor breakpoints. An unmapped requested line
+may bind to the next nearby executable line in the same file; distant unmapped
+lines remain unverified. `sourceRoot` resolves relative debug-info source paths.
 
-The Theia Memory view is a bottom-panel view exposed through Theia's View list.
-It reads and writes through the active stopped `commodore-vice` debug session;
-it does not open a separate VICE monitor connection.
+## Startup synchronization
 
-Implemented behavior:
+The adapter advertises `supportsConfigurationDoneRequest` and retains source
+breakpoints received before `launch`. After loading `.dbg`, it resolves pending
+bindings and emits breakpoint-changed events. VICE remains at the
+`-initbreak ready` halt while Theia submits breakpoint state and
+`configurationDone`; checkpoints are synchronized before the first resume.
 
-- read-only status when no stopped VICE debug session is active
-- editable byte cells when the stopped debug session supports `writeMemory`
-- comma-separated monitor expressions, such as `$0400-$07e7, message`
-- range syntax using `start-end`
-- numeric addresses using `$`, `0x`, or decimal notation
-- Kick Assembler labels resolved through DAP `evaluate`
-- presets for zero page, stack, screen memory, color RAM, and program memory
-- 8, 16, 32, and 40 byte row widths; screen and color presets default to 40
-  columns for the C64 display width
-- ASCII and custom text-map renderings
-- bitmap C64 PETSCII and screen-code renderings with upper/graphics and
-  lower/upper charset selection, reverse-video glyphs, and labeled PETSCII
-  control bytes
-- changed-byte highlighting after refresh
-- persisted address/range, length, columns, text mode, character set, custom
-  map, advanced memory-space dropdown, bank combobox, side-effect, and
-  auto-refresh settings
-- memory-space and bank values passed through to the adapter for VICE monitor
-  memory reads/writes
-- a PC action that opens memory at the current program counter
+VICE can report several startup halts. The adapter serializes initial-stop
+handling and reports one DAP `stopped` event until the client continues/steps.
+The initial halt may be in KERNAL/autostart code rather than the user program.
+Breakpoints added while running are installed once the monitor is available.
 
-Memory refresh still happens only while the target is stopped. This matches the
-Eclipse-era behavior and avoids flooding VICE with monitor requests while the
-emulator is running.
+## Breakpoint authority
 
-## VICE Monitor View
+| Kind | Authority | Runtime mechanism | UI removal |
+| --- | --- | --- | --- |
+| Editor source breakpoint | Theia user marker/full state | Adapter-managed binary-monitor execution checkpoint | Deletes owned checkpoint |
+| Source-authored `.break` | Rebuilt `.vs`, with `.dbg` mapping/fallback | VICE installs `break` commands; adapter installs `.dbg` fallback only when needed | Cannot remove the source-owned marker/checkpoint; edit source and rebuild |
+| Data watchpoint | DAP state/persistent Theia watchpoint manager | Separate VICE load/store checkpoints | Deletes owned checkpoints |
 
-The VICE Monitor view is a bottom-panel diagnostic view for the active
-`commodore-vice` debug session. It does not open another monitor socket.
-Instead, the debug adapter mirrors its session-owned binary monitor traffic as
-DAP custom events. The view can copy the current log to the clipboard as
-tab-separated text.
+Theia's standard `setBreakpoints` omits disabled markers. The extension also
+sends full source-breakpoint state with marker IDs, enabled flags and programmed
+ownership. After full state is known, omission from standard DAP state means
+*disabled*, not removed. Disable uses `CHECKPOINT_TOGGLE`; removal of a UI-owned
+checkpoint uses `CHECKPOINT_DELETE`. Marker IDs survive disable even when the
+resolved executable line differs from the requested line.
 
-The view uses compact direction labels:
+Programmed markers appear in the normal Breakpoints view and can be toggled,
+but remove paths preserve them. They are excluded from persisted user-owned
+breakpoints and protected during marker rewrites. Standard `setBreakpoints`
+reports their bindings but does not toggle/reconcile their runtime state;
+the full-state request performs those operations.
 
-- `LOG` adapter decisions such as the loaded `.dbg`, selected `.vs` monitor
-  command files, `setBreakpoints`, `configurationDone`, and checkpoint
-  synchronization. Skipped source breakpoints include the full source path and
-  active debug-info path so wrong-debug-dump selection is visible in copied logs
-- `TX` binary monitor command frames sent to VICE
-- `RX` binary monitor response and asynchronous event frames received from
-  VICE
+VICE checkpoint numbers for `.vs`-owned breakpoints are volatile. Before a UI
+toggle the adapter refreshes them with `CHECKPOINT_LIST`. If VICE rejects a
+stale number, it clears the association, refreshes and retries. Source-owned
+checkpoints are associated by address rather than reinstalled or deleted.
+Unknown checkpoint hits, including explicit monitor-file breakpoints, produce
+DAP breakpoint stops rather than automatic resume.
 
-For breakpoint diagnosis, the expected startup sequence is a `.vs` selection
-note when a Kick Assembler VICE symbol file exists, a `configurationDone` note,
-one or more `CHECKPOINT_SET` commands for DAP-managed source or `.dbg`
-breakpoints, and `CHECKPOINT_INFO` responses that return the installed VICE
-checkpoint numbers. Source-owned `.break` entries installed by the `.vs` file
-are discovered with `CHECKPOINT_LIST` and associated with their `.dbg` mappings
-by address, not reinstalled by the adapter. A later breakpoint hit should
-appear as a `CHECKPOINT_INFO` response with `hit=1`. If a remembered breakpoint
-is not installable, the adapter logs a `LOG` row with the skip reason before
-returning without a `CHECKPOINT_SET`. Disabling an installed UI breakpoint
-should produce `CHECKPOINT_TOGGLE enabled=0`; removing an installed UI
-breakpoint should produce `CHECKPOINT_DELETE`. Disabling a source-owned
-programmed breakpoint should first refresh with `CHECKPOINT_LIST`, then produce
-`CHECKPOINT_TOGGLE enabled=0` for the current VICE checkpoint number.
-Programmed breakpoints must not produce `CHECKPOINT_DELETE` from UI removal
-controls; clicking or removing their UI marker should leave the marker present.
-The source-authored VICE checkpoint remains active until it disappears from the
-rebuilt `.vs` file after the `.break` directive is removed from source.
+Conditional source/data breakpoints use VICE checkpoint conditions. Hit counts
+are interpreted by the adapter. Static logpoints use non-stopping checkpoints;
+logpoints needing live registers briefly stop, refresh, log and resume.
+Watchpoint stops report range, actual read/write access, PC and current bytes.
+The persistent manager supports add, toggle, edit, delete, clear and reinstall.
 
-## Remaining Work
+## Stack, source fallback and trace limits
 
-- Full PETSCII/charset rendering can be made more faithful by loading real C64
-  character ROM data instead of using text approximations.
-- Stack traces reconstruct caller frames from page-$01 stack entries that
-  validate against real `JSR` instructions in memory. Arbitrary pushes and
-  asynchronous interrupt provenance still require richer execution metadata.
-  Unmapped stack-frame addresses can still open in generated PRG disassembly,
-  or in live-memory disassembly for addresses outside the PRG image, but
-  returning from that disassembly to original source requires `.dbg` mappings
-  for the address.
-- Conditional branches such as `BNE` and plain `JMP` do not create stack frames
-  because they do not push a return address. Stack-frame names include nearest
-  containing label context so loops are still visible without misrepresenting
-  branch targets as calls.
-- Theia plus VICE UI automation covers debug startup, Memory view rendering and
-  byte editing, and the C64 Visual Debugger overview, sprite, screen, and CIA
-  views. It runs locally through `npm run test:e2e:theia:ui` after the Electron
-  app is built and in GitHub Actions on Linux under Xvfb.
-- Debug-adapter VICE e2e fixtures cover `debug-demo`,
-  `visual-debugger-demo`, and `screencolors`; `debug-demo` covers regular
-  source breakpoints, including source breakpoints sent before `launch`, while
-  `screencolors` covers comment-line breakpoint binding against Kick Assembler
-  `<Segment>` mappings, embedded VICE breakpoint startup, and a source-authored
-  `.break` represented by matching `.dbg` and `.vs` fixture output.
-- Build-before-debug has Theia task-provider and generated `preLaunchTask`
-  wiring for Kick Assembler builds. Remaining work is run-picker and
-  build-policy behavior for configured runs, plus any clean-task workflow that
-  should be exposed through Theia tasks.
-- VICE textual monitor `command <checknum> ...` actions are not exposed through
-  the binary monitor protocol used here. Logpoints are therefore implemented in
-  the adapter with VICE stop/non-stop checkpoints rather than arbitrary VICE
-  action commands.
-- Trace History is not full MAME-style PC history yet. It only contains states
-  observed through DAP stops, logpoint stop/resume, register edits, watched
-  memory writes, and Memory view writes; complete "who last wrote any byte"
-  provenance needs emulator-side execution and memory tracking.
+The current PC is mapped through exact `.dbg` addresses, then a bounded nearby
+source-line fallback. Unmapped frames can open generated PRG disassembly,
+bundled C64 BASIC/KERNAL disassembly or live-memory disassembly. ROM aliases
+come from VICE `share/vice/C64/c64mem.sym`; these documents are generated
+sources, not original Commodore source.
+
+Caller reconstruction examines page-$01 stack entries that validate against
+real `JSR` instructions in memory. `BNE` and plain `JMP` do not create call
+frames; nearest label context still names the current frame. Arbitrary stack
+pushes and asynchronous interrupts need richer execution metadata.
+
+Trace History records adapter-observed stops/logpoints, registers, watched
+accesses and debugger-originated writes. `.trace`, `.lastwrite` and
+`.regchanges` query it; complete execution history or last-write provenance for
+any arbitrary byte requires emulator-side tracking.
+
+## DAP and view behavior
+
+The adapter provides launch/no-debug, continue/pause/stepping, source/data
+breakpoints, breakpoint locations, stack/scopes/variables, register editing,
+evaluation, loaded sources, memory read/write and complete NMOS 6502 disassembly
+including undocumented opcodes. Capability details are in the
+[adapter README](../packages/debug-adapter/README.md); user workflows are in the
+[debugger guide](../bundled-docs/debugger-user-guide.md).
+
+Watch expressions for registers/labels/addresses retain memory references;
+label/address watches show live byte values. Kick Assembler `.watch` entries
+appear as a live memory scope. Memory writes emit DAP memory events when the
+client advertises support.
+
+The Memory view reads/edits only while the target is stopped. It supports
+comma-separated expressions, `start-end` ranges, labels via DAP `evaluate`,
+zero-page/stack/screen/color/program presets and 8/16/32/40-byte rows. Rendering
+includes ASCII, custom maps and bitmap C64 PETSCII/screen codes with charset,
+reverse-video and control-byte handling. It highlights changed bytes and
+persists ranges, display options, memory-space/bank, side-effect and refresh
+settings. Those monitor fields are passed through to the adapter. A PC action
+opens the current instruction's memory address.
+
+The VICE Monitor view shows `commodoreViceMonitorLog` events as `LOG` decisions,
+`TX` commands and `RX` responses, including IDs, decoded summaries and hex
+previews. Clipboard export preserves the diagnostic rows. For breakpoint
+troubleshooting, expect metadata selection, `configurationDone`,
+`CHECKPOINT_SET`/`CHECKPOINT_INFO` for adapter-owned bindings and
+`CHECKPOINT_LIST` for `.vs` ownership. Skips log source/debug-info paths and
+reasons. Disable should toggle; source-owned UI removal must not delete a
+checkpoint. A hit carries `CHECKPOINT_INFO hit=1`.
+
+## Verification and remaining work
+
+[Real VICE and Electron UI tests](vice-e2e-test-rig.md) cover debug startup,
+source/programmed checkpoints, Memory byte editing and Visual Debugger tabs.
+They complement focused adapter/runtime tests; they do not establish complete
+feature or platform parity.
+
+Remaining work includes configured-run selection/build policies, clean-task UX,
+richer symbols/charset fidelity and execution-history provenance. Arbitrary
+textual VICE `command <checknum> ...` actions are not exposed through the binary
+monitor path; logpoints remain adapter-managed.

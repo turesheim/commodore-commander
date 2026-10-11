@@ -25,8 +25,8 @@ Language/build planning services belong to `packages/language-support`. DAP and
 binary-monitor behavior belong to `packages/debug-adapter`. VICE resource and
 executable discovery, shared launch flags, debugger process lifecycle helpers,
 standalone child-process/command-pipe ownership, binary frame parsing, native
-loopback frame transport, and embedded stdout framing belong to
-`packages/vice-runtime`.
+loopback frame transport, embedded stdout framing, and the CCV1 JSON wire codec
+belong to `packages/vice-runtime`.
 
 The local `vice-runtime-resolver.ts` is an integration wrapper: it resolves the
 selected machine/model and supplies the extension's asset location and
@@ -42,6 +42,12 @@ record, and complete CCB1 records. This backend still validates and forwards
 fallback binary/JSON frames, reports malformed JSON as both status and output,
 and truncates overflow output to the existing 32 MiB limit. DAP intentionally
 uses different forwarding and overflow rules.
+
+The runtime JSON codec parses the CCV1 envelope and encodes commands. The local
+`commodore-vice-embed-protocol.ts` retains typed input commands and stricter
+frame/status field validation, including timestamp fallback and optional-field
+normalization. The browser/RPC contract remains in the common service module;
+its protocol version is checked against the runtime wire version in tests.
 
 [`CommodoreViceFrameBridge`](src/node/commodore-vice-frame-bridge.ts) owns the
 browser-facing WebSocket listener, origin/path checks, connected clients,
