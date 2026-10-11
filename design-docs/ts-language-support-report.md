@@ -13,7 +13,7 @@ old emitted JS/declaration/map copies under `src/` have been removed.
 | Documents/includes | Text/position/range models, file-URI/loading helpers, relative/search-root imports and recursive project graph |
 | Semantic model | Expressions, scopes, namespace/macro/function/pseudocommand/struct/enum constructs, imports/import-once, segments/PC, conditionals/loops, labels and generated/data metadata |
 | Scanner/outline | Scanner facade over semantics; separate Langium structural outline; SIDScore subtune/effect outline |
-| Lookup/editor | Cached project/XML document analysis; definition/reference queries, HTML hovers, completion, rename, workspace symbols, semantic tokens, folding, formatting and quick fixes |
+| Lookup/editor | Cached project/XML analysis and last assembled index; definition/reference queries, HTML hovers, completion, rename, workspace symbols, semantic tokens, folding, formatting and quick fixes |
 | Hardware reference | Bundled 6502/C64 I/O XML plus typed machine profiles and machine-filtered I/O/ROM/memory/zero-page facts |
 | Build planning | Program/profile/run settings, standalone root detection, affected-program dependencies, output/generated assets, machine overrides and KickAss command rendering |
 | Diagnostics | Structural/include diagnostics and KickAss output parsing/range expansion; Theia translates results to markers |
@@ -36,8 +36,9 @@ syntax assets are active product inputs and must remain packaged.
 
 - Shared incremental workspace state and include-graph-precise lookup. Theia
   reuses file discovery and disk text models for up to five seconds with file-event
-  invalidation, overlaying current editor text. Unchanged document analysis is
-  reused, but index maps are still assembled per request.
+  invalidation, overlaying current editor text. Unchanged ordered inputs/machine
+  reuse index assembly with independent mutable results; changed input still
+  triggers full assembly.
 - Compiler-accurate KickAss expression/directive edge cases, macro expansion,
   conditional evaluation and generated-symbol materialization.
 - Compiler-grade diagnostics, completion/rename/formatting/quick-fix parity,
@@ -56,9 +57,9 @@ Structural/tolerant parsing is appropriate for editing while full compiler
 parity remains explicitly unfinished. Paths/file URIs replace former workspace
 resource objects; framework adapters must not leak their APIs into this package.
 
-Document analysis caching and bounded/event-invalidated file/disk snapshots are
-implemented steps toward an incremental index. Next, reuse assembled indexes
-with invalidation for document order/content and active-machine changes.
-Align outline, scanner, semantic and project views before expanding compiler-relevant behavior.
+The bounded lookup-reuse round covers file discovery, disk models, document
+analysis and assembled indexes. Comparison/result copying remains per request;
+delta updates and full compiler parity remain unfinished. Align outline, scanner,
+semantic and project views before expanding compiler-relevant behavior.
 See [language architecture](language-support-architecture.md) and
 [the implementation plan](plan.md).

@@ -103,6 +103,19 @@ interface CachedDocumentAnalysis<T> {
   analysis: T;
 }
 
+interface IndexDocumentSnapshot {
+  kind: KickAssemblerLookupDocumentKind;
+  uri: string;
+  text: string;
+  languageId: string;
+}
+
+interface CachedLookupIndex {
+  documents: readonly IndexDocumentSnapshot[];
+  machineProfileId: CommodoreMachineProfileId;
+  index: KickAssemblerLookupIndex;
+}
+
 export interface KickAssemblerLookupIndexOptions {
   machineProfileId?: CommodoreMachineProfileId;
 }
@@ -110,10 +123,12 @@ export interface KickAssemblerLookupIndexOptions {
 export class KickAssemblerLookupService {
   private readonly projectAnalysis = new Map<string, CachedDocumentAnalysis<ProjectDocumentAnalysis>>();
   private readonly referenceAnalysis = new Map<string, CachedDocumentAnalysis<readonly ReferenceSymbolDefinition[]>>();
+  private cachedIndex: CachedLookupIndex | undefined;
 
   clearDocumentCache(): void {
     this.projectAnalysis.clear();
     this.referenceAnalysis.clear();
+    this.cachedIndex = undefined;
   }
 
   protected analyzeProjectDocument(document: TextDocumentModel): ProjectDocumentAnalysis {
@@ -133,6 +148,29 @@ export class KickAssemblerLookupService {
   buildIndex(
     documents: readonly KickAssemblerLookupDocument[],
     options: KickAssemblerLookupIndexOptions = {}
+  ): KickAssemblerLookupIndex {
+    const machineProfileId = options.machineProfileId ?? DEFAULT_COMMODORE_MACHINE_PROFILE_ID;
+    if (this.cachedIndex && this.cachedIndex.machineProfileId === machineProfileId &&
+        matchesIndexDocuments(this.cachedIndex.documents, documents)) {
+      return copyLookupIndex(this.cachedIndex.index);
+    }
+
+    const index = this.assembleIndex(documents, { machineProfileId });
+    this.cachedIndex = {
+      machineProfileId,
+      documents: documents.map(({ kind, document }) => ({
+        kind, uri: document.uri, text: document.text, languageId: document.languageId
+      })),
+      // The existing public index remains mutable. Keep a private copy so both
+      // first-build and cache-hit callers are isolated from subsequent results.
+      index: copyLookupIndex(index)
+    };
+    return index;
+  }
+
+  protected assembleIndex(
+    documents: readonly KickAssemblerLookupDocument[],
+    options: KickAssemblerLookupIndexOptions
   ): KickAssemblerLookupIndex {
     // Keep only the latest supplied document set; workspace discovery/overlays
     // remain caller-owned. Text, rather than model version, controls reuse.
@@ -325,6 +363,41 @@ export class KickAssemblerLookupService {
       ]
     };
   }
+}
+
+function matchesIndexDocuments(
+  snapshots: readonly IndexDocumentSnapshot[],
+  documents: readonly KickAssemblerLookupDocument[]
+): boolean {
+  return snapshots.length === documents.length && snapshots.every((snapshot, index) => {
+    const input = documents[index]!;
+    return snapshot.kind === input.kind && snapshot.uri === input.document.uri &&
+      snapshot.text === input.document.text && snapshot.languageId === input.document.languageId;
+  });
+}
+
+function copyLookupIndex(index: KickAssemblerLookupIndex): KickAssemblerLookupIndex {
+  // Preserve aliases within one result (e.g. address/name views of a reference),
+  // while isolating maps, arrays, occurrences, locations and address ranges.
+  const occurrences = new Map<KickAssemblerLookupOccurrence, KickAssemblerLookupOccurrence>();
+  const copy = (occurrence: KickAssemblerLookupOccurrence): KickAssemblerLookupOccurrence => {
+    let result = occurrences.get(occurrence);
+    if (!result) {
+      result = { ...occurrence, location: copyLocation(occurrence.location) };
+      if (occurrence.addressRange) result.addressRange = { ...occurrence.addressRange };
+      occurrences.set(occurrence, result);
+    }
+    return result;
+  };
+  const copyMap = (map: Map<string, KickAssemblerLookupOccurrence[]>) =>
+    new Map([...map].map(([key, values]) => [key, values.map(copy)] as const));
+  return {
+    projectDeclarationsByName: copyMap(index.projectDeclarationsByName),
+    projectReferencesByName: copyMap(index.projectReferencesByName),
+    referenceDeclarationsByName: copyMap(index.referenceDeclarationsByName),
+    referenceReferencesByName: copyMap(index.referenceReferencesByName),
+    referenceDeclarationsByAddressRange: index.referenceDeclarationsByAddressRange.map(copy)
+  };
 }
 
 function addReferenceDefinition(

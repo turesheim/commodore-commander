@@ -1425,6 +1425,6 @@ interface KickAssemblerLookupContext {
   token: KickAssemblerLookupTokenMatch;
 }
 
-// TODO(theia-ts-migration): Extend the shared document-analysis cache and Theia
-// disk snapshots with persistent index state. Index assembly still happens for
-// every request; file discovery and disk reads have bounded/event-invalidated reuse.
+// TODO(theia-ts-migration): Extend snapshot reuse with per-document index updates
+// and include-graph-precise lookup. Changed input still triggers full assembly;
+// Theia file discovery and disk reads have bounded/event-invalidated reuse.
