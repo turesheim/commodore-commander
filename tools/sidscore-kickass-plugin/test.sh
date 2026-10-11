@@ -4,7 +4,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_dir="$(cd "$script_dir/../.." && pwd)"
 kickass_jar="${KICKASS_JAR:-$repo_dir/resources/KickAss.jar}"
-sidscore_jar="${SIDSCORE_JAR:-$repo_dir/resources/sidscore-cli-0.7.3.jar}"
+sidscore_jar="${SIDSCORE_JAR:-$repo_dir/resources/sidscore-cli-0.8.0.jar}"
 plugin_jar="${OUTPUT_JAR:-$repo_dir/resources/sidscore-kickass-plugin.jar}"
 score_path="$script_dir/src/test/fixtures/effect_with_voice.sidscore"
 
@@ -118,11 +118,12 @@ assert len({init, play, blip, zap}) == 4, 'effect trigger aliases another entry 
 assert all(address >= 0x3000 for address in addresses), 'a SIDScore entry point lies outside its module'
 assert 'effect_Blip:' in asm, 'tune 1 effect was dropped from generated ASM'
 assert 'effect_Zap:' in asm, 'effect-only tune was dropped from generated ASM'
-assert asm.count('sfx_trigger:') == 2, 'effect triggers are missing their runtime'
-assert asm.count('sfx_apply:') == 2, 'effect playback runtime is missing'
+assert asm.count('sfx_trigger:') == 1, 'effects do not share one trigger runtime'
+assert asm.count('sfx_apply:') == 1, 'effects do not share one playback runtime'
+assert asm.count('sfx_owner:') == 1, 'tunes do not share effect voice ownership'
 assert asm.count('sta $d400,x') >= 2, 'effect playback does not write SID voice registers'
 assert re.search(r'sfx_data_1:\s*\.byte \$00,\$40', asm), 'Blip frequency was not encoded'
-assert re.search(r'sfx_data_1:\s*\.byte \$00,\$30', asm), 'Zap frequency was not encoded'
+assert re.search(r'sfx_data_2:\s*\.byte \$00,\$30', asm), 'Zap frequency was not encoded'
 print(f'SIDScore plugin: Score.init=${init:04x}, Score.play=${play:04x}, Blip=${blip:04x}, Zap=${zap:04x}')
 PY
 

@@ -7,7 +7,7 @@ supplies it as an `IAutoIncludeFile` during the same KickAssembler build.
 Compile the Java plugin with `./build.sh`. The script writes
 `resources/sidscore-kickass-plugin.jar` and requires JDK 21, the bundled
 `resources/KickAss.jar`, and the corresponding
-`resources/sidscore-cli-0.7.3.jar` containing `SIDScoreModuleExporter`.
+`resources/sidscore-cli-0.8.0.jar` containing `SIDScoreModuleExporter`.
 `KICKASS_JAR`, `SIDSCORE_JAR`, and `OUTPUT_JAR` can override those paths.
 
 For a Commodore Commander project, declare a module in the root ASM or an
@@ -80,7 +80,7 @@ effect parameters instead of silently omitting them. Each effect can last
 1–4096 frames in the current module format.
 
 The IRQ must save and restore `A`, `X`, and `Y` around `Music.play` and any
-effect trigger. When effects from different tunes write the same SID voice in
-one frame, the later tune's write wins. Use distinct fixed `VOICE` values for
-effects intended to overlap. `VOICE ANY` allocates among active effects within
-its own tune; it does not coordinate voice ownership across tunes.
+effect trigger. SIDScore 0.8.0 shares effect voice ownership across all tunes:
+fixed-voice and `VOICE ANY` effects use the same priority/retrigger rules.
+Music keeps advancing while an effect owns its voice, and the current music
+voice state is restored when the effect completes.
