@@ -11,16 +11,16 @@ The implementation plan and migration gap are tracked in
    project loader so shared editor services do not diverge on common Kick
    Assembler constructs.
 
-3. Add Theia task integration for Kick Assembler build, build-before-debug, and
-   headless-equivalent execution.
+3. Harden existing Theia build/pre-launch tasks and add missing clean and
+   headless-equivalent task behavior.
 
 4. Improve KickAss diagnostic attribution and build-config validation.
 
-5. Extend VICE debug coverage with live monitor fixtures, richer disassembly,
-   monitor-console support, and better data breakpoint UX.
+5. Extend existing real VICE/UI regressions, symbol presentation and watchpoint
+   UX while preserving the shared runtime and distinct session owners.
 
-6. Wire generated VICE launch configurations to build tasks and the workspace
-   Active Machine preference where appropriate.
+6. Complete configured-run build policies and workspace Active Machine defaults
+   in generated VICE launch configurations; build-task wiring already exists.
 
 7. Expand reference data and hardware-aware editor feedback after the shared
    index and diagnostics path are stable.

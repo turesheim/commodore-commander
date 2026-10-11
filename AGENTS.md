@@ -7,6 +7,9 @@ This repository contains a Theia based IDE for building applications for the Com
 ## Working rules
 
 - Prefer small, reviewable changes over large speculative rewrites.
+- Keep relevant README files and `design-docs` synchronized with architecture
+  changes. Prefer concise responsibility/behavior descriptions and explicit
+  remaining gaps over duplicated feature lists or historical implementation plans.
 - Work in the repository checkout the user is actively using. Do not create or
   keep feature work in a separate worktree, temporary checkout, or copied
   repository unless you ask first and the user explicitly agrees.

@@ -245,6 +245,9 @@ backend still coordinates launch ownership, interprets standalone JSON events,
 and manages the browser WebSocket
 bridge through a separate `CommodoreViceFrameBridge` in `theia-extension`. See
 [Packages](packages/README.md) for boundaries and remaining extraction work.
+The [VICE architecture](design-docs/vice-debug-architecture.md) describes
+session ownership and transport policy; the [implementation plan](design-docs/plan.md)
+tracks the remaining work.
 
 
 # Developer resources

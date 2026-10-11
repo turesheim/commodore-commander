@@ -1,222 +1,117 @@
 # Real VICE E2E Test Rig
 
-## Purpose
+## Boundaries
 
-The real VICE end-to-end rig verifies the debug adapter against an actual VICE
-process and binary monitor session. It complements the adapter's parser,
-protocol-encoding, disassembly, trace-history, and runtime unit tests.
+The opt-in rig in
+[`packages/debug-adapter/src/test/e2e`](../packages/debug-adapter/src/test/e2e)
+spawns the built adapter over stdio and lets it launch real VICE through the
+production runtime helpers. Assertions use DAP responses/events, generated
+sources, console output and memory/register state. It does not instantiate
+`ViceDebugSession` directly.
 
-The rig is intentionally outside the normal unit-test path. Real emulator tests
-need a runnable VICE binary, local TCP monitor access, process teardown, and
-more wall-clock time than the default package tests should require.
+Real emulator tests require a runnable binary/data directory, local TCP access
+and process teardown. Unit suites remain independent of an installed emulator:
 
-## Ownership
+```sh
+npm test --workspace @commodore-commander/vice-runtime
+npm test --workspace @commodore-commander/debug-adapter
+COMMODORE_COMMANDER_SKIP_VICE_ASSETS=1 npm test --workspace @commodore-commander/theia-extension
+```
 
-The test rig lives under `packages/debug-adapter/src/test/e2e` because it tests
-the debug adapter as a debugger client sees it:
+The extension command assumes its workspace dependencies are already built.
+Skipping asset sync avoids invoking the native build; it does not supply a VICE
+binary for integration tests.
 
-- DAP messages go over adapter stdio.
-- The adapter launches VICE through its production launch path.
-- The adapter connects to the VICE binary monitor over localhost.
-- Test assertions observe only DAP responses, DAP events, generated sources,
-  memory reads/writes, console output, and visual-debugger memory snapshots.
+## Components
 
-The rig does not instantiate `ViceDebugSession` directly. That boundary is
-deliberate: direct construction would be an integration test of adapter
-internals, not an end-to-end test of DAP framing, launch arguments, monitor
-connection setup, event ordering, and teardown.
+| Component | Responsibility |
+| --- | --- |
+| `dap-client.ts` | Adapter subprocess, DAP framing, response/event timeouts and transcripts |
+| `vice-environment.ts` | `VICE_E2E` opt-in, runtime overrides and embedded-transport capability detection |
+| `fixtures.ts` | Per-test temporary workspace and rewritten `.dbg` source paths |
+| `visual-snapshot.ts` | C64 state through DAP memory/evaluation/bank queries without Theia rendering |
+| [`tools/run-theia-ui-e2e.mjs`](../tools/run-theia-ui-e2e.mjs) | Built Electron app, launch configurations, Debug/Memory/Visual Debugger UI assertions and screenshots |
 
-## Main Pieces
+Golden fixtures are `debug-demo` (debug-session behavior),
+`visual-debugger-demo` (C64 display/bank state) and `screencolors` (comment-line
+breakpoint resolution and programmed `.break` behavior). Keep source, PRG,
+DBG and any VS monitor commands together when rebuilding fixtures.
 
-- `dap-client.ts`
-  Minimal DAP client for tests. It spawns the built adapter with Node, frames
-  requests over stdio, waits for responses/events with timeouts, captures Debug
-  Console output, and writes transcripts on teardown.
+## Running
 
-- `vice-environment.ts`
-  Resolves the opt-in real VICE environment. The suite runs only when
-  `VICE_E2E=1` is set. It accepts `VICE_RESOURCES_PATH`, `VICE_EXECUTABLE`, and
-  `VICE_ARGS`, and otherwise falls back to the bundled macOS Apple Silicon VICE
-  resource tree when present.
+Without `VICE_E2E=1`, the adapter e2e command builds and skips emulator cases:
 
-- `fixtures.ts`
-  Copies committed golden fixtures into a temporary workspace per test and
-  rewrites the primary `.dbg` source path to the temporary source copy. Kick
-  Assembler debug dumps contain source paths, so this rewrite keeps source
-  breakpoint matching portable across checkout locations.
-
-- `visual-snapshot.ts`
-  Headless visual-debugger snapshot reader. It uses DAP `readMemory`,
-  `evaluate`, and `commodore-vice/banksAvailable` behavior to assert the same
-  C64 state that the Theia visual debugger depends on, without starting Theia
-  or rendering React UI.
-
-- `tools/run-theia-ui-e2e.mjs`
-  Electron/Theia UI harness. It reuses the same fixture programs, starts real
-  VICE sessions through Theia launch configurations, asserts debugger UI state,
-  edits a Memory view byte, and switches through C64 Visual Debugger tabs.
-
-- `fixtures/debug-demo`
-  Golden source, PRG, and DBG for debugger-session behavior: entry stops,
-  source breakpoints, stepping, data breakpoints, memory writes, ROM fallback
-  frames, trace history, and logpoints.
-
-- `fixtures/visual-debugger-demo`
-  Golden source, PRG, and DBG for C64 display-state coverage: VIC bank
-  decoding, screen memory, color RAM, sprite pointer/state, and visual-debugger
-  snapshot assumptions.
-
-- `fixtures/screencolors`
-  Golden source, PRG, and DBG for breakpoint binding against a small looping
-  program. It covers Kick Assembler debug dumps with an empty `<Breakpoints>`
-  block and verifies that a breakpoint on a nearby comment line resolves to the
-  next executable `<Segment>` line mapping. The e2e suite also injects a
-  `.break`-style `<Breakpoints>` row for this fixture and verifies that the
-  adapter installs it as a VICE checkpoint.
-
-## Run Commands
-
-Default behavior compiles and skips the real VICE tests:
-
-```text
+```sh
 npm run test:e2e:vice --workspace @commodore-commander/debug-adapter
 ```
 
-Real emulator run:
+To use the bundled macOS Apple Silicon runtime when available:
 
-```text
+```sh
 VICE_E2E=1 npm run test:e2e:vice --workspace @commodore-commander/debug-adapter
 ```
 
-Optional runtime overrides:
+For another installation, set `VICE_RESOURCES_PATH`, `VICE_EXECUTABLE` and
+optional `VICE_ARGS` (JSON string array or simple whitespace-separated flags):
 
-```text
+```sh
 VICE_E2E=1 \
 VICE_RESOURCES_PATH=/path/to/VICE.app/Contents/Resources \
 VICE_EXECUTABLE=x64sc \
-VICE_ARGS='["-silent"]' \
+VICE_ARGS='["+sound"]' \
 npm run test:e2e:vice --workspace @commodore-commander/debug-adapter
 ```
 
-`VICE_ARGS` may be JSON string-array syntax for arguments containing spaces.
-For simple local runs it may also be a whitespace-separated string.
+The UI rig requires a built Electron app and a graphical session:
 
-The Theia UI e2e lane requires a built Electron app and a graphical desktop
-session:
-
-```text
+```sh
 npm run theia:build
 npm run test:e2e:theia:ui
 ```
 
-It accepts `--vice-executable`, `--vice-resources`, and `--vice-args`, plus the
-`THEIA_UI_E2E_VICE_EXECUTABLE`, `THEIA_UI_E2E_VICE_RESOURCES_PATH`, and
-`THEIA_UI_E2E_VICE_ARGS` environment variables. GitHub Actions runs it on Linux
-under Xvfb.
+It accepts `--vice-executable`, `--vice-resources`, `--vice-args` and the
+corresponding `THEIA_UI_E2E_VICE_EXECUTABLE`,
+`THEIA_UI_E2E_VICE_RESOURCES_PATH`, `THEIA_UI_E2E_VICE_ARGS` overrides.
 
-## Covered Behaviors
+## Coverage and synchronization
 
-The current suite covers:
+The DAP suite covers launch/capabilities, startup and dynamic source breakpoints,
+Theia enable/disable state, programmed checkpoints, exact-PRG debug-info
+selection, stepping, watchpoints, memory read/write and last-write provenance,
+ROM fallback, logpoints and visual-debugger memory snapshots. Embedded startup
+cases run only when the binary supports `-cc-embed`.
 
-- real VICE launch through the adapter
-- `stopOnEntry`
-- DAP capability negotiation
-- source breakpoints installed through Kick Assembler `.dbg` mappings
-- continue-to-source-stop synchronization
-- step in, step over, and step out
-- data breakpoints backed by VICE store checkpoints
-- DAP `writeMemory` plus `readMemory` round trips
-- trace-history last-write provenance
-- generated KERNAL ROM stack-frame source fallback
-- source logpoints that briefly stop, log, and resume when live registers are
-  needed
-- visual-debugger memory snapshots for VIC bank, screen RAM, color RAM, sprite
-  pointer, sprite position, and sprite color
-- Theia UI launch through the built Electron app
-- Debug view register scope visibility
-- Memory view rendering for a stopped VICE session
-- Memory view byte editing through DAP `writeMemory`
-- C64 Visual Debugger overview, sprite, screen RAM, and CIA tab rendering
+The UI suite covers launch, register scope, stopped Memory rendering/byte
+editing and Visual Debugger overview/sprite/screen/CIA tabs. It is not a complete
+embedded input or frame-performance test.
 
-## Synchronization Rules
+Synchronize on DAP events and observable state. `-initbreak ready` can stop in
+KERNAL/autostart code before user code; source-specific tests continue through
+unrelated stops until the expected source/line is reached. Logpoint tests wait
+for matching output or another stop and resume as necessary. Targeted timing
+checks may introduce a delay; a delay alone is not evidence of a correct stop.
 
-The tests synchronize on DAP events and observable stopped state, not sleeps.
+## CI and artifacts
 
-One important VICE detail is `-initbreak ready`: the initial monitor stop can
-occur while VICE autostart or KERNAL code is still active. Tests that need a
-specific user-code location continue through unrelated stops until the top
-stack frame matches the expected fixture source and line.
+[`.github/workflows/vice-e2e.yml`](../.github/workflows/vice-e2e.yml) runs runtime
+unit tests and real DAP sessions on Linux, plus a separate Electron UI lane
+under Xvfb. Both use distro `x64sc` and resolved ROM/data resources. Resource
+resolution uses installed data when available and upstream VICE data otherwise.
+Stock Linux VICE does not exercise the patched embedded transport; those cases
+are skipped. The [Docker rig](../tools/docker/README.md) provides the Linux DAP
+lane locally.
 
-Logpoint tests similarly wait for either matching output or another stop. If a
-non-target stop arrives first, the test continues and waits again. This models
-real debug-client behavior and avoids assuming a particular VICE startup stop
-sequence.
+Ignored diagnostic outputs:
 
-## Artifacts
+- `test-results/vice-e2e/<test-name>/`: `dap-transcript.jsonl`,
+  `adapter-output.log`, `adapter-stderr.log`.
+- `test-results/theia-ui-e2e/`: UI screenshots and runner diagnostics.
 
-Every e2e session writes artifacts under:
+Missing runtime or unsupported embedded capability produces an explicit skip;
+check executed/skipped counts before claiming coverage. Fixture changes must
+rebuild matching PRG/DBG/VS artifacts and rerun the real suite. Review assertion
+changes against product behavior, not just changed addresses.
 
-```text
-test-results/vice-e2e/<test-name>/
-```
-
-The directory contains:
-
-- `dap-transcript.jsonl`
-  Timestamped client/adapter DAP messages.
-
-- `adapter-output.log`
-  Aggregated DAP output events, including launch command output and Debug
-  Console text.
-
-- `adapter-stderr.log`
-  Debug adapter stderr.
-
-`test-results/` is ignored by Git because these files are diagnostic outputs,
-not golden inputs.
-
-The Theia UI e2e runner writes screenshots for each UI scenario under:
-
-```text
-test-results/theia-ui-e2e/
-```
-
-## Fixture Maintenance
-
-Golden fixture changes must keep source, PRG, and DBG files together. Do not
-update a fixture PRG without the matching DBG, because source breakpoints and
-stack-frame assertions depend on address-to-source mappings.
-
-When changing fixture source:
-
-1. Rebuild the matching PRG and DBG with Kick Assembler debug dump enabled.
-2. Keep the rebuilt files under the same fixture directory.
-3. Re-run `VICE_E2E=1 npm run test:e2e:vice --workspace @commodore-commander/debug-adapter`.
-4. Review any assertion changes against actual product behavior, not just new
-   addresses.
-
-The e2e fixture source may diverge from example workspace programs when the
-test needs stricter determinism. For example, the visual fixture keeps screen
-text and sprite pointer state coherent at the snapshot stop point.
-
-## CI Expectations
-
-The suite can run in CI only when the runner provides:
-
-- a compatible VICE binary and resource directory
-- permission to launch emulator processes
-- permission to bind a local binary-monitor port on `127.0.0.1`
-- enough timeout budget for multiple fresh VICE sessions
-
-CI should keep the normal unit suite mandatory and treat the real VICE lane as
-an additional platform/runtime job. A missing VICE runtime should skip the e2e
-lane, not fail default package tests.
-
-## Current Limits
-
-The Electron UI harness requires a graphical desktop session locally and Xvfb in
-CI.
-
-It also does not cover non-macOS bundled runtime discovery yet. The environment
-resolver accepts external VICE paths so Linux, Windows, and Intel macOS jobs can
-be added without changing the adapter test harness.
+Bundled embedded payload discovery outside macOS Apple Silicon, physical
+keyboard/mouse behavior and the full distribution package are not established
+by these lanes.
