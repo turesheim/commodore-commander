@@ -121,6 +121,9 @@ matching `LINUX-SETUP.txt`; the product test does not disable Chromium sandboxin
 Native startup uses the normal sound initialization. GUI failures retain a bounded
 Machine status/native-output report as well as screenshots, so an initialized
 blank frame cannot hide later emulator startup failures.
+The headless Linux runner supplies a PulseAudio null sink, so the default sound
+device initializes while the Machine workflow runs. This checks the host audio
+API path, not physical audibility or audio fidelity.
 The ELF packaging fixture runs after removing build libraries and moving the runtime.
 Physical keyboard/mouse behavior, Windows packaged UI/embedded transport and
 fresh-host/minimum-OS acceptance remain outside this coverage.

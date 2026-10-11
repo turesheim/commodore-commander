@@ -61,9 +61,11 @@ bash tools/run-with-xvfb.sh node tools/smoke-test-vice.mjs tools/vice-embed/dist
 ```
 
 Nightly package tests on macOS Apple Silicon and Linux x64 require continuing
-visible frames, then launch the packaged Electron app and verify BASIC `READY.`,
-keyboard execution, power off and restart. Linux runs under Xvfb with software
-rendering. Logs/screenshots survive failures; see the
+visible frames with normal sound initialization, then launch the packaged Electron
+app and verify BASIC `READY.`, keyboard execution, power off and restart. Headless
+Linux runs require a sound server; the nightly runner supplies a PulseAudio null
+sink and Xvfb with software rendering. Physical audio checks remain manual.
+Logs/screenshots survive failures; see the
 [product test instructions](../../applications/electron/README.md).
 `node --test tools/vice-embed/*.test.mjs` additionally verifies ELF relocation on
 Linux after deleting the original build libraries and compiles the actual native

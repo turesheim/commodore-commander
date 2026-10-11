@@ -118,7 +118,7 @@ jobs:
             build-essential \
             autoconf automake bison flex texinfo dos2unix subversion xa65 patchelf \
             libsdl2-dev libsdl2-image-dev libcurl4-openssl-dev libasound2-dev libpulse-dev zlib1g-dev \
-            dbus-x11 libatk-bridge2.0-0 libgbm1 libgtk-3-0 libnss3 libxss1 libxtst6 xvfb \
+            dbus-x11 libatk-bridge2.0-0 libgbm1 libgtk-3-0 libnss3 libxss1 libxtst6 xvfb pulseaudio pulseaudio-utils \
             libsecret-1-dev \
             libx11-dev \
             libxkbfile-dev \
@@ -232,6 +232,20 @@ jobs:
           echo "CC_CODESIGN_IDENTITY=$identity" >> "$GITHUB_ENV"
           rm -f "$certificate_path"
 
+      - name: Start Linux virtual audio output
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          pulse_runtime_dir="$(mktemp -d "$RUNNER_TEMP/cc-pulse.XXXXXX")"
+          chmod 700 "$pulse_runtime_dir"
+          export XDG_RUNTIME_DIR="$pulse_runtime_dir"
+          export PULSE_SERVER="unix:$pulse_runtime_dir/pulse/native"
+          pulseaudio --daemonize=yes --exit-idle-time=-1 --log-target="file:$RUNNER_TEMP/cc-pulse.log"
+          pactl load-module module-null-sink sink_name=cc_test_sink
+          pactl set-default-sink cc_test_sink
+          pactl info
+          printf 'XDG_RUNTIME_DIR=%s\nPULSE_SERVER=%s\n' "$XDG_RUNTIME_DIR" "$PULSE_SERVER" >> "$GITHUB_ENV"
+
       - name: Package current platform
         shell: bash
         run: |
@@ -250,6 +264,15 @@ jobs:
           fi
           tar -czf "$package_archive" -C "$(dirname "$package_dir")" "$(basename "$package_dir")"
           echo "Packaged $package_archive"
+
+      - name: Stop Linux virtual audio output
+        if: always() && runner.os == 'Linux'
+        run: |
+          if [ -n "${PULSE_SERVER:-}" ]; then pactl exit || true; fi
+          if [ -f "$RUNNER_TEMP/cc-pulse.log" ]; then
+            mkdir -p test-results/product-package
+            cp "$RUNNER_TEMP/cc-pulse.log" test-results/product-package/pulse.log
+          fi
 
       - name: Upload package test diagnostics
         if: always() && runner.os != 'Windows'
