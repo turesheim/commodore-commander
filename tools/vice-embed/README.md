@@ -67,9 +67,12 @@ node tools/smoke-test-vice.mjs tools/vice-embed/dist/darwin-arm64/VICE.app/Conte
 ```
 
 The product package smoke test runs this check on the bundled macOS Apple
-Silicon emulator and requires continuing frames with visible content. A
-successful file copy or signature check alone does not
-verify that VICE can run or deliver frames to the Machine view.
+Silicon emulator and requires continuing frames with visible content. It also
+launches the packaged Electron app and verifies Machine painting and BASIC
+keyboard execution through two power cycles; see the
+[product test instructions](../../applications/electron/README.md).
+A successful file copy or signature check alone does not establish runtime
+behavior.
 
 The patch adds a small SDL-only transport enabled with `-cc-embed`. The patched
 emulator still runs as an external process, but its SDL window is hidden while

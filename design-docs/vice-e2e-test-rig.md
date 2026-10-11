@@ -31,6 +31,7 @@ binary for integration tests.
 | `fixtures.ts` | Per-test temporary workspace and rewritten `.dbg` source paths |
 | `visual-snapshot.ts` | C64 state through DAP memory/evaluation/bank queries without Theia rendering |
 | [`tools/run-theia-ui-e2e.mjs`](../tools/run-theia-ui-e2e.mjs) | Built Electron app, launch configurations, Debug/Memory/Visual Debugger UI assertions and screenshots |
+| [`tools/smoke-test-product-package.mjs`](../tools/smoke-test-product-package.mjs) | Packaged Kick Assembler PRG output and SIDScore SRAP/MIDI; macOS Apple Silicon native VICE frames plus packaged Electron Machine painting, BASIC keyboard execution and restart |
 
 Golden fixtures are `debug-demo` (debug-session behavior),
 `visual-debugger-demo` (C64 display/bank state) and `screencolors` (comment-line
@@ -106,12 +107,13 @@ Ignored diagnostic outputs:
 - `test-results/vice-e2e/<test-name>/`: `dap-transcript.jsonl`,
   `adapter-output.log`, `adapter-stderr.log`.
 - `test-results/theia-ui-e2e/`: UI screenshots and runner diagnostics.
+- `test-results/product-package/`: packaged macOS Machine screenshots, capture configuration and Electron log; retained by the nightly workflow even on failure.
 
 Missing runtime or unsupported embedded capability produces an explicit skip;
 check executed/skipped counts before claiming coverage. Fixture changes must
 rebuild matching PRG/DBG/VS artifacts and rerun the real suite. Review assertion
 changes against product behavior, not just changed addresses.
 
-Bundled embedded payload discovery outside macOS Apple Silicon, physical
-keyboard/mouse behavior and the full distribution package are not established
-by these lanes.
+The nightly package lane exercises bundled discovery and Electron keyboard input
+on macOS Apple Silicon. Physical keyboard/mouse behavior, packaged Windows/Linux
+UI and bundled embedded payloads for those platforms remain outside this coverage.

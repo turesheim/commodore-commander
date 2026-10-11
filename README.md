@@ -279,10 +279,14 @@ jobs. Failed new-commit builds remain eligible for retry. Manual dispatch follow
 the same rule unless `force` is enabled. Any new commit qualifies, including docs.
 Successful packages are uploaded as run artifacts and refresh the mutable
 `nightly` prerelease on `main` after all three platform builds succeed.
-Each product package is smoke-tested before upload by starting the bundled
-SIDScore player server from the packaged Kick Assembler and SIDScore assets and
-running a MIDI-device scan through the SRAP protocol. The smoke test also
-checks that the selected Java runtime supports the bundled SIDScore CLI.
+Before upload, package tests compile a program with the bundled Kick Assembler
+and verify its PRG bytes, then start SIDScore and exercise SRAP/MIDI. On macOS
+Apple Silicon they also verify native VICE display frames and open the packaged
+Electron app: Machine must render visible pixels, execute a typed BASIC command
+with an observable border-color change, power off and repeat after startup.
+UI logs/screenshots are retained as run artifacts. See the
+[Electron harness README](applications/electron/README.md) for local execution
+and current platform coverage.
 The macOS nightly package is ad-hoc signed unless these repository secrets are
 configured:
 
