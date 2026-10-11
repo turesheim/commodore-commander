@@ -7,6 +7,7 @@ import {
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileChangeType } from '@theia/filesystem/lib/common/files';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { BreakpointManager } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
@@ -75,6 +76,7 @@ import {
 import {
   CommodoreMachineProfileSelectionService
 } from './commodore-machine-profile-selection';
+import { KickAssemblerWorkspaceFiles } from './kick-assembler-workspace-files';
 
 const EXCLUDED_DIRECTORY_NAMES = new Set([
   '.git',
@@ -110,6 +112,11 @@ export class KickAssemblerEditorLookupContribution
   protected readonly machineProfileSelection!: CommodoreMachineProfileSelectionService;
 
   protected readonly lookupService = new KickAssemblerLookupService();
+  protected readonly workspaceFiles = new KickAssemblerWorkspaceFiles(
+    resource => this.fileService.resolve(resource),
+    hasKickAssemblerExtension,
+    EXCLUDED_DIRECTORY_NAMES
+  );
   protected readonly toDispose = new DisposableCollection();
   protected readonly trackedEditors = new WeakSet<MonacoEditor>();
   protected readonly referenceHoverWidgets = new Map<
@@ -121,6 +128,26 @@ export class KickAssemblerEditorLookupContribution
     | undefined;
 
   initialize(): void {
+    this.toDispose.pushAll([
+      this.fileService.onDidFilesChange(event => {
+        this.workspaceFiles.invalidate(event.changes
+          .filter(change => change.type !== FileChangeType.UPDATED)
+          .map(change => change.resource));
+      }),
+      this.fileService.onDidRunOperation(event => {
+        this.workspaceFiles.invalidate(event.target
+          ? [event.resource, event.target.resource]
+          : [event.resource]);
+      }),
+      this.workspaceService.onWorkspaceChanged(() => {
+        this.workspaceFiles.clear();
+        this.lookupService.clearDocumentCache();
+      }),
+      this.workspaceService.onWorkspaceLocationChanged(() => {
+        this.workspaceFiles.clear();
+        this.lookupService.clearDocumentCache();
+      })
+    ]);
     this.installScreenCaptureApi();
     this.registerReferenceHoverWidgets();
 
@@ -401,6 +428,7 @@ export class KickAssemblerEditorLookupContribution
 
   onStop(): void {
     this.toDispose.dispose();
+    this.workspaceFiles.clear();
     this.lookupService.clearDocumentCache();
   }
 
@@ -827,7 +855,7 @@ export class KickAssemblerEditorLookupContribution
     return response.text();
   }
 
-  protected async collectCandidateUris(currentUri: URI): Promise<URI[]> {
+  protected async collectCandidateUris(currentUri: URI): Promise<readonly URI[]> {
     if (!hasKickAssemblerExtension(currentUri) && currentUri.scheme !== 'file') {
       return [currentUri];
     }
@@ -844,53 +872,8 @@ export class KickAssemblerEditorLookupContribution
     return this.collectKickAssemblerFiles(workspaceRoot);
   }
 
-  protected async collectKickAssemblerFiles(rootUri: URI): Promise<URI[]> {
-    const files: URI[] = [];
-    const pending: URI[] = [rootUri];
-    const seen = new Set<string>();
-
-    while (pending.length > 0) {
-      const candidate = pending.pop();
-      if (!candidate) {
-        continue;
-      }
-
-      const key = candidate.toString();
-      if (seen.has(key)) {
-        continue;
-      }
-      seen.add(key);
-
-      let stat;
-      try {
-        stat = await this.fileService.resolve(candidate);
-      } catch {
-        continue;
-      }
-
-      if (stat.isFile) {
-        if (hasKickAssemblerExtension(stat.resource)) {
-          files.push(stat.resource);
-        }
-        continue;
-      }
-
-      for (const child of stat.children ?? []) {
-        if (child.isDirectory) {
-          if (EXCLUDED_DIRECTORY_NAMES.has(child.name)) {
-            continue;
-          }
-          pending.push(child.resource);
-          continue;
-        }
-
-        if (child.isFile && hasKickAssemblerExtension(child.resource)) {
-          files.push(child.resource);
-        }
-      }
-    }
-
-    return files;
+  protected collectKickAssemblerFiles(rootUri: URI): Promise<readonly URI[]> {
+    return this.workspaceFiles.getFiles(rootUri);
   }
 
   protected createWorkspaceSymbolProvider(): WorkspaceSymbolProvider {
@@ -1456,6 +1439,6 @@ interface KickAssemblerLookupContext {
   token: KickAssemblerLookupTokenMatch;
 }
 
-// TODO(theia-ts-migration): Replace this on-demand file crawl with a shared
-// workspace/project update boundary. Lookup reuses document analysis, but file
-// discovery and request-local index assembly still happen for every request.
+// TODO(theia-ts-migration): Extend the shared document-analysis cache and Theia
+// file inventory with persistent workspace state. Content reads and index
+// assembly still happen for every request; file discovery has bounded reuse.

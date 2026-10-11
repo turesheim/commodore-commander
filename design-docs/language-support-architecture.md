@@ -44,14 +44,20 @@ integration into their dependency graph.
    Editor features consume this index/model and return framework-neutral edits,
    ranges, tokens and symbols. Hover formatting preserves reference HTML.
 
-The Theia contribution selects workspace files, overlays open editor text,
-loads bundled XML and translates feature results to Monaco. Its long-lived
-lookup service caches project symbols/tokens and XML definitions by URI, kind,
-text and language ID. Comparing text keeps unsaved editor changes current even
-when model versions coincide. Each request assembles fresh maps in document
-order with current machine filtering; copied locations isolate cached analysis
-from mutable results. Documents absent from the latest input are evicted, and
-frontend shutdown clears the cache. File discovery and reads remain on demand.
+The long-lived lookup service caches project symbols/tokens and XML definitions
+by URI, kind, text and language ID. Text comparison keeps unsaved changes current
+even when model versions coincide. Each request assembles fresh maps in document
+order with current machine filtering; copied locations protect cached analysis
+from mutable results. Documents absent from the latest input are evicted.
+
+Theia owns file selection, open-editor overlays, bundled XML and Monaco adapters.
+Its `KickAssemblerWorkspaceFiles` shares discovery per root across lookup,
+workspace symbols and include completion. Structural file notifications and
+completed operations invalidate overlapping roots, including moved directories.
+Workspace changes/shutdown clear both caches; an event during discovery forces
+pending callers to use a fresh inventory. Complete inventories expire after five
+seconds to cover missed/excluded watcher events; filesystem failures are retried
+on the next request. Content reads and index assembly remain on demand.
 
 ## Project and build flow
 
@@ -70,8 +76,8 @@ outline/syntax slice.
 
 ## Remaining work
 
-- Workspace update/invalidation boundaries for file discovery, reads and
-  persistent index assembly beyond the existing document analysis cache.
+- Persistent workspace state for content reads and index assembly beyond
+  document analysis caching and bounded/event-invalidated file discovery.
 - Include-graph-precise lookup and consistency between outline and semantic paths.
 - Compiler-accurate semantics/diagnostics: configured conditional evaluation,
   macro/pseudocommand expansion and generated-symbol materialization.

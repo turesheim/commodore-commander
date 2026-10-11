@@ -29,9 +29,15 @@ loopback frame transport, embedded stdout framing, and the CCV1 JSON wire codec
 belong to `packages/vice-runtime`.
 
 Editor lookup keeps a long-lived `KickAssemblerLookupService` and clears its
-document analysis cache on frontend shutdown. Workspace file discovery/reads,
-open-editor overlays and active-machine selection remain here. Each request
-still assembles fresh lookup maps; persistent workspace indexing remains work.
+document analysis cache on frontend shutdown and workspace changes.
+`KickAssemblerWorkspaceFiles` shares concurrent file discovery per root across
+lookup, workspace symbols and include completion. Create/delete notifications
+and completed file operations invalidate overlapping roots; workspace changes
+and shutdown clear the inventory. Complete snapshots expire after five seconds
+to cover missed/excluded watcher events; incomplete discovery is retried on the
+next request. Traversal order, source extensions and excluded directories are
+preserved. Content reads, open-editor overlays, active-machine selection and
+fresh lookup-map assembly remain here; persistent workspace indexing is pending.
 
 The local `vice-runtime-resolver.ts` is an integration wrapper: it resolves the
 selected machine/model and supplies the extension's asset location and
