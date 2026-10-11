@@ -31,11 +31,13 @@ TypeScript directly through Node's type stripping.
 | `project`, `build` | Include graph, program/profile/run settings, standalone roots, generated assets and KickAss invocation planning |
 | `syntaxes`, `language`, `runtime` | Grammar/configuration assets, language manifests and browser-safe exports |
 
-Lookup binds project tokens to case-sensitive qualified names. Multiline
-`.namespace` blocks support nested/reopened namespaces, parent/root fallback and
-`@` root escapes. All declarations are collected before references, so supplied
-document order does not control resolution. Rename replaces only the leaf name,
-preserving reference prefixes; workspace symbols expose namespace containers.
+Lookup binds project tokens to case-sensitive symbol identities. The semantic
+scope resolver separates anonymous blocks and parameters, follows lexical
+parents and `@` root escapes, and supports multiline namespace/label scopes
+(including `.label Name = value {`). Labels have qualified member names;
+constants/variables remain lexical, including in the shared scope of reopened
+namespaces. All declarations precede reference binding. Rename replaces the
+leaf name and preserves prefixes; workspace symbols expose named containers.
 Project symbols take precedence over reference symbols. Lookup filters hardware
 references by active machine while sharing 6502 mnemonic data; hover content
 preserves reference HTML. Machine profiles cover C64, C128, VIC-20, Plus/4, C16,
@@ -51,10 +53,10 @@ the Theia/headless runner; the language package plans those inputs.
 The semantic model and editor services are structural/name-based, not a full
 KickAss compiler. Conditional branches are represented without evaluating a
 configured symbol environment; macros/pseudocommands are not expanded.
-Lexical block/label scopes, local/anonymous labels, `.filenamespace` and
-import-site namespace context still need compiler-accurate lookup. Namespace
-renames and ambiguous duplicate declarations are rejected; replacement names
-are single identifiers. Diagnostics and reference datasets remain incomplete.
+Directional multi-labels (`!loop+`/`!loop-`), `.filenamespace`, inline block
+bodies and import-site namespace context remain work. Namespace/label-scope
+owner/multi-label renames and ambiguous duplicate declarations are rejected; replacement
+names are single identifiers. Diagnostics and reference datasets remain incomplete.
 
 `KickAssemblerLookupService` caches project/XML analysis and the last assembled
 index. Reuse requires identical ordered URI/kind/text/language inputs and active

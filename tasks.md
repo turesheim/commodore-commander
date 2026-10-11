@@ -7,11 +7,11 @@ The bounded editor lookup-reuse round is implemented: discovery, disk models,
 document analysis and assembled indexes are reused with explicit invalidation.
 Changed input still causes full assembly; per-document index updates remain work.
 
-1. Continue language consistency after namespace-bound lookup: implement precise
-   lexical/local-label scope identity and `.filenamespace`, then include-graph
-   lookup and alignment with the project loader/Langium outline. Navigation,
-   references, leaf rename and semantic tokens now share namespace bindings;
-   namespace rename and scope-aware completion remain work.
+1. Continue language consistency after namespace/lexical binding: implement
+   directional multi-labels and `.filenamespace`, then include-graph lookup and
+   alignment with the project loader/Langium outline. Native CTRL/CMD+click,
+   references, leaf rename and semantic tokens share those bindings; scope-owner
+   rename and scope-aware completion remain work.
 
 2. Harden existing Theia build/pre-launch tasks and add missing clean and
    headless-equivalent task behavior.

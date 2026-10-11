@@ -44,10 +44,13 @@ editor text always overrides disk snapshots. Workspace changes/shutdown clear
 all caches. Active-machine selection remains here. The language service reuses
 the last assembled index for equivalent ordered inputs/machine, returning an
 independent mutable copy; changed inputs trigger fresh assembly. Namespace
-resolution and token binding belong to the language service: navigation,
-references, leaf rename and semantic tokens use its qualified names; the
-workspace-symbol adapter displays the supplied namespace container. Lexical
-scopes and include-graph-precise file selection remain work.
+and lexical resolution belong to the language service; navigation, references,
+leaf rename and semantic tokens share its bindings. Definition links include
+the full source-token range. Native CTRL+click (Windows/Linux), CMD+click
+(macOS) and F12 use those definitions; with `editor.multiCursorModifier` set
+to `ctrlCmd`, Monaco switches click navigation to Alt/Option to avoid a conflict.
+Workspace symbols display named containers. Include-graph file selection
+remains work.
 
 The local `vice-runtime-resolver.ts` is an integration wrapper: it resolves the
 selected machine/model and supplies the extension's asset location and
@@ -103,3 +106,8 @@ set `COMMODORE_COMMANDER_SKIP_VICE_ASSETS=1`.
 Electron packaging and signing are owned by `applications/electron` and the
 scripts under `tools`. See the [root README](../../README.md) and
 [`bundled-docs`](../../bundled-docs) for product workflows and current limits.
+
+Language navigation has a real Electron gesture regression: after building,
+run `npm run test:e2e:language:ui` from the repository root (on Linux, through
+`bash tools/run-with-xvfb.sh`). It checks cross-file and local-scope targets,
+including declaration line numbers and qualified link ranges.

@@ -202,7 +202,9 @@ class KickAssemblerSemanticParser {
     }
 
     if (braceDelta(code) > 0) {
-      this.pushScope('block', undefined, this.location(lineIndex, 0, line.raw.length));
+      const scope = this.pushScope('block', label?.symbol.name,
+        this.location(lineIndex, line.raw.indexOf('{'), line.raw.length));
+      if (label) scope.qualifiedName = label.symbol.qualifiedName;
     }
 
     this.finalizeDataBlock();
@@ -370,12 +372,15 @@ class KickAssemblerSemanticParser {
       rawLine.length
     );
 
+    const expressionOperands = directiveName === 'label' && hasOpeningBrace(operands)
+      ? operands.slice(0, operands.lastIndexOf('{')).trim() : operands;
+
     this.directives.push({
       name: directiveName,
       kind: directiveKind(directiveName),
       location,
       operands,
-      operandExpressions: this.parseOperandExpressions(operands, rawLine, lineIndex)
+      operandExpressions: this.parseOperandExpressions(expressionOperands, rawLine, lineIndex)
     });
 
     if (SYMBOL_DIRECTIVES.has(directiveName)) {
@@ -427,7 +432,9 @@ class KickAssemblerSemanticParser {
     rawLine: string,
     lineIndex: number
   ): void {
-    const match = /^([@A-Za-z_][@A-Za-z0-9_.]*)\b\s*(?:=\s*(.*))?$/u.exec(operands);
+    const opensLabelScope = directiveName === 'label' && hasOpeningBrace(operands);
+    const declaration = opensLabelScope ? operands.slice(0, operands.lastIndexOf('{')).trim() : operands;
+    const match = /^([@A-Za-z_][@A-Za-z0-9_.]*)\b\s*(?:=\s*(.*))?$/u.exec(declaration);
     const name = match?.[1];
     if (!name) {
       this.diagnostics.push({
@@ -441,7 +448,7 @@ class KickAssemblerSemanticParser {
 
     const nameOffset = rawLine.indexOf(name);
     const valueText = match?.[2]?.trim();
-    this.addSymbol({
+    const symbol = this.addSymbol({
       name,
       kind: SYMBOL_DIRECTIVES.get(directiveName) ?? 'variable',
       location: this.location(
@@ -459,6 +466,11 @@ class KickAssemblerSemanticParser {
       detail: `.${directiveName}`,
       generated: this.isGeneratedSymbolScope()
     });
+    if (opensLabelScope) {
+      const scope = this.pushScope('block', name,
+        this.location(lineIndex, rawLine.lastIndexOf('{'), rawLine.length));
+      scope.qualifiedName = symbol.qualifiedName;
+    }
   }
 
   private parseDataDirective(
@@ -973,10 +985,13 @@ class KickAssemblerSemanticParser {
     if (name.startsWith('@')) {
       return name.slice(1);
     }
-    const qualifiers = this.scopeStack
-      .filter((scope) => scope.kind === 'namespace' && scope.name)
-      .map((scope) => scope.name as string);
-    return [...qualifiers, name].join('.');
+    for (let index = this.scopeStack.length - 1; index >= 0; index -= 1) {
+      const scope = this.scopeStack[index]!;
+      if ((scope.kind === 'namespace' || scope.kind === 'block' && scope.name) && scope.qualifiedName) {
+        return `${scope.qualifiedName}.${name}`;
+      }
+    }
+    return name;
   }
 
   private isGeneratedSymbolScope(): boolean {

@@ -13,7 +13,7 @@ old emitted JS/declaration/map copies under `src/` have been removed.
 | Documents/includes | Text/position/range models, file-URI/loading helpers, relative/search-root imports and recursive project graph |
 | Semantic model | Expressions, scopes, namespace/macro/function/pseudocommand/struct/enum constructs, imports/import-once, segments/PC, conditionals/loops, labels and generated/data metadata |
 | Scanner/outline | Scanner facade over semantics; separate Langium structural outline; SIDScore subtune/effect outline |
-| Lookup/editor | Cached project/XML analysis and last assembled index; namespace-bound definition/reference queries and leaf rename, namespace containers, HTML hovers, completion, semantic tokens, folding, formatting and quick fixes |
+| Lookup/editor | Cached project/XML analysis and last assembled index; namespace/lexical-bound definition/reference queries and leaf rename, named containers, HTML hovers, completion, semantic tokens, folding, formatting and quick fixes |
 | Hardware reference | Bundled 6502/C64 I/O XML plus typed machine profiles and machine-filtered I/O/ROM/memory/zero-page facts |
 | Build planning | Program/profile/run settings, standalone root detection, affected-program dependencies, output/generated assets, machine overrides and KickAss command rendering |
 | Diagnostics | Structural/include diagnostics and KickAss output parsing/range expansion; Theia translates results to markers |
@@ -39,10 +39,10 @@ syntax assets are active product inputs and must remain packaged.
   invalidation, overlaying current editor text. Unchanged ordered inputs/machine
   reuse index assembly with independent mutable results; changed input still
   triggers full assembly.
-- Lexical block/label and local/anonymous-label resolution, `.filenamespace`,
-  import-site namespace context, namespace rename and scope-aware completion.
-  Multiline namespace lookup handles nested/reopened names, parent/root fallback
-  and `@` root escapes; it does not establish full compiler scope parity.
+- Directional multi-labels, `.filenamespace`, inline block bodies, import-site
+  namespace context, scope-owner rename and scope-aware completion. Structural
+  binding covers anonymous blocks, parameters and multiline namespace/label
+  scopes with lexical parent/root lookup; it does not establish compiler parity.
 - Compiler-accurate KickAss expression/directive edge cases, macro expansion,
   conditional evaluation and generated-symbol materialization.
 - Compiler-grade diagnostics, completion/rename/formatting/quick-fix parity,
@@ -64,7 +64,9 @@ resource objects; framework adapters must not leak their APIs into this package.
 The bounded lookup-reuse round covers file discovery, disk models, document
 analysis and assembled indexes. Comparison/result copying remains per request;
 delta updates and full compiler parity remain unfinished. Namespace lookup now
-uses semantic qualified names and source-token bindings. Next, establish precise
-lexical/local-label scope identity and align outline and project views.
+uses semantic identities and source-token bindings through a lexical scope
+resolver. Next, add directional multi-labels/file namespaces and align outline
+and project views. Native CTRL/CMD+click shares definition targets; the Linux CI
+job exercises the actual click gesture as well as the debugger UI.
 See [language architecture](language-support-architecture.md) and
 [the implementation plan](plan.md).

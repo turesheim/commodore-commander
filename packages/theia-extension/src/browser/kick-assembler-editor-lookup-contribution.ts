@@ -191,7 +191,11 @@ export class KickAssemblerEditorLookupContribution
               return undefined;
             }
 
-            return context.lookup.declarations.map(toMonacoLocation);
+            const originSelectionRange = toMonacoRange(context.document, context.token);
+            return context.lookup.declarations.map(occurrence => ({
+              ...toMonacoLocation(occurrence),
+              originSelectionRange
+            }));
           }
         }
       )

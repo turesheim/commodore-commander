@@ -1,5 +1,5 @@
 import type { TextDocumentModel } from '../document/text-document-model.ts';
-import { comparePositions, type SourceLocation } from '../location/source-location.ts';
+import type { SourceLocation } from '../location/source-location.ts';
 import type { DocumentPosition } from '../location/source-location.ts';
 import {
   DEFAULT_COMMODORE_MACHINE_PROFILE_ID,
@@ -8,9 +8,9 @@ import {
 } from '../machines/commodore-machine-profiles.ts';
 import { parseKickAssemblerSemanticModel } from '../semantic/kick-assembler-semantic-parser.ts';
 import type {
-  KickAssemblerSemanticScope,
   KickAssemblerSemanticSymbol
 } from '../semantic/kick-assembler-semantic-model.ts';
+import { KickAssemblerScopeResolver } from '../semantic/kick-assembler-scope-resolver.ts';
 import {
   createMachineProfileReferenceSymbolDefinitions
 } from '../reference/machine-profile-reference-symbols.ts';
@@ -57,6 +57,7 @@ export interface KickAssemblerLookupDocument {
 export interface KickAssemblerLookupOccurrence {
   name: string;
   qualifiedName?: string;
+  hasMemberScope?: boolean;
   normalizedName: string;
   kind: KickAssemblerLookupKind;
   origin: KickAssemblerLookupOrigin;
@@ -80,9 +81,9 @@ export interface KickAssemblerLookupTokenMatch {
 }
 
 export interface KickAssemblerLookupIndex {
-  /** Source-token locations bound to canonical, case-sensitive project names. */
+  /** Source-token locations bound to case-sensitive project symbol identities. */
   projectBindingsByLocation: Map<string, string>;
-  /** Canonical qualified names; occurrences retain their source spelling. */
+  /** Qualified public names or private lexical keys; retain source spelling. */
   projectDeclarationsByName: Map<string, KickAssemblerLookupOccurrence[]>;
   projectReferencesByName: Map<string, KickAssemblerLookupOccurrence[]>;
   referenceDeclarationsByName: Map<string, KickAssemblerLookupOccurrence[]>;
@@ -103,7 +104,7 @@ interface TokenOccurrence extends KickAssemblerLookupTokenMatch {
 
 interface ProjectDocumentAnalysis {
   symbols: readonly KickAssemblerSemanticSymbol[];
-  namespaceScopes: readonly KickAssemblerSemanticScope[];
+  scopeResolver: KickAssemblerScopeResolver;
   tokens: readonly TokenOccurrence[];
 }
 
@@ -145,7 +146,7 @@ export class KickAssemblerLookupService {
     const model = parseKickAssemblerSemanticModel(document);
     return {
       symbols: model.symbols,
-      namespaceScopes: model.scopes.filter(scope => scope.kind === 'namespace'),
+      scopeResolver: new KickAssemblerScopeResolver(model),
       tokens: collectTokenOccurrences(document)
     };
   }
@@ -222,16 +223,17 @@ export class KickAssemblerLookupService {
     // must not depend on the caller's document order.
     for (const analysis of projectAnalyses) {
       for (const symbol of analysis.symbols) {
-        const name = projectSymbolName(symbol);
+        const name = analysis.scopeResolver.declarationKey(symbol);
         const occurrence: KickAssemblerLookupOccurrence = {
           name: symbol.name,
-          qualifiedName: name,
+          qualifiedName: symbol.qualifiedName,
           normalizedName: name,
           kind: symbol.kind,
           origin: 'project',
           location: copyLocation(symbol.location),
           ...(symbol.detail ? { detail: symbol.detail } : {})
         };
+        if (analysis.scopeResolver.hasMemberScope(symbol)) occurrence.hasMemberScope = true;
         projectBindingsByLocation.set(locationKey(symbol.location), name);
         pushOccurrence(projectDeclarationsByName, name, occurrence);
       }
@@ -283,12 +285,15 @@ export class KickAssemblerLookupService {
         }
 
         if (occurrence.kind === 'identifier') {
-          const name = resolveProjectName(occurrence, analysis.namespaceScopes, projectDeclarationsByName);
+          const name = analysis.scopeResolver.resolve(occurrence.location.range.start,
+            occurrence.text, key => projectDeclarationsByName.has(key));
           if (name) {
             projectBindingsByLocation.set(key, name);
             const reference = toProjectReferenceOccurrence(occurrence,
               toProjectSymbolKind(projectDeclarationsByName.get(name)?.[0]?.kind));
-            reference.qualifiedName = reference.normalizedName = name;
+            reference.normalizedName = name;
+            const qualifiedName = projectDeclarationsByName.get(name)![0]!.qualifiedName;
+            if (qualifiedName) reference.qualifiedName = qualifiedName;
             pushOccurrence(projectReferencesByName, name, reference);
           }
         }
@@ -407,43 +412,6 @@ function copyLookupIndex(index: KickAssemblerLookupIndex): KickAssemblerLookupIn
     referenceReferencesByName: copyMap(index.referenceReferencesByName),
     referenceDeclarationsByAddressRange: index.referenceDeclarationsByAddressRange.map(copy)
   };
-}
-
-function projectSymbolName(symbol: KickAssemblerSemanticSymbol): string {
-  // Local/anonymous-label resolution is a separate compiler-semantics task.
-  return symbol.kind === 'local-label' || symbol.kind === 'anonymous-label'
-    ? symbol.name : symbol.qualifiedName;
-}
-
-function resolveProjectName(
-  token: TokenOccurrence,
-  scopes: readonly KickAssemblerSemanticScope[],
-  declarations: Map<string, KickAssemblerLookupOccurrence[]>
-): string | undefined {
-  // TODO: Add lexical/label-scope identity and import-site namespace context.
-  // This step deliberately resolves only the semantic model's namespace chain.
-  if (token.text.startsWith('@')) {
-    const rootName = token.text.slice(1);
-    return declarations.has(rootName) ? rootName : undefined;
-  }
-  const position = token.location.range.start;
-  let prefix = '';
-  // Parser order places nested scopes after their parents.
-  for (let index = scopes.length - 1; index >= 0; index -= 1) {
-    const scope = scopes[index]!;
-    if (comparePositions(position, scope.range.start) >= 0 &&
-        comparePositions(position, scope.range.end) < 0) {
-      prefix = scope.qualifiedName ?? '';
-      break;
-    }
-  }
-  while (prefix) {
-    const name = `${prefix}.${token.text}`;
-    if (declarations.has(name)) return name;
-    const separator = prefix.lastIndexOf('.');
-    prefix = separator >= 0 ? prefix.slice(0, separator) : '';
-  }
-  return declarations.has(token.text) ? token.text : undefined;
 }
 
 function addReferenceDefinition(
@@ -799,7 +767,8 @@ function locationKey(location: SourceLocation): string {
 }
 
 function isLookupTokenCharacter(character: string | undefined): boolean {
-  return Boolean(character && /[@$A-Za-z0-9_.]/u.test(character));
+  // Keep unsupported multi-label tokens whole; never mistake !loop for loop.
+  return Boolean(character && /[!@$A-Za-z0-9_.]/u.test(character));
 }
 
 function advanceToNextLine(text: string, offset: number): number {
