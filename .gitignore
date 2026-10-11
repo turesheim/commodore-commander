@@ -20,6 +20,9 @@ target
 /packages/theia-extension/assets/vice/
 /packages/language-support/node_modules/
 /packages/language-support/dist/
+/packages/language-support/src/**/*.js
+/packages/language-support/src/**/*.js.map
+/packages/language-support/src/**/*.d.ts
 /.theia/
 /example-workspace/out
 /tools/vice-embed/build/

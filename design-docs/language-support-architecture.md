@@ -1,140 +1,78 @@
 # Language-Support Architecture
 
-## Goal
+## Boundaries and source layout
 
-Keep Commodore Commander language support TypeScript-first and framework-light
-so Theia integration can consume it without inheriting Eclipse runtime
-assumptions.
+`packages/language-support` owns framework-neutral TypeScript language logic.
+Theia adapts its outputs to Monaco, filesystem services, tasks and product UI.
+The package has no Theia/Eclipse runtime dependency; Java is required for
+executing KickAss builds, not for editor lookup.
 
-## Current Package Shape
+| Area | Responsibility |
+| --- | --- |
+| `document`, `location`, `resolution` | Text/range models, URI conversion, filesystem loading and include resolution |
+| `semantic`, `parsing` | Tolerant semantic model and compatibility projections for existing callers |
+| `langium`, `outline` | Structural grammar/AST and editor-neutral outline models |
+| `lookup`, `features`, `symbols` | Request-local symbol/reference index and editor features |
+| `reference`, `machines` | XML assets, hardware facts, profiles and filtered lookup |
+| `project`, `build` | Recursive include graph, diagnostics and program/profile/run planning |
 
-### `packages/language-support/syntaxes`
+Maintained sources are `.ts`. `src/langium/generated/*.ts` is committed generator
+output used as compiler input. JavaScript, declaration files and source maps
+are build output under ignored `dist/`, not maintained copies under `src/`.
+The build also copies `reference/` and `syntaxes/` assets to `dist/`.
 
-Syntax assets:
+The package root includes Node filesystem/build APIs. Its separate `runtime`
+export is browser-safe and used by Theia frontend code. Both package exports
+resolve to compiled `dist/src` modules; tests import `.ts` sources directly.
+This distinction prevents frontend consumers from pulling filesystem/process
+integration into their dependency graph.
 
-- `kickassembler.tmLanguage.json`
-- `kickassembler.language-configuration.json`
-- `sidscore.tmLanguage.json`
-- `sidscore.language-configuration.json`
+## Parsing and editor flow
 
-The Kick Assembler assets are reused directly. SIDScore assets are first-pass
-editor support derived from `../SIDScore/SIDScore_Language_Specification.md`
-in the sibling SIDScore repository. Both languages are exposed through small
-language manifests under `src/language/`.
+1. A `TextDocumentModel` stores source text and line/offset mappings.
+2. The semantic parser models expressions, scopes, imports, namespaces,
+   macros/functions/pseudocommands, structs/enums, segments, conditionals,
+   local/anonymous labels, generated symbols and labelled data.
+3. `scanKickAssemblerDocument` projects that model into the existing
+   include/symbol/diagnostic shape. It is a compatibility facade, not a separate
+   semantic authority.
+4. The Langium structural parser produces the Kick Assembler outline through
+   its own path. SIDScore outline scans subtunes/effects. Aligning these paths
+   with richer semantic lookup remains work.
+5. Lookup combines project declarations/references with XML and machine facts.
+   Project declarations win; the active machine filters hardware references.
+   Editor features consume this index/model and return framework-neutral edits,
+   ranges, tokens and symbols. Hover formatting preserves reference HTML.
 
-### `packages/language-support/src`
+The Theia contribution selects workspace files, overlays open editor text,
+loads bundled XML and translates feature results to Monaco. It still crawls and
+builds the lookup index on demand; removing stale source build artifacts does
+not implement persistent indexing.
 
-Current runtime layers:
+## Project and build flow
 
-- `document/`
-  - text storage plus line/offset conversion
-- `location/`
-  - document positions, ranges, and locations
-- `resolution/`
-  - file-URI/path helpers
-  - filesystem document loading
-  - include resolution with optional search roots
-- `parsing/`
-  - compatibility scanner for existing project-loading and lookup callers
-- `langium/`
-  - structural Kick Assembler grammar and generated AST/service inputs used by
-    the outline path
-- `semantic/`
-  - TypeScript semantic model for expressions, scopes, imports, directives,
-    segments, conditionals, generated symbols, data blocks, and richer symbol
-    kinds
-- `outline/`
-  - editor-neutral Kick Assembler outline model
-- `lookup/`
-  - shared runtime-safe definition/reference queries
-  - hover content formatting for reference symbols with preserved embedded HTML
-- `features/`
-  - editor-neutral completion, rename, workspace-symbol, semantic-token,
-    folding, formatting, and quick-fix services
-- `reference/`
-  - XML reference parsing plus bundled asset specs for 6502 mnemonics and C64
-    I/O symbols
-- `machines/`
-  - typed Commodore machine profiles and profile-aware reference facts
-- `symbols/`
-  - symbol shapes and in-memory index
-- `project/`
-  - recursive source-tree loading and project-level diagnostics
-- `build/`
-  - workspace build configuration loading, program/profile/run resolution,
-    standalone root detection, and KickAss command-line rendering
-- `runtime/`
-  - browser-safe exports consumed by `packages/theia-extension`
+The Node project loader resolves `#import`/`#importif` using source-relative or
+configured search roots and builds a source graph, symbol index and diagnostics.
+The build planner identifies standalone assembly roots and resolves programs,
+profiles, runs, output/generated assets and command-line settings. SIDScore
+module declarations/configuration contribute generated assembly dependencies.
+The Theia/headless runner owns process execution and compiler-output markers.
 
-### `packages/language-support/reference`
+`reference/6502.xml` and `reference/c64/c64io.xml` are active lookup data;
+`reference/java` and `reference/antlr` retain migration behavior references.
+Syntax assets and language manifests expose Kick Assembler and initial SIDScore
+editing support. Compiler/player semantics stay outside the TypeScript SIDScore
+outline/syntax slice.
 
-Mixed assets:
+## Remaining work
 
-- runtime reference data:
-  - `6502.xml`
-  - `c64/c64io.xml`
-- reference-only migration material:
-  - preserved `KickAssembler.g4`
-- Java parser/scaffolding from the earlier extraction
+- A shared incremental index with explicit update/invalidation boundaries.
+- Include-graph-precise lookup and consistency between outline and semantic paths.
+- Compiler-accurate semantics/diagnostics: configured conditional evaluation,
+  macro/pseudocommand expansion and generated-symbol materialization.
+- Richer editor/reference coverage and build-config/diagnostic attribution.
 
-The XML datasets are now reused as runtime lookup inputs and packaged product
-assets. The Java and ANTLR files remain reference-only material for later
-parity work.
-
-## Data Flow
-
-1. A root source file is loaded as a `TextDocumentModel`.
-2. The semantic parser builds a document model for imports, import-once,
-   expression trees, scopes, namespaces, macros, functions, pseudocommands,
-   structs, enums, segments, conditionals, local/anonymous labels, generated
-   symbols, directives, and labelled data blocks.
-3. The Langium outline path builds document symbols for structural navigation.
-4. The compatibility scanner projects the semantic model back into the legacy
-   include/symbol/diagnostic shape.
-5. The include resolver maps `#import` / `#importif` to filesystem targets.
-6. The project loader walks the include graph recursively.
-7. The symbol index accumulates document-level symbol definitions.
-8. The lookup service combines project symbols with XML and machine-profile
-   reference definitions.
-9. The hover formatter turns XML-heavy reference descriptions into preserved
-   HTML fragments.
-10. Editor feature services consume the semantic model, lookup index, reference
-   symbols, and optional include-path candidates to produce framework-neutral
-   completions, rename edits, workspace symbols, semantic tokens, folding
-   ranges, formatting edits, and quick fixes.
-11. The build planner resolves programs, profiles, runs, generated assets, and
-    command-line settings from workspace configuration.
-12. The Theia extension adapts editor requests onto the runtime-safe lookup API
-    and loads bundled reference XML assets from `packages/language-support`
-    before rendering reference hover HTML through Theia hover services with DOM
-    content.
-
-## Deliberate Constraints
-
-- No `org.eclipse.*` types
-- No Java language-support runtime dependency
-- No Theia-specific APIs in the package core
-- No debug/runtime orchestration in this package
-- SIDScore support in this package is editor scaffolding only; compiler/player
-  semantics remain out of scope for the TypeScript language-support package.
-
-## Known Gaps
-
-- The semantic model is tolerant and editor-oriented; it is not a full
-  KickAss compiler front end.
-- Conditional assembly is modelled structurally but not evaluated against a
-  configured symbol environment.
-- Macro and pseudocommand bodies are marked as generated-symbol scopes, but
-  macro expansion is not executed.
-- Diagnostics are broader than the old scanner, but still not compiler-grade.
-- Completion, rename, semantic tokens, formatting, and quick fixes are
-  structural/name-based editor services, not compiler-accurate parity.
-- The current lookup pass still crawls the workspace on demand instead of using
-  an incremental shared index.
-- The build planner models configuration and command rendering, but Theia task
-  integration and form-based validation are still outside this package.
-
-## Next Architectural Step
-
-Add an incremental, backend-neutral indexing boundary so editor features can
-reuse shared lookup state without rescanning the workspace for each request.
+Keep language logic here, Theia adaptation in `theia-extension`, and DAP/debug
+metadata in `debug-adapter`. The [status report](ts-language-support-report.md)
+distinguishes implemented behavior from deferred work; [the plan](plan.md)
+tracks priorities.

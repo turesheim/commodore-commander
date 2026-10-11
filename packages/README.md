@@ -16,6 +16,12 @@ build order is language support, VICE runtime, debug adapter, Theia extension,
 and Electron frontend/backend bundling. The debug adapter's standalone build
 also builds its runtime dependency, including in the focused VICE CI lane.
 
+Language-support exports resolve to compiled `dist` modules. Its TypeScript
+sources and committed Langium generator inputs live in `src`; compiler JS,
+maps and declarations belong in ignored build output. Theia frontend code uses
+the browser-safe `language-support/runtime` entry point. See the
+[language architecture](../design-docs/language-support-architecture.md).
+
 The runtime extraction is partial: the standalone embedded child process,
 command pipe, shared binary frame parser, native loopback frame socket, and
 mixed stdout framing, and CCV1 command encoding/event-envelope parsing now live
