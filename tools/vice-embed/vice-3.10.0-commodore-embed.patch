@@ -1204,27 +1204,6 @@ diff --git a/src/arch/sdl/ui.c b/src/arch/sdl/ui.c
 @@ -320,0 +322,2 @@ ui_menu_action_t ui_dispatch_events_for_menu_action(void)
 +    cc_embed_poll_commands();
 +
-@@ -514,19 +519,19 @@
- void ui_message(const char* format, ...)
- {
-     va_list ap;
-     char *tmp;
-
-     va_start(ap, format);
-     tmp = lib_mvsprintf(format, ap);
-     va_end(ap);
-
--    if (sdl_ui_ready) {
-+    if (sdl_ui_ready && !cc_embed_is_enabled()) {
-         message_box("VICE MESSAGE", tmp, MESSAGE_OK);
-     } else {
-         fprintf(stderr, "%s\n", tmp);
-     }
-     lib_free(tmp);
- }
-
- /* ----------------------------------------------------------------- */
- /* uiapi.h */
 @@ -892,19 +897,19 @@
  void ui_error(const char *format, ...)
  {
