@@ -1,11 +1,14 @@
 diff --git a/src/arch/sdl/Makefile.am b/src/arch/sdl/Makefile.am
 --- a/src/arch/sdl/Makefile.am
 +++ b/src/arch/sdl/Makefile.am
-@@ -96,0 +97,4 @@
+@@ -96,0 +97,7 @@
 +	cc_embed.c \
 +	cc_embed.h \
 +	cc_frame_writer.c \
 +	cc_frame_writer.h \
++	cc_socket.h \
++	cc_command_reader.c \
++	cc_command_reader.h \
 diff --git a/src/arch/shared/macOS-launcher.c b/src/arch/shared/macOS-launcher.c
 --- a/src/arch/shared/macOS-launcher.c
 +++ b/src/arch/shared/macOS-launcher.c
@@ -44,7 +47,18 @@ diff --git a/src/arch/shared/archdep_program_path.c b/src/arch/shared/archdep_pr
 diff --git a/src/arch/shared/archdep_get_vice_datadir.c b/src/arch/shared/archdep_get_vice_datadir.c
 --- a/src/arch/shared/archdep_get_vice_datadir.c
 +++ b/src/arch/shared/archdep_get_vice_datadir.c
-@@ -64,6 +64,9 @@
+@@ -50,7 +50,9 @@
+     char *path;
+
+ #ifdef WINDOWS_COMPILE
+-# if defined(USE_SDLUI) || defined(USE_SDL2UI) || defined(USE_HEADLESSUI)
++# if defined(USE_SDL2UI)
++    path = util_join_paths(archdep_boot_path(), "..", "share", "vice", NULL);
++# elif defined(USE_SDLUI) || defined(USE_HEADLESSUI)
+     path = lib_strdup(archdep_boot_path());
+ # elif defined(USE_GTK3UI)
+     path = util_join_paths(archdep_boot_path(), "..", NULL);
+@@ -63,6 +65,9 @@
      } else {
          path = lib_strdup(VICE_DATADIR);
      }
@@ -126,7 +140,7 @@ diff --git a/src/arch/sdl/cc_embed.c b/src/arch/sdl/cc_embed.c
 new file mode 100644
 --- /dev/null
 +++ b/src/arch/sdl/cc_embed.c
-@@ -0,0 +1,933 @@
+@@ -0,0 +1,949 @@
 +/*
 + * cc_embed.c - Commodore Commander VICE embedding transport.
 + *
@@ -139,6 +153,8 @@ new file mode 100644
 + * (at your option) any later version.
 + */
 +
++#include "cc_socket.h"
++#include "cc_command_reader.h"
 +#include "vice.h"
 +
 +#include "vice_sdl.h"
@@ -188,7 +204,10 @@ new file mode 100644
 +static int cc_embed_enabled = 0;
 +static int cc_embed_frame_port = 0;
 +static int cc_embed_command_fd = 0;
-+static int cc_embed_frame_socket = -1;
++static cc_socket_t cc_embed_frame_socket = CC_INVALID_SOCKET;
++#ifdef _WIN32
++static int cc_embed_winsock_started = 0;
++#endif
 +static cc_frame_writer_t cc_embed_frame_writer;
 +static uint32_t cc_embed_frame_id = 0;
 +static uint32_t cc_embed_last_frame_ticks = 0;
@@ -319,7 +338,7 @@ new file mode 100644
 +void cc_embed_poll_commands(void)
 +{
 +    /* Advance a partial record without blocking the SDL/input loop. */
-+    if (cc_embed_frame_socket >= 0 &&
++    if (cc_embed_frame_socket != CC_INVALID_SOCKET &&
 +        cc_frame_writer_flush(&cc_embed_frame_writer, cc_embed_frame_socket) < 0) {
 +        cc_embed_close_frame_socket();
 +        cc_embed_emit_status("error", "Could not write embedded frame socket.");
@@ -329,10 +348,9 @@ new file mode 100644
 +
 +static int cc_embed_read_commands(void)
 +{
-+#ifndef WINDOWS_COMPILE
 +    char buffer[512];
-+    ssize_t count;
-+    ssize_t index;
++    int count;
++    int index;
 +    int read_any = 0;
 +
 +    if (!cc_embed_enabled) {
@@ -340,11 +358,8 @@ new file mode 100644
 +    }
 +
 +    for (;;) {
-+        count = read(cc_embed_command_fd, buffer, sizeof(buffer));
++        count = cc_command_read(cc_embed_command_fd, buffer, sizeof(buffer));
 +        if (count < 0) {
-+            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
-+                return read_any;
-+            }
 +            cc_embed_emit_status("error", "Could not read embedded input stream.");
 +            return read_any;
 +        }
@@ -367,9 +382,6 @@ new file mode 100644
 +            }
 +        }
 +    }
-+#else
-+    return 0;
-+#endif
 +}
 +
 +void cc_embed_publish_frame(int width,
@@ -477,20 +489,29 @@ new file mode 100644
 +
 +static void cc_embed_connect_frame_socket(void)
 +{
-+#ifndef WINDOWS_COMPILE
 +    struct sockaddr_in address;
-+    int socket_fd;
++    cc_socket_t socket_fd;
 +    int send_buffer_bytes = CC_EMBED_FRAME_SOCKET_SEND_BUFFER_BYTES;
 +#ifdef SO_NOSIGPIPE
 +    int no_sigpipe = 1;
 +#endif
 +
-+    if (!cc_embed_should_use_frame_socket() || cc_embed_frame_socket >= 0) {
++    if (!cc_embed_should_use_frame_socket() || cc_embed_frame_socket != CC_INVALID_SOCKET) {
 +        return;
 +    }
 +
++#ifdef _WIN32
++    if (!cc_embed_winsock_started) {
++        WSADATA data;
++        if (WSAStartup(MAKEWORD(2, 2), &data) != 0) {
++            cc_embed_emit_status("error", "Could not initialize embedded Winsock transport.");
++            return;
++        }
++        cc_embed_winsock_started = 1;
++    }
++#endif
 +    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-+    if (socket_fd < 0) {
++    if (socket_fd == CC_INVALID_SOCKET) {
 +        cc_embed_emit_status("error", "Could not create embedded frame socket.");
 +        return;
 +    }
@@ -514,12 +535,21 @@ new file mode 100644
 +    address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 +
 +    if (connect(socket_fd, (const struct sockaddr *)&address, sizeof(address)) != 0) {
-+        close(socket_fd);
++        cc_socket_close(socket_fd);
 +        cc_embed_emit_status("error", "Could not connect embedded frame socket.");
 +        return;
 +    }
 +
 +    cc_embed_frame_socket = socket_fd;
++#ifdef _WIN32
++    {
++        u_long nonblocking = 1;
++        if (ioctlsocket(cc_embed_frame_socket, FIONBIO, &nonblocking) != 0) {
++            cc_embed_close_frame_socket();
++            cc_embed_emit_status("error", "Could not make embedded frame socket nonblocking.");
++        }
++    }
++#else
 +    cc_embed_set_fd_nonblocking(cc_embed_frame_socket);
 +#endif
 +}
@@ -527,10 +557,14 @@ new file mode 100644
 +static void cc_embed_close_frame_socket(void)
 +{
 +    cc_frame_writer_reset(&cc_embed_frame_writer);
-+#ifndef WINDOWS_COMPILE
-+    if (cc_embed_frame_socket >= 0) {
-+        close(cc_embed_frame_socket);
-+        cc_embed_frame_socket = -1;
++    if (cc_embed_frame_socket != CC_INVALID_SOCKET) {
++        cc_socket_close(cc_embed_frame_socket);
++        cc_embed_frame_socket = CC_INVALID_SOCKET;
++    }
++#ifdef _WIN32
++    if (cc_embed_winsock_started) {
++        WSACleanup();
++        cc_embed_winsock_started = 0;
 +    }
 +#endif
 +}
@@ -542,11 +576,7 @@ new file mode 100644
 +
 +static int cc_embed_frame_socket_connected(void)
 +{
-+#ifndef WINDOWS_COMPILE
-+    return cc_embed_frame_socket >= 0;
-+#else
-+    return 0;
-+#endif
++    return cc_embed_frame_socket != CC_INVALID_SOCKET;
 +}
 +
 +static void cc_embed_handle_line(const char *line)
@@ -951,7 +981,7 @@ new file mode 100644
 +                                       (uint32_t)payload_length);
 +    if (cc_embed_should_use_frame_socket()) {
 +        int result;
-+        if (cc_embed_frame_socket < 0) { return 0; }
++        if (cc_embed_frame_socket == CC_INVALID_SOCKET) { return 0; }
 +        result = cc_frame_writer_flush(&cc_embed_frame_writer, cc_embed_frame_socket);
 +        if (result == 0) { return 0; }
 +        if (result < 0) {
@@ -1018,7 +1048,7 @@ new file mode 100644
 +    if (!cc_embed_should_use_frame_socket()) {
 +        return 1;
 +    }
-+    if (cc_embed_frame_socket < 0) {
++    if (cc_embed_frame_socket == CC_INVALID_SOCKET) {
 +        return 0;
 +    }
 +    if (getsockopt(cc_embed_frame_socket,
@@ -1064,10 +1094,11 @@ diff --git a/src/arch/sdl/cc_frame_writer.h b/src/arch/sdl/cc_frame_writer.h
 new file mode 100644
 --- /dev/null
 +++ b/src/arch/sdl/cc_frame_writer.h
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,20 @@
 +/* SPDX-License-Identifier: GPL-2.0-or-later */
 +#ifndef VICE_CC_FRAME_WRITER_H
 +#define VICE_CC_FRAME_WRITER_H
++#include "cc_socket.h"
 +#include <stddef.h>
 +#include <stdint.h>
 +
@@ -1078,8 +1109,8 @@ new file mode 100644
 +} cc_frame_writer_t;
 +
 +/* 1: complete, 0: pending (drop new frames), -1: error. One owned record only. */
-+int cc_frame_writer_flush(cc_frame_writer_t *writer, int fd);
-+int cc_frame_writer_queue(cc_frame_writer_t *writer, int fd,
++int cc_frame_writer_flush(cc_frame_writer_t *writer, cc_socket_t fd);
++int cc_frame_writer_queue(cc_frame_writer_t *writer, cc_socket_t fd,
 +                         const void *header, size_t header_length,
 +                         const void *payload, size_t payload_length);
 +void cc_frame_writer_reset(cc_frame_writer_t *writer);
@@ -1094,10 +1125,6 @@ new file mode 100644
 +#include <errno.h>
 +#include <stdlib.h>
 +#include <string.h>
-+#ifndef WINDOWS_COMPILE
-+#include <sys/socket.h>
-+#include <sys/types.h>
-+#endif
 +
 +void cc_frame_writer_reset(cc_frame_writer_t *writer)
 +{
@@ -1107,10 +1134,19 @@ new file mode 100644
 +    writer->offset = 0;
 +}
 +
-+int cc_frame_writer_flush(cc_frame_writer_t *writer, int fd)
++int cc_frame_writer_flush(cc_frame_writer_t *writer, cc_socket_t fd)
 +{
-+#ifndef WINDOWS_COMPILE
 +    while (writer->offset < writer->length) {
++#ifdef _WIN32
++        int written = send(fd, (const char *)writer->data + writer->offset,
++                           (int)(writer->length - writer->offset), 0);
++        if (written == SOCKET_ERROR) {
++            int error = WSAGetLastError();
++            if (error == WSAEINTR) { continue; }
++            if (error == WSAEWOULDBLOCK) { return 0; }
++            return -1;
++        }
++#else
 +        ssize_t written;
 +#ifdef MSG_NOSIGNAL
 +        written = send(fd, writer->data + writer->offset,
@@ -1125,6 +1161,7 @@ new file mode 100644
 +        if (written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
 +            return 0;
 +        }
++#endif
 +        if (written <= 0) {
 +            if (written == 0) { errno = EPIPE; }
 +            return -1;
@@ -1133,15 +1170,9 @@ new file mode 100644
 +    }
 +    cc_frame_writer_reset(writer);
 +    return 1;
-+#else
-+    (void)writer;
-+    (void)fd;
-+    errno = ENOSYS;
-+    return -1;
-+#endif
 +}
 +
-+int cc_frame_writer_queue(cc_frame_writer_t *writer, int fd,
++int cc_frame_writer_queue(cc_frame_writer_t *writer, cc_socket_t fd,
 +                         const void *header, size_t header_length,
 +                         const void *payload, size_t payload_length)
 +{
@@ -1173,6 +1204,27 @@ diff --git a/src/arch/sdl/ui.c b/src/arch/sdl/ui.c
 @@ -320,0 +322,2 @@ ui_menu_action_t ui_dispatch_events_for_menu_action(void)
 +    cc_embed_poll_commands();
 +
+@@ -892,19 +897,19 @@
+ void ui_error(const char *format, ...)
+ {
+     va_list ap;
+     char *tmp;
+
+     va_start(ap, format);
+     tmp = lib_mvsprintf(format, ap);
+     va_end(ap);
+
+-    if (sdl_ui_ready) {
++    if (sdl_ui_ready && !cc_embed_is_enabled()) {
+         message_box("VICE ERROR", tmp, MESSAGE_OK);
+     } else {
+         fprintf(stderr, "%s\n", tmp);
+     }
+     lib_free(tmp);
+ }
+
+ /* Let the user browse for a filename; display format as a titel */
+ char* ui_get_file(const char *format, ...)
 diff --git a/src/arch/sdl/vsyncarch.c b/src/arch/sdl/vsyncarch.c
 --- a/src/arch/sdl/vsyncarch.c
 +++ b/src/arch/sdl/vsyncarch.c
@@ -1218,3 +1270,91 @@ diff --git a/src/arch/sdl/video_sdl2.c b/src/arch/sdl/video_sdl2.c
      if (recreate_textures) {
          recreate_all_textures();
          recreate_textures = 0;
+diff --git a/src/arch/sdl/cc_socket.h b/src/arch/sdl/cc_socket.h
+new file mode 100644
+--- /dev/null
++++ b/src/arch/sdl/cc_socket.h
+@@ -0,0 +1,21 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later */
++#ifndef VICE_CC_SOCKET_H
++#define VICE_CC_SOCKET_H
++#ifdef _WIN32
++#ifndef WIN32_LEAN_AND_MEAN
++#define WIN32_LEAN_AND_MEAN
++#endif
++#include <winsock2.h>
++#include <ws2tcpip.h>
++typedef SOCKET cc_socket_t;
++#define CC_INVALID_SOCKET INVALID_SOCKET
++#define cc_socket_close closesocket
++#else
++#include <sys/socket.h>
++#include <sys/types.h>
++#include <unistd.h>
++typedef int cc_socket_t;
++#define CC_INVALID_SOCKET (-1)
++#define cc_socket_close close
++#endif
++#endif
+diff --git a/src/arch/sdl/cc_command_reader.h b/src/arch/sdl/cc_command_reader.h
+new file mode 100644
+--- /dev/null
++++ b/src/arch/sdl/cc_command_reader.h
+@@ -0,0 +1,6 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later */
++#ifndef VICE_CC_COMMAND_READER_H
++#define VICE_CC_COMMAND_READER_H
++/* Nonblocking: bytes read, 0 for no data/EOF, -1 for an input failure. */
++int cc_command_read(int fd, char *buffer, unsigned int capacity);
++#endif
+diff --git a/src/arch/sdl/cc_command_reader.c b/src/arch/sdl/cc_command_reader.c
+new file mode 100644
+--- /dev/null
++++ b/src/arch/sdl/cc_command_reader.c
+@@ -0,0 +1,33 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later */
++#include "cc_command_reader.h"
++#ifdef _WIN32
++#include <windows.h>
++int cc_command_read(int fd, char *buffer, unsigned int capacity)
++{
++    HANDLE pipe;
++    DWORD available, count;
++    /* Node provides a standard Windows pipe, not a CRT fd 3. */
++    if (fd != 0) { return -1; }
++    pipe = GetStdHandle(STD_INPUT_HANDLE);
++    if (!PeekNamedPipe(pipe, NULL, 0, NULL, &available, NULL)) {
++        return GetLastError() == ERROR_BROKEN_PIPE ? 0 : -1;
++    }
++    if (!available) { return 0; }
++    if (available > capacity) { available = capacity; }
++    if (!ReadFile(pipe, buffer, available, &count, NULL)) {
++        return GetLastError() == ERROR_BROKEN_PIPE ? 0 : -1;
++    }
++    return (int)count;
++}
++#else
++#include <errno.h>
++#include <unistd.h>
++int cc_command_read(int fd, char *buffer, unsigned int capacity)
++{
++    ssize_t count = read(fd, buffer, capacity);
++    if (count < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
++        return 0;
++    }
++    return (int)count;
++}
++#endif
+diff --git a/src/arch/shared/archdep_fix_streams.c b/src/arch/shared/archdep_fix_streams.c
+--- a/src/arch/shared/archdep_fix_streams.c
++++ b/src/arch/shared/archdep_fix_streams.c
+@@ -80,7 +80,7 @@
+         filetype = GetFileType(handle);
+         is_cons  = (filetype == FILE_TYPE_UNKNOWN || filetype == FILE_TYPE_CHAR);
+
+-        if (filetype == FILE_TYPE_DISK) {
+-            /* don't call AttachConsole in case of redirecting to file */
++        if (filetype == FILE_TYPE_DISK || filetype == FILE_TYPE_PIPE) {
++            /* Preserve inherited files/pipes: attaching/closing breaks Node I/O. */
+             return;
+         }

@@ -71,12 +71,19 @@ checks, cached-frame replay and slow-client handling. Clearing the frame cache
 retains browser connections; stopping the bridge releases its listener and
 clients. The bridge does not own emulator processes.
 
-Commands use CCV1 JSON lines on inherited fd 3, with stdin fallback for manual
-launches without `-cc-command-fd`. Standalone commands go through the backend;
+Commands use CCV1 JSON lines on inherited fd 3 on macOS/Linux and stdin (fd 0)
+on Windows. The Windows native reader uses `PeekNamedPipe`/`ReadFile`; the
+frame writer uses pointer-sized Winsock handles and `WSAEWOULDBLOCK`. Both
+readers poll without blocking SDL. Manual launches default to stdin. Standalone commands go through the backend;
 debug-session commands go through adapter custom requests. Keyboard, mouse,
 menu, reset and quit have native hooks. Joystick and resize remain reserved
 messages. Mouse input requires the selected VICE mouse device/emulation to be
 enabled; browser pointer lock supplies relative movement.
+
+Native SDL errors in embedded mode are written to stderr rather than opening a
+hidden blocking dialog. Existing backend output forwarding exposes the message;
+VICE retains its own error policy (for example disabling failed sound output).
+This does not complete audio recovery or bounded lifecycle handling.
 
 ## Stdout and JSON policy
 
@@ -136,7 +143,7 @@ Real DAP and Electron UI lanes are described in the
 [VICE E2E rig](vice-e2e-test-rig.md). The debugger development lane uses stock external VICE; embedded
 transport cases need the patched runtime and are skipped when unsupported.
 
-macOS Apple Silicon and Linux x64 product smoke tests check the bundled VICE's early startup
+macOS Apple Silicon, Windows x64 and Linux x64 product smoke tests check the bundled VICE's early startup
 and require continuing CCB1 frames with visible content over loopback. Native
 packaging includes the complete non-system dylib dependency graph, including
 `@rpath` references and sdl2-compat's dynamically loaded SDL3, and
@@ -151,14 +158,17 @@ unfiltered C64 surface; a fixed delay or a power-on RAM pattern does not qualify
 This covers bundled discovery,
 backend/browser transport, canvas painting and BASIC input/execution, rather than
 accepting FPS or an existing screenshot as success. Nightly logs/screenshots
-survive failed checks.
+survive failed checks. Windows packaging follows PE imports recursively and
+copies non-system DLLs beside the executables; tests remove the build prefix
+and toolchain PATH entries, and clear MSYSTEM before launching. Windows native
+startup preserves inherited pipes instead of applying terminal redirection. This tests relocation, not a full
+Windows minimum-OS or clean-host acceptance matrix.
 Linux packaged UI runs under Xvfb with software rendering. Package-level UI
-verification covers macOS Apple Silicon and Linux x64; debug
+verification covers macOS Apple Silicon, Windows x64 and Linux x64; debug
 stepping and richer UI flows remain in the separate Electron/DAP E2E lanes.
 
 Runtime extraction is partial. Theia still owns launch/session policy, machine
 selection, JSON validation, browser transport and RPC cleanup; the adapter
 retains its DAP-specific binary-monitor connection. Remaining product gaps
-include joystick/resize native hooks, bundled Windows/Intel macOS embedded
-payloads, cycle-accurate execution provenance, richer symbol presentation and
+include joystick/resize native hooks, Intel macOS embedded payloads, cycle-accurate execution provenance, richer symbol presentation and
 configured-run build policies. See [the implementation plan](plan.md).

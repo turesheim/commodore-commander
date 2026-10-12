@@ -12,7 +12,11 @@ SOURCE_DIR ?= $(BUILD_DIR)/vice-$(VICE_VERSION)
 PREFIX_DIR ?= $(BUILD_DIR)/prefix
 DIST_ROOT ?= $(CURDIR)/dist
 JOBS ?= $(shell sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
+ifeq ($(PLATFORM),win32-x64)
+VICE_CONFIGURE_FLAGS ?= --enable-sdl2ui --disable-pdf-docs --disable-html-docs --disable-arch
+else
 VICE_CONFIGURE_FLAGS ?= --enable-sdl2ui
+endif
 VICE_CODESIGN_IDENTITY ?= -
 
 REPO_ROOT := $(abspath $(CURDIR)/../..)
@@ -33,6 +37,10 @@ APP_RESOURCES_DIR := $(APP_DIR)
 ASSETS_APP_DIR := $(REPO_ROOT)/packages/theia-extension/assets/vice/$(PLATFORM)
 endif
 PACKAGE_STAMP := $(APP_RESOURCES_DIR)/.commodore-commander-patched-vice
+VICE_EXE := x64sc
+ifeq ($(PLATFORM),win32-x64)
+VICE_EXE := x64sc.exe
+endif
 STAGE_STAMP := $(APP_RESOURCES_DIR)/.commodore-commander-staged-vice
 
 .PHONY: help package assets source patch configure build install stage bundle-dylibs sign verify clean distclean check-platform check-prereqs
@@ -98,15 +106,26 @@ $(CONFIGURE_STAMP): $(PATCH_STAMP) Makefile
 $(INSTALL_STAMP): $(CONFIGURE_STAMP) Makefile
 	 $(MAKE) -C "$(SOURCE_DIR)" -j"$(JOBS)"
 	 rm -rf "$(PREFIX_DIR)"
+ifeq ($(PLATFORM),win32-x64)
+	 mkdir -p "$(PREFIX_DIR)/bin" "$(PREFIX_DIR)/share/vice"
+	 cp "$(SOURCE_DIR)"/src/*.exe "$(SOURCE_DIR)/src/tools/cartconv/cartconv.exe" "$(SOURCE_DIR)/src/tools/petcat/petcat.exe" "$(PREFIX_DIR)/bin/"
+	 cp -R "$(SOURCE_DIR)/data/". "$(PREFIX_DIR)/share/vice/"
+	 find "$(PREFIX_DIR)/share/vice" -name 'Makefile*' -delete
+	 cp "$(SOURCE_DIR)/COPYING" "$(SOURCE_DIR)/README" "$(PREFIX_DIR)/"
+else
 	 $(MAKE) -C "$(SOURCE_DIR)" install
+endif
 	 touch "$@"
 
-$(STAGE_STAMP): $(INSTALL_STAMP) Makefile bundle-dylibs.mjs bundle-linux-libs.mjs
+$(STAGE_STAMP): $(INSTALL_STAMP) Makefile bundle-dylibs.mjs bundle-linux-libs.mjs bundle-windows-libs.mjs
 	 rm -rf "$(APP_DIR)"
 	 mkdir -p "$(APP_RESOURCES_DIR)"
 	 cp -R "$(PREFIX_DIR)/bin" "$(APP_RESOURCES_DIR)/"
 	 cp -R "$(PREFIX_DIR)/share" "$(APP_RESOURCES_DIR)/"
 	 if [ -d "$(PREFIX_DIR)/lib" ]; then cp -R "$(PREFIX_DIR)/lib" "$(APP_RESOURCES_DIR)/"; fi
+ifeq ($(PLATFORM),win32-x64)
+	 cp "$(PREFIX_DIR)/COPYING" "$(PREFIX_DIR)/README" "$(APP_RESOURCES_DIR)/"
+endif
 ifeq ($(PLATFORM),darwin-arm64)
 	 mkdir -p "$(APP_MACOS_DIR)"
 	 printf '%s\n' \
@@ -141,6 +160,8 @@ endif
 bundle-dylibs: $(STAGE_STAMP)
 ifeq ($(PLATFORM),darwin-arm64)
 	node "$(CURDIR)/bundle-dylibs.mjs" "$(APP_RESOURCES_DIR)"
+else ifeq ($(PLATFORM),win32-x64)
+	node "$(CURDIR)/bundle-windows-libs.mjs" "$(APP_RESOURCES_DIR)" "$$(cygpath -w "$(MINGW_PREFIX)")"
 else
 	node "$(CURDIR)/bundle-linux-libs.mjs" "$(APP_RESOURCES_DIR)"
 endif
@@ -162,19 +183,24 @@ verify: sign
 ifeq ($(PLATFORM),darwin-arm64)
 	 test -f "$(APP_CONTENTS_DIR)/Info.plist"
 endif
-	 test -x "$(APP_RESOURCES_DIR)/bin/x64sc"
+	 test -x "$(APP_RESOURCES_DIR)/bin/$(VICE_EXE)"
 	 test -d "$(APP_RESOURCES_DIR)/share/vice"
 	 test -f "$(APP_RESOURCES_DIR)/share/vice/C64/basic-901226-01.bin"
 	 test -f "$(APP_RESOURCES_DIR)/share/vice/C64/kernal-901227-03.bin"
-	 if command -v strings >/dev/null 2>&1; then strings "$(APP_RESOURCES_DIR)/bin/x64sc" | grep -q -- "-cc-embed"; fi
+	 if command -v strings >/dev/null 2>&1; then strings "$(APP_RESOURCES_DIR)/bin/$(VICE_EXE)" | grep -q -- "-cc-embed"; fi
 	 touch "$(PACKAGE_STAMP)"
 	 @echo "Patched VICE package is ready: $(APP_DIR)"
 
 check-platform:
-	 case "$(PLATFORM)" in darwin-arm64|linux-x64) ;; *) echo "Unsupported patched VICE platform: $(PLATFORM)"; exit 1 ;; esac
+	 case "$(PLATFORM)" in darwin-arm64|linux-x64|win32-x64) ;; *) echo "Unsupported patched VICE platform: $(PLATFORM)"; exit 1 ;; esac
 	 test "$(PLATFORM)" = "$$(node -p "process.platform + '-' + process.arch")" || { echo "Build patched VICE on the target platform."; exit 1; }
 
 check-prereqs:
+ifeq ($(PLATFORM),win32-x64)
+	 test "$(MSYSTEM)" = MINGW64 || { echo "Build Windows x64 VICE in the MSYS2 MINGW64 shell."; exit 1; }
+	 command -v gcc >/dev/null 2>&1 || { echo "MinGW GCC is required."; exit 1; }
+	 command -v objdump >/dev/null 2>&1 || { echo "MinGW objdump is required to bundle DLLs."; exit 1; }
+endif
 	 command -v node >/dev/null 2>&1 || { echo "Node.js is required to bundle VICE libraries."; exit 1; }
 ifeq ($(PLATFORM),linux-x64)
 	 command -v patchelf >/dev/null 2>&1 || { echo "patchelf is required to bundle Linux VICE libraries."; exit 1; }

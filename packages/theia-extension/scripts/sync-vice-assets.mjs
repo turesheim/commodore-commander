@@ -39,6 +39,7 @@ const viceEmbedBuildInputs = [
   path.join(viceEmbedDir, 'Makefile'),
   path.join(viceEmbedDir, 'bundle-dylibs.mjs'),
   path.join(viceEmbedDir, 'bundle-linux-libs.mjs'),
+  path.join(viceEmbedDir, 'bundle-windows-libs.mjs'),
   path.join(viceEmbedDir, 'runtime-layout.cjs'),
   path.join(viceEmbedDir, 'vice-3.10.0-commodore-embed.patch')
 ];
@@ -152,6 +153,9 @@ async function ensurePatchedVicePackage(appPath) {
   console.warn(
     'Patched embedded VICE is missing or stale; rebuilding with `make -C tools/vice-embed package`.'
   );
+  if (process.platform === 'win32') {
+    throw new Error('Build Windows VICE first in MSYS2 MINGW64: make -C tools/vice-embed package');
+  }
   await runInherited('make', ['-C', viceEmbedDir, `PLATFORM=${layout.platformKey}`, 'package']);
 }
 

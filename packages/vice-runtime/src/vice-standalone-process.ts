@@ -47,7 +47,8 @@ export class ViceStandaloneProcess {
     this.stop();
     const child = spawn(launch.command, launch.args, {
       cwd: launch.cwd,
-      stdio: ['pipe', 'pipe', 'pipe', 'pipe']
+      windowsHide: true,
+      stdio: process.platform === 'win32' ? ['pipe', 'pipe', 'pipe'] : ['pipe', 'pipe', 'pipe', 'pipe']
     });
     this.child = child;
     this.commandInput = resolveViceCommandInput(child);

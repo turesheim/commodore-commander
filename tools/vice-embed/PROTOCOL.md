@@ -64,7 +64,8 @@ debug adapter never forwards video frames as DAP events.
 
 ## Commodore Commander to VICE
 
-Commodore Commander launches patched VICE with `-cc-command-fd 3` and writes
+Commodore Commander launches patched VICE with `-cc-command-fd 3` on macOS/Linux
+and `-cc-command-fd 0` on Windows, then writes
 commands to that inherited file descriptor. Patched VICE still falls back to
 stdin for manual launches that omit the flag.
 

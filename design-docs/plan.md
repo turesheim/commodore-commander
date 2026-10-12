@@ -38,8 +38,9 @@ requirements.
 | 7 | Versioned, tested release artifacts, installation/trust checks and redistribution material | [#112](https://github.com/turesheim/commodore-commander/issues/112) |
 
 Platform scope bounds the other gates. Nightlies package macOS, Windows and
-Linux. Patched embedded VICE is packaged for macOS Apple Silicon and Linux x64
-(Ubuntu 24.04 build/test baseline); Windows streaming remains to be ported.
+Linux. Patched embedded VICE is packaged for macOS Apple Silicon, Windows x64
+and Linux x64 (Ubuntu 24.04 build/test baseline). Windows uses native Winsock
+frames, a polled stdin command pipe and bundled PE DLL dependencies.
 1.0 requires our patched display/input transport on all supported platforms.
 Stock external VICE remains a compatibility option, not a replacement for this
 release requirement. CPU/OS/model coverage still needs verification. Java 21+ is

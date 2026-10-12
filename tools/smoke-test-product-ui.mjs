@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -76,7 +76,7 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
   }
   await rm(path.join(outputDir, 'failure.png'), { force: true });
   const env = Object.fromEntries(Object.entries(process.env).filter(([name]) =>
-    name !== 'ELECTRON_RUN_AS_NODE' && !name.startsWith('DYLD_') && name !== 'LD_LIBRARY_PATH' && name !== 'LD_PRELOAD' &&
+    name !== 'ELECTRON_RUN_AS_NODE' && name !== 'MSYSTEM' && !name.startsWith('DYLD_') && name !== 'LD_LIBRARY_PATH' && name !== 'LD_PRELOAD' &&
     !name.startsWith('VICE_') && !name.startsWith('THEIA_UI_E2E_VICE_')
   ));
   env.COMMODORE_COMMANDER_SCREEN_CAPTURE_CONFIG = configPath;
@@ -129,8 +129,13 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
     // This detached process group belongs exclusively to this test. Also clean
     // up a VICE child left behind when Electron exits on an assertion failure.
     if (child?.pid) {
-      try { process.kill(-child.pid, 'SIGKILL'); } catch (error) {
-        if (error.code !== 'ESRCH') { throw error; }
+      if (process.platform === 'win32') {
+        // taskkill handles the owned Electron/VICE process tree on Windows.
+        try { execFileSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore', timeout: 5000 }); } catch { /* Already exited. */ }
+      } else {
+        try { process.kill(-child.pid, 'SIGKILL'); } catch (error) {
+          if (error.code !== 'ESRCH') { throw error; }
+        }
       }
     }
     if (child && child.exitCode === null && child.signalCode === null) {

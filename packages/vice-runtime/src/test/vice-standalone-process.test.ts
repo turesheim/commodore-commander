@@ -44,7 +44,7 @@ test('standalone launch preserves cwd, arguments, inherited environment, and out
   assert.equal(runtime.pid, undefined);
 });
 
-test('standalone commands use inherited fd 3', processTestOptions, async (t) => {
+test('standalone commands use the platform inherited pipe', processTestOptions, async (t) => {
   const closed = deferred<ViceStandaloneProcessClose>();
   let stdout = '';
   const runtime = new ViceStandaloneProcess({
@@ -57,7 +57,7 @@ test('standalone commands use inherited fd 3', processTestOptions, async (t) => 
     args: ['-e', `
       const fs = require('node:fs');
       const readline = require('node:readline');
-      const input = readline.createInterface({ input: fs.createReadStream(null, { fd: 3, autoClose: false }) });
+      const input = readline.createInterface({ input: process.platform === 'win32' ? process.stdin : fs.createReadStream(null, { fd: 3, autoClose: false }) });
       input.on('line', (line) => process.stdout.write(line + '\\n', () => process.exit(0)));
     `],
     cwd: process.cwd()

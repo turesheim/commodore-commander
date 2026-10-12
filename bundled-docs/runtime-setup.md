@@ -12,7 +12,7 @@ and `launch.json` can override the defaults checked here.
 | Package | In-product Machine display | External VICE window |
 | --- | --- | --- |
 | macOS Apple Silicon | Bundled patched VICE 3.10.0 | Configure a compatible VICE installation |
-| Windows x64 | Matching patched runtime not bundled yet; required for 1.0 | Optional compatibility mode; configure stock VICE |
+| Windows x64 | Bundled patched VICE 3.10.0 | Optional compatibility mode; configure stock VICE |
 | Linux x64 | Bundled patched VICE 3.10.0; Ubuntu 24.04 build/test baseline | Optional compatibility mode; configure stock VICE |
 | macOS Intel / other architectures | No nightly package currently provided | No release support claim yet |
 
@@ -56,7 +56,7 @@ Kick Assembler build definitions may also specify `javaRuntime` and `javaArgs`;
 
 ## VICE
 
-On macOS Apple Silicon and Linux x64, leave `commodoreCommander.VICE.runtimePath` empty to
+On macOS Apple Silicon, Windows x64 and Linux x64, leave `commodoreCommander.VICE.runtimePath` empty to
 discover the bundled patched runtime. For another installation, set it to a
 runtime root with `bin` and `share/vice`, or a VICE distribution directory with
 the emulators and machine data such as `C64`. The selected profile chooses its
@@ -82,6 +82,9 @@ these settings. See [Debugger User Guide](debugger-user-guide.md).
   for stock VICE. A version number alone does not prove embedded support.
 - **Native executable cannot load:** reinstall a complete package/runtime for
   your OS/architecture; include the error and selected paths in a bug report.
+- **Native device/error message:** inspect Output/VICE. Embedded errors no longer
+  wait in a hidden SDL dialog; VICE can disable an unavailable sound device while
+  continuing emulation. Correct the host audio setup and restart to retry sound.
 - **Tools ready but Machine stays empty:** stop and restart the machine, inspect
   Output/VICE and report the selected profile/model and steps leading to the
   failure. The setup probe does not validate live frames or all ROM/model files.

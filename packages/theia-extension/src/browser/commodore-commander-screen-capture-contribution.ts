@@ -17,9 +17,9 @@ import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-mana
 import type { DebugConfigurationSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
 import type { DebugConfiguration } from '@theia/debug/lib/common/debug-common';
 import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
-import { FileUri } from '@theia/core/lib/common/file-uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import URI from '@theia/core/lib/common/uri';
+import { toScreenCaptureUri as toUri } from '../common/screen-capture-uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { parse as parseJsonC } from 'jsonc-parser';
@@ -614,13 +614,6 @@ export class CommodoreCommanderScreenCaptureContribution
     await revealWidgetForScreenCapture(this.shell, widget.id);
     return true;
   }
-}
-
-function toUri(value: string): URI {
-  if (/^[a-z][a-z0-9+.-]*:/iu.test(value)) {
-    return new URI(value);
-  }
-  return FileUri.create(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
