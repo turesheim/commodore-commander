@@ -6,7 +6,7 @@ function bundledViceLayout(platform = process.platform, arch = process.arch) {
   if (platformKey === 'darwin-arm64') {
     return { platformKey, packagePath: path.join(platformKey, 'VICE.app'), resourcesPath: path.join('Contents', 'Resources') };
   }
-  if (platformKey === 'linux-x64') {
+  if (platformKey === 'linux-x64' || platformKey === 'win32-x64') {
     return { platformKey, packagePath: platformKey, resourcesPath: '' };
   }
   return undefined;

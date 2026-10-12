@@ -117,7 +117,8 @@ npm test --workspace @commodore-commander/theia-extension
 ```
 
 The extension build runs `sync:vice-assets`; on macOS Apple Silicon and Linux x64 it can
-trigger a patched VICE build with bundled native dependencies. For tests that deliberately use an external VICE,
+trigger a patched VICE build with bundled native dependencies. Windows x64 uses
+a runtime built beforehand in MSYS2 MINGW64; sync fails if it is missing/stale. For tests that deliberately use an external VICE,
 set `COMMODORE_COMMANDER_SKIP_VICE_ASSETS=1`.
 
 Electron packaging and signing are owned by `applications/electron` and the

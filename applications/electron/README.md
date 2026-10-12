@@ -21,7 +21,9 @@ npm run theia:start
 
 `theia:build` compiles the supporting packages, rebuilds Electron native
 modules, downloads the configured local plugins, and bundles the application.
-The extension build can build/sync patched VICE on macOS Apple Silicon and Linux x64; see
+The extension build can build/sync patched VICE on macOS Apple Silicon and Linux x64.
+On Windows, build it first in MSYS2 MINGW64; asset sync then copies the staged
+runtime. See
 [`tools/vice-embed`](../../tools/vice-embed/README.md) for prerequisites and
 options for using an external runtime.
 
@@ -36,8 +38,7 @@ the branch commit matches its last successful run; manual dispatch can set
 `force` to rebuild it. Package smoke tests run before upload. Packages include
 app assets, bundled documentation, Kick Assembler, SIDScore 0.8.0 (Java 21+),
 and applicable VICE assets. The patched embedded VICE build is currently
-supplied for macOS Apple Silicon and Linux x64 (Ubuntu 24.04 baseline). Windows
-embedded streaming remains required for 1.0 and is not bundled yet. Stock external
+supplied for macOS Apple Silicon, Windows x64 and Linux x64 (Ubuntu 24.04 baseline). Stock external
 VICE is an optional compatibility mode.
 
 The Linux archive includes `LINUX-SETUP.txt`: configure its Electron
@@ -47,7 +48,7 @@ without `--no-sandbox`; Ubuntu 24.04 restricts unprivileged user namespaces.
 
 Package tests compile a small program with the bundled Kick Assembler and verify
 the emitted PRG bytes, then exercise SIDScore startup and its SRAP/MIDI protocol.
-On macOS Apple Silicon and Linux x64 they also start bundled VICE, require visible native
+On macOS Apple Silicon, Windows x64 and Linux x64 they also start bundled VICE, require visible native
 frames, and launch the packaged Electron app in an isolated workspace/profile.
 The UI test opens an assembly source and checks Machine canvas pixels through
 two power-on/off cycles. It types `POKE53280,2` through Electron keyboard input
@@ -66,8 +67,10 @@ npm run test:product-package -- --package-dir "dist/nightly/Commodore Commander.
 
 The VICE dylib dependency graph is bundled without requiring Homebrew on the
 user's machine. Linux bundles linked non-glibc libraries with relative ELF search
-paths and runs the product UI test under Xvfb. Windows packaged UI, fresh-host
-acceptance and minimum OS coverage remain release work. External VICE stays in
+paths and runs the product UI test under Xvfb. Windows builds in MSYS2 MINGW64,
+bundles the transitive PE DLL imports beside the executables, then tests the
+product with the build prefix removed and MinGW/MSYS2 removed from PATH.
+Fresh-host acceptance and minimum OS coverage remain release work. External VICE stays in
 separate development tests.
 
 macOS bundles are ad-hoc signed by default. Developer ID signing is supported;

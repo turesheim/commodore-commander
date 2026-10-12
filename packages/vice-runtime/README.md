@@ -32,7 +32,10 @@ this package provides the mechanism. Binary-monitor protocol and DAP events
 remain in `packages/debug-adapter`.
 
 `ViceStandaloneProcess` owns one standalone child process and uses the same
-command-fd selection as the debug launch helper. It accepts already-resolved
+command-fd selection as the debug launch helper: fd 3 on macOS/Linux and
+standard input (fd 0) on Windows. The native Windows reader polls the inherited
+Win32 pipe without blocking the SDL loop; it does not treat extra Node pipes as
+CRT descriptors. It accepts already-resolved
 commands/arguments, inherits the environment, and does not require a PRG or
 allocate a monitor port. Replacing/stopping a process releases ownership and
 suppresses its later output and exit callbacks. Explicit stop retains

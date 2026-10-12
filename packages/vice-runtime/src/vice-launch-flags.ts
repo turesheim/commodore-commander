@@ -1,7 +1,8 @@
 export const VICE_EMBED_FLAG = '-cc-embed';
 export const VICE_EMBED_FRAME_PORT_FLAG = '-cc-frame-port';
 export const VICE_EMBED_COMMAND_FD_FLAG = '-cc-command-fd';
-export const VICE_EMBED_COMMAND_FD = 3;
+// Windows inherits stdin as a Win32 pipe; extra Node descriptors are not CRT fds.
+export const VICE_EMBED_COMMAND_FD = process.platform === 'win32' ? 0 : 3;
 export const VICE_EMBED_MOUSE_GRAB_FLAG = '-mouse';
 export const VICE_EMBED_KEYMAP_INDEX_FLAG = '-keymap';
 export const VICE_EMBED_SYMBOLIC_KEYMAP_INDEX = '0';

@@ -9,7 +9,7 @@ import { promisify } from 'node:util';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 export async function smokeTestVice(resourcesPath, timeoutMs = 15000) {
-  const executable = path.join(resourcesPath, 'bin', 'x64sc');
+  const executable = path.join(resourcesPath, 'bin', process.platform === 'win32' ? 'x64sc.exe' : 'x64sc');
   const env = Object.fromEntries(Object.entries(process.env)
     .filter(([name]) => !name.startsWith('DYLD_') && name !== 'LD_LIBRARY_PATH' && name !== 'LD_PRELOAD'));
   // Exercise early path discovery too; it precedes normal argv initialization.
@@ -60,12 +60,13 @@ export async function smokeTestVice(resourcesPath, timeoutMs = 15000) {
     const port = await transport.start();
     child = spawn(executable, [
       '-default', '-cc-embed', '-cc-frame-port', String(port),
-      '-cc-command-fd', '3'
+      '-cc-command-fd', process.platform === 'win32' ? '0' : '3'
     ], {
       cwd: workingDirectory,
       // Do not inherit user VICE configuration or dynamic-loader overrides.
       env,
-      stdio: ['ignore', 'pipe', 'pipe', 'pipe']
+      windowsHide: true,
+      stdio: process.platform === 'win32' ? ['pipe', 'pipe', 'pipe'] : ['ignore', 'pipe', 'pipe', 'pipe']
     });
     const appendLog = chunk => { log = (log + chunk.toString()).slice(-8000); };
     child.stdout.on('data', appendLog);

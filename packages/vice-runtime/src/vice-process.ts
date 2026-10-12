@@ -92,8 +92,9 @@ export async function launchViceProcess(
       ...process.env,
       VICE_INITIAL_CWD: options.cwd
     },
+    windowsHide: true,
     stdio: options.enableEmbed
-      ? ['pipe', 'pipe', 'pipe', 'pipe']
+      ? (process.platform === 'win32' ? ['pipe', 'pipe', 'pipe'] : ['pipe', 'pipe', 'pipe', 'pipe'])
       : ['ignore', 'pipe', 'pipe']
   });
 

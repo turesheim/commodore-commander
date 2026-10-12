@@ -110,6 +110,25 @@ jobs:
             & $vswhere -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
           }
 
+      - name: Set up Windows VICE build toolchain
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          path-type: inherit
+          install: >-
+            make autoconf automake libtool bison flex texinfo dos2unix subversion patch icoutils
+            mingw-w64-x86_64-gcc mingw-w64-x86_64-pkgconf mingw-w64-x86_64-xa65
+            mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL2_image mingw-w64-x86_64-curl
+
+      - name: Build Windows patched VICE and test native helpers
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          node --test tools/vice-embed/*.test.mjs
+          make -C tools/vice-embed PLATFORM=win32-x64 package
+
       - name: Install Linux build packages
         if: runner.os == 'Linux'
         run: |
@@ -134,6 +153,7 @@ jobs:
           brew install autoconf automake dos2unix pkg-config sdl2_image subversion xa
 
       - name: Test native packaging helpers
+        if: runner.os != 'Windows'
         run: node --test tools/vice-embed/*.test.mjs
 
       - name: Prepare @vscode/ripgrep download cache
@@ -259,6 +279,11 @@ jobs:
             sudo chown root:root "$package_dir/chrome-sandbox"
             sudo chmod 4755 "$package_dir/chrome-sandbox"
             XVFB_SCREEN=1600x1200x24 bash tools/run-with-xvfb.sh npm run test:product-package -- --package-dir "$package_dir"
+          elif [ "${{ runner.os }}" = "Windows" ]; then
+            mv tools/vice-embed/build/win32-x64/prefix "$RUNNER_TEMP/vice-build-prefix"
+            # A shipped product must run without MinGW/MSYS2 DLLs in PATH.
+            export PATH="$(printf '%s' "$PATH" | tr ':' '\n' | sed '/[Mm][Ss][Yy][Ss]/d; /[Mm][Ii][Nn][Gg][Ww]/d' | paste -sd ':' -)"
+            npm run test:product-package -- --package-dir "$package_dir"
           else
             npm run test:product-package -- --package-dir "$package_dir"
           fi
@@ -275,7 +300,7 @@ jobs:
           fi
 
       - name: Upload package test diagnostics
-        if: always() && runner.os != 'Windows'
+        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: product-package-tests-${{ matrix.platform }}-${{ runner.arch }}
