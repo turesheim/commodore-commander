@@ -12,7 +12,11 @@ SOURCE_DIR ?= $(BUILD_DIR)/vice-$(VICE_VERSION)
 PREFIX_DIR ?= $(BUILD_DIR)/prefix
 DIST_ROOT ?= $(CURDIR)/dist
 JOBS ?= $(shell sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
+ifeq ($(PLATFORM),win32-x64)
+VICE_CONFIGURE_FLAGS ?= --enable-sdl2ui --disable-pdf-docs --disable-html-docs --disable-arch
+else
 VICE_CONFIGURE_FLAGS ?= --enable-sdl2ui
+endif
 VICE_CODESIGN_IDENTITY ?= -
 
 REPO_ROOT := $(abspath $(CURDIR)/../..)
@@ -36,7 +40,6 @@ PACKAGE_STAMP := $(APP_RESOURCES_DIR)/.commodore-commander-patched-vice
 VICE_EXE := x64sc
 ifeq ($(PLATFORM),win32-x64)
 VICE_EXE := x64sc.exe
-VICE_CONFIGURE_FLAGS := --enable-sdl2ui --disable-pdf-docs --disable-html-docs
 endif
 STAGE_STAMP := $(APP_RESOURCES_DIR)/.commodore-commander-staged-vice
 
@@ -120,6 +123,9 @@ $(STAGE_STAMP): $(INSTALL_STAMP) Makefile bundle-dylibs.mjs bundle-linux-libs.mj
 	 cp -R "$(PREFIX_DIR)/bin" "$(APP_RESOURCES_DIR)/"
 	 cp -R "$(PREFIX_DIR)/share" "$(APP_RESOURCES_DIR)/"
 	 if [ -d "$(PREFIX_DIR)/lib" ]; then cp -R "$(PREFIX_DIR)/lib" "$(APP_RESOURCES_DIR)/"; fi
+ifeq ($(PLATFORM),win32-x64)
+	 cp "$(PREFIX_DIR)/COPYING" "$(PREFIX_DIR)/README" "$(APP_RESOURCES_DIR)/"
+endif
 ifeq ($(PLATFORM),darwin-arm64)
 	 mkdir -p "$(APP_MACOS_DIR)"
 	 printf '%s\n' \

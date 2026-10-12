@@ -45,7 +45,8 @@ node --test tools/vice-embed/*.test.mjs
 Windows packaging follows each executable/DLL's PE imports with MinGW objdump,
 copies the transitive MinGW DLL graph into `bin`, and fails on unresolved imports
 or MSYS/Cygwin dependencies. Windows system DLLs and API-set contracts stay with
-the host. The product tests run outside the build shell after removing MinGW/MSYS2
+the host. The Windows default disables build-host CPU tuning (`--disable-arch`)
+and includes upstream README/license text. The product tests run outside the build shell after removing MinGW/MSYS2
 from PATH and moving the build prefix away. The build runner is Windows Server
 2022 x64; supported desktop/minimum Windows versions still need release verification.
 
