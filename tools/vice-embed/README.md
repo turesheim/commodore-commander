@@ -4,75 +4,74 @@ This directory contains the Commodore Commander embedded-display patch and build
 flow for VICE. The patch targets upstream VICE 3.10.0, tagged as `v3.10` in the
 SourceForge repository.
 
-Build and stage the patched macOS Apple Silicon app bundle with:
+Build natively on macOS Apple Silicon or Linux x64:
 
 ```sh
 make -C tools/vice-embed package
+make -C tools/vice-embed assets  # also copy into the extension assets
 ```
 
-On macOS, the build expects Xcode command line tools plus the normal VICE SDL2
-build prerequisites. With Homebrew, the missing pieces are typically:
+The Makefile exports VICE `v3.10` from SourceForge SVN, applies our display/input
+patch and builds the SDL2 UI. Build outputs are isolated by platform. The Theia
+extension build automatically builds a missing/stale runtime and copies it into
+its assets. `npm run vice:package` and `npm run vice:assets` are equivalent shortcuts.
+
+macOS requires Xcode command line tools and:
 
 ```sh
 brew install autoconf automake dos2unix pkg-config sdl2_image subversion xa
 ```
 
-The staged runtime is written to:
-
-```text
-tools/vice-embed/dist/darwin-arm64/VICE.app
-```
-
-Copy that runtime into the Theia extension assets with:
+Ubuntu 24.04 x64 is the Linux build/test baseline:
 
 ```sh
-make -C tools/vice-embed assets
+sudo apt-get install build-essential autoconf automake bison flex texinfo dos2unix \
+  pkg-config libsdl2-dev libsdl2-image-dev libcurl4-openssl-dev \
+  libasound2-dev libpulse-dev zlib1g-dev subversion xa65 patchelf
 ```
 
-The equivalent npm shortcuts are:
+| Platform | Staged runtime | Resource root |
+| --- | --- | --- |
+| macOS Apple Silicon | `dist/darwin-arm64/VICE.app` | `Contents/Resources` inside the app |
+| Linux x64 | `dist/linux-x64` | The runtime directory itself |
 
-```sh
-npm run vice:package
-npm run vice:assets
-```
+Both resource roots contain `bin`, `lib` and `share/vice`. macOS packaging follows
+the non-system dylib graph, including `@rpath` and sdl2-compat's dynamically loaded
+SDL3, removes build-machine paths and signs the app. Linux packaging follows ELF
+linked dependencies, copies non-glibc libraries and sets relative `$ORIGIN`
+search paths on executables and libraries. Missing or unbundled linked dependencies
+fail packaging. The host supplies glibc/loader and SDL's dynamically loaded desktop,
+graphics and audio drivers; this does not promise portability to musl or older glibc.
 
-The Theia extension build also checks this staged runtime. If
-`tools/vice-embed/dist/darwin-arm64/VICE.app` is missing, or older than the
-VICE patch or Makefile, `packages/theia-extension/scripts/sync-vice-assets.mjs`
-automatically runs:
-
-```sh
-make -C tools/vice-embed package
-```
-
-before copying the runtime into `packages/theia-extension/assets`.
-
-The Makefile exports VICE `v3.10` from SourceForge SVN, applies
-`vice-3.10.0-commodore-embed.patch`, runs VICE autotools/configure, builds,
-installs to a local prefix and stages a `VICE.app` layout. The Node.js
-`bundle-dylibs.mjs` script follows the complete non-system dependency graph,
-including `@rpath` references and sdl2-compat's dynamically loaded SDL3. It
-rewrites dependencies to bundled libraries and removes build-machine search
-paths. Missing dependencies fail packaging. The bundle is
-then ad-hoc signed and checked for the embedded `-cc-embed` transport flag.
+The Linux SDL2 runtime discovers ROMs relative to its `bin` directory, independent
+of the configured build prefix. Product tests move that prefix away and start the
+packaged emulator without a `-directory` override.
+The Linux nightly runner is pinned to Ubuntu 24.04. Minimum OS and fresh-host
+acceptance for 1.0 remain separate release work; Windows streaming is not ported yet.
 
 The macOS path-discovery patch supplies `proc_pidpath` with its required buffer
 size, including during early startup before VICE has saved `argv[0]`.
-After building the shared runtime TypeScript package, check native startup and
-frame delivery with:
+After building the shared runtime package, check startup and live frames:
 
 ```sh
 npm run build --workspace @commodore-commander/vice-runtime
 node tools/smoke-test-vice.mjs tools/vice-embed/dist/darwin-arm64/VICE.app/Contents/Resources
+# Linux headless testing requires Xvfb:
+bash tools/run-with-xvfb.sh node tools/smoke-test-vice.mjs tools/vice-embed/dist/linux-x64
 ```
 
-The product package smoke test runs this check on the bundled macOS Apple
-Silicon emulator and requires continuing frames with visible content. It also
-launches the packaged Electron app and verifies Machine painting and BASIC
-keyboard execution through two power cycles; see the
+Nightly package tests on macOS Apple Silicon and Linux x64 require continuing
+visible frames with normal sound initialization, then launch the packaged Electron
+app and verify BASIC `READY.`, keyboard execution, power off and restart. Headless
+Linux runs require a sound server; the nightly runner supplies a PulseAudio null
+sink and Xvfb with software rendering. Physical audio checks remain manual.
+Logs/screenshots survive failures; see the
 [product test instructions](../../applications/electron/README.md).
-A successful file copy or signature check alone does not establish runtime
-behavior.
+`node --test tools/vice-embed/*.test.mjs` additionally verifies ELF relocation on
+Linux after deleting the original build libraries and compiles the actual native
+frame writer to test partial sends, dropped newer frames and disconnect cleanup
+with a deliberately small nonblocking socket buffer. A copy or protocol hello alone
+does not establish live runtime behavior.
 
 The patch adds a small SDL-only transport enabled with `-cc-embed`. The patched
 emulator still runs as an external process, but its SDL window is hidden while
@@ -113,6 +112,9 @@ The current patch is intentionally narrow:
   frame emission to a minimum interval of 16 ms, which is fast enough for 50 Hz
   display while still avoiding unbounded frame traffic during warp or
   over-rendering.
+- The nonblocking socket sender owns at most one pending frame. Partial sends
+  resume on SDL/input polls; newer frames are dropped until that record drains.
+  Socket backpressure must not truncate a CCB1 record or block input handling.
 - Commodore Commander default launch arguments disable VICE render filters and
   request nearest GL filtering for the active video chip. The browser canvas is
   responsible for presentation scaling; SDL fullscreen custom resolution is not
@@ -139,7 +141,8 @@ before `npm run theia:build` so the packaged app uses the patched runtime.
 
 For CI lanes that deliberately use an external system VICE instead of a bundled
 runtime, set `COMMODORE_COMMANDER_SKIP_VICE_ASSETS=1` during the Theia build.
-For local experiments with a separately built app bundle, set
-`COMMODORE_COMMANDER_PATCHED_VICE_APP=/path/to/VICE.app`.
+For a separately built runtime, set
+`COMMODORE_COMMANDER_PATCHED_VICE_RUNTIME=/path/to/runtime` (the app root on macOS).
+`COMMODORE_COMMANDER_PATCHED_VICE_APP` remains a compatible macOS alias.
 To copy an existing staged runtime without triggering the automatic stale check,
 set `COMMODORE_COMMANDER_SKIP_VICE_AUTO_REBUILD=1`.

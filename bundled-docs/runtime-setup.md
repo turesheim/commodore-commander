@@ -13,7 +13,7 @@ and `launch.json` can override the defaults checked here.
 | --- | --- | --- |
 | macOS Apple Silicon | Bundled patched VICE 3.10.0 | Configure a compatible VICE installation |
 | Windows x64 | Matching patched runtime not bundled yet; required for 1.0 | Optional compatibility mode; configure stock VICE |
-| Linux x64 | Matching patched runtime not bundled yet; required for 1.0 | Optional compatibility mode; configure stock VICE |
+| Linux x64 | Bundled patched VICE 3.10.0; Ubuntu 24.04 build/test baseline | Optional compatibility mode; configure stock VICE |
 | macOS Intel / other architectures | No nightly package currently provided | No release support claim yet |
 
 1.0 requires patched VICE with display streaming on all supported platforms.
@@ -21,6 +21,21 @@ This table describes current packages, not a completed acceptance matrix.
 Minimum OS versions and clean-host support still need release verification.
 Machine profiles provide reference/configuration data; their presence in the
 selector does not mean every model has passed packaged acceptance tests.
+
+## Linux installation
+
+Extract the Linux archive to a permanent location. From its directory, configure
+the bundled Electron sandbox helper, then start the IDE as your normal user:
+
+```sh
+sudo chown root:root ./chrome-sandbox
+sudo chmod 4755 ./chrome-sandbox
+./commodore-commander
+```
+
+Repeat the helper setup after replacing the package. The installation filesystem
+must permit setuid execution. `LINUX-SETUP.txt` beside the executable gives these
+instructions before the IDE can open; Java and VICE setup follow below.
 
 ## Java
 
@@ -41,7 +56,7 @@ Kick Assembler build definitions may also specify `javaRuntime` and `javaArgs`;
 
 ## VICE
 
-On macOS Apple Silicon, leave `commodoreCommander.VICE.runtimePath` empty to
+On macOS Apple Silicon and Linux x64, leave `commodoreCommander.VICE.runtimePath` empty to
 discover the bundled patched runtime. For another installation, set it to a
 runtime root with `bin` and `share/vice`, or a VICE distribution directory with
 the emulators and machine data such as `C64`. The selected profile chooses its

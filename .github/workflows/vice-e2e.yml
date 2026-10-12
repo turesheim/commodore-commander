@@ -66,7 +66,10 @@ jobs:
           sudo apt-get install -y software-properties-common
           sudo add-apt-repository -y multiverse
           sudo apt-get update
-          sudo apt-get install -y dbus-x11 subversion vice xvfb
+          sudo apt-get install -y build-essential dbus-x11 patchelf subversion vice xvfb
+
+      - name: Test native packaging helpers
+        run: node --test tools/vice-embed/*.test.mjs
 
       - name: Resolve VICE resources
         run: |
@@ -179,6 +182,9 @@ jobs:
           test -f "$VICE_RESOURCES_PATH/C64/kernal-901227-03.bin"
           test -x "$VICE_EXECUTABLE"
           file "$VICE_EXECUTABLE"
+
+      - name: Run Theia extension unit tests
+        run: node --test packages/theia-extension/lib/test/*.test.js
 
       - name: Run Theia debugger UI e2e tests
         run: bash tools/run-theia-ui-e2e-linux.sh

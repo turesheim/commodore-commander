@@ -25,6 +25,9 @@ Theia `vice-runtime-resolver.ts` wrapper.
   `ViceStandaloneProcess`, stdout decoding and the native frame listener.
   Explicit stop sends SIGTERM and releases ownership immediately; late child
   callbacks cannot affect a replacement session.
+  Active command-pipe failure stops/releases that child and reports an error;
+  pipe errors from already released children are ignored, including queued quit
+  writes interrupted by stop.
 - Debug/no-debug: `ViceDebugSession` owns the launched process. For embedded
   launches, Theia reserves a frame port before starting the adapter. Repeated
   resolution reuses an unconnected reservation; an already connected emulator
@@ -58,6 +61,9 @@ VICE sends complete RGBA8888 SDL surfaces without downsampling or compression.
 The native patch limits ordinary frame emission to a minimum 16 ms interval;
 frame dimensions follow the emitted surface. Browser presentation handles
 scaling. Debug frames bypass DAP custom events and adapter stdout forwarding.
+The native nonblocking sender retains at most one partially sent record, resumes
+it on SDL/input polls, and drops newer frames until it drains. A full socket
+buffer does not close the connection or block input; transport errors still do.
 
 `ViceFrameTransport` owns the loopback listener and record validation/reassembly.
 `CommodoreViceFrameBridge` stays in Theia and owns WebSocket endpoint/origin
@@ -113,17 +119,24 @@ and offline setup guide. Explicit invalid runtime paths fail instead of silently
 mixing the chosen executable with another installation's resources.
 
 1.0 requires patched VICE display/input transport on every supported platform;
-stock external VICE remains an optional compatibility mode. Linux/Windows
-payloads and clean-host/minimum-OS acceptance remain unfinished.
+stock external VICE remains an optional compatibility mode. Windows
+payloads and clean-host/minimum-OS acceptance remain unfinished. Linux x64 uses
+the same POSIX frame socket/command fd as macOS and is staged as `bin/lib/share/vice`;
+its linked non-glibc libraries use relative ELF RUNPATHs.
+Linux SDL2 ROM discovery also uses the runtime's relative `bin/../share/vice`
+layout; the package test removes access to the configured build prefix and uses
+no ROM-directory override.
+Ubuntu 24.04 is the pinned Linux build/test baseline. SDL desktop/graphics/audio
+drivers remain host-owned.
 
 ## Verification and remaining work
 
 Runtime and adapter tests cover protocol, process, framing and monitor behavior.
 Real DAP and Electron UI lanes are described in the
-[VICE E2E rig](vice-e2e-test-rig.md). Linux CI uses stock external VICE; embedded
+[VICE E2E rig](vice-e2e-test-rig.md). The debugger development lane uses stock external VICE; embedded
 transport cases need the patched runtime and are skipped when unsupported.
 
-macOS Apple Silicon product smoke tests check the bundled VICE's early startup
+macOS Apple Silicon and Linux x64 product smoke tests check the bundled VICE's early startup
 and require continuing CCB1 frames with visible content over loopback. Native
 packaging includes the complete non-system dylib dependency graph, including
 `@rpath` references and sdl2-compat's dynamically loaded SDL3, and
@@ -131,20 +144,21 @@ removes build-machine search paths so local Homebrew libraries cannot mask
 missing payloads. The same package check launches the packaged Electron app with
 isolated user data and verifies visible pixels in the Machine canvas. It matches
 BASIC `READY.` glyphs against the bundled C64 character ROM before sending
-`POKE 53280,2` through Electron keyboard events and requiring a border-color
-change, then powers off, replays a previously sent frame to verify the UI remains
+`POKE53280,2` through Electron keyboard events, waiting for each prefix to echo as ROM glyphs
+before releasing its key, and requiring a border-color change after Return, then powers off, replays a previously sent frame to verify the UI remains
 off, and repeats after startup. Readiness uses the default
 unfiltered C64 surface; a fixed delay or a power-on RAM pattern does not qualify.
 This covers bundled discovery,
 backend/browser transport, canvas painting and BASIC input/execution, rather than
 accepting FPS or an existing screenshot as success. Nightly logs/screenshots
 survive failed checks.
-Package-level UI verification currently covers macOS Apple Silicon only; debug
+Linux packaged UI runs under Xvfb with software rendering. Package-level UI
+verification covers macOS Apple Silicon and Linux x64; debug
 stepping and richer UI flows remain in the separate Electron/DAP E2E lanes.
 
 Runtime extraction is partial. Theia still owns launch/session policy, machine
 selection, JSON validation, browser transport and RPC cleanup; the adapter
 retains its DAP-specific binary-monitor connection. Remaining product gaps
-include joystick/resize native hooks, bundled Linux/Windows/Intel macOS embedded
+include joystick/resize native hooks, bundled Windows/Intel macOS embedded
 payloads, cycle-accurate execution provenance, richer symbol presentation and
 configured-run build policies. See [the implementation plan](plan.md).

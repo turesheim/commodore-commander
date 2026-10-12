@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { packagedViceResources } from './vice-embed/runtime-layout.cjs';
 
 // Launch the packaged application, with its own backend/frontend and bundled
 // runtime discovery. A development Electron entry point would miss packaging bugs.
@@ -14,12 +15,20 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
   await writeFile(sourcePath, '#import "lib/shared.asm"\n*=$1000\nStart: rts\n');
   await writeFile(path.join(workspace, 'lib', 'shared.asm'), '.label screen = $0400\n');
   const configPath = path.join(testRoot, 'config.json');
-  const chargen = await readFile(path.join(layout.appResourcesDir,
-    'lib', 'backend', 'assets', 'vice', 'darwin-arm64', 'VICE.app',
-    'Contents', 'Resources', 'share', 'vice', 'C64', 'chargen-901225-01.bin'));
+  const chargen = await readFile(path.join(packagedViceResources(layout.appResourcesDir), 'share', 'vice', 'C64', 'chargen-901225-01.bin'));
   // C64 screen codes for READY.; derive the expected pixels from the packaged ROM.
   const readyScreenCodes = [18, 5, 1, 4, 25, 46];
   const readyRows = Array.from({ length: 8 }, (_, row) => readyScreenCodes.flatMap(code =>
+    Array.from({ length: 8 }, (_, col) => (chargen[code * 8 + row] >> (7 - col)) & 1)
+  ));
+  // Every echoed prefix must change pixels; a space is indistinguishable from
+  // an unfilled cell until the cursor moves. BASIC accepts this without spaces.
+  const command = 'poke53280,2';
+  const commandScreenCodes = [...command.toUpperCase()].map(char => {
+    const ascii = char.charCodeAt(0);
+    return ascii >= 64 && ascii < 96 ? ascii - 64 : ascii;
+  });
+  const echoRows = Array.from({ length: 8 }, (_, row) => commandScreenCodes.flatMap(code =>
     Array.from({ length: 8 }, (_, col) => (chargen[code * 8 + row] >> (7 - col)) & 1)
   ));
   const machineCaptures = [1, 2].map(cycle => ({
@@ -31,7 +40,7 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
       { type: 'waitForCanvasContent', selector: '.cc-machine-vice-screen canvas', timeoutMs: 20000 },
       // A RAM pattern proves painting, but not that BASIC accepts input yet.
       { type: 'waitForCanvasGlyphs', selector: '.cc-machine-vice-screen canvas', rows: readyRows, timeoutMs: 20000 },
-      { type: 'assertCanvasKeyboardResponse', selector: '.cc-machine-vice-screen canvas', text: 'poke 53280,2', timeoutMs: 10000 }
+      { type: 'assertCanvasKeyboardResponse', selector: '.cc-machine-vice-screen canvas', text: command, echoRows, timeoutMs: 10000 }
     ],
     afterSteps: [
       { type: 'powerOffMachine', replayLateFrame: true },
@@ -67,7 +76,7 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
   }
   await rm(path.join(outputDir, 'failure.png'), { force: true });
   const env = Object.fromEntries(Object.entries(process.env).filter(([name]) =>
-    name !== 'ELECTRON_RUN_AS_NODE' && !name.startsWith('DYLD_') &&
+    name !== 'ELECTRON_RUN_AS_NODE' && !name.startsWith('DYLD_') && name !== 'LD_LIBRARY_PATH' && name !== 'LD_PRELOAD' &&
     !name.startsWith('VICE_') && !name.startsWith('THEIA_UI_E2E_VICE_')
   ));
   env.COMMODORE_COMMANDER_SCREEN_CAPTURE_CONFIG = configPath;

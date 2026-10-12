@@ -44,6 +44,9 @@ offset  size  value
 
 The native patch emits complete SDL `rgba8888` frames without downsampling or
 compression; the browser canvas is responsible for presentation scaling.
+On socket backpressure, the sender retains one complete record and resumes its
+unsent bytes on later SDL/input polls. Newer frames are dropped while it drains;
+record bytes must never interleave. The CCB1 wire format is unchanged.
 Commodore Commander default launches also disable VICE render filters and
 request nearest GL filtering for the active video chip. SDL fullscreen custom
 resolution is not used by the embedded view. The UI uses pixelated browser

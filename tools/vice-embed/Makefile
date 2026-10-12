@@ -6,11 +6,11 @@ VICE_TAG := v3.10
 VICE_SVN_URL := https://svn.code.sf.net/p/vice-emu/code/tags/$(VICE_TAG)/vice
 PATCH_FILE := $(CURDIR)/vice-$(VICE_VERSION)-commodore-embed.patch
 
-BUILD_DIR ?= $(CURDIR)/build
+PLATFORM ?= $(shell node -p "process.platform + '-' + process.arch")
+BUILD_DIR ?= $(CURDIR)/build/$(PLATFORM)
 SOURCE_DIR ?= $(BUILD_DIR)/vice-$(VICE_VERSION)
 PREFIX_DIR ?= $(BUILD_DIR)/prefix
 DIST_ROOT ?= $(CURDIR)/dist
-PLATFORM ?= darwin-arm64
 JOBS ?= $(shell sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo 4)
 VICE_CONFIGURE_FLAGS ?= --enable-sdl2ui
 VICE_CODESIGN_IDENTITY ?= -
@@ -21,12 +21,19 @@ PATCH_STAMP := $(BUILD_DIR)/.patched-$(VICE_VERSION)
 CONFIGURE_STAMP := $(BUILD_DIR)/.configured-$(VICE_VERSION)
 INSTALL_STAMP := $(BUILD_DIR)/.installed-$(VICE_VERSION)
 
+ifeq ($(PLATFORM),darwin-arm64)
 APP_DIR := $(DIST_ROOT)/$(PLATFORM)/VICE.app
 APP_CONTENTS_DIR := $(APP_DIR)/Contents
 APP_RESOURCES_DIR := $(APP_CONTENTS_DIR)/Resources
 APP_MACOS_DIR := $(APP_CONTENTS_DIR)/MacOS
+ASSETS_APP_DIR := $(REPO_ROOT)/packages/theia-extension/assets/vice/$(PLATFORM)/VICE.app
+else
+APP_DIR := $(DIST_ROOT)/$(PLATFORM)
+APP_RESOURCES_DIR := $(APP_DIR)
+ASSETS_APP_DIR := $(REPO_ROOT)/packages/theia-extension/assets/vice/$(PLATFORM)
+endif
 PACKAGE_STAMP := $(APP_RESOURCES_DIR)/.commodore-commander-patched-vice
-ASSETS_APP_DIR := $(REPO_ROOT)/packages/theia-extension/assets/vice/darwin-arm64/VICE.app
+STAGE_STAMP := $(APP_RESOURCES_DIR)/.commodore-commander-staged-vice
 
 .PHONY: help package assets source patch configure build install stage bundle-dylibs sign verify clean distclean check-platform check-prereqs
 
@@ -43,7 +50,7 @@ help:
 	 @echo "  VICE_CONFIGURE_FLAGS=$(VICE_CONFIGURE_FLAGS)"
 	 @echo "  VICE_CODESIGN_IDENTITY=$(VICE_CODESIGN_IDENTITY)"
 
-package: check-platform check-prereqs $(PACKAGE_STAMP) bundle-dylibs sign verify
+package: check-platform check-prereqs verify
 
 assets: package
 	rm -rf "$(ASSETS_APP_DIR)"
@@ -63,7 +70,7 @@ build: configure
 
 install: $(INSTALL_STAMP)
 
-stage: $(PACKAGE_STAMP)
+stage: $(STAGE_STAMP)
 
 $(CHECKOUT_STAMP):
 	 mkdir -p "$(BUILD_DIR)"
@@ -94,12 +101,14 @@ $(INSTALL_STAMP): $(CONFIGURE_STAMP) Makefile
 	 $(MAKE) -C "$(SOURCE_DIR)" install
 	 touch "$@"
 
-$(PACKAGE_STAMP): $(INSTALL_STAMP) Makefile bundle-dylibs.mjs
+$(STAGE_STAMP): $(INSTALL_STAMP) Makefile bundle-dylibs.mjs bundle-linux-libs.mjs
 	 rm -rf "$(APP_DIR)"
-	 mkdir -p "$(APP_RESOURCES_DIR)" "$(APP_MACOS_DIR)"
+	 mkdir -p "$(APP_RESOURCES_DIR)"
 	 cp -R "$(PREFIX_DIR)/bin" "$(APP_RESOURCES_DIR)/"
 	 cp -R "$(PREFIX_DIR)/share" "$(APP_RESOURCES_DIR)/"
 	 if [ -d "$(PREFIX_DIR)/lib" ]; then cp -R "$(PREFIX_DIR)/lib" "$(APP_RESOURCES_DIR)/"; fi
+ifeq ($(PLATFORM),darwin-arm64)
+	 mkdir -p "$(APP_MACOS_DIR)"
 	 printf '%s\n' \
 	   '<?xml version="1.0" encoding="UTF-8"?>' \
 	   '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
@@ -126,12 +135,18 @@ $(PACKAGE_STAMP): $(INSTALL_STAMP) Makefile bundle-dylibs.mjs
 	   'exec "$$resources_dir/bin/x64sc" "$$@"' \
 	   > "$(APP_MACOS_DIR)/VICE"
 	 chmod +x "$(APP_MACOS_DIR)/VICE"
+endif
 	 touch "$@"
 
-bundle-dylibs: $(PACKAGE_STAMP)
+bundle-dylibs: $(STAGE_STAMP)
+ifeq ($(PLATFORM),darwin-arm64)
 	node "$(CURDIR)/bundle-dylibs.mjs" "$(APP_RESOURCES_DIR)"
+else
+	node "$(CURDIR)/bundle-linux-libs.mjs" "$(APP_RESOURCES_DIR)"
+endif
 
-sign: $(PACKAGE_STAMP)
+sign: bundle-dylibs
+ifeq ($(PLATFORM),darwin-arm64)
 	 if command -v codesign >/dev/null 2>&1; then \
 	   xattr -cr "$(APP_DIR)" 2>/dev/null || true; \
 	   find "$(APP_RESOURCES_DIR)/bin" "$(APP_RESOURCES_DIR)/lib" -type f 2>/dev/null | while IFS= read -r file; do \
@@ -141,20 +156,29 @@ sign: $(PACKAGE_STAMP)
 	   codesign --verify --deep --strict --verbose=2 "$(APP_DIR)"; \
 	 fi
 
-verify: $(PACKAGE_STAMP)
+endif
+
+verify: sign
+ifeq ($(PLATFORM),darwin-arm64)
 	 test -f "$(APP_CONTENTS_DIR)/Info.plist"
+endif
 	 test -x "$(APP_RESOURCES_DIR)/bin/x64sc"
 	 test -d "$(APP_RESOURCES_DIR)/share/vice"
 	 test -f "$(APP_RESOURCES_DIR)/share/vice/C64/basic-901226-01.bin"
 	 test -f "$(APP_RESOURCES_DIR)/share/vice/C64/kernal-901227-03.bin"
 	 if command -v strings >/dev/null 2>&1; then strings "$(APP_RESOURCES_DIR)/bin/x64sc" | grep -q -- "-cc-embed"; fi
+	 touch "$(PACKAGE_STAMP)"
 	 @echo "Patched VICE package is ready: $(APP_DIR)"
 
 check-platform:
-	 test "$(PLATFORM)" = "darwin-arm64" || { echo "Only PLATFORM=darwin-arm64 is packaged as VICE.app in this Makefile."; exit 1; }
+	 case "$(PLATFORM)" in darwin-arm64|linux-x64) ;; *) echo "Unsupported patched VICE platform: $(PLATFORM)"; exit 1 ;; esac
+	 test "$(PLATFORM)" = "$$(node -p "process.platform + '-' + process.arch")" || { echo "Build patched VICE on the target platform."; exit 1; }
 
 check-prereqs:
-	 command -v node >/dev/null 2>&1 || { echo "Node.js is required to bundle VICE dylibs."; exit 1; }
+	 command -v node >/dev/null 2>&1 || { echo "Node.js is required to bundle VICE libraries."; exit 1; }
+ifeq ($(PLATFORM),linux-x64)
+	 command -v patchelf >/dev/null 2>&1 || { echo "patchelf is required to bundle Linux VICE libraries."; exit 1; }
+endif
 	 command -v svn >/dev/null 2>&1 || { echo "svn is required to export VICE source."; exit 1; }
 	 command -v patch >/dev/null 2>&1 || { echo "patch is required to apply $(PATCH_FILE)."; exit 1; }
 	 command -v make >/dev/null 2>&1 || { echo "make is required to build VICE."; exit 1; }

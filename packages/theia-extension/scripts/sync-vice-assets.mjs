@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { access, cp, chmod, lstat, mkdir, open, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { bundledViceLayout } from '../../../tools/vice-embed/runtime-layout.cjs';
 
 const MACHO_MAGIC = new Set([
   0xfeedface,
@@ -26,35 +27,22 @@ const sidScoreCliTarget = path.join(
   'sidscore',
   sidScoreCliJar
 );
-const source = process.env.COMMODORE_COMMANDER_PATCHED_VICE_APP
-  ? path.resolve(process.env.COMMODORE_COMMANDER_PATCHED_VICE_APP)
-  : path.join(
-    repoRoot,
-    'tools',
-    'vice-embed',
-    'dist',
-    'darwin-arm64',
-    'VICE.app'
-  );
-const usesExternalViceApp = Boolean(
-  process.env.COMMODORE_COMMANDER_PATCHED_VICE_APP
-);
-const supportsBundledViceAssets =
-  process.platform === 'darwin' && process.arch === 'arm64';
+const layout = bundledViceLayout();
+const runtimeOverride = process.env.COMMODORE_COMMANDER_PATCHED_VICE_RUNTIME
+  ?? process.env.COMMODORE_COMMANDER_PATCHED_VICE_APP;
+const source = runtimeOverride ? path.resolve(runtimeOverride)
+  : path.join(repoRoot, 'tools', 'vice-embed', 'dist', layout?.packagePath ?? 'unsupported');
+const usesExternalViceApp = Boolean(runtimeOverride);
+const supportsBundledViceAssets = Boolean(layout);
 const viceEmbedDir = path.join(repoRoot, 'tools', 'vice-embed');
 const viceEmbedBuildInputs = [
   path.join(viceEmbedDir, 'Makefile'),
   path.join(viceEmbedDir, 'bundle-dylibs.mjs'),
+  path.join(viceEmbedDir, 'bundle-linux-libs.mjs'),
+  path.join(viceEmbedDir, 'runtime-layout.cjs'),
   path.join(viceEmbedDir, 'vice-3.10.0-commodore-embed.patch')
 ];
-const target = path.join(
-  scriptDir,
-  '..',
-  'assets',
-  'vice',
-  'darwin-arm64',
-  'VICE.app'
-);
+const target = path.join(scriptDir, '..', 'assets', 'vice', layout?.packagePath ?? 'unsupported');
 
 await mkdir(path.dirname(sidScoreCliTarget), { recursive: true });
 for (const entry of await readdir(path.dirname(sidScoreCliTarget))) {
@@ -90,9 +78,9 @@ if (
 
 if (!(await pathExists(source))) {
   throw new Error(
-    `Patched embedded VICE app bundle was not found: ${source}\n` +
+    `Patched embedded VICE runtime was not found: ${source}\n` +
       'Run `make -C tools/vice-embed package` or set ' +
-      'COMMODORE_COMMANDER_PATCHED_VICE_APP to a patched VICE.app.'
+      'COMMODORE_COMMANDER_PATCHED_VICE_RUNTIME to a patched runtime.'
   );
 }
 
@@ -164,14 +152,13 @@ async function ensurePatchedVicePackage(appPath) {
   console.warn(
     'Patched embedded VICE is missing or stale; rebuilding with `make -C tools/vice-embed package`.'
   );
-  await runInherited('make', ['-C', viceEmbedDir, 'package']);
+  await runInherited('make', ['-C', viceEmbedDir, `PLATFORM=${layout.platformKey}`, 'package']);
 }
 
 async function isPatchedVicePackageStale(appPath) {
   const packageStamp = path.join(
     appPath,
-    'Contents',
-    'Resources',
+    layout.resourcesPath,
     '.commodore-commander-patched-vice'
   );
   if (!(await pathExists(packageStamp))) {

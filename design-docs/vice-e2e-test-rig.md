@@ -31,7 +31,7 @@ binary for integration tests.
 | `fixtures.ts` | Per-test temporary workspace and rewritten `.dbg` source paths |
 | `visual-snapshot.ts` | C64 state through DAP memory/evaluation/bank queries without Theia rendering |
 | [`tools/run-theia-ui-e2e.mjs`](../tools/run-theia-ui-e2e.mjs) | Built Electron app, launch configurations, Debug/Memory/Visual Debugger UI assertions and screenshots |
-| [`tools/smoke-test-product-package.mjs`](../tools/smoke-test-product-package.mjs) | Packaged Kick Assembler PRG output and SIDScore SRAP/MIDI; macOS Apple Silicon native VICE frames plus packaged Electron Machine painting, BASIC keyboard execution and restart |
+| [`tools/smoke-test-product-package.mjs`](../tools/smoke-test-product-package.mjs) | Packaged Kick Assembler PRG output and SIDScore SRAP/MIDI; macOS Apple Silicon/Linux x64 native VICE frames plus packaged Electron Machine painting, BASIC keyboard execution and restart |
 
 Golden fixtures are `debug-demo` (debug-session behavior),
 `visual-debugger-demo` (C64 display/bank state) and `screencolors` (comment-line
@@ -107,7 +107,7 @@ Ignored diagnostic outputs:
 - `test-results/vice-e2e/<test-name>/`: `dap-transcript.jsonl`,
   `adapter-output.log`, `adapter-stderr.log`.
 - `test-results/theia-ui-e2e/`: UI screenshots and runner diagnostics.
-- `test-results/product-package/`: packaged macOS Machine screenshots, capture configuration and Electron log; retained by the nightly workflow even on failure.
+- `test-results/product-package/`: packaged macOS/Linux Machine screenshots, capture configuration and Electron log; retained by the nightly workflow even on failure.
 
 Missing runtime or unsupported embedded capability produces an explicit skip;
 check executed/skipped counts before claiming coverage. Fixture changes must
@@ -115,5 +115,15 @@ rebuild matching PRG/DBG/VS artifacts and rerun the real suite. Review assertion
 changes against product behavior, not just changed addresses.
 
 The nightly package lane exercises bundled discovery and Electron keyboard input
-on macOS Apple Silicon. Physical keyboard/mouse behavior, packaged Windows/Linux
-UI and bundled embedded payloads for those platforms remain outside this coverage.
+on macOS Apple Silicon and Linux x64 (Ubuntu 24.04, Xvfb/software rendering).
+Linux configures the packaged Electron sandbox helper as root-owned mode 4755,
+matching `LINUX-SETUP.txt`; the product test does not disable Chromium sandboxing.
+Native startup uses the normal sound initialization. GUI failures retain a bounded
+Machine status/native-output report as well as screenshots, so an initialized
+blank frame cannot hide later emulator startup failures.
+The headless Linux runner supplies a PulseAudio null sink, so the default sound
+device initializes while the Machine workflow runs. This checks the host audio
+API path, not physical audibility or audio fidelity.
+The ELF packaging fixture runs after removing build libraries and moving the runtime.
+Physical keyboard/mouse behavior, Windows packaged UI/embedded transport and
+fresh-host/minimum-OS acceptance remain outside this coverage.

@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { inflateRawSync } from 'node:zlib';
 import { promisify } from 'node:util';
+import { bundledViceLayout, packagedViceResources } from './vice-embed/runtime-layout.cjs';
 import { smokeTestVice } from './smoke-test-vice.mjs';
 import { smokeTestProductUi } from './smoke-test-product-ui.mjs';
 
@@ -40,14 +41,11 @@ async function main() {
   const layout = resolvePackageLayout(options.packageDir);
   verifyPackageLayout(layout);
   await smokeTestKickAssembler(layout, options);
-  if (process.platform === 'darwin' && process.arch === 'arm64') {
-    await smokeTestVice(path.join(
-      layout.appResourcesDir, 'lib', 'backend', 'assets', 'vice',
-      'darwin-arm64', 'VICE.app', 'Contents', 'Resources'
-    ), options.timeoutMs);
+  if (bundledViceLayout()) {
+    await smokeTestVice(packagedViceResources(layout.appResourcesDir), options.timeoutMs);
   }
   await smokeTestSidScore(layout, options);
-  if (process.platform === 'darwin' && process.arch === 'arm64') {
+  if (bundledViceLayout()) {
     await smokeTestProductUi(layout, options.outputDir, options.uiTimeoutMs);
   }
   console.log(`Product package smoke test passed: ${path.relative(repoRoot, layout.packageDir)}`);

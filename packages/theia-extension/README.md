@@ -116,8 +116,8 @@ adapter are built, run extension unit tests with:
 npm test --workspace @commodore-commander/theia-extension
 ```
 
-The extension build runs `sync:vice-assets`; on macOS Apple Silicon it can
-trigger a patched VICE build. For tests that deliberately use an external VICE,
+The extension build runs `sync:vice-assets`; on macOS Apple Silicon and Linux x64 it can
+trigger a patched VICE build with bundled native dependencies. For tests that deliberately use an external VICE,
 set `COMMODORE_COMMANDER_SKIP_VICE_ASSETS=1`.
 
 Electron packaging and signing are owned by `applications/electron` and the

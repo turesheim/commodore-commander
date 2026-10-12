@@ -289,6 +289,7 @@ type ElectronScreenCaptureStep =
       readonly type: 'assertCanvasKeyboardResponse';
       readonly selector: string;
       readonly text: string;
+      readonly echoRows: readonly (readonly number[])[];
       readonly timeoutMs?: number;
     }
   | {
@@ -360,6 +361,14 @@ function installElectronScreenCapture(): void {
         started = true;
         clearTimeout(startupTimer);
         console.error(screenCaptureErrorMessage(error));
+        try {
+          const diagnostics = await callScreenCaptureApi<Record<string, unknown>>(
+            window, 'machineRuntimeDiagnostics', [], {}, 3000
+          );
+          console.error('Machine runtime diagnostics:', JSON.stringify(diagnostics));
+        } catch (diagnosticError) {
+          console.error('Unable to read Machine runtime diagnostics.', diagnosticError);
+        }
         try {
           await capturePage(window, path.join(config.outputDir, 'failure.png'));
         } catch (captureError) {
@@ -822,7 +831,7 @@ async function runScreenCaptureStep(
       console.log(`Verified canvas glyphs in ${step.selector}.`);
       return;
     case 'assertCanvasKeyboardResponse':
-      await assertCanvasKeyboardResponse(window, step.selector, step.text, step.timeoutMs ?? timeoutMs);
+      await assertCanvasKeyboardResponse(window, step.selector, step.text, step.echoRows, step.timeoutMs ?? timeoutMs);
       console.log(`Verified canvas keyboard response in ${step.selector}.`);
       return;
     case 'waitForCanvasContent':
@@ -1074,13 +1083,14 @@ async function waitForCanvasGlyphs(
       }
     }
     return false;
-  })()`, timeoutMs, `Timed out waiting for C64 BASIC READY glyphs in ${selector}.`);
+  })()`, timeoutMs, `Timed out waiting for expected C64 glyphs in ${selector}.`);
 }
 
 async function assertCanvasKeyboardResponse(
   window: BrowserWindow,
   selector: string,
   text: string,
+  echoRows: readonly (readonly number[])[],
   timeoutMs: number
 ): Promise<void> {
   const pixelExpression = `(() => {
@@ -1094,18 +1104,30 @@ async function assertCanvasKeyboardResponse(
   if (!before) {
     throw new Error(`No opaque canvas pixel before keyboard input in ${selector}.`);
   }
-  for (const key of [...text, 'Enter']) {
+  if (echoRows.length !== 8 || echoRows.some(row => row.length !== text.length * 8)) {
+    throw new Error('Keyboard test echo glyphs must contain eight rows for the complete command.');
+  }
+  for (const [index, key] of [...text].entries()) {
     window.webContents.sendInputEvent({ type: 'keyDown', keyCode: key });
-    // Allow multiple C64 keyboard scans even when a CI runner renders slowly.
-    // This checks functional input/execution, not maximum typing throughput.
-    await delay(150);
-    window.webContents.sendInputEvent({ type: 'keyUp', keyCode: key });
+    try {
+      // Wait for the guest to echo each prefix. A fixed host-time key press can
+      // begin and end between C64 keyboard scans on a slow software renderer.
+      await waitForCanvasGlyphs(window, selector,
+        echoRows.map(row => row.slice(0, (index + 1) * 8)), timeoutMs);
+    } finally {
+      window.webContents.sendInputEvent({ type: 'keyUp', keyCode: key });
+    }
     await delay(150);
   }
-  await waitForCondition(window, `(() => {
-    const pixel = ${pixelExpression};
-    return pixel !== null && pixel !== ${JSON.stringify(before)};
-  })()`, timeoutMs, `Canvas border did not respond to keyboard input in ${selector}.`);
+  window.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Enter' });
+  try {
+    await waitForCondition(window, `(() => {
+      const pixel = ${pixelExpression};
+      return pixel !== null && pixel !== ${JSON.stringify(before)};
+    })()`, timeoutMs, `Canvas border did not respond to keyboard input in ${selector}.`);
+  } finally {
+    window.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Enter' });
+  }
 }
 
 async function waitForCanvasContent(

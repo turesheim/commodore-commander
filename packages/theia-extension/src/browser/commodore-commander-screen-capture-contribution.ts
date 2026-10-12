@@ -85,6 +85,7 @@ export interface CommodoreCommanderScreenCaptureApi {
   openEmulatorView?: () => Promise<boolean>;
   openC64VisualDebugger?: () => Promise<boolean>;
   openMachineView?: () => Promise<boolean>;
+  machineRuntimeDiagnostics?: () => Promise<Record<string, unknown>>;
   openMemoryView?: () => Promise<boolean>;
   openOutlineView?: () => Promise<boolean>;
   openSidSfxEditor?: () => Promise<boolean>;
@@ -187,6 +188,12 @@ export class CommodoreCommanderScreenCaptureContribution
       openC64VisualDebugger: async () =>
         this.openC64VisualDebuggerForScreenCapture(),
       openMachineView: async () => this.openMachineViewForScreenCapture(),
+      machineRuntimeDiagnostics: async () => {
+        const widget = await this.widgetManager.getOrCreateWidget<CommodoreMachineProfileWidget>(
+          COMMODORE_MACHINE_PROFILE_WIDGET_ID
+        );
+        return widget.runtimeDiagnosticsForScreenCapture();
+      },
       openMemoryView: async () => this.openWidgetForScreenCapture(
         VICE_MEMORY_WIDGET_ID,
         'bottom',
