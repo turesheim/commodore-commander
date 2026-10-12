@@ -29,6 +29,7 @@ test('actual native frame writer resumes partial sends and drops new frames unde
 #include <fcntl.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #ifndef _WIN32
 #include <sys/socket.h>
@@ -85,7 +86,14 @@ int main(void) {
     nonblocking(sockets[1]);
     for (size_t i = 0; i < length; i++) { payload[i] = (unsigned char)(i % 251); }
     result = cc_frame_writer_queue(&writer, sockets[0], header, sizeof(header), payload, length);
-    assert(result == 0 && writer.offset > 0 && writer.offset < writer.length);
+    if (result != 0) {
+        fprintf(stderr, "queue result=%d offset=%zu length=%zu\\n", result, writer.offset, writer.length);
+    }
+    assert(result == 0 && writer.offset < writer.length);
+#ifndef _WIN32
+    assert(writer.offset > 0); /* POSIX socketpair makes a short first send. */
+#endif
+    /* Winsock may report would-block before sending any of the large record. */
     // A newer record must not overwrite/interleave the partially sent record.
     assert(cc_frame_writer_queue(&writer, sockets[0], "new", 3, "discard", 7) == 0);
     // The writer owns the queued bytes; the renderer may reuse its pixel buffer.

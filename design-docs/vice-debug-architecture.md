@@ -155,7 +155,8 @@ backend/browser transport, canvas painting and BASIC input/execution, rather tha
 accepting FPS or an existing screenshot as success. Nightly logs/screenshots
 survive failed checks. Windows packaging follows PE imports recursively and
 copies non-system DLLs beside the executables; tests remove the build prefix
-and toolchain PATH entries before launching. This tests relocation, not a full
+and toolchain PATH entries, and clear MSYSTEM before launching. Windows native
+startup preserves inherited pipes instead of applying terminal redirection. This tests relocation, not a full
 Windows minimum-OS or clean-host acceptance matrix.
 Linux packaged UI runs under Xvfb with software rendering. Package-level UI
 verification covers macOS Apple Silicon, Windows x64 and Linux x64; debug

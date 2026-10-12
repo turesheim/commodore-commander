@@ -76,7 +76,7 @@ export async function smokeTestProductUi(layout, outputDir, timeoutMs = 90000) {
   }
   await rm(path.join(outputDir, 'failure.png'), { force: true });
   const env = Object.fromEntries(Object.entries(process.env).filter(([name]) =>
-    name !== 'ELECTRON_RUN_AS_NODE' && !name.startsWith('DYLD_') && name !== 'LD_LIBRARY_PATH' && name !== 'LD_PRELOAD' &&
+    name !== 'ELECTRON_RUN_AS_NODE' && name !== 'MSYSTEM' && !name.startsWith('DYLD_') && name !== 'LD_LIBRARY_PATH' && name !== 'LD_PRELOAD' &&
     !name.startsWith('VICE_') && !name.startsWith('THEIA_UI_E2E_VICE_')
   ));
   env.COMMODORE_COMMANDER_SCREEN_CAPTURE_CONFIG = configPath;

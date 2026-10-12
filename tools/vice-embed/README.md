@@ -47,7 +47,8 @@ copies the transitive MinGW DLL graph into `bin`, and fails on unresolved import
 or MSYS/Cygwin dependencies. Windows system DLLs and API-set contracts stay with
 the host. The Windows default disables build-host CPU tuning (`--disable-arch`)
 and includes upstream README/license text. The product tests run outside the build shell after removing MinGW/MSYS2
-from PATH and moving the build prefix away. The build runner is Windows Server
+from PATH, clearing MSYSTEM and moving the build prefix away. Native startup
+preserves inherited output pipes rather than attaching to a console/closing them. The build runner is Windows Server
 2022 x64; supported desktop/minimum Windows versions still need release verification.
 
 | Platform | Staged runtime | Resource root |

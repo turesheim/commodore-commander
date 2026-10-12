@@ -1324,3 +1324,16 @@ new file mode 100644
 +    return (int)count;
 +}
 +#endif
+diff --git a/src/arch/shared/archdep_fix_streams.c b/src/arch/shared/archdep_fix_streams.c
+--- a/src/arch/shared/archdep_fix_streams.c
++++ b/src/arch/shared/archdep_fix_streams.c
+@@ -80,7 +80,7 @@
+         filetype = GetFileType(handle);
+         is_cons  = (filetype == FILE_TYPE_UNKNOWN || filetype == FILE_TYPE_CHAR);
+
+-        if (filetype == FILE_TYPE_DISK) {
+-            /* don't call AttachConsole in case of redirecting to file */
++        if (filetype == FILE_TYPE_DISK || filetype == FILE_TYPE_PIPE) {
++            /* Preserve inherited files/pipes: attaching/closing breaks Node I/O. */
+             return;
+         }

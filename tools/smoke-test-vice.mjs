@@ -11,7 +11,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 export async function smokeTestVice(resourcesPath, timeoutMs = 15000) {
   const executable = path.join(resourcesPath, 'bin', process.platform === 'win32' ? 'x64sc.exe' : 'x64sc');
   const env = Object.fromEntries(Object.entries(process.env)
-    .filter(([name]) => !name.startsWith('DYLD_') && name !== 'LD_LIBRARY_PATH' && name !== 'LD_PRELOAD'));
+    .filter(([name]) => name !== 'MSYSTEM' && !name.startsWith('DYLD_') && name !== 'LD_LIBRARY_PATH' && name !== 'LD_PRELOAD'));
   // Exercise early path discovery too; it precedes normal argv initialization.
   try {
     await promisify(execFile)(executable, ['-version'], {
