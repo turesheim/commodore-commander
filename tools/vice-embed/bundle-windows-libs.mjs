@@ -33,7 +33,8 @@ export async function bundleWindowsLibraries(runtimeRoot, mingwPrefix, objdumpCo
     if (visited.has(file.toLowerCase())) { continue; }
     visited.add(file.toLowerCase());
     const imports = parsePeImports(execFileSync(objdumpCommand ?? path.join(toolchainDir, 'objdump.exe'), ['-p', file], {
-      encoding: 'utf8', timeout: 15000
+      // objdump also prints unwind tables for the large emulator binaries.
+      encoding: 'utf8', timeout: 15000, maxBuffer: 32 * 1024 * 1024
     }));
     for (const name of imports) {
       const key = name.toLowerCase();
