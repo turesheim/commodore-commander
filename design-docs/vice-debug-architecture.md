@@ -80,6 +80,11 @@ menu, reset and quit have native hooks. Joystick and resize remain reserved
 messages. Mouse input requires the selected VICE mouse device/emulation to be
 enabled; browser pointer lock supplies relative movement.
 
+Native SDL errors in embedded mode are written to stderr rather than opening a
+hidden blocking dialog. Existing backend output forwarding exposes the message;
+VICE retains its own error policy (for example disabling failed sound output).
+This does not complete audio recovery or bounded lifecycle handling.
+
 ## Stdout and JSON policy
 
 `ViceEmbeddedStdoutDecoder` separates text, CCV1 lines and fallback CCB1 records

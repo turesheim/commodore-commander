@@ -127,6 +127,8 @@ API path, not physical audibility or audio fidelity.
 The ELF and Windows PE fixtures run after removing build libraries and moving
 the runtime. Native helper tests compile the actual patch files, verify
 nonblocking partial frame sends and fragmented input from a Node-owned pipe.
+A native regression fixture checks that embedded errors reach stderr without
+entering a hidden modal dialog, while external VICE keeps its dialogs.
 Windows product tests remove MinGW/MSYS2 PATH entries and the build prefix.
 Physical keyboard/mouse behavior, audio fidelity and fresh-host/minimum-OS
 acceptance remain outside this coverage.

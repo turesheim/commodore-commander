@@ -82,6 +82,9 @@ these settings. See [Debugger User Guide](debugger-user-guide.md).
   for stock VICE. A version number alone does not prove embedded support.
 - **Native executable cannot load:** reinstall a complete package/runtime for
   your OS/architecture; include the error and selected paths in a bug report.
+- **Native device/error message:** inspect Output/VICE. Embedded errors no longer
+  wait in a hidden SDL dialog; VICE can disable an unavailable sound device while
+  continuing emulation. Correct the host audio setup and restart to retry sound.
 - **Tools ready but Machine stays empty:** stop and restart the machine, inspect
   Output/VICE and report the selected profile/model and steps leading to the
   failure. The setup probe does not validate live frames or all ROM/model files.

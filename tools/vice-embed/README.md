@@ -132,6 +132,10 @@ The current patch is intentionally narrow:
   embedded keyboard commands are turned into SDL key events so the menu can be
   controlled from Theia. Command input is consumed from VICE's SDL/main loop so
   SDL and AppKit operations stay on the main thread.
+- Native errors go to stderr in embedded mode instead of waiting in a hidden
+  SDL modal dialog. The backend forwards that diagnostic to Output/VICE; normal
+  external VICE retains its visible dialogs. Audio-device recovery/fidelity still
+  needs release acceptance.
 - Reset commands trigger a normal machine CPU reset.
 - Joystick commands are reserved by the protocol but are not implemented in the
   native patch yet.
