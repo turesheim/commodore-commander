@@ -118,7 +118,7 @@ jobs:
           update: true
           path-type: inherit
           install: >-
-            make autoconf automake libtool bison flex texinfo dos2unix subversion patch icoutils
+            make autoconf automake libtool bison flex texinfo dos2unix subversion patch mingw-w64-x86_64-icoutils
             mingw-w64-x86_64-gcc mingw-w64-x86_64-pkgconf mingw-w64-x86_64-xa65
             mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL2_image mingw-w64-x86_64-curl
 
@@ -179,6 +179,10 @@ jobs:
           THEIA_BUILD_MAX_OLD_SPACE_SIZE_MB: "4096"
           npm_config_msvs_version: "2022"
         run: npm run theia:build
+
+      - name: Test Windows runtime command routing
+        if: runner.os == 'Windows'
+        run: node --test --test-name-pattern="platform inherited pipe" packages/vice-runtime/lib/test/vice-process.test.js packages/vice-runtime/lib/test/vice-standalone-process.test.js
 
       - name: Run Theia extension unit tests
         if: runner.os == 'Linux'

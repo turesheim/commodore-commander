@@ -12,6 +12,7 @@ import {
   resolveViceCommand,
   terminateViceProcess
 } from '../vice-process';
+import { VICE_EMBED_COMMAND_FD } from '../vice-launch-flags';
 
 test('no-debug process launch preserves the working directory and environment', async () => {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'cc-vice-launch-'));
@@ -139,7 +140,7 @@ test('createViceProcessArgs enables the embedded VICE transport when requested',
     '-cc-frame-port',
     '6510',
     '-cc-command-fd',
-    '3',
+    String(VICE_EMBED_COMMAND_FD),
     '-mouse',
     '-model',
     'c64',
@@ -164,7 +165,7 @@ test('createViceProcessArgs allows embedded launch args to override mouse grab',
     '-cc-frame-port',
     '6510',
     '-cc-command-fd',
-    '3',
+    String(VICE_EMBED_COMMAND_FD),
     '+mouse',
     '-model',
     'c64',
@@ -189,7 +190,7 @@ test('createViceProcessArgs pins embedded keyboard mapping after config files', 
     '-cc-frame-port',
     '6510',
     '-cc-command-fd',
-    '3',
+    String(VICE_EMBED_COMMAND_FD),
     '-mouse',
     '-config',
     '/workspace/vice.ini',
@@ -324,5 +325,39 @@ test('resolveViceCommand finds an executable under the VICE resources bin direct
     );
   } finally {
     await rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+
+test('embedded launch routes commands to the platform inherited pipe', { timeout: 5000 }, async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'cc-vice-command-'));
+  const script = path.join(directory, 'emulator.cjs');
+  let child: ReturnType<typeof spawn> | undefined;
+  try {
+    await writeFile(script, `
+      const fs = require('node:fs');
+      const readline = require('node:readline');
+      const input = process.platform === 'win32' ? process.stdin : fs.createReadStream(null, { fd: 3, autoClose: false });
+      readline.createInterface({ input }).on('line', line => {
+        process.stdout.write(line + '\\n', () => process.exit(0));
+      });
+    `);
+    const launch = await launchViceProcess({
+      program: script, cwd: directory, viceResourcesPath: directory,
+      viceExecutable: process.execPath, enableMonitor: false, enableEmbed: true,
+      // A Node executable stands in for the emulator. Keep its flags after --.
+      viceArgs: ['--', script, '-cc-embed', '-cc-command-fd', String(VICE_EMBED_COMMAND_FD), '-mouse']
+    });
+    child = launch.child;
+    assert.ok(launch.commandInput?.writable);
+    let output = '';
+    child.stdout!.on('data', chunk => { output += chunk.toString(); });
+    const closed = once(child, 'close');
+    launch.commandInput.write('CCV1 {"type":"reset"}\n');
+    assert.equal((await closed)[0], 0);
+    assert.equal(output, 'CCV1 {"type":"reset"}\n');
+  } finally {
+    child?.kill('SIGKILL');
+    await rm(directory, { recursive: true, force: true });
   }
 });

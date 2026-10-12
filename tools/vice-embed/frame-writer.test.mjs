@@ -95,7 +95,12 @@ int main(void) {
         assert(++loops < 100000);
         count = recv(sockets[1], (char *)actual + received, (int)(length + sizeof(header) - received), 0);
         if (count > 0) { received += (size_t)count; }
-        else { assert(count < 0 && (would_block())); }
+        else {
+            assert(count < 0 && would_block());
+#ifdef _WIN32
+            Sleep(1);
+#endif
+        }
         assert(cc_frame_writer_flush(&writer, sockets[0]) >= 0);
     }
     assert(writer.data == NULL && writer.length == 0 && writer.offset == 0);

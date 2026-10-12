@@ -35,7 +35,7 @@ Windows x64 builds in the MSYS2 **MINGW64** shell, with Node.js on PATH:
 
 ```sh
 pacman -S --needed make autoconf automake libtool bison flex texinfo dos2unix \
-  subversion patch icoutils mingw-w64-x86_64-gcc mingw-w64-x86_64-pkgconf \
+  subversion patch mingw-w64-x86_64-icoutils mingw-w64-x86_64-gcc mingw-w64-x86_64-pkgconf \
   mingw-w64-x86_64-xa65 mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL2_image \
   mingw-w64-x86_64-curl
 make -C tools/vice-embed PLATFORM=win32-x64 package
