@@ -55,6 +55,8 @@ int main(void) {
     int size = 1024, result, loops = 0;
     const size_t length = 512 * 1024;
     size_t received = 0;
+    size_t padding = 0;
+    char padding_buffer[4096] = { 0 };
     unsigned char header[32] = "CCB1";
     unsigned char *payload = malloc(length);
     unsigned char *actual = malloc(length + sizeof(header));
@@ -84,6 +86,16 @@ int main(void) {
     assert(setsockopt(sockets[0], SOL_SOCKET, SO_SNDBUF, (const char *)&size, sizeof(size)) == 0);
     nonblocking(sockets[0]);
     nonblocking(sockets[1]);
+#ifdef _WIN32
+    /* Winsock can accept a whole large first send despite SO_SNDBUF. Fill
+       the real socket before queueing a frame to force would-block reliably. */
+    for (;;) {
+        int count = send(sockets[0], padding_buffer, sizeof(padding_buffer), 0);
+        if (count < 0) { assert(would_block()); break; }
+        assert(count > 0 && padding < 64 * 1024 * 1024);
+        padding += (size_t)count;
+    }
+#endif
     for (size_t i = 0; i < length; i++) { payload[i] = (unsigned char)(i % 251); }
     result = cc_frame_writer_queue(&writer, sockets[0], header, sizeof(header), payload, length);
     if (result != 0) {
@@ -101,8 +113,15 @@ int main(void) {
     while (received < length + sizeof(header)) {
         int count;
         assert(++loops < 100000);
-        count = recv(sockets[1], (char *)actual + received, (int)(length + sizeof(header) - received), 0);
-        if (count > 0) { received += (size_t)count; }
+        if (padding) {
+            int capacity = padding < sizeof(padding_buffer) ? (int)padding : (int)sizeof(padding_buffer);
+            count = recv(sockets[1], padding_buffer, capacity, 0);
+            if (count > 0) { padding -= (size_t)count; }
+        } else {
+            count = recv(sockets[1], (char *)actual + received, (int)(length + sizeof(header) - received), 0);
+            if (count > 0) { received += (size_t)count; }
+        }
+        if (count > 0) { /* Received padding or record bytes. */ }
         else {
             assert(count < 0 && would_block());
 #ifdef _WIN32
@@ -133,7 +152,7 @@ int main(void) {
     execFileSync(process.platform === 'win32' ? 'gcc' : 'cc', ['-std=c99', '-Wall', '-Wextra', '-Werror', 'cc_frame_writer.c', 'test.c', '-o', executable, ...(process.platform === 'win32' ? ['-lws2_32'] : [])], {
       cwd: temp, timeout: 10000
     });
-    execFileSync(executable, [], { timeout: 3000 });
+    execFileSync(executable, [], { timeout: 7000 });
   } finally {
     await rm(temp, { recursive: true, force: true });
   }
