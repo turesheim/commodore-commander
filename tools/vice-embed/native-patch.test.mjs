@@ -25,3 +25,24 @@ test('macOS launcher include patch applies with the platform patch tool', {
     await rm(temp, { recursive: true, force: true });
   }
 });
+
+test('native error-dialog hunk applies with balanced context', async () => {
+  const patch = (await readFile(new URL('./vice-3.10.0-commodore-embed.patch', import.meta.url), 'utf8')).replace(/\r\n/g, '\n');
+  const start = patch.indexOf('@@ -892,19 +897,19 @@');
+  const end = patch.indexOf('diff --git ', start);
+  assert.ok(start >= 0 && end > start);
+  const chunk = patch.slice(start, end);
+  const original = chunk.split('\n').filter(line => line.startsWith(' ') || line.startsWith('-') || line === '')
+    .map(line => line ? line.slice(1) : '').join('\n');
+  const temp = await mkdtemp(path.join(os.tmpdir(), 'cc native error patch-'));
+  const fixture = path.join(temp, 'src', 'arch', 'sdl', 'ui.c');
+  try {
+    await mkdir(path.dirname(fixture), { recursive: true });
+    await writeFile(fixture, '\n'.repeat(891) + original + '\n{\n    return NULL;\n}\n');
+    execFileSync('patch', ['-p1', '--forward'], {
+      cwd: temp,
+      input: '--- a/src/arch/sdl/ui.c\n+++ b/src/arch/sdl/ui.c\n' + chunk
+    });
+    assert.ok((await readFile(fixture, 'utf8')).includes('sdl_ui_ready && !cc_embed_is_enabled()'));
+  } finally { await rm(temp, { recursive: true, force: true }); }
+});

@@ -132,3 +132,8 @@ entering a hidden modal dialog, while external VICE keeps its dialogs.
 Windows product tests remove MinGW/MSYS2 PATH entries and the build prefix.
 Physical keyboard/mouse behavior, audio fidelity and fresh-host/minimum-OS
 acceptance remain outside this coverage.
+
+Packaged native tests also request a deliberately nonexistent sound device,
+require its stderr diagnostic and continuing visible frames. This exercises the
+real SDL error path in addition to default startup; it does not bypass or replace
+the default-device check. Native logs are retained as product test artifacts.

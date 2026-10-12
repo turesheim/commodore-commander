@@ -6,9 +6,9 @@ import path from 'node:path';
 import test from 'node:test';
 
 test('embedded native errors report to stderr without entering a hidden modal dialog', { timeout: 15000 }, async () => {
-  const patch = await readFile(new URL('./vice-3.10.0-commodore-embed.patch', import.meta.url), 'utf8');
+  const patch = await readFile(new URL('./vice-3.10.0-commodore-embed.patch', import.meta.url), 'utf8').then(text => text.replace(/\r\n/g, '\n'));
   const start = patch.indexOf(' void ui_error(const char *format, ...)');
-  const end = patch.indexOf('diff --git ', start);
+  const end = patch.indexOf('\n }\n', start) + 4;
   assert.ok(start >= 0 && end > start);
   const fn = patch.slice(start, end).split('\n').filter(line => line.startsWith(' ') || line.startsWith('+') || line === '')
     .map(line => line ? line.slice(1) : '').join('\n');

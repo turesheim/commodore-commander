@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFile, spawn } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -8,7 +8,7 @@ import { promisify } from 'node:util';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-export async function smokeTestVice(resourcesPath, timeoutMs = 15000) {
+export async function smokeTestVice(resourcesPath, timeoutMs = 15000, options = {}) {
   const executable = path.join(resourcesPath, 'bin', process.platform === 'win32' ? 'x64sc.exe' : 'x64sc');
   const env = Object.fromEntries(Object.entries(process.env)
     .filter(([name]) => name !== 'MSYSTEM' && !name.startsWith('DYLD_') && name !== 'LD_LIBRARY_PATH' && name !== 'LD_PRELOAD'));
@@ -42,7 +42,10 @@ export async function smokeTestVice(resourcesPath, timeoutMs = 15000) {
       frameCount++;
       // Require ongoing rendering and visible content, not an initial blank.
       const firstPixel = frame.data.readUInt32LE(0) & 0x00ffffff;
-      if (frameCount >= 5) {
+      const sawExpectedError = !options.expectSoundError || log.includes(
+        `Sound: device '${options.soundDevice}' not found or not supported.`
+      );
+      if (frameCount >= 5 && sawExpectedError) {
         for (let offset = 4; offset < frame.data.length; offset += 4) {
           if (frame.data[offset + 3] > 0 &&
               (frame.data.readUInt32LE(offset) & 0x00ffffff) !== firstPixel) {
@@ -60,7 +63,8 @@ export async function smokeTestVice(resourcesPath, timeoutMs = 15000) {
     const port = await transport.start();
     child = spawn(executable, [
       '-default', '-cc-embed', '-cc-frame-port', String(port),
-      '-cc-command-fd', process.platform === 'win32' ? '0' : '3'
+      '-cc-command-fd', process.platform === 'win32' ? '0' : '3',
+      ...(options.soundDevice ? ['-sounddev', options.soundDevice] : [])
     ], {
       cwd: workingDirectory,
       // Do not inherit user VICE configuration or dynamic-loader overrides.
@@ -79,7 +83,7 @@ export async function smokeTestVice(resourcesPath, timeoutMs = 15000) {
       `VICE produced no visible content within ${timeoutMs} ms (${frameCount} frames received).`
     )), timeoutMs);
     const frame = await frameReady;
-    console.log(`VICE package smoke test received ${frameCount} frames, including ${frame.width}x${frame.height} visible RGBA content.`);
+    console.log(`VICE package smoke test received ${frameCount} frames, including ${frame.width}x${frame.height} visible RGBA content.${options.expectSoundError ? ' Native audio failure was reported and emulation continued.' : ''}`);
   } catch (error) {
     throw new Error(`${error instanceof Error ? error.message : String(error)}\n${log.trim()}`);
   } finally {
@@ -90,6 +94,10 @@ export async function smokeTestVice(resourcesPath, timeoutMs = 15000) {
       const exited = new Promise(resolve => child.once('exit', resolve));
       child.kill('SIGKILL');
       await exited;
+    }
+    if (options.outputPath) {
+      await mkdir(path.dirname(options.outputPath), { recursive: true });
+      await writeFile(options.outputPath, log);
     }
     await rm(workingDirectory, { recursive: true, force: true });
   }

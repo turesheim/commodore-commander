@@ -42,7 +42,14 @@ async function main() {
   verifyPackageLayout(layout);
   await smokeTestKickAssembler(layout, options);
   if (bundledViceLayout()) {
-    await smokeTestVice(packagedViceResources(layout.appResourcesDir), options.timeoutMs);
+    const resources = packagedViceResources(layout.appResourcesDir);
+    await smokeTestVice(resources, options.timeoutMs, {
+      outputPath: path.join(options.outputDir, 'vice-default.log')
+    });
+    await smokeTestVice(resources, options.timeoutMs, {
+      soundDevice: 'cc-smoke-missing-audio', expectSoundError: true,
+      outputPath: path.join(options.outputDir, 'vice-audio-error.log')
+    });
   }
   await smokeTestSidScore(layout, options);
   if (bundledViceLayout()) {
