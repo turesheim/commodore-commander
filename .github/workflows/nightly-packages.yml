@@ -180,9 +180,11 @@ jobs:
           npm_config_msvs_version: "2022"
         run: npm run theia:build
 
-      - name: Test Windows runtime command routing
+      - name: Test Windows runtime and capture path routing
         if: runner.os == 'Windows'
-        run: node --test --test-name-pattern="platform inherited pipe" packages/vice-runtime/lib/test/vice-process.test.js packages/vice-runtime/lib/test/vice-standalone-process.test.js
+        run: |
+          node --test --test-name-pattern="platform inherited pipe" packages/vice-runtime/lib/test/vice-process.test.js packages/vice-runtime/lib/test/vice-standalone-process.test.js
+          node --test packages/theia-extension/lib/test/screen-capture-uri.test.js
 
       - name: Run Theia extension unit tests
         if: runner.os == 'Linux'
